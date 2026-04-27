@@ -1,4 +1,3 @@
-cat > README.md << 'EOF'
 # BloodShare 🩸
 
 Application mobile de fidélisation des donneurs de sang en Nouvelle-Calédonie.
