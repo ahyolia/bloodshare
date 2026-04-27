@@ -1,0 +1,20 @@
+cat > .gitignore << 'EOF'
+# Node
+node_modules/
+npm-debug.log
+
+# Environnement
+.env
+*.env.local
+
+# Docker
+postgres_data/
+
+# Expo
+bloodshare-mobile/.expo/
+bloodshare-mobile/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+EOF
