@@ -16,7 +16,7 @@ Application mobile de fidélisation des donneurs de sang en Nouvelle-Calédonie.
 
 ### Installation
 ```bash
-git clone https://github.com/VOTRE_ORG/bloodshare.git
+git clone https://github.com/ahyolia/bloodshare.git
 cd bloodshare
 cp bloodshare-api/.env.example bloodshare-api/.env
 docker compose up --build
@@ -29,4 +29,7 @@ L'API est accessible sur http://localhost:3000
 cd bloodshare-mobile
 npx expo start
 ```
+<<<<<<< HEAD
 EOF
+=======
+>>>>>>> 0583c78 (fix : readme.md)
