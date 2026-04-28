@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS users (
   groupe_sanguin VARCHAR(5),
   date_naissance DATE,
   genre VARCHAR(20),
-  region VARCHAR(100),
   xp_total INT DEFAULT 0,
   code_parrainage VARCHAR(20) UNIQUE,
   notif_push BOOLEAN DEFAULT true,

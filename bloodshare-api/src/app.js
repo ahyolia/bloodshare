@@ -6,10 +6,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Route de test
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', project: 'BloodShare API' });
 });
+
+app.use('/api/auth', require('./routes/auth'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
