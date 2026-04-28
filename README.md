@@ -29,7 +29,3 @@ L'API est accessible sur http://localhost:3000
 cd bloodshare-mobile
 npx expo start
 ```
-<<<<<<< HEAD
-EOF
-=======
->>>>>>> 0583c78 (fix : readme.md)
