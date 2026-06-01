@@ -1,13 +1,13 @@
 services:
   api:
-    build: ./bloodshare-api
-    container_name: bloodshare_api
+    build: ./bloodshare-backend
+    container_name: bloodshare_backend
     ports:
       - "3001:3000"
     env_file:
-      - ./bloodshare-api/.env
+      - ./bloodshare-backend/.env
     volumes:
-      - ./bloodshare-api:/app
+      - ./bloodshare-backend:/app
       - /app/node_modules
     depends_on:
       db:
