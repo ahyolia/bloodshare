@@ -1,31 +1,31 @@
 services:
-  api:
-    build: ./bloodshare-backend
+
+  backend:
+    build:
+      context: ./bloodshare-backend
+      dockerfile: Dockerfile
     container_name: bloodshare_backend
     ports:
-      - "3001:3000"
+      - "8000:8000"
     env_file:
       - ./bloodshare-backend/.env
     volumes:
-      - ./bloodshare-backend:/app
-      - /app/node_modules
+      - ./bloodshare-backend:/var/www/html
     depends_on:
       db:
         condition: service_healthy
-    command: npm run dev
 
   db:
     image: postgres:15-alpine
     container_name: bloodshare_db
     environment:
-      - POSTGRES_USER=bloodshare
-      - POSTGRES_PASSWORD=bloodshare123
-      - POSTGRES_DB=bloodshare
+      POSTGRES_USER: bloodshare
+      POSTGRES_PASSWORD: bloodshare123
+      POSTGRES_DB: bloodshare
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - /home/camelia/dev/bloodshare/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U bloodshare"]
       interval: 5s
