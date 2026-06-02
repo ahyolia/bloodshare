@@ -1,1 +1,0 @@
--- Structure gérée par les migrations Laravel
