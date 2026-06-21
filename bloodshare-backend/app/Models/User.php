@@ -24,6 +24,7 @@ class User extends Authenticatable implements FilamentUser, HasName
         'points_cumules',
         'derniere_connexion',
         'avatar_id',
+        'code_parrainage',
     ];
 
     protected $hidden = [
@@ -94,10 +95,6 @@ class User extends Authenticatable implements FilamentUser, HasName
         return $this->hasMany(Parrainage::class, 'filleul_id');
     }
 
-    public function benevole()
-    {
-        return $this->hasOne(Benevole::class);
-    }
     // Dire à Filament d'utiliser pseudo comme nom d'affichage
     public function getFilamentName(): string
     {
