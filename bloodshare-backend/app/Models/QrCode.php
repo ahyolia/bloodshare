@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 class QrCode extends Model
 {
+    use HasUuids;
+
     protected $table = 'qr_codes';
 
     protected $fillable = [
