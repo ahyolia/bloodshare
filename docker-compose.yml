@@ -11,6 +11,9 @@ services:
       - ./bloodshare-backend/.env
     volumes:
       - ./bloodshare-backend:/var/www/html
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     depends_on:
       db:
         condition: service_healthy
