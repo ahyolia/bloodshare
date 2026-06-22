@@ -10,6 +10,7 @@
         "filament/filament": "^3.0",
         "laravel/framework": "^11.31",
         "laravel/tinker": "^2.9",
+        "simplesoftwareio/simple-qrcode": "*",
         "spatie/laravel-permission": "^6.25"
     },
     "require-dev": {
@@ -67,6 +68,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+        "php": "8.3.31"
         }
     },
     "minimum-stability": "stable",
