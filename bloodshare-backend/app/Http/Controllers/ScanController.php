@@ -46,16 +46,18 @@ class ScanController extends Controller
 
     private function handleDon($user, QrCodeScan $scan): JsonResponse
     {
-        // Vérification éligibilité : pas de don validé dans les 56 derniers jours
+        // Délai d'éligibilité selon le sexe : 56j (homme) / 84j (femme)
+        $delaiJours = $user->sexe === 'femme' ? 84 : 56;
+
         $dernierDon = Don::where('user_id', $user->id)
             ->where('statut', 'valide')
             ->orderByDesc('date_don')
             ->first();
 
-        if ($dernierDon && $dernierDon->date_don->addDays(56)->isFuture()) {
+        if ($dernierDon && $dernierDon->date_don->addDays($delaiJours)->isFuture()) {
             return response()->json([
                 'message'               => 'Vous n\'êtes pas encore éligible pour donner.',
-                'prochaine_eligibilite' => $dernierDon->date_don->addDays(56)->toDateString(),
+                'prochaine_eligibilite' => $dernierDon->date_don->addDays($delaiJours)->toDateString(),
             ], 422);
         }
 
@@ -65,6 +67,12 @@ class ScanController extends Controller
             ->where('mois_numero', $moisNumero)
             ->where('statut', 'active')
             ->first();
+
+        if (! $carte) {
+            return response()->json([
+                'message' => 'La carte du mois n\'est pas encore disponible. Contactez un administrateur.',
+            ], 503);
+        }
 
         // Enregistrement du don
         Don::create([
