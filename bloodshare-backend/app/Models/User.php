@@ -55,11 +55,6 @@ class User extends Authenticatable implements FilamentUser, HasName
         return $this->hasMany(QrCodeScan::class);
     }
 
-    public function boosters()
-    {
-        return $this->hasMany(Booster::class);
-    }
-
     public function cartes()
     {
         return $this->hasMany(UserCarte::class);
