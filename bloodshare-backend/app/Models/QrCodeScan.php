@@ -33,11 +33,6 @@ class QrCodeScan extends Model
         return $this->belongsTo(QrCode::class);
     }
 
-    public function booster()
-    {
-        return $this->hasOne(Booster::class, 'scan_id');
-    }
-
     public function don()
     {
         return $this->hasOne(Don::class, 'scan_id');

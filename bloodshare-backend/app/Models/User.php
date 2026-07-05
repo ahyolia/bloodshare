@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -11,7 +12,7 @@ use Filament\Panel;
 
 class User extends Authenticatable implements FilamentUser, HasName
 {
-    use HasRoles, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
         'pseudo',
@@ -53,11 +54,6 @@ class User extends Authenticatable implements FilamentUser, HasName
     public function qrCodeScans()
     {
         return $this->hasMany(QrCodeScan::class);
-    }
-
-    public function boosters()
-    {
-        return $this->hasMany(Booster::class);
     }
 
     public function cartes()

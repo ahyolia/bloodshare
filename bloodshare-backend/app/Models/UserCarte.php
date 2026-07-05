@@ -11,7 +11,6 @@ class UserCarte extends Model
     protected $fillable = [
         'user_id',
         'carte_id',
-        'booster_id',
         'quantite',
         'obtenue_at',
     ];
@@ -28,10 +27,5 @@ class UserCarte extends Model
     public function carte()
     {
         return $this->belongsTo(Carte::class);
-    }
-
-    public function booster()
-    {
-        return $this->belongsTo(Booster::class);
     }
 }

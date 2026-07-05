@@ -10,7 +10,8 @@ class Carte extends Model
         'titre',
         'description',
         'image_url',
-        'rarete',
+        'categorie',
+        'mois_numero',
         'statut',
     ];
 
