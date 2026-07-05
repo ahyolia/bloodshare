@@ -16,8 +16,15 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         User::factory()->create([
-            'name' => 'Test User',
+            'pseudo' => 'Test User',
             'email' => 'test@example.com',
+        ]);
+
+        $this->call([
+            AvatarSeeder::class,
+            CarteSeeder::class,
+            BadgeSeeder::class,
+            QrCodeSeeder::class,
         ]);
     }
 }
