@@ -1,50 +1,75 @@
-# Welcome to your Expo app 👋
+# BloodShare — Mobile 🩸
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Application mobile React Native (Expo) de BloodShare — plateforme gamifiée de sensibilisation au don du sang en Nouvelle-Calédonie.
 
-## Get started
+## Stack
 
-1. Install dependencies
+- **Framework** : React Native
+- **Environnement** : Expo
+- **Auth** : Laravel Sanctum (tokens API)
 
-   ```bash
-   npm install
-   ```
+## Prérequis
 
-2. Start the app
+- Node.js 20+
+- Expo Go (sur votre téléphone) ou un émulateur Android/iOS
+- Le backend doit tourner sur http://localhost:8000
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Installation
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Lancer l'application
 
-## Learn more
+```bash
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Scannez le QR Code avec Expo Go sur votre téléphone, ou appuyez sur :
+- `a` → émulateur Android
+- `i` → simulateur iOS
+- `w` → navigateur web
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Fonctionnalités
 
-## Join the community
+### Authentification
+- Inscription / Connexion
+- Récupération de mot de passe
 
-Join our community of developers creating universal apps.
+### Accueil
+- Stock de sang en temps réel par groupe sanguin
+- Bannières d'alerte
+- Événements à venir
+- Don du mois
+- Actualités ACDO-NC
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Dons
+- Questionnaire d'éligibilité
+- Informations pratiques sur le don
+- Lien vers le site officiel du CNT
+- Scan QR Code pour valider un don
+
+### Cartes
+- Collection de cartes à collectionner (12 cartes, 2 raretés)
+- Ouverture de boosters (3 cartes dont 1 rare garantie)
+- Scan QR Code pour obtenir un booster
+
+### Profil
+- Points cumulés
+- Badges obtenus
+- Historique des dons
+- Défis en cours
+- Paramètres du compte
+
+## Connexion au backend
+
+Configurez l'URL de l'API dans votre fichier de configuration :
+
+```
+API_URL=http://localhost:8000/api
+```
+
+## Rôles utilisateur
+
+L'application mobile est accessible uniquement aux utilisateurs avec le rôle `utilisateur`. Les admins accèdent au backoffice via http://localhost:8000/admin.
