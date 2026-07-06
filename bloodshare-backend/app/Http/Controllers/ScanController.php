@@ -9,6 +9,7 @@ use App\Models\QrCode;
 use App\Models\QrCodeScan;
 use App\Models\UserBadge;
 use App\Models\UserCarte;
+use App\Services\ParrainageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -108,6 +109,8 @@ class ScanController extends Controller
                 'deja_possedee' => $dejaPossedee,
             ];
         }
+
+        app(ParrainageService::class)->validerSiFilleul($user);
 
         $badges = $this->attribuerBadgesDon($user);
 
