@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserQuiz extends Model
 {
+    protected $table = 'user_quiz';
+
     public $timestamps = false;
 
     protected $fillable = [

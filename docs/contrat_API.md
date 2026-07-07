@@ -4,6 +4,36 @@ Ce document définit le format exact des requêtes et réponses entre l'applicat
 
 **Base URL (dev)** : [`http://localhost:8000/api`](http://localhost:8000/api)
 
+## État d'implémentation
+
+| Section | Endpoint | Statut |
+|---|---|---|
+| Authentification | `POST /auth/register` | ✅ Implémenté |
+| Authentification | `POST /auth/login` | ✅ Implémenté |
+| Authentification | `POST /auth/logout` | ✅ Implémenté |
+| Authentification | `POST /auth/forgot-password` | ✅ Implémenté |
+| Profil | `GET /me` | ✅ Implémenté |
+| Profil | `PUT /me` | ✅ Implémenté |
+| Profil | `DELETE /me` | ✅ Implémenté |
+| Scan QR Code | `POST /scan` | ✅ Implémenté |
+| Dons | `GET /dons` | ✅ Implémenté |
+| Cartes | `GET /cartes` | ✅ Implémenté |
+| Badges | `GET /badges` | ✅ Implémenté |
+| Points | `GET /points/historique` | ✅ Implémenté |
+| Parrainage | `GET /parrainage/code` | ✅ Implémenté |
+| Contenu | `GET /actualites` | ✅ Implémenté |
+| Contenu | `GET /fiches-infos` | ✅ Implémenté |
+| Contenu | `GET /faq` | ✅ Implémenté |
+| Contenu | `GET /stock-sang` | ✅ Implémenté |
+| Contenu | `GET /evenements` | ✅ Implémenté |
+| Contenu | `GET /bannieres` | ✅ Implémenté |
+| Gamification | `GET /quiz` | ✅ Implémenté |
+| Gamification | `GET /quiz/{id}` | ✅ Implémenté |
+| Gamification | `POST /quiz/{id}/soumettre` | ✅ Implémenté |
+| Gamification | `GET /defis/actuel` | ✅ Implémenté |
+
+Toutes les sections de ce contrat sont désormais implémentées côté backend.
+
 **Authentification** : après un `login` ou `register` réussi, l'API renvoie un `token` (une longue chaîne de caractères, ex: `1|xxxxxxxxxxxxxxxxxxxxx`).
 
 Pour tous les appels suivants qui nécessitent d'être connecté (marqués _Authentifié_ dans ce document), ce token doit être renvoyé dans chaque requête, glissé dans un **header HTTP** nommé `Authorization`, sous la forme :

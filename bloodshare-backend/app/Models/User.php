@@ -92,6 +92,11 @@ class User extends Authenticatable implements FilamentUser, HasName
         return $this->hasMany(Parrainage::class, 'filleul_id');
     }
 
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
+
     // Dire à Filament d'utiliser pseudo comme nom d'affichage
     public function getFilamentName(): string
     {
