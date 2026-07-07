@@ -26,17 +26,9 @@ bloodshare/
 └── docker-compose.yml    → Orchestration Docker
 ```
 
-## ⚠️ Prérequis API — Sanctum (à faire dès que le réseau est disponible dans le conteneur)
+## API mobile
 
-L'authentification de l'API mobile repose sur Laravel Sanctum, qui n'est pas encore installé faute d'accès réseau dans le conteneur lors du développement initial. Dès que le réseau est disponible, exécuter dans cet ordre :
-
-```bash
-docker exec bloodshare_backend composer require laravel/sanctum
-docker exec bloodshare_backend php artisan install:api
-docker exec bloodshare_backend php artisan migrate
-```
-
-`install:api` publie la migration de la table `personal_access_tokens` et configure le guard `sanctum` — indispensable pour que `POST /api/scan` et tous les futurs endpoints authentifiés fonctionnent.
+L'authentification de l'API repose sur Laravel Sanctum (tokens Bearer). Le format exact de chaque endpoint (requêtes, réponses JSON, codes d'erreur) est documenté dans **[docs/contrat_API.md](docs/contrat_API.md)** — à lire avant toute intégration côté mobile. Ce document inclut un tableau d'état d'implémentation ; tous les endpoints sont désormais implémentés côté backend.
 
 ## Prérequis
 
