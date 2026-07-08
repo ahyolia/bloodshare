@@ -211,7 +211,6 @@ export default function RootLayout() {
 
 ### Sprint 2 — Accueil & Don (à répartir)
 
-**Camin :**
 ```
 8. Onglet Accueil
    - Stock de sang (GET /api/stock-sang)
@@ -221,7 +220,6 @@ export default function RootLayout() {
    - Actualités carousel (GET /api/actualites)
 ```
 
-**Amie :**
 ```
 9. Onglet Don
    - Questionnaire éligibilité (JSON local, pas d'API)
@@ -236,7 +234,6 @@ export default function RootLayout() {
 
 ### Sprint 3 — Quiz & Cartes (à répartir)
 
-**Camin :**
 ```
 10. Onglet Quiz
     - Liste par catégorie (GET /api/quiz)
@@ -244,7 +241,6 @@ export default function RootLayout() {
     - Soumission + résultat (POST /api/quiz/{id}/soumettre)
 ```
 
-**Amie :**
 ```
 11. Onglet Cartes
     - Collection par catégorie (GET /api/cartes)
@@ -256,7 +252,6 @@ export default function RootLayout() {
 
 ### Sprint 4 — Profil (à répartir)
 
-**Camin :**
 ```
 12. Onglet Profil
     - Infos user (GET /api/me)
@@ -265,7 +260,6 @@ export default function RootLayout() {
     - Historique points (GET /api/points/historique)
 ```
 
-**Amie :**
 ```
 13. Onglet Profil (suite)
     - Badges obtenus (GET /api/badges)
