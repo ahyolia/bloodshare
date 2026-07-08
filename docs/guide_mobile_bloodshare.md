@@ -447,4 +447,3 @@ Tous ces endpoints sont opérationnels et testés :
 > ❌ = accessible sans token
 
 Le format exact de chaque réponse est dans `docs/contrat_API.md`.
-```
