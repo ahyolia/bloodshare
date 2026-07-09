@@ -1,9 +1,9 @@
 import { View, Text } from 'react-native';
 
-export default function AccueilScreen() {
+export default function DonScreen() {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Accueil — à construire</Text>
+      <Text>Don — à construire</Text>
     </View>
   );
 }

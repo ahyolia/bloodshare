@@ -1,9 +1,9 @@
 import { View, Text } from 'react-native';
 
-export default function AccueilScreen() {
+export default function ProfilScreen() {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Accueil — à construire</Text>
+      <Text>Profil — à construire</Text>
     </View>
   );
 }

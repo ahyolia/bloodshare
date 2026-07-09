@@ -1,9 +1,9 @@
 import { View, Text } from 'react-native';
 
-export default function AccueilScreen() {
+export default function CartesScreen() {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Accueil — à construire</Text>
+      <Text>Cartes — à construire</Text>
     </View>
   );
 }
