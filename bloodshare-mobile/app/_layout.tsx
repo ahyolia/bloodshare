@@ -1,25 +1,29 @@
 import { useEffect, useState } from 'react';
-import { Slot, useRouter } from 'expo-router';
+import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { getToken } from '../stores/auth.store';
 
 export default function RootLayout() {
   const router = useRouter();
-  const [checked, setChecked] = useState(false);
+  const segments = useSegments();
+  const navigationState = useRootNavigationState();
+  const [token, setToken] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
-    checkAuth();
+    getToken().then(setToken);
   }, []);
 
-  const checkAuth = async () => {
-    const token = await getToken();
-    if (!token) {
-      router.replace('/(auth)/login');
-    } else {
-      router.replace('/(tabs)');
-    }
-    setChecked(true);
-  };
+  useEffect(() => {
+    // Attendre que la navigation soit prête et le token chargé
+    if (!navigationState?.key || token === undefined) return;
 
-  if (!checked) return null;
-  return <Slot />;
+    const inAuthGroup = segments[0] === 'auth';
+
+    if (!token && !inAuthGroup) {
+      router.replace('/auth/login');
+    } else if (token && inAuthGroup) {
+      router.replace('/tabs');
+    }
+  }, [token, segments, navigationState?.key]);
+
+  return <Stack screenOptions={{ headerShown: false }} />;
 }
