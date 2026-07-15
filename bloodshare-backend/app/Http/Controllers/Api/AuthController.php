@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class AuthController extends Controller
 {
@@ -18,7 +19,13 @@ class AuthController extends Controller
         $validated = $request->validate([
             'pseudo' => 'required|string|max:50|unique:users,pseudo',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
+            'password' => [
+                'required',
+                'confirmed',
+                PasswordRule::min(8)
+                    ->mixedCase()
+                    ->numbers(),
+            ],
             'sexe' => 'required|in:homme,femme',
             'groupe_sanguin' => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
             'avatar_id' => 'nullable|exists:avatars,id',
