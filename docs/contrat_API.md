@@ -72,13 +72,15 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
   "password": "MotDePasse123",
   "password_confirmation": "MotDePasse123",
   "sexe": "homme",
-  "groupe_sanguin": "O+",
+  "statut_donneur": "jamais_donne",
   "avatar_id": 3,
   "code_parrainage": "ABCD1234"
 }
 ```
 
 > `code_parrainage` est optionnel.
+>
+> `statut_donneur` est optionnel (nullable). Il remplace `groupe_sanguin` pour des raisons RGPD — le groupe sanguin est une donnée de santé sensible non nécessaire au fonctionnement de l'app. Les stocks de sang restent gérés par l'admin depuis le backoffice, sans lien avec les profils utilisateurs. Valeurs possibles : `donneur_regulier` / `quelques_dons` / `jamais_donne`.
 
 **Réponse 201 :**
 
@@ -89,7 +91,7 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
     "id": 12,
     "pseudo": "BloodHero42",
     "avatar_url": "https://cdn.bloodshare.nc/avatars/3.webp",
-    "groupe_sanguin": "O+",
+    "statut_donneur": "jamais_donne",
     "points_cumules": 0,
     "code_parrainage": "XYZ98765"
   }
@@ -119,7 +121,7 @@ Connecte un utilisateur déjà inscrit et renvoie un nouveau token à stocker.
     "id": 12,
     "pseudo": "BloodHero42",
     "avatar_url": "https://cdn.bloodshare.nc/avatars/3.webp",
-    "groupe_sanguin": "O+",
+    "statut_donneur": "jamais_donne",
     "points_cumules": 250,
     "code_parrainage": "XYZ98765"
   }
@@ -164,7 +166,7 @@ Récupère les informations complètes du profil de l'utilisateur actuellement c
   "id": 12,
   "pseudo": "BloodHero42",
   "avatar_url": "https://cdn.bloodshare.nc/avatars/3.webp",
-  "groupe_sanguin": "O+",
+  "statut_donneur": "jamais_donne",
   "sexe": "homme",
   "points_cumules": 250,
   "code_parrainage": "XYZ98765",
