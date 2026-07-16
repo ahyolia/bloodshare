@@ -44,7 +44,7 @@ class ProfilController extends Controller
             'id' => $user->id,
             'pseudo' => $user->pseudo,
             'avatar_url' => null,
-            'groupe_sanguin' => $user->groupe_sanguin,
+            'statut_donneur' => $user->statut_donneur,
             'sexe' => $user->sexe,
             'points_cumules' => $user->points_cumules,
             'code_parrainage' => $user->code_parrainage,

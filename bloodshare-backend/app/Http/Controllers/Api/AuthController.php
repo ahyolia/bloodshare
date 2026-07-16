@@ -27,7 +27,7 @@ class AuthController extends Controller
                     ->numbers(),
             ],
             'sexe' => 'required|in:homme,femme',
-            'groupe_sanguin' => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
+            'statut_donneur' => 'nullable|in:donneur_regulier,quelques_dons,jamais_donne',
             'avatar_id' => 'nullable|exists:avatars,id',
             'code_parrainage' => 'nullable|string',
         ]);
@@ -42,7 +42,7 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'sexe' => $validated['sexe'],
-            'groupe_sanguin' => $validated['groupe_sanguin'],
+            'statut_donneur' => $validated['statut_donneur'] ?? null,
             'avatar_id' => $validated['avatar_id'] ?? null,
             'code_parrainage' => $codeParrainage,
         ]);
@@ -119,7 +119,7 @@ class AuthController extends Controller
             'id' => $user->id,
             'pseudo' => $user->pseudo,
             'avatar_url' => null,
-            'groupe_sanguin' => $user->groupe_sanguin,
+            'statut_donneur' => $user->statut_donneur,
             'points_cumules' => $user->points_cumules,
             'code_parrainage' => $user->code_parrainage,
         ];
