@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/actualites', [ContenuController::class, 'actualites']);
 Route::get('/fiches-infos', [ContenuController::class, 'fichesInfos']);
 Route::get('/faq', [ContenuController::class, 'faq']);
+Route::get('/eligibilite', [ContenuController::class, 'eligibilite']);
 Route::get('/stock-sang', [ContenuController::class, 'stockSang']);
 Route::get('/evenements', [ContenuController::class, 'evenements']);
 Route::get('/bannieres', [ContenuController::class, 'bannieres']);

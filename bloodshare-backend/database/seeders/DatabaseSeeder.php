@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             CarteSeeder::class,
             BadgeSeeder::class,
             QrCodeSeeder::class,
+            QuestionEligibiliteSeeder::class,
         ]);
     }
 }
