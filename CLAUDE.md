@@ -34,6 +34,9 @@ docker compose up -d
 - Rôles : `super_admin` (accès total) et `admin` (tout sauf Paramètres système)
 
 ## Conventions
+Voir `CONTRIBUTING.md` à la racine du repo — branches, commits, PR, Definition of Done.
+Règle à ne jamais oublier : une branche par tâche (US ClickUp), jamais de commit direct sur `main`.
+
 - Les ressources Filament suivent le style de `StockSangResource.php`
   (Select avec options explicites, BadgeColumn colorée, navigationGroup défini)
 - Toujours grouper les ressources dans la sidebar via `navigationGroup`
