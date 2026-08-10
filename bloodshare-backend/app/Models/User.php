@@ -20,7 +20,7 @@ class User extends Authenticatable implements FilamentUser, HasName
         'email',
         'password',
         'sexe',
-        'groupe_sanguin',
+        'statut_donneur',
         'statut',
         'motif_suspension',
         'points_cumules',

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class AuthController extends Controller
 {
@@ -18,9 +19,15 @@ class AuthController extends Controller
         $validated = $request->validate([
             'pseudo' => 'required|string|max:50|unique:users,pseudo',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
+            'password' => [
+                'required',
+                'confirmed',
+                PasswordRule::min(8)
+                    ->mixedCase()
+                    ->numbers(),
+            ],
             'sexe' => 'required|in:homme,femme',
-            'groupe_sanguin' => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
+            'statut_donneur' => 'nullable|in:donneur_regulier,quelques_dons,jamais_donne',
             'avatar_id' => 'nullable|exists:avatars,id',
             'code_parrainage' => 'nullable|string',
         ]);
@@ -35,7 +42,7 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'sexe' => $validated['sexe'],
-            'groupe_sanguin' => $validated['groupe_sanguin'],
+            'statut_donneur' => $validated['statut_donneur'] ?? null,
             'avatar_id' => $validated['avatar_id'] ?? null,
             'code_parrainage' => $codeParrainage,
         ]);
@@ -112,7 +119,7 @@ class AuthController extends Controller
             'id' => $user->id,
             'pseudo' => $user->pseudo,
             'avatar_url' => null,
-            'groupe_sanguin' => $user->groupe_sanguin,
+            'statut_donneur' => $user->statut_donneur,
             'points_cumules' => $user->points_cumules,
             'code_parrainage' => $user->code_parrainage,
         ];

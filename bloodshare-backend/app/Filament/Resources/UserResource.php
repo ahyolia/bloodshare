@@ -38,14 +38,14 @@ class UserResource extends Resource
                     ->label('Pseudo')
                     ->searchable(),
 
-                Tables\Columns\BadgeColumn::make('groupe_sanguin')
-                    ->label('Groupe sanguin')
-                    ->colors([
-                        'danger' => fn ($state) => in_array($state, ['O-', 'O+']),
-                        'warning' => fn ($state) => in_array($state, ['A-', 'A+']),
-                        'info' => fn ($state) => in_array($state, ['B-', 'B+']),
-                        'success' => fn ($state) => in_array($state, ['AB-', 'AB+']),
-                    ]),
+                Tables\Columns\TextColumn::make('statut_donneur')
+                    ->label('Statut donneur')
+                    ->formatStateUsing(fn ($state) => match($state) {
+                        'donneur_regulier' => 'Donneur régulier',
+                        'quelques_dons'    => 'Quelques dons',
+                        'jamais_donne'     => 'Jamais donné',
+                        default            => '—'
+                    }),
 
                 Tables\Columns\TextColumn::make('points_cumules')
                     ->label('Points')
@@ -91,17 +91,11 @@ class UserResource extends Resource
                         'suspendu' => 'Suspendu',
                         'supprime' => 'Supprimé',
                     ]),
-                Tables\Filters\SelectFilter::make('groupe_sanguin')
-                    ->label('Groupe sanguin')
+                Tables\Filters\SelectFilter::make('statut_donneur')
                     ->options([
-                        'O-' => 'O-',
-                        'O+' => 'O+',
-                        'A-' => 'A-',
-                        'A+' => 'A+',
-                        'B-' => 'B-',
-                        'B+' => 'B+',
-                        'AB-' => 'AB-',
-                        'AB+' => 'AB+',
+                        'donneur_regulier' => 'Donneur régulier',
+                        'quelques_dons'    => 'Quelques dons',
+                        'jamais_donne'     => 'Jamais donné',
                     ]),
             ])
             ->actions([
@@ -119,7 +113,14 @@ class UserResource extends Resource
                 InfolistSection::make('Informations')
                     ->schema([
                         TextEntry::make('pseudo')->label('Pseudo'),
-                        TextEntry::make('groupe_sanguin')->label('Groupe sanguin'),
+                        TextEntry::make('statut_donneur')
+                            ->label('Statut donneur')
+                            ->formatStateUsing(fn ($state) => match($state) {
+                                'donneur_regulier' => '🩸 Donneur régulier',
+                                'quelques_dons'    => '💧 Quelques dons',
+                                'jamais_donne'     => '🆕 Jamais donné',
+                                default            => '—'
+                            }),
                         TextEntry::make('sexe')->label('Sexe'),
                         TextEntry::make('points_cumules')->label('Points cumulés'),
                         TextEntry::make('niveau')
