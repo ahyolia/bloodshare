@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
+use App\Services\NiveauService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Infolist;
@@ -49,6 +50,25 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('points_cumules')
                     ->label('Points')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('niveau')
+                    ->label('Niveau')
+                    ->getStateUsing(fn ($record) =>
+                        'Niv. ' .
+                        NiveauService::calculerNiveau($record->points_cumules ?? 0)['niveau'] .
+                        ' — ' .
+                        NiveauService::calculerNiveau($record->points_cumules ?? 0)['label']
+                    )
+                    ->badge()
+                    ->color(fn ($record) => match (
+                        NiveauService::calculerNiveau($record->points_cumules ?? 0)['niveau']
+                    ) {
+                        1 => 'gray',
+                        2 => 'info',
+                        3 => 'warning',
+                        4 => 'success',
+                        5 => 'danger',
+                    }),
 
                 Tables\Columns\BadgeColumn::make('statut')
                     ->label('Statut')
@@ -102,6 +122,13 @@ class UserResource extends Resource
                         TextEntry::make('groupe_sanguin')->label('Groupe sanguin'),
                         TextEntry::make('sexe')->label('Sexe'),
                         TextEntry::make('points_cumules')->label('Points cumulés'),
+                        TextEntry::make('niveau')
+                            ->label('Niveau')
+                            ->getStateUsing(function ($record) {
+                                $n = NiveauService::calculerNiveau($record->points_cumules ?? 0);
+
+                                return "Niveau {$n['niveau']} — {$n['label']} ({$n['progression']}% vers niveau suivant)";
+                            }),
                         TextEntry::make('created_at')
                             ->label("Date d'inscription")
                             ->date('d/m/Y'),
