@@ -135,7 +135,7 @@ class UserResource extends Resource
                         TextEntry::make('derniere_connexion')
                             ->label('Dernière connexion')
                             ->dateTime('d/m/Y H:i')
-                            ->default('—'),
+                            ->placeholder('—'),
                     ])
                     ->columns(3),
 
