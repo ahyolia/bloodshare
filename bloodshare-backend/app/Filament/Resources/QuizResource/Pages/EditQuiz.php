@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\UserResource\Pages;
+namespace App\Filament\Resources\QuizResource\Pages;
 
-use App\Filament\Resources\UserResource;
+use App\Filament\Resources\QuizResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditUser extends EditRecord
+class EditQuiz extends EditRecord
 {
-    protected static string $resource = UserResource::class;
+    protected static string $resource = QuizResource::class;
 
     protected function getHeaderActions(): array
     {

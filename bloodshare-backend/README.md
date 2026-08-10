@@ -73,6 +73,47 @@ docker exec -it bloodshare_backend php artisan optimize:clear
 | API | http://localhost:8000/api |
 | Backoffice | http://localhost:8000/admin |
 
+## API mobile
+
+Auth via Laravel Sanctum (token Bearer). Format exact des requêtes/réponses : voir **[docs/contrat_API.md](../docs/contrat_API.md)** à la racine du repo.
+
+Endpoints disponibles :
+
+```
+POST   /api/auth/register          Inscription (+ code de parrainage optionnel)
+POST   /api/auth/login             Connexion
+POST   /api/auth/logout            Déconnexion (authentifié)
+POST   /api/auth/forgot-password   Envoi email de réinitialisation
+GET    /api/me                     Profil de l'utilisateur connecté (authentifié)
+PUT    /api/me                     Mise à jour du profil (authentifié)
+DELETE /api/me                     Suppression du compte, soft delete (authentifié)
+POST   /api/scan                   Scan QR Code (authentifié)
+
+GET    /api/dons                   Historique des dons (authentifié)
+GET    /api/cartes                 Collection de cartes par catégorie (authentifié)
+GET    /api/badges                 Badges obtenus/non obtenus (authentifié)
+GET    /api/points/historique      Historique des points (authentifié)
+GET    /api/parrainage/code        Code + parrainages validés (authentifié)
+
+GET    /api/actualites             Actualités publiées (public)
+GET    /api/fiches-infos           Fiches info publiées (public)
+GET    /api/faq                    FAQ (public)
+GET    /api/stock-sang             Niveaux de stock par groupe sanguin (public)
+GET    /api/evenements             Événements à venir (public)
+GET    /api/bannieres              Bannière d'urgence active (public)
+
+GET    /api/quiz                   Liste des quiz par catégorie (authentifié)
+GET    /api/quiz/{id}              Détail d'un quiz (sans réponses correctes, authentifié)
+POST   /api/quiz/{id}/soumettre    Soumission des réponses (authentifié)
+GET    /api/defis/actuel           Défi communautaire du mois en cours (authentifié)
+```
+
+Vérifier les routes enregistrées :
+
+```bash
+docker exec bloodshare_backend php artisan route:list --path=api
+```
+
 ## Structure BDD
 
 Le schéma comprend 20 tables :
