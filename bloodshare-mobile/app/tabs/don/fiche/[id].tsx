@@ -1,11 +1,35 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../../../constants/colors';
+import { FicheInfo, getFicheInfo } from '../../../../services/fichesInfos.service';
 
 export default function FicheScreen() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const [fiche, setFiche] = useState<FicheInfo | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getFicheInfo(Number(id))
+      .then((data) => {
+        if (!cancelled) setFiche(data);
+      })
+      .catch(() => {
+        if (!cancelled) setError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   return (
     <View style={styles.screen}>
@@ -16,10 +40,22 @@ export default function FicheScreen() {
         <Text style={styles.headerTitle}>Fiche pratique</Text>
       </View>
 
-      <View style={styles.content}>
-        <Ionicons name="document-text-outline" size={48} color={Colors.aubergine} />
-        <Text style={styles.text}>Fiche pratique #{id} — à construire</Text>
-      </View>
+      {loading && <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />}
+
+      {!loading && (error || !fiche) && (
+        <View style={styles.content}>
+          <Ionicons name="alert-circle-outline" size={48} color={Colors.aubergine} />
+          <Text style={styles.text}>Impossible de charger cette fiche.</Text>
+        </View>
+      )}
+
+      {!loading && fiche && (
+        <ScrollView contentContainerStyle={styles.content}>
+          <Ionicons name="document-text-outline" size={48} color={Colors.aubergine} />
+          <Text style={styles.title}>{fiche.titre}</Text>
+          <Text style={styles.text}>{fiche.contenu}</Text>
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -60,5 +96,15 @@ const styles = StyleSheet.create({
     color: Colors.aubergine,
     fontSize: 16,
     textAlign: 'center',
+    lineHeight: 22,
+  },
+  title: {
+    color: Colors.aubergine,
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  loader: {
+    marginTop: 24,
   },
 });

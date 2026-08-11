@@ -11,15 +11,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/colors';
-import api from '../../../services/api';
+import { FicheInfo, getFichesInfos } from '../../../services/fichesInfos.service';
+import { getProfil } from '../../../services/profil.service';
 
 const RESERVATION_URL = 'https://www.dondusang.nc/reservation-en-ligne/';
-
-type Fiche = {
-  id: number;
-  titre: string;
-  categorie: string;
-};
 
 type Category = {
   key: string;
@@ -37,7 +32,7 @@ const CATEGORIES: Category[] = [
 export default function DonScreen() {
   const router = useRouter();
   const [points, setPoints] = useState(0);
-  const [fiches, setFiches] = useState<Fiche[]>([]);
+  const [fiches, setFiches] = useState<FicheInfo[]>([]);
   const [fichesLoading, setFichesLoading] = useState(true);
   const [fichesError, setFichesError] = useState(false);
   const [openCategorie, setOpenCategorie] = useState<string | null>(null);
@@ -45,10 +40,9 @@ export default function DonScreen() {
   useEffect(() => {
     let cancelled = false;
 
-    api
-      .get('/me')
-      .then((response) => {
-        if (!cancelled) setPoints(response.data.points_cumules ?? 0);
+    getProfil()
+      .then((profil) => {
+        if (!cancelled) setPoints(profil.points_cumules ?? 0);
       })
       .catch(() => {});
 
@@ -60,10 +54,9 @@ export default function DonScreen() {
   useEffect(() => {
     let cancelled = false;
 
-    api
-      .get('/fiches-infos')
-      .then((response) => {
-        if (!cancelled) setFiches(response.data);
+    getFichesInfos()
+      .then((data) => {
+        if (!cancelled) setFiches(data);
       })
       .catch(() => {
         if (!cancelled) setFichesError(true);

@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "titre": "Qui peut donner son sang ?",
+    "categorie": "eligibilite",
+    "contenu": "Vous pouvez donner votre sang si vous avez entre 18 et 70 ans, pesez plus de 50 kg et êtes en bonne santé. Certains traitements, voyages récents ou situations de santé peuvent temporairement ou définitivement vous rendre inéligible."
+  },
+  {
+    "id": 2,
+    "titre": "Délais entre deux dons",
+    "categorie": "eligibilite",
+    "contenu": "Un homme peut donner son sang jusqu'à 6 fois par an, une femme jusqu'à 4 fois par an, avec un délai minimum de 8 semaines entre deux dons de sang total."
+  },
+  {
+    "id": 3,
+    "titre": "Comment se déroule un don ?",
+    "categorie": "processus_don",
+    "contenu": "Le don se déroule en 4 étapes : accueil et vérification d'identité, entretien médical confidentiel, prélèvement (environ 10 minutes) et collation de repos."
+  },
+  {
+    "id": 4,
+    "titre": "Combien de temps dure le prélèvement ?",
+    "categorie": "processus_don",
+    "contenu": "Le prélèvement en lui-même dure entre 8 et 10 minutes. En comptant l'accueil, l'entretien et la collation, prévoyez environ 45 minutes au total."
+  },
+  {
+    "id": 5,
+    "titre": "Avant votre don",
+    "categorie": "apres_don",
+    "contenu": "Mangez normalement avant de venir, évitez les repas gras et hydratez-vous bien dans les heures qui précèdent le don."
+  },
+  {
+    "id": 6,
+    "titre": "Après votre don",
+    "categorie": "apres_don",
+    "contenu": "Reposez-vous quelques minutes sur place, évitez les efforts physiques intenses pendant 24h et continuez à bien vous hydrater."
+  },
+  {
+    "id": 7,
+    "titre": "Pourquoi les stocks sont-ils parfois en tension ?",
+    "categorie": "urgences",
+    "contenu": "Les produits sanguins ont une durée de conservation limitée (quelques jours à quelques semaines selon le type), ce qui impose des dons réguliers tout au long de l'année pour maintenir les stocks."
+  },
+  {
+    "id": 8,
+    "titre": "Comment être alerté en cas d'urgence ?",
+    "categorie": "urgences",
+    "contenu": "Le Centre du Don du Sang communique les appels à dons urgents via ses réseaux sociaux et son site dondusang.nc. Activez les notifications de l'application pour être informé en priorité."
+  }
+]
