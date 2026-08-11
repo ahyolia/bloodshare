@@ -1,20 +1,16 @@
 export const Colors = {
   corail: {
-    300: '#F5A58E',
     500: '#F07A5E',
     600: '#D6543A',
-    700: '#A83B24',
   },
-  bleu: {
-    300: '#9AC9DE',
+  petrole: {
     500: '#2E93A0',
-    600: '#1E7A87',
-    700: '#136B7A',
+    600: '#136B7A',
   },
-  creme: '#F5F0E8',
-  aubergine: '#2D1B2E',
-  lime: {
-    400: '#C8D93A',
-    500: '#B0C230',
-  },
+  lime: '#C6DA2C',
+  creme: '#F6F1E4',
+  cremeClair: '#FFFDF7',
+  blanc: '#FFFFFF',
+  aubergine: '#3E2430',
+  grisMoyen: '#6A5560',
 };
