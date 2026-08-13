@@ -1,16 +1,31 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../../../constants/colors';
+import { TAB_BAR_STYLE } from '../../_layout';
 import { FicheInfo, getFicheInfo } from '../../../../services/fichesInfos.service';
 
 export default function FicheScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const navigation = useNavigation();
   const [fiche, setFiche] = useState<FicheInfo | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  // 📖 Même logique que sur l'écran scanner : on masque la tab bar pendant la lecture, on la restaure en quittant l'écran
+  // → Pourquoi : une fiche pratique est un contenu à lire en plein écran (potentiellement long, avec scroll) ; la tab bar flottante par-dessus le texte gênerait la lecture sans apporter d'utilité ici
+  useFocusEffect(
+    useCallback(() => {
+      navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
+
+      return () => {
+        navigation.getParent()?.setOptions({ tabBarStyle: TAB_BAR_STYLE });
+      };
+    }, [navigation])
+  );
 
   useEffect(() => {
     let cancelled = false;

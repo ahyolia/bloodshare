@@ -57,6 +57,14 @@ export default function TabsLayout() {
             </View>
           ),
         }}
+        // 📖 Chaque onglet garde son propre historique de navigation en mémoire (le Stack "don" reste où on l'a laissé : scanner, éligibilité...)
+        // → Pourquoi ce listener : sans lui, revenir sur l'onglet Don après être passé par Accueil réaffiche l'écran où on était (ex: le résultat du questionnaire) au lieu du hub Don ; on force donc un retour à l'écran "index" à CHAQUE appui sur l'onglet, qu'il soit déjà actif ou non
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('don', { screen: 'index' });
+          },
+        })}
       />
       <Tabs.Screen
         name="cartes"
@@ -76,25 +84,28 @@ export default function TabsLayout() {
   );
 }
 
+// 📖 Exportée pour que les écrans imbriqués (ex: scanner QR) puissent restaurer exactement ce style après l'avoir masquée
+export const TAB_BAR_STYLE = {
+  position: 'absolute' as const,
+  left: 40,
+  right: 40,
+  bottom: 15,
+  height: 72,
+  borderTopWidth: 0,
+  borderRadius: 34,
+  backgroundColor: '#3A3837',
+  paddingTop: 6,
+  paddingBottom: 8,
+  paddingHorizontal: 10,
+  shadowColor: '#000',
+  shadowOpacity: 0.14,
+  shadowRadius: 20,
+  shadowOffset: { width: 0, height: 10 },
+  elevation: 8,
+};
+
 const styles = StyleSheet.create({
-  tabBar: {
-    position: 'absolute',
-    left: 40,
-    right: 40,
-    bottom: 15,
-    height: 72,
-    borderTopWidth: 0,
-    borderRadius: 34,
-    backgroundColor: '#3A3837',
-    paddingTop: 6,
-    paddingBottom: 8,
-    paddingHorizontal: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.14,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
-  },
+  tabBar: TAB_BAR_STYLE,
   tabItem: {
     paddingTop: 0,
     marginHorizontal: 3,
