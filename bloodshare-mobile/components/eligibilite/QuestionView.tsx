@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { Question } from '../../constants/eligibilite';
+
+const TOTAL_QUESTIONS = 15;
 
 type Props = {
   question: Question;
@@ -16,58 +18,41 @@ type Props = {
 export function QuestionView({
   question,
   numeroQuestion,
-  progression,
   peutRevenirArriere,
   onRepondre,
   onRetour,
   onQuitter,
 }: Props) {
-  // 📖 widthAnim garde la valeur de largeur animée en mémoire entre les rendus (useRef évite de la recréer à chaque render)
-  const widthAnim = useRef(new Animated.Value(0)).current;
-
-  // 📖 À chaque changement de `progression`, on anime la largeur de la barre vers sa nouvelle valeur au lieu de la changer d'un coup
-  // → Si on ne le faisait pas : la barre passerait de 6% à 13% instantanément à chaque réponse, sans transition visuelle
-  useEffect(() => {
-    Animated.timing(widthAnim, {
-      toValue: progression,
-      duration: 300,
-      useNativeDriver: false, // 📖 la largeur (%) n'est pas une propriété animable par le driver natif, on reste sur le JS driver
-    }).start();
-  }, [progression]);
-
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        {peutRevenirArriere ? (
-          <TouchableOpacity onPress={onRetour} style={styles.headerButton} accessibilityRole="button">
-            <Text style={styles.headerButtonText}>← Retour</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.headerButton} />
-        )}
-        <TouchableOpacity onPress={onQuitter} style={styles.headerButton} accessibilityRole="button">
-          <Text style={styles.headerButtonText}>✕ Quitter</Text>
+        <TouchableOpacity
+          onPress={peutRevenirArriere ? onRetour : onQuitter}
+          style={styles.backButton}
+          accessibilityRole="button"
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.aubergine} />
         </TouchableOpacity>
-      </View>
 
-      <View style={styles.progressTrack}>
-        <Animated.View
-          style={[
-            styles.progressFill,
-            {
-              width: widthAnim.interpolate({
-                inputRange: [0, 100],
-                outputRange: ['0%', '100%'],
-              }),
-            },
-          ]}
-        />
+        <View style={styles.dots}>
+          {Array.from({ length: TOTAL_QUESTIONS }).map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.dot,
+                index === numeroQuestion - 1 ? styles.dotActive : styles.dotInactive,
+              ]}
+            />
+          ))}
+        </View>
       </View>
-      <Text style={styles.progressLabel}>Question {numeroQuestion} sur 15</Text>
 
       <View style={styles.questionBlock}>
         <Text style={styles.questionTexte}>{question.texte}</Text>
         {question.sous_texte && <Text style={styles.questionSousTexte}>{question.sous_texte}</Text>}
+        <Text style={styles.progressLabel}>
+          Question {numeroQuestion} sur {TOTAL_QUESTIONS}
+        </Text>
       </View>
 
       <View style={styles.answersBlock}>
@@ -103,81 +88,85 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
   },
-  headerButton: {
-    minWidth: 44,
-    minHeight: 44,
+  backButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 8,
   },
-  headerButtonText: {
-    color: Colors.aubergine,
-    fontSize: 15,
-    fontWeight: '600',
+  dots: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginRight: 42,
   },
-  progressTrack: {
+  dot: {
+    borderRadius: 5,
+  },
+  dotActive: {
+    width: 9,
+    height: 9,
+    backgroundColor: Colors.aubergine,
+  },
+  dotInactive: {
+    width: 6,
     height: 6,
-    borderRadius: 3,
-    backgroundColor: '#E5E1D8',
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 3,
-    backgroundColor: Colors.corail[600],
-  },
-  progressLabel: {
-    marginTop: 8,
-    fontSize: 13,
-    color: Colors.grisMoyen,
-    textAlign: 'center',
+    backgroundColor: '#D8D3CA',
   },
   questionBlock: {
     flex: 1,
     justifyContent: 'center',
   },
   questionTexte: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     color: Colors.aubergine,
-    marginTop: 32,
-    marginBottom: 8,
-    textAlign: 'center',
+    lineHeight: 30,
   },
   questionSousTexte: {
     fontStyle: 'italic',
     color: Colors.grisMoyen,
     fontSize: 14,
-    textAlign: 'center',
+    marginTop: 6,
+  },
+  progressLabel: {
+    marginTop: 10,
+    fontSize: 13,
+    color: Colors.grisMoyen,
   },
   answersBlock: {
     gap: 12,
   },
   buttonOui: {
     height: 56,
-    borderRadius: 12,
-    backgroundColor: Colors.aubergine,
+    borderRadius: 20,
+    backgroundColor: '#E2DFD8',
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonOuiText: {
-    color: Colors.blanc,
+    color: Colors.aubergine,
     fontWeight: '700',
     fontSize: 17,
   },
   buttonNon: {
     height: 56,
-    borderRadius: 12,
-    backgroundColor: Colors.blanc,
-    borderWidth: 2,
-    borderColor: Colors.aubergine,
+    borderRadius: 20,
+    backgroundColor: Colors.aubergine,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonNonText: {
-    color: Colors.aubergine,
+    color: Colors.cremeClair,
     fontWeight: '700',
     fontSize: 17,
   },

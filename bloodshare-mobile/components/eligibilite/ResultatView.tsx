@@ -29,8 +29,8 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
   if (resultat.eligible) {
     return (
       <View style={styles.screen}>
-        <View style={[styles.iconCircle, { backgroundColor: Colors.succes }]}>
-          <Ionicons name="checkmark" size={44} color={Colors.blanc} />
+        <View style={styles.iconCircle}>
+          <Ionicons name="checkmark" size={30} color={Colors.aubergine} />
         </View>
 
         <Text style={styles.titre}>Vous semblez éligible !</Text>
@@ -46,8 +46,8 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
           <Text style={styles.primaryButtonText}>Prendre un rendez-vous</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.outlineButton} onPress={() => router.replace('/tabs')}>
-          <Text style={styles.outlineButtonText}>Retour à l'accueil</Text>
+        <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/tabs')}>
+          <Text style={styles.secondaryButtonText}>Retour à l'accueil</Text>
         </TouchableOpacity>
 
         <Disclaimer />
@@ -63,8 +63,8 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
 
     return (
       <View style={styles.screen}>
-        <View style={[styles.iconCircle, { backgroundColor: Colors.attention }]}>
-          <Ionicons name="time" size={40} color={Colors.blanc} />
+        <View style={styles.iconCircle}>
+          <Ionicons name="alert" size={28} color={Colors.aubergine} />
         </View>
 
         <Text style={styles.titreSecondaire}>Report temporaire probable</Text>
@@ -77,12 +77,12 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
           </View>
         )}
 
-        <TouchableOpacity style={styles.outlineButtonCorail} onPress={() => router.push('/tabs/don')}>
-          <Text style={styles.outlineButtonCorailText}>Lire les fiches pratiques</Text>
+        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/tabs/don')}>
+          <Text style={styles.primaryButtonText}>Lire les fiches pratiques</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.textButton} onPress={() => router.replace('/tabs')}>
-          <Text style={styles.textButtonText}>Retour à l'accueil</Text>
+        <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/tabs')}>
+          <Text style={styles.secondaryButtonText}>Retour à l'accueil</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.textButton} onPress={onRecommencer}>
@@ -97,8 +97,8 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
   // 📖 Dernier cas restant : type === 'definitive'
   return (
     <View style={styles.screen}>
-      <View style={[styles.iconCircle, { backgroundColor: Colors.grisMoyen }]}>
-        <Ionicons name="medkit" size={38} color={Colors.blanc} />
+      <View style={styles.iconCircle}>
+        <Ionicons name="close" size={30} color={Colors.aubergine} />
       </View>
 
       <Text style={styles.titreSecondaire}>Don contre-indiqué</Text>
@@ -108,8 +108,8 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
         devenant bénévole.
       </Text>
 
-      <TouchableOpacity style={styles.outlineButton} onPress={() => router.replace('/tabs')}>
-        <Text style={styles.outlineButtonText}>Retour à l'accueil</Text>
+      <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/tabs')}>
+        <Text style={styles.secondaryButtonText}>Retour à l'accueil</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.textButton} onPress={onRecommencer}>
@@ -141,9 +141,11 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 1.5,
+    borderColor: Colors.aubergine,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
@@ -195,41 +197,26 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     width: '100%',
-    backgroundColor: Colors.corail[500],
-    borderRadius: 16,
-    paddingVertical: 14,
+    backgroundColor: Colors.aubergine,
+    borderRadius: 20,
+    paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
   },
   primaryButtonText: {
-    color: Colors.blanc,
+    color: Colors.cremeClair,
     fontWeight: '700',
     fontSize: 15,
   },
-  outlineButton: {
+  secondaryButton: {
     width: '100%',
-    borderWidth: 1.5,
-    borderColor: Colors.aubergine,
-    borderRadius: 16,
-    paddingVertical: 14,
+    backgroundColor: '#E2DFD8',
+    borderRadius: 20,
+    paddingVertical: 16,
     alignItems: 'center',
   },
-  outlineButtonText: {
+  secondaryButtonText: {
     color: Colors.aubergine,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  outlineButtonCorail: {
-    width: '100%',
-    borderWidth: 1.5,
-    borderColor: Colors.corail[600],
-    borderRadius: 16,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  outlineButtonCorailText: {
-    color: Colors.corail[600],
     fontWeight: '700',
     fontSize: 15,
   },
