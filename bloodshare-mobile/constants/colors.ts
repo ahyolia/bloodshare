@@ -13,4 +13,6 @@ export const Colors = {
   blanc: '#FFFFFF',
   aubergine: '#3E2430',
   grisMoyen: '#6A5560',
+  succes: '#6E9B3E',
+  attention: '#F0A03C',
 };

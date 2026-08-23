@@ -1,63 +1,54 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../../constants/colors';
+import { useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useRouter } from 'expo-router';
+import { useCallback } from 'react';
+import { View } from 'react-native';
+import { QuestionView } from '../../../components/eligibilite/QuestionView';
+import { ResultatView } from '../../../components/eligibilite/ResultatView';
+import { TAB_BAR_STYLE } from '../_layout';
+import { useEligibilite } from '../../../hooks/useEligibilite';
 
 export default function EligibiliteScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
+
+  useFocusEffect(
+    useCallback(() => {
+      navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
+
+      return () => {
+        navigation.getParent()?.setOptions({ tabBarStyle: TAB_BAR_STYLE });
+      };
+    }, [navigation])
+  );
+
+  // 📖 Unique appel du hook : c'est la "single source of truth" du questionnaire
+  // → QuestionView et ResultatView ne font que lire ces valeurs et appeler ces fonctions, ils ne possèdent aucun état métier à eux
+  const {
+    questionActuelle,
+    historique,
+    resultat,
+    repondre,
+    revenirArriere,
+    recommencer,
+    progression,
+    peutRevenirArriere,
+  } = useEligibilite();
 
   return (
-    <View style={styles.screen}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={22} color={Colors.aubergine} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Suis-je éligible ?</Text>
-      </View>
-
-      <View style={styles.content}>
-        <Ionicons name="help-circle-outline" size={48} color={Colors.aubergine} />
-        <Text style={styles.text}>Questionnaire d'éligibilité — à construire</Text>
-      </View>
+    <View style={{ flex: 1 }}>
+      {resultat ? (
+        <ResultatView resultat={resultat} onRecommencer={recommencer} />
+      ) : (
+        <QuestionView
+          question={questionActuelle}
+          numeroQuestion={historique.length + 1}
+          progression={progression}
+          peutRevenirArriere={peutRevenirArriere}
+          onRepondre={repondre}
+          onRetour={revenirArriere}
+          onQuitter={() => router.back()}
+        />
+      )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: Colors.creme,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 54,
-    paddingHorizontal: 18,
-    paddingBottom: 16,
-  },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    gap: 12,
-  },
-  text: {
-    color: Colors.aubergine,
-    fontSize: 16,
-    textAlign: 'center',
-  },
-});
