@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\NiveauService;
 use Illuminate\Http\Request;
 
 class ProfilController extends Controller
@@ -47,6 +48,7 @@ class ProfilController extends Controller
             'statut_donneur' => $user->statut_donneur,
             'sexe' => $user->sexe,
             'points_cumules' => $user->points_cumules,
+            'niveau' => NiveauService::calculerNiveau($user->points_cumules ?? 0),
             'code_parrainage' => $user->code_parrainage,
             'statut' => $user->statut,
             'created_at' => $user->created_at,
