@@ -118,8 +118,9 @@ export default function ScanScreen() {
         params: {
           type: data.type,
           carte_id: data.carte_obtenue?.id,
-          carte_titre: data.carte_obtenue?.titre,
-          carte_categorie: data.carte_obtenue?.categorie,
+          carte_titre: data.carte_obtenue?.titre ?? '',
+          carte_categorie: data.carte_obtenue?.categorie ?? '',
+          carte_image_url: data.carte_obtenue?.image_url ?? '',
           badges: JSON.stringify(data.badges_debloques ?? []),
         },
       });
