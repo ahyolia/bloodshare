@@ -3,48 +3,216 @@
     "id": 1,
     "titre": "Qui peut donner son sang ?",
     "categorie": "eligibilite",
-    "contenu": "Vous pouvez donner votre sang si vous avez entre 18 et 70 ans, pesez plus de 50 kg et êtes en bonne santé. Certains traitements, voyages récents ou situations de santé peuvent temporairement ou définitivement vous rendre inéligible."
+    "contenu": "Le don du sang est ouvert à toute personne répondant à quelques critères simples, vérifiés lors de l'entretien médical confidentiel avant chaque don.",
+    "sections": [
+      {
+        "titre": "Les critères d'éligibilité",
+        "items": [
+          {
+            "titre": "Avoir entre 18 et 70 ans",
+            "description": "Le premier don est possible dès 18 ans et jusqu'à 60 ans, les dons suivants jusqu'à 70 ans."
+          },
+          {
+            "titre": "Peser plus de 50 kg",
+            "description": "Ce seuil garantit que le prélèvement reste sans risque pour votre organisme."
+          },
+          {
+            "titre": "Être en bonne santé",
+            "description": "Aucune infection, fièvre ou traitement en cours pouvant contre-indiquer le don."
+          }
+        ]
+      }
+    ],
+    "a_eviter": [
+      "Se présenter avec de la fièvre ou en convalescence",
+      "Donner moins de 4 mois après un voyage en zone à risque",
+      "Donner pendant une grossesse ou juste après un accouchement"
+    ],
+    "le_saviez_vous": "En Nouvelle-Calédonie, seuls les dons locaux permettent d'approvisionner les hôpitaux du territoire : le sang ne peut pas être importé en urgence."
   },
   {
     "id": 2,
     "titre": "Délais entre deux dons",
     "categorie": "eligibilite",
-    "contenu": "Un homme peut donner son sang jusqu'à 6 fois par an, une femme jusqu'à 4 fois par an, avec un délai minimum de 8 semaines entre deux dons de sang total."
+    "contenu": "Entre deux dons de sang total, votre organisme a besoin de temps pour reconstituer ses réserves. La fréquence maximale dépend de votre sexe.",
+    "sections": [
+      {
+        "titre": "Fréquence maximale par an",
+        "items": [
+          {
+            "titre": "Femmes",
+            "description": "Jusqu'à 4 dons de sang total par an."
+          },
+          {
+            "titre": "Hommes",
+            "description": "Jusqu'à 6 dons de sang total par an."
+          }
+        ]
+      }
+    ],
+    "a_eviter": [
+      "Donner moins de 8 semaines après un précédent don de sang total"
+    ],
+    "le_saviez_vous": "Le délai de 8 semaines correspond au temps nécessaire à votre organisme pour reconstituer intégralement ses réserves de fer et de globules rouges."
   },
   {
     "id": 3,
     "titre": "Comment se déroule un don ?",
     "categorie": "processus_don",
-    "contenu": "Le don se déroule en 4 étapes : accueil et vérification d'identité, entretien médical confidentiel, prélèvement (environ 10 minutes) et collation de repos."
+    "contenu": "Le don se déroule en 4 étapes simples, encadrées par l'équipe médicale du Centre du Don du Sang, du début à la fin de votre visite.",
+    "sections": [
+      {
+        "titre": "Les 4 étapes du don",
+        "items": [
+          {
+            "titre": "Accueil et vérification d'identité",
+            "description": "Une pièce d'identité vous est demandée à votre arrivée."
+          },
+          {
+            "titre": "Entretien médical confidentiel",
+            "description": "Un questionnaire et un échange avec un médecin permettent de vérifier votre éligibilité du jour."
+          },
+          {
+            "titre": "Prélèvement",
+            "description": "Le prélèvement dure environ 10 minutes, allongé et sous surveillance."
+          },
+          {
+            "titre": "Collation de repos",
+            "description": "Un temps de repos avec une collation est proposé avant de repartir."
+          }
+        ]
+      }
+    ],
+    "le_saviez_vous": "L'entretien médical est confidentiel : aucune information de santé n'est communiquée en dehors de l'équipe médicale, conformément aux règles d'anonymat du don."
   },
   {
     "id": 4,
     "titre": "Combien de temps dure le prélèvement ?",
     "categorie": "processus_don",
-    "contenu": "Le prélèvement en lui-même dure entre 8 et 10 minutes. En comptant l'accueil, l'entretien et la collation, prévoyez environ 45 minutes au total."
+    "contenu": "Entre l'accueil et la collation, prévoyez un peu de temps devant vous — le prélèvement en lui-même reste rapide.",
+    "sections": [
+      {
+        "titre": "Le déroulé minute par minute",
+        "items": [
+          {
+            "titre": "8 à 10 minutes",
+            "description": "C'est la durée du prélèvement en lui-même."
+          },
+          {
+            "titre": "Environ 45 minutes au total",
+            "description": "En comptant l'accueil, l'entretien médical et la collation de repos."
+          }
+        ]
+      }
+    ],
+    "a_eviter": [
+      "Se précipiter pour repartir immédiatement après le prélèvement"
+    ],
+    "le_saviez_vous": "Le volume prélevé (environ 450 ml) représente moins de 10 % du volume sanguin total d'un adulte."
   },
   {
     "id": 5,
-    "titre": "Avant votre don",
+    "titre": "Comment bien se préparer avant le don ?",
     "categorie": "apres_don",
-    "contenu": "Mangez normalement avant de venir, évitez les repas gras et hydratez-vous bien dans les heures qui précèdent le don."
+    "contenu": "Donner son sang est un geste simple et rapide, mais une bonne préparation permet de vivre le don dans les meilleures conditions et d'éviter les effets indésirables.",
+    "sections": [
+      {
+        "titre": "La veille du don",
+        "items": [
+          {
+            "titre": "Mangez normalement",
+            "description": "Prenez un repas équilibré avant de venir. Évitez les repas trop gras (fritures, charcuterie, fromages) dans les heures précédant le don — ils peuvent perturber certaines analyses réalisées sur votre sang."
+          },
+          {
+            "titre": "Hydratez-vous bien",
+            "description": "Buvez suffisamment d'eau dans les 24 heures précédant le don. Une bonne hydratation facilite le prélèvement et réduit le risque de malaise."
+          },
+          {
+            "titre": "Dormez suffisamment",
+            "description": "Une bonne nuit de sommeil est recommandée avant de donner. La fatigue peut favoriser les réactions post-don comme les vertiges."
+          }
+        ]
+      }
+    ],
+    "a_eviter": [
+      "L'alcool dans les 24 heures précédant le don",
+      "Le café ou le thé juste avant le don (déshydratant)",
+      "Le sport intense le jour du don",
+      "Venir à jeun — le don à jeun est déconseillé",
+      "Fumer dans l'heure précédant le don"
+    ],
+    "quiz_cta": true,
+    "le_saviez_vous": "Le corps reconstitue le volume sanguin prélevé en quelques heures grâce à l'hydratation. Les globules rouges, eux, se régénèrent complètement en 4 à 8 semaines — c'est pour cela qu'on ne peut pas donner son sang aussi souvent qu'on veut, mais aussi pourquoi son organisme le supporte bien."
   },
   {
     "id": 6,
     "titre": "Après votre don",
     "categorie": "apres_don",
-    "contenu": "Reposez-vous quelques minutes sur place, évitez les efforts physiques intenses pendant 24h et continuez à bien vous hydrater."
+    "contenu": "Quelques précautions simples permettent de récupérer dans les meilleures conditions après votre prélèvement.",
+    "sections": [
+      {
+        "titre": "Les bons réflexes",
+        "items": [
+          {
+            "titre": "Reposez-vous quelques minutes",
+            "description": "Restez assis sur place le temps de la collation avant de repartir."
+          },
+          {
+            "titre": "Hydratez-vous bien",
+            "description": "Continuez à boire régulièrement dans les heures qui suivent le don."
+          }
+        ]
+      }
+    ],
+    "a_eviter": [
+      "Les efforts physiques intenses pendant 24h",
+      "Retirer le pansement trop tôt",
+      "Prendre un bain chaud ou un sauna le jour même"
+    ],
+    "le_saviez_vous": "Un léger inconfort ou vertige juste après le don est normal — il disparaît généralement en restant assis quelques minutes et en s'hydratant."
   },
   {
     "id": 7,
     "titre": "Pourquoi les stocks sont-ils parfois en tension ?",
     "categorie": "urgences",
-    "contenu": "Les produits sanguins ont une durée de conservation limitée (quelques jours à quelques semaines selon le type), ce qui impose des dons réguliers tout au long de l'année pour maintenir les stocks."
+    "contenu": "Les produits sanguins ont une durée de conservation limitée, ce qui impose des dons réguliers tout au long de l'année pour maintenir les stocks à un niveau suffisant.",
+    "sections": [
+      {
+        "titre": "Ce qui explique les tensions",
+        "items": [
+          {
+            "titre": "Durée de conservation limitée",
+            "description": "Les produits sanguins se conservent quelques jours à quelques semaines selon le type."
+          },
+          {
+            "titre": "Besoins constants",
+            "description": "Les hôpitaux ont besoin de dons réguliers toute l'année, y compris pendant les vacances."
+          }
+        ]
+      }
+    ],
+    "le_saviez_vous": "Les plaquettes sanguines ne se conservent que 5 à 7 jours, ce qui impose des dons très réguliers pour éviter les ruptures de stock."
   },
   {
     "id": 8,
     "titre": "Comment être alerté en cas d'urgence ?",
     "categorie": "urgences",
-    "contenu": "Le Centre du Don du Sang communique les appels à dons urgents via ses réseaux sociaux et son site dondusang.nc. Activez les notifications de l'application pour être informé en priorité."
+    "contenu": "Le Centre du Don du Sang communique les appels à dons urgents dès qu'un besoin critique est identifié. Voici comment rester informé en priorité.",
+    "sections": [
+      {
+        "titre": "Rester informé",
+        "items": [
+          {
+            "titre": "Réseaux sociaux et site web",
+            "description": "Le Centre du Don du Sang y communique les appels à dons urgents."
+          },
+          {
+            "titre": "Notifications de l'application",
+            "description": "Activez-les pour être informé en priorité des besoins urgents."
+          }
+        ]
+      }
+    ],
+    "le_saviez_vous": "Un appel à dons urgent concerne souvent un groupe sanguin précis en tension — pensez à vérifier votre compatibilité avant de vous déplacer."
   }
 ]
