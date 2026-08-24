@@ -43,3 +43,20 @@ Règle à ne jamais oublier : une branche par tâche (US ClickUp), jamais de com
   (Opérations / Contenu éditorial / Gamification / Utilisateurs / Administration)
 - Les champs `admin_id` sont remplis automatiquement via `Auth::id()`, jamais
   saisis manuellement dans les formulaires
+
+## Conventions de développement (workflow d'équipe)
+Le détail complet (branches, commits, PR, Definition of Done) est dans
+`docs/Conventions de développement.md`. Résumé :
+- Branches : `type/description-courte-US-xx` (ex. `feat/validation-don-US-09`)
+- Commits : `type(portée): description` en français, style
+  [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+  (ex. `feat(don): saisie et validation du code anonyme`)
+  - Types : `feat` / `fix` / `refactor` / `test` / `docs` / `chore` / `style`
+  - `refactor` ne change jamais le comportement
+- Une PR par branche vers `dev`, titre = même idée que le commit, relecture
+  obligatoire avant merge, branche supprimée après merge
+- Definition of Done : critères d'acceptation cochés, tests écrits et
+  passants, code relu, build main toujours vert après merge
+- Contraintes projet à vérifier à chaque tâche : anonymat (aucune donnée
+  médicale/identité réelle stockée), architecture adaptateur (accès aux
+  données via couche découplée)
