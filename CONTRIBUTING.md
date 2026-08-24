@@ -49,6 +49,7 @@ Règles :
 ## Pull Requests
 
 - Une PR par branche, ouverte vers `dev`
+- `main` est réservée au déploiement : seule `dev` y est mergée, une fois stable
 - Titre de PR = même idée que le commit : `feat(don): valider mon don - US09`
 - Lier l'US ClickUp dans la description + résumer ce qui change (voir `.github/PULL_REQUEST_TEMPLATE.md`)
 - Si la PR ne couvre qu'une partie des sous-tâches de l'US, le préciser clairement dans la description
