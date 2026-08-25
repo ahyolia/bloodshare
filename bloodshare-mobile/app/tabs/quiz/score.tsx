@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Colors } from '../../constants/colors';
+import { Colors } from '../../../constants/colors';
 
-export default function QuizScreen() {
+export default function QuizScoreScreen() {
   return (
     <View style={styles.screen}>
-      <Text style={styles.text}>Quiz — à construire</Text>
+      <Text style={styles.text}>Résultat du quiz — à construire</Text>
     </View>
   );
 }
