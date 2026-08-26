@@ -60,11 +60,11 @@
     ]
   },
   {
-    "categorie": "L'association ACDO-NC",
+    "categorie": "L'association ADSB-NC",
     "quiz": [
       {
         "id": 6,
-        "titre": "L'histoire de l'ACDO-NC",
+        "titre": "L'histoire de l'ADSB-NC",
         "points_attribues": 10,
         "complete": true,
         "nb_questions": 5,

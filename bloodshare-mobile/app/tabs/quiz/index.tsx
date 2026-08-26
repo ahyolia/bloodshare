@@ -19,7 +19,7 @@ import { CategorieQuiz, getQuizCategories, QuizItem } from '../../../services/qu
 const CATEGORIE_STYLE: Record<string, { emoji: string; fond: string }> = {
   'Les bases du don': { emoji: '🩸', fond: Colors.fondRose },
   'Les groupes sanguins': { emoji: '🔬', fond: Colors.fondBleu },
-  "L'association ACDO-NC": { emoji: '🏥', fond: Colors.fondVert },
+  "L'association ADSB-NC": { emoji: '🏥', fond: Colors.fondVert },
 };
 
 const getCategorieStyle = (categorie: string) =>

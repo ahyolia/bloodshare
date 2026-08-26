@@ -104,7 +104,7 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
       <Text style={styles.titreSecondaire}>Don contre-indiqué</Text>
       <Text style={styles.texte}>{resultat.motif}</Text>
       <Text style={styles.texteEncourageant}>
-        Vous pouvez toujours soutenir l'association ACDO-NC en sensibilisant votre entourage ou en
+        Vous pouvez toujours soutenir l'association ADSB-NC en sensibilisant votre entourage ou en
         devenant bénévole.
       </Text>
 

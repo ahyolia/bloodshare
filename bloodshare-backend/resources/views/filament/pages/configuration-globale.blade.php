@@ -22,7 +22,7 @@
         </table>
 
         <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            Don et événement : aucun point attribué (conformément à la charte de l'association ACDO-NC).
+            Don et événement : aucun point attribué (conformément à la charte de l'association ADSB-NC).
         </p>
     </div>
 </x-filament-panels::page>

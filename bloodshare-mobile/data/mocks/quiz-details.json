@@ -1,0 +1,155 @@
+{
+  "1": {
+    "id": 1,
+    "titre": "Qui peut donner son sang ?",
+    "aleatoire": false,
+    "questions": [
+      {
+        "id": 1,
+        "intitule": "Quel âge minimum pour donner son sang ?",
+        "type": "unique",
+        "ordre": 1,
+        "reponses": [
+          { "id": 1, "texte": "16 ans" },
+          { "id": 2, "texte": "18 ans" },
+          { "id": 3, "texte": "21 ans" }
+        ]
+      },
+      {
+        "id": 2,
+        "intitule": "Quel poids minimum est requis pour donner ?",
+        "type": "unique",
+        "ordre": 2,
+        "reponses": [
+          { "id": 4, "texte": "40 kg" },
+          { "id": 5, "texte": "50 kg" },
+          { "id": 6, "texte": "60 kg" }
+        ]
+      },
+      {
+        "id": 3,
+        "intitule": "Quels critères peuvent temporairement empêcher un don ?",
+        "type": "multiple",
+        "ordre": 3,
+        "reponses": [
+          { "id": 7, "texte": "Un tatouage récent" },
+          { "id": 8, "texte": "Un rhume léger" },
+          { "id": 9, "texte": "Un voyage récent en zone à risque" },
+          { "id": 10, "texte": "Avoir bien dormi" }
+        ]
+      }
+    ]
+  },
+  "2": {
+    "id": 2,
+    "titre": "Avant et après le don",
+    "aleatoire": false,
+    "questions": [
+      {
+        "id": 4,
+        "intitule": "Que faut-il faire avant de donner son sang ?",
+        "type": "unique",
+        "ordre": 1,
+        "reponses": [
+          { "id": 11, "texte": "Bien s'hydrater et manger" },
+          { "id": 12, "texte": "Être à jeun" },
+          { "id": 13, "texte": "Faire du sport intensif" }
+        ]
+      },
+      {
+        "id": 5,
+        "intitule": "Que recommande-t-on après le don ?",
+        "type": "multiple",
+        "ordre": 2,
+        "reponses": [
+          { "id": 14, "texte": "Se reposer quelques minutes" },
+          { "id": 15, "texte": "Boire beaucoup d'eau" },
+          { "id": 16, "texte": "Reprendre le sport immédiatement" }
+        ]
+      }
+    ]
+  },
+  "3": {
+    "id": 3,
+    "titre": "Fréquence des dons",
+    "aleatoire": false,
+    "questions": [
+      {
+        "id": 6,
+        "intitule": "Combien de temps faut-il attendre entre deux dons de sang total ?",
+        "type": "unique",
+        "ordre": 1,
+        "reponses": [
+          { "id": 17, "texte": "2 semaines" },
+          { "id": 18, "texte": "8 semaines" },
+          { "id": 19, "texte": "6 mois" }
+        ]
+      }
+    ]
+  },
+  "4": {
+    "id": 4,
+    "titre": "Comprendre les groupes sanguins",
+    "aleatoire": false,
+    "questions": [
+      {
+        "id": 7,
+        "intitule": "Combien existe-t-il de groupes sanguins principaux ?",
+        "type": "unique",
+        "ordre": 1,
+        "reponses": [
+          { "id": 20, "texte": "2" },
+          { "id": 21, "texte": "4" },
+          { "id": 22, "texte": "8" }
+        ]
+      },
+      {
+        "id": 8,
+        "intitule": "Quels facteurs déterminent un groupe sanguin ?",
+        "type": "multiple",
+        "ordre": 2,
+        "reponses": [
+          { "id": 23, "texte": "Le système ABO" },
+          { "id": 24, "texte": "Le facteur rhésus" },
+          { "id": 25, "texte": "La couleur des yeux" }
+        ]
+      }
+    ]
+  },
+  "5": {
+    "id": 5,
+    "titre": "Le donneur universel",
+    "aleatoire": false,
+    "questions": [
+      {
+        "id": 9,
+        "intitule": "Quel groupe sanguin est considéré comme donneur universel ?",
+        "type": "unique",
+        "ordre": 1,
+        "reponses": [
+          { "id": 26, "texte": "O négatif" },
+          { "id": 27, "texte": "AB positif" },
+          { "id": 28, "texte": "A négatif" }
+        ]
+      }
+    ]
+  },
+  "6": {
+    "id": 6,
+    "titre": "L'histoire de l'ADSB-NC",
+    "aleatoire": false,
+    "questions": [
+      {
+        "id": 10,
+        "intitule": "Que signifie le sigle ADSB-NC ?",
+        "type": "unique",
+        "ordre": 1,
+        "reponses": [
+          { "id": 29, "texte": "Association des Donneurs de Sang Bénévoles de Nouvelle-Calédonie" },
+          { "id": 30, "texte": "Agence Centrale du Don d'Organes" },
+          { "id": 31, "texte": "Aucune de ces réponses" }
+        ]
+      }
+    ]
+  }
+}

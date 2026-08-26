@@ -1,5 +1,6 @@
 import { USE_MOCK_DATA } from '../constants/config';
 import quizMock from '../data/mocks/quiz.json';
+import quizDetailsMock from '../data/mocks/quiz-details.json';
 import api from './api';
 
 export type QuizItem = {
@@ -24,5 +25,70 @@ export const getQuizCategories = async (): Promise<CategorieQuiz[]> => {
   }
 
   const response = await api.get<CategorieQuiz[]>('/quiz');
+  return response.data;
+};
+
+export type Reponse = {
+  id: number;
+  texte: string;
+};
+
+export type Question = {
+  id: number;
+  intitule: string;
+  type: 'unique' | 'multiple';
+  ordre: number;
+  reponses: Reponse[];
+};
+
+export type QuizDetail = {
+  id: number;
+  titre: string;
+  aleatoire: boolean;
+  questions: Question[];
+};
+
+export const getQuizDetail = async (id: number): Promise<QuizDetail> => {
+  if (USE_MOCK_DATA) {
+    const detail = (quizDetailsMock as Record<string, QuizDetail>)[String(id)];
+    if (!detail) throw new Error('Quiz introuvable');
+    return detail;
+  }
+
+  const response = await api.get<QuizDetail>(`/quiz/${id}`);
+  return response.data;
+};
+
+export type ReponsePayload = {
+  question_id: number;
+  reponse_ids: number[];
+};
+
+export type SoumissionResultat = {
+  score: number;
+  total_questions: number;
+  points_gagnes: number;
+  premiere_completion: boolean;
+};
+
+export const submitQuiz = async (
+  id: number,
+  reponses: ReponsePayload[]
+): Promise<SoumissionResultat> => {
+  if (USE_MOCK_DATA) {
+    // 📖 Simule une correction serveur : ici on ne peut pas vraiment calculer un score (les
+    // bonnes réponses ne sont jamais exposées côté mock, comme sur le vrai backend), donc on
+    // renvoie un résultat plausible pour permettre de tester l'écran score sans API réelle
+    const total = reponses.length;
+    const score = Math.max(1, Math.round(total * 0.8));
+    return {
+      score,
+      total_questions: total,
+      points_gagnes: 10,
+      premiere_completion: true,
+    };
+  }
+
+  const response = await api.post<SoumissionResultat>(`/quiz/${id}/soumettre`, { reponses });
   return response.data;
 };

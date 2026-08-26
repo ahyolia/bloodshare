@@ -42,7 +42,7 @@ Scannez le QR Code avec Expo Go sur votre téléphone, ou appuyez sur :
 - Bannières d'alerte
 - Événements à venir
 - Don du mois
-- Actualités ACDO-NC
+- Actualités ADSB-NC
 
 ### Dons
 - Questionnaire d'éligibilité
