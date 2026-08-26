@@ -86,7 +86,7 @@ export default function QuizScoreScreen() {
 
         <TouchableOpacity
           style={styles.fichesButton}
-          onPress={() => router.replace('/tabs/don')}
+          onPress={() => router.replace({ pathname: '/tabs/don', params: { section: 'fiches' } })}
         >
           <Text style={styles.fichesButtonText}>Lire les fiches pratiques</Text>
         </TouchableOpacity>

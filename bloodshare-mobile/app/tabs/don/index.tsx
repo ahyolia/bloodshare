@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../../../constants/colors';
 import { FicheInfo, getFichesInfos } from '../../../services/fichesInfos.service';
 import { getProfil } from '../../../services/profil.service';
@@ -31,11 +31,14 @@ const CATEGORIES: Category[] = [
 
 export default function DonScreen() {
   const router = useRouter();
+  const { section } = useLocalSearchParams<{ section?: string }>();
   const [points, setPoints] = useState(0);
   const [fiches, setFiches] = useState<FicheInfo[]>([]);
   const [fichesLoading, setFichesLoading] = useState(true);
   const [fichesError, setFichesError] = useState(false);
   const [openCategorie, setOpenCategorie] = useState<string | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const fichesY = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,9 +76,16 @@ export default function DonScreen() {
   const fichesParCategorie = (categorie: string) =>
     fiches.filter((fiche) => fiche.categorie === categorie);
 
+  useEffect(() => {
+    if (section === 'fiches' && !fichesLoading) {
+      scrollRef.current?.scrollTo({ y: fichesY.current, animated: true });
+    }
+  }, [section, fichesLoading]);
+
   return (
     <View style={styles.screen}>
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -146,7 +156,12 @@ export default function DonScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.fichesHeader}>
+        <View
+          style={styles.fichesHeader}
+          onLayout={(e) => {
+            fichesY.current = e.nativeEvent.layout.y;
+          }}
+        >
           <Text style={styles.sectionTitle}>Fiches pratiques</Text>
           <Text style={styles.fichesSubtitle}>
             Pour plus d'informations, retrouvez des articles sur le site du{' '}

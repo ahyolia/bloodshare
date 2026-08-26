@@ -294,7 +294,7 @@ export default function QuizScreen() {
           <Text style={styles.historiqueLabel}>Envie d'en apprendre plus ?</Text>
           <TouchableOpacity
             style={styles.fichesButton}
-            onPress={() => router.push('/tabs/don')}
+            onPress={() => router.push({ pathname: '/tabs/don', params: { section: 'fiches' } })}
           >
             <Text style={styles.fichesButtonText}>Lire les fiches pratiques</Text>
           </TouchableOpacity>

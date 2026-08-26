@@ -77,7 +77,10 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
           </View>
         )}
 
-        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/tabs/don')}>
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => router.push({ pathname: '/tabs/don', params: { section: 'fiches' } })}
+        >
           <Text style={styles.primaryButtonText}>Lire les fiches pratiques</Text>
         </TouchableOpacity>
 
