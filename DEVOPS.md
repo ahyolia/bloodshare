@@ -50,12 +50,14 @@ Pourquoi ces extensions PHP :
 
 | Commande | Effet |
 |---|---|
-| `docker compose up -d` | Démarre les 3 services en arrière-plan |
+| `docker compose up -d` | Crée et démarre les 3 services en arrière-plan (première fois, ou après un changement de config/Dockerfile) |
+| `docker compose start` | Redémarre les conteneurs existants sans les recréer (usage quotidien, plus rapide) |
+| `docker compose stop` | Arrête les conteneurs sans les supprimer (préféré à `down` pour un usage quotidien) |
 | `docker compose logs -f backend` | Suit les logs du backend en temps réel |
 | `docker exec -it bloodshare_backend php artisan <commande>` | Exécute une commande Artisan dans le conteneur |
 | `docker exec -it bloodshare_backend composer <commande>` | Exécute une commande Composer dans le conteneur |
 | `docker exec -it bloodshare_backend bash` | Ouvre un shell interactif dans le conteneur |
-| `docker compose down` | Arrête et supprime les conteneurs (les volumes sont conservés) |
+| `docker compose down` | Arrête et supprime les conteneurs (les volumes sont conservés) — à réserver aux cas où il faut repartir de zéro |
 | `docker compose up --build` | Reconstruit les images puis démarre les services |
 
 ### Initialisation de la base de données
