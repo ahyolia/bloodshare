@@ -46,6 +46,12 @@ export default function QuizDeroulementScreen() {
   //    l'annuler si l'utilisateur re-tape une autre réponse ou quitte l'écran avant la fin du délai
   const autoAvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // 📖 Drapeau synchrone : passé à true AVANT le router.replace vers l'écran score. Le listener
+  //    `beforeRemove` le lit tout de suite, alors que le state `submitting` ne serait committé
+  //    qu'au rendu suivant → sans ce ref, quitter [id] pour aller vers /score déclenchait la
+  //    modale « Abandonner le quiz ? » au lieu de laisser passer la navigation.
+  const soumissionEnCours = useRef(false);
+
   const annulerAutoAvance = () => {
     if (autoAvanceTimer.current) {
       clearTimeout(autoAvanceTimer.current);
@@ -102,14 +108,14 @@ export default function QuizDeroulementScreen() {
   //    bouton matériel) pour proposer la même confirmation d'abandon dans tous les cas
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
-      if (submitting) return;
+      if (soumissionEnCours.current) return;
 
       e.preventDefault();
       confirmerAbandon(() => navigation.dispatch(e.data.action));
     });
 
     return unsubscribe;
-  }, [navigation, submitting]);
+  }, [navigation]);
 
   const confirmerAbandon = (onConfirm: () => void) => {
     Alert.alert('Abandonner le quiz ?', 'Votre progression sera perdue.', [
@@ -165,6 +171,8 @@ export default function QuizDeroulementScreen() {
   const handleSoumettre = async () => {
     if (!quiz) return;
 
+    annulerAutoAvance();
+    soumissionEnCours.current = true;
     setSubmitting(true);
 
     try {
@@ -190,6 +198,8 @@ export default function QuizDeroulementScreen() {
         },
       });
     } catch {
+      // 📖 Échec de l'envoi : on reste sur le quiz, donc on réarme la confirmation d'abandon
+      soumissionEnCours.current = false;
       Alert.alert('Erreur', 'Impossible de soumettre le quiz. Vérifiez votre connexion.', [
         { text: 'OK' },
       ]);
@@ -218,6 +228,13 @@ export default function QuizDeroulementScreen() {
   const reponsesSelectionnees = reponses.get(question.id) ?? [];
   const derniereQuestion = questionIndex === quiz.questions.length - 1;
   const peutContinuer = reponsesSelectionnees.length > 0;
+
+  // 📖 Un seul mécanisme d'avancement par type de question :
+  //    - choix unique (hors dernière) → auto-avance à la sélection, PAS de bouton (sinon doublon)
+  //    - choix multiple → bouton « Suivant » manuel (on laisse cocher plusieurs cases avant de valider)
+  //    - dernière question (quel que soit le type) → bouton « Terminer ✓ » manuel
+  const afficherBoutonSuivant = question.type === 'multiple' || derniereQuestion;
+  const afficherFooter = questionIndex > 0 || afficherBoutonSuivant;
 
   return (
     <View style={styles.screen}>
@@ -289,29 +306,33 @@ export default function QuizDeroulementScreen() {
         })}
       </ScrollView>
 
-      <View style={styles.footer}>
-        {questionIndex > 0 && (
-          <TouchableOpacity
-            style={styles.precedentButton}
-            onPress={() => {
-              annulerAutoAvance();
-              setQuestionIndex((prev) => prev - 1);
-            }}
-          >
-            <Text style={styles.precedentButtonText}>← Précédent</Text>
-          </TouchableOpacity>
-        )}
+      {afficherFooter && (
+        <View style={styles.footer}>
+          {questionIndex > 0 && (
+            <TouchableOpacity
+              style={styles.precedentButton}
+              onPress={() => {
+                annulerAutoAvance();
+                setQuestionIndex((prev) => prev - 1);
+              }}
+            >
+              <Text style={styles.precedentButtonText}>← Précédent</Text>
+            </TouchableOpacity>
+          )}
 
-        <TouchableOpacity
-          style={[styles.suivantButton, !peutContinuer && styles.suivantButtonDesactive]}
-          onPress={handleSuivant}
-          disabled={!peutContinuer}
-        >
-          <Text style={styles.suivantButtonText}>
-            {derniereQuestion ? 'Terminer ✓' : 'Suivant →'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          {afficherBoutonSuivant && (
+            <TouchableOpacity
+              style={[styles.suivantButton, !peutContinuer && styles.suivantButtonDesactive]}
+              onPress={handleSuivant}
+              disabled={!peutContinuer}
+            >
+              <Text style={styles.suivantButtonText}>
+                {derniereQuestion ? 'Terminer ✓' : 'Suivant →'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
 
       {submitting && (
         <View style={styles.submittingOverlay}>
