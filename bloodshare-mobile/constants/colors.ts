@@ -20,4 +20,9 @@ export const Colors = {
     600: '#b32626',
   },
   fondNeutre: '#F0EDEE',
+  fondRose: '#FFE8E4',
+  fondBleu: '#E4F3F5',
+  fondVert: '#E8F4E8',
+  fondGris: '#E8E4E6',
+  fondGrisClair: '#FAFAFA',
 };

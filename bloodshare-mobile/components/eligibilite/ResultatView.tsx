@@ -77,7 +77,10 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
           </View>
         )}
 
-        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/tabs/don')}>
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => router.push({ pathname: '/tabs/don', params: { section: 'fiches' } })}
+        >
           <Text style={styles.primaryButtonText}>Lire les fiches pratiques</Text>
         </TouchableOpacity>
 
@@ -104,8 +107,8 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
       <Text style={styles.titreSecondaire}>Don contre-indiqué</Text>
       <Text style={styles.texte}>{resultat.motif}</Text>
       <Text style={styles.texteEncourageant}>
-        Vous pouvez toujours soutenir l&apos;association ACDO-NC en sensibilisant votre
-        entourage ou en devenant bénévole.
+        Vous pouvez toujours soutenir l'association ADSB-NC en sensibilisant votre entourage ou en
+        devenant bénévole.
       </Text>
 
       <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/tabs')}>

@@ -40,7 +40,7 @@ class CarteSeeder extends Seeder
             [
                 'categorie' => 'evenement',
                 'titre' => 'Carte Événement',
-                'description' => 'Carte obtenue lors d\'un événement ACDO-NC',
+                'description' => 'Carte obtenue lors d\'un événement ADSB-NC',
             ],
             [
                 'categorie' => 'parrain',
