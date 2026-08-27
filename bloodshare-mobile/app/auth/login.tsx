@@ -19,12 +19,11 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // États pour l'UX (Feedback visuel)
+  // États pour l'UX
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleLogin = async () => {
-    // 1. Réinitialiser les erreurs et faire une validation basique
     setErrorMessage('');
     if (!email || !password) {
       setErrorMessage('Veuillez remplir tous les champs.');
@@ -34,32 +33,24 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      // 2. Appel via la couche service (mock ou API selon USE_MOCK_DATA)
       const { token, user } = await login(email.trim(), password);
 
-      // 3. Sauvegarde sécurisée (attendre que la promesse resolve avant de router)
       await saveToken(token);
       await saveUser(user);
 
-      // 4. Redirection vers les onglets en écrasant la navigation
       router.replace('/tabs');
     } catch (error: any) {
       console.error('Erreur de connexion:', error);
 
-      // 5. Gestion fine de l'erreur pour l'utilisateur
       if (error.response) {
-        // Le serveur a répondu avec un code d'erreur (ex: 401)
         if (error.response.status === 401) {
-          // On exploite le champ 'message' renvoyé par le backend
           setErrorMessage(error.response.data?.message || 'Email ou mot de passe incorrect.');
         } else {
           setErrorMessage('Une erreur est survenue côté serveur.');
         }
       } else if (error.request) {
-        // La requête est partie, mais aucune réponse (problème réseau ou IP incorrecte)
         setErrorMessage('Impossible de joindre le serveur. Vérifiez votre connexion.');
       } else {
-        // Erreur de configuration de la requête Axios
         setErrorMessage("Une erreur inattendue s'est produite.");
       }
     } finally {
@@ -98,7 +89,7 @@ export default function LoginScreen() {
           placeholderTextColor={Colors.grisMoyen}
           value={password}
           onChangeText={setPassword}
-          secureTextEntry // Masque les caractères
+          secureTextEntry
           autoCapitalize="none"
           autoComplete="password"
           editable={!isLoading}

@@ -12,7 +12,6 @@ export default function ProfilScreen() {
   useEffect(() => {
     let cancelled = false;
 
-    // On récupère le profil (GET /me) au montage de l'écran
     getProfil()
       .then((data) => {
         if (!cancelled) setProfil(data);
@@ -31,10 +30,8 @@ export default function ProfilScreen() {
 
   const handleLogout = async () => {
     try {
-      // 1. On supprime le token et les données utilisateur du SecureStore
       await removeToken();
 
-      // 2. On redirige vers l'écran de connexion en écrasant l'historique
       router.replace('/auth/login');
     } catch (error) {
       console.error('Erreur lors de la déconnexion', error);
