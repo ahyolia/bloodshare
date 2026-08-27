@@ -2,27 +2,24 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../../constants/colors';
-import { getUser, removeToken } from '../../stores/auth.store';
-
-type UtilisateurLocal = {
-  pseudo?: string;
-  statut_donneur?: string;
-  points_cumules?: number;
-};
+import { getProfil, Profil } from '../../services/profil.service';
+import { removeToken } from '../../stores/auth.store';
 
 export default function ProfilScreen() {
-  const [user, setUser] = useState<UtilisateurLocal | null>(null);
+  const [profil, setProfil] = useState<Profil | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    // On récupère les infos de l'utilisateur au montage de l'écran
-    getUser()
-      .then((userData) => {
-        if (!cancelled) setUser(userData);
+    // On récupère le profil (GET /me) au montage de l'écran
+    getProfil()
+      .then((data) => {
+        if (!cancelled) setProfil(data);
       })
-      .catch(() => {})
+      .catch((error) => {
+        console.error('Erreur lors de la récupération du profil', error);
+      })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
       });
@@ -57,11 +54,11 @@ export default function ProfilScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>Mon Profil</Text>
 
-        {user && (
+        {profil && (
           <View style={styles.userInfo}>
-            <Text style={styles.text}>Pseudo : {user.pseudo}</Text>
-            <Text style={styles.text}>Statut : {user.statut_donneur}</Text>
-            <Text style={styles.text}>Points : {user.points_cumules ?? 0}</Text>
+            <Text style={styles.text}>Pseudo : {profil.pseudo}</Text>
+            <Text style={styles.text}>Statut : {profil.statut}</Text>
+            <Text style={styles.text}>Points : {profil.points_cumules}</Text>
           </View>
         )}
 
