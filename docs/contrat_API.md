@@ -72,13 +72,17 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
   "password": "MotDePasse123",
   "password_confirmation": "MotDePasse123",
   "sexe": "homme",
-  "groupe_sanguin": "O+",
+  "statut_donneur": "quelques_dons",
   "avatar_id": 3,
   "code_parrainage": "ABCD1234"
 }
 ```
 
-> `code_parrainage` est optionnel.
+> `statut_donneur`, `avatar_id` et `code_parrainage` sont optionnels. `sexe` est requis
+> (`homme` ou `femme`) : il est stocké côté serveur car la fréquence maximale de don en dépend,
+> mais il n'est jamais renvoyé dans la réponse et ne doit pas être conservé sur le téléphone.
+> `statut_donneur` accepte `donneur_regulier`, `quelques_dons` ou `jamais_donne`.
+> `password` doit faire au moins 8 caractères et contenir majuscule, minuscule et chiffre.
 
 **Réponse 201 :**
 
@@ -89,7 +93,7 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
     "id": 12,
     "pseudo": "BloodHero42",
     "avatar_url": "https://cdn.bloodshare.nc/avatars/3.webp",
-    "groupe_sanguin": "O+",
+    "statut_donneur": "quelques_dons",
     "points_cumules": 0,
     "code_parrainage": "XYZ98765"
   }
@@ -119,12 +123,15 @@ Connecte un utilisateur déjà inscrit et renvoie un nouveau token à stocker.
     "id": 12,
     "pseudo": "BloodHero42",
     "avatar_url": "https://cdn.bloodshare.nc/avatars/3.webp",
-    "groupe_sanguin": "O+",
+    "statut_donneur": "quelques_dons",
     "points_cumules": 250,
     "code_parrainage": "XYZ98765"
   }
 }
 ```
+
+> `avatar_url` vaut actuellement toujours `null` côté backend (`AuthController::formatUser`) :
+> la résolution de l'URL de l'avatar reste à implémenter.
 
 **Réponse 401 :**
 
@@ -164,15 +171,26 @@ Récupère les informations complètes du profil de l'utilisateur actuellement c
   "id": 12,
   "pseudo": "BloodHero42",
   "avatar_url": "https://cdn.bloodshare.nc/avatars/3.webp",
-  "groupe_sanguin": "O+",
+  "statut_donneur": "quelques_dons",
   "sexe": "homme",
   "points_cumules": 250,
+  "niveau": {
+    "niveau": 3,
+    "label": "Donneur engagé",
+    "points_actuels": 250,
+    "points_prochain_niveau": 400,
+    "progression": 62
+  },
   "code_parrainage": "XYZ98765",
   "statut": "actif",
   "created_at": "2026-01-15T10:00:00Z",
   "derniere_connexion": "2026-06-20T08:30:00Z"
 }
 ```
+
+> ⚠️ `sexe` est renvoyé par cet endpoint. Côté mobile, `profil.service.ts` l'écarte
+> explicitement : ne pas l'ajouter au type `Profil` ni le stocker (contrainte d'anonymat,
+> voir CONTRIBUTING.md).
 
 ## `PUT /me`
 Modifie le profil — utilisé sur l'écran "Paramètres / Informations du profil" pour changer le pseudo ou l'avatar. _Authentifié._ Tous les champs sont optionnels (envoyer uniquement ceux à modifier).
