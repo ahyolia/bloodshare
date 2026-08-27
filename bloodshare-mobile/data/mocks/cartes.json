@@ -1,0 +1,61 @@
+{
+  "mois_don": {
+    "pourcentage_complete": 41.7,
+    "cartes": [
+      { "id": 101, "titre": "Janvier", "mois_numero": 1, "image_url": null, "obtenue": true },
+      { "id": 102, "titre": "Février", "mois_numero": 2, "image_url": null, "obtenue": true },
+      { "id": 103, "titre": "Mars", "mois_numero": 3, "image_url": null, "obtenue": true },
+      { "id": 104, "titre": "Avril", "mois_numero": 4, "image_url": null, "obtenue": true },
+      { "id": 105, "titre": "Mai", "mois_numero": 5, "image_url": null, "obtenue": true },
+      { "id": 106, "titre": "Juin", "mois_numero": 6, "image_url": null, "obtenue": false },
+      { "id": 107, "titre": "Juillet", "mois_numero": 7, "image_url": null, "obtenue": false },
+      { "id": 108, "titre": "Août", "mois_numero": 8, "image_url": null, "obtenue": true },
+      { "id": 109, "titre": "Septembre", "mois_numero": 9, "image_url": null, "obtenue": false },
+      { "id": 110, "titre": "Octobre", "mois_numero": 10, "image_url": null, "obtenue": false },
+      { "id": 111, "titre": "Novembre", "mois_numero": 11, "image_url": null, "obtenue": false },
+      { "id": 112, "titre": "Décembre", "mois_numero": 12, "image_url": null, "obtenue": false }
+    ]
+  },
+  "evenement": {
+    "categories": [
+      {
+        "id": "collectes_sang",
+        "titre": "Collectes de sang",
+        "cartes": [
+          { "id": 201, "titre": "Collecte du 12 mars", "image_url": null, "obtenue": true },
+          { "id": 202, "titre": "Collecte du 8 mai", "image_url": null, "obtenue": true },
+          { "id": 203, "titre": "Collecte du 15 juillet", "image_url": null, "obtenue": false },
+          { "id": 204, "titre": "Collecte du 2 septembre", "image_url": null, "obtenue": false },
+          { "id": 205, "titre": "Collecte du 20 novembre", "image_url": null, "obtenue": false }
+        ]
+      },
+      {
+        "id": "journees_sensibilisation",
+        "titre": "Journées de sensibilisations",
+        "cartes": [
+          { "id": 211, "titre": "Journée du 4 février", "image_url": null, "obtenue": true },
+          { "id": 212, "titre": "Journée du 18 avril", "image_url": null, "obtenue": true },
+          { "id": 213, "titre": "Journée du 6 juin", "image_url": null, "obtenue": true, "quantite": 2 },
+          { "id": 214, "titre": "Journée du 14 août", "image_url": null, "obtenue": true },
+          { "id": 215, "titre": "Journée du 10 octobre", "image_url": null, "obtenue": false },
+          { "id": 216, "titre": "Journée du 5 décembre", "image_url": null, "obtenue": false }
+        ]
+      }
+    ]
+  },
+  "parrainage": {
+    "carte_parrain": {
+      "id": 301,
+      "titre": "Parrainage",
+      "image_url": null,
+      "obtenue": true,
+      "quantite": 2
+    },
+    "carte_filleul": {
+      "id": 302,
+      "titre": "Parrainé",
+      "image_url": null,
+      "obtenue": false
+    }
+  }
+}

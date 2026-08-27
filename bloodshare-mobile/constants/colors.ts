@@ -19,4 +19,5 @@ export const Colors = {
     500: '#d92c2c',
     600: '#b32626',
   },
+  fondNeutre: '#F0EDEE',
 };

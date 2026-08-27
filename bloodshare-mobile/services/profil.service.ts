@@ -2,16 +2,18 @@ import { USE_MOCK_DATA } from '../constants/config';
 import profilMock from '../data/mocks/profil.json';
 import api from './api';
 
-// Format renvoyé par GET /me (voir docs/contrat_API.md § 2).
-// ⚠️ Contrainte anonymat (CONTRIBUTING.md) : `groupe_sanguin` et `sexe` sont renvoyés par
-// l'API mais ne sont volontairement pas repris ici, ni affichés, ni stockés.
+export type NiveauInfo = {
+  niveau: number;
+  label: string;
+  points_actuels: number;
+  points_prochain_niveau: number | null;
+  progression: number;
+};
+
 export type Profil = {
-  id: number;
   pseudo: string;
-  avatar_url: string | null;
   points_cumules: number;
-  code_parrainage: string;
-  statut: string;
+  niveau: NiveauInfo;
 };
 
 // Ne conserve que les champs autorisés : ce que l'API renvoie en plus est écarté ici.
@@ -26,7 +28,7 @@ const filtrerProfil = (profil: Profil): Profil => ({
 
 export const getProfil = async (): Promise<Profil> => {
   if (USE_MOCK_DATA) {
-    return profilMock;
+    return profilMock as Profil;
   }
 
   const response = await api.get<Profil>('/me');
