@@ -35,7 +35,7 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
 
         <Text style={styles.titre}>Vous semblez éligible !</Text>
         <Text style={styles.texte}>
-          D'après vos réponses, rien ne semble vous empêcher de donner votre sang. Seul le
+          D&apos;après vos réponses, rien ne semble vous empêcher de donner votre sang. Seul le
           personnel du CHT peut confirmer votre éligibilité le jour du don.
         </Text>
 
@@ -47,7 +47,7 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/tabs')}>
-          <Text style={styles.secondaryButtonText}>Retour à l'accueil</Text>
+          <Text style={styles.secondaryButtonText}>Retour à l&apos;accueil</Text>
         </TouchableOpacity>
 
         <Disclaimer />
@@ -82,7 +82,7 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/tabs')}>
-          <Text style={styles.secondaryButtonText}>Retour à l'accueil</Text>
+          <Text style={styles.secondaryButtonText}>Retour à l&apos;accueil</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.textButton} onPress={onRecommencer}>
@@ -104,12 +104,12 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
       <Text style={styles.titreSecondaire}>Don contre-indiqué</Text>
       <Text style={styles.texte}>{resultat.motif}</Text>
       <Text style={styles.texteEncourageant}>
-        Vous pouvez toujours soutenir l'association ACDO-NC en sensibilisant votre entourage ou en
-        devenant bénévole.
+        Vous pouvez toujours soutenir l&apos;association ACDO-NC en sensibilisant votre
+        entourage ou en devenant bénévole.
       </Text>
 
       <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/tabs')}>
-        <Text style={styles.secondaryButtonText}>Retour à l'accueil</Text>
+        <Text style={styles.secondaryButtonText}>Retour à l&apos;accueil</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.textButton} onPress={onRecommencer}>
@@ -125,8 +125,8 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
 function Disclaimer() {
   return (
     <Text style={styles.disclaimer}>
-      Ce questionnaire est indicatif et ne remplace pas l'entretien médical obligatoire avec le
-      personnel du CHT le jour du don.
+      Ce questionnaire est indicatif et ne remplace pas l&apos;entretien médical obligatoire
+      avec le personnel du CHT le jour du don.
     </Text>
   );
 }
