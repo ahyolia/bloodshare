@@ -3,8 +3,15 @@ import { router } from 'expo-router';
 import { Colors } from '../../constants/colors';
 
 // TODO — Écran d'inscription à implémenter (POST /auth/register, voir docs/contrat_API.md § 1).
-// Champs attendus : pseudo, email, password, password_confirmation, sexe, groupe_sanguin,
-// avatar_id, code_parrainage (optionnel). La réponse renvoie { token, user } comme le login.
+// Champs réellement validés par AuthController::register :
+//   pseudo (max 50, unique), email (unique), password (min 8, majuscule + minuscule + chiffre)
+//   avec password_confirmation, sexe (requis, homme|femme),
+//   statut_donneur (optionnel : donneur_regulier|quelques_dons|jamais_donne),
+//   avatar_id (optionnel, doit exister en base), code_parrainage (optionnel).
+// ⚠️ `sexe` est requis par l'API et stocké côté serveur (la fréquence de don en dépend), mais
+// il ne doit jamais être conservé sur le téléphone : la liste blanche de auth.service.ts s'en
+// charge, ne pas la contourner ici.
+// La réponse 201 renvoie { token, user } comme le login — même traitement, saveToken + saveUser.
 export default function RegisterScreen() {
   return (
     <View style={styles.screen}>
