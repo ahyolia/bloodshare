@@ -1,9 +1,26 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../../constants/colors';
+import { TAB_BAR_STYLE } from '../_layout';
 
 export default function QuizScoreScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
+
+  // 📖 L'écran score fait partie du Stack quiz : on garde la tab bar masquée ici aussi
+  //    (footer avec boutons fiches / rejouer / retour) et on la restaure au retour vers la liste.
+  useFocusEffect(
+    useCallback(() => {
+      navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
+
+      return () => {
+        navigation.getParent()?.setOptions({ tabBarStyle: TAB_BAR_STYLE });
+      };
+    }, [navigation])
+  );
+
   const { quiz_id, quiz_titre, score, total_questions, points_gagnes, premiere_completion } =
     useLocalSearchParams<{
       quiz_id: string;

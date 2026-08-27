@@ -1,6 +1,7 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { useNavigation, useRouter } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { Colors } from '../../../constants/colors';
+import { TAB_BAR_STYLE } from '../_layout';
 import {
   getQuizDetail,
   Question,
@@ -52,6 +54,18 @@ export default function QuizDeroulementScreen() {
   };
 
   useEffect(() => annulerAutoAvance, []);
+
+  // 📖 Pendant le déroulement du quiz, on masque la tab bar flottante : sinon elle recouvre
+  //    le footer (boutons Précédent / Suivant / Terminer). On la restaure en quittant l'écran.
+  useFocusEffect(
+    useCallback(() => {
+      navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
+
+      return () => {
+        navigation.getParent()?.setOptions({ tabBarStyle: TAB_BAR_STYLE });
+      };
+    }, [navigation])
+  );
 
   useEffect(() => {
     let cancelled = false;
