@@ -104,9 +104,8 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
       <Text style={styles.titreSecondaire}>Don contre-indiqué</Text>
       <Text style={styles.texte}>{resultat.motif}</Text>
       <Text style={styles.texteEncourageant}>
-        Vous pouvez toujours soutenir l&apos;association ACDO-NC en sensibilisant votre entourage
-        ou en
-        devenant bénévole.
+        Vous pouvez toujours soutenir l&apos;association ACDO-NC en sensibilisant votre
+        entourage ou en devenant bénévole.
       </Text>
 
       <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/tabs')}>
@@ -126,9 +125,8 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
 function Disclaimer() {
   return (
     <Text style={styles.disclaimer}>
-      Ce questionnaire est indicatif et ne remplace pas l&apos;entretien médical obligatoire avec
-      le
-      personnel du CHT le jour du don.
+      Ce questionnaire est indicatif et ne remplace pas l&apos;entretien médical obligatoire
+      avec le personnel du CHT le jour du don.
     </Text>
   );
 }
