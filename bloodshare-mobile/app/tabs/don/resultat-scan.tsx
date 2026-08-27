@@ -65,7 +65,7 @@ export default function ResultatScanScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.outlineButton} onPress={() => router.replace('/tabs')}>
-        <Text style={styles.outlineButtonText}>Retour à l'accueil</Text>
+        <Text style={styles.outlineButtonText}>Retour à l&apos;accueil</Text>
       </TouchableOpacity>
     </ScrollView>
   );

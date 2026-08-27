@@ -67,7 +67,7 @@ export default function CarteDetailScreen() {
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={close} />
         <View style={styles.card}>
-          <Text style={styles.errorText}>Impossible d'afficher cette carte.</Text>
+          <Text style={styles.errorText}>Impossible d&apos;afficher cette carte.</Text>
           <TouchableOpacity style={styles.closeButton} onPress={close}>
             <Ionicons name="close" size={20} color={Colors.aubergine} />
           </TouchableOpacity>

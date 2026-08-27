@@ -156,7 +156,7 @@ export default function DonScreen() {
         <View style={styles.fichesHeader}>
           <Text style={styles.sectionTitle}>Fiches pratiques</Text>
           <Text style={styles.fichesSubtitle}>
-            Pour plus d'informations, retrouvez des articles sur le site du{' '}
+            Pour plus d&apos;informations, retrouvez des articles sur le site du{' '}
             <Text style={styles.fichesLink} onPress={() => Linking.openURL(RESERVATION_URL)}>
               Centre du Don du Sang.
             </Text>

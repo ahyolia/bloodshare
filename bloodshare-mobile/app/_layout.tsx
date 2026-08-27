@@ -37,7 +37,7 @@ export default function RootLayout() {
     };
     // 📖 On dépend de booléens et non de `segments` : useSegments() renvoie un nouveau
     // tableau à chaque rendu, ce qui redéclencherait cet effet en boucle.
-  }, [inAuthGroup, inTabsGroup, navigationState?.key]);
+  }, [inAuthGroup, inTabsGroup, navigationState?.key, router]);
 
   return <Stack screenOptions={{ headerShown: false }} />;
 }
