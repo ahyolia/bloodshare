@@ -30,6 +30,15 @@ bloodshare/
 
 L'authentification de l'API repose sur Laravel Sanctum (tokens Bearer). Le format exact de chaque endpoint (requêtes, réponses JSON, codes d'erreur) est documenté dans **[docs/contrat_API.md](docs/contrat_API.md)** — à lire avant toute intégration côté mobile. Ce document inclut un tableau d'état d'implémentation ; tous les endpoints sont désormais implémentés côté backend.
 
+## Documentation
+
+| Document | Description |
+|---|---|
+| [DEVOPS.md](DEVOPS.md) | Architecture Docker, workflow Git |
+| [docs/contrat_API.md](docs/contrat_API.md) | Format des endpoints API mobile |
+| [bloodshare-backend/README.md](bloodshare-backend/README.md) | Documentation backend |
+| [bloodshare-mobile/README.md](bloodshare-mobile/README.md) | Documentation mobile |
+
 ## Prérequis
 
 - Docker Desktop
