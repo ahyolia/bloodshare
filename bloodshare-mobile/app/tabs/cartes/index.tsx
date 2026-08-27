@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/colors';
-import { getProfil } from '../../../services/profil.service';
+import { ScreenHeader } from '../../../components/ui/screen-header';
 import {
   Cartes,
   CarteParrainage,
@@ -21,24 +21,9 @@ import {
 
 export default function CartesScreen() {
   const router = useRouter();
-  const [points, setPoints] = useState(0);
   const [cartes, setCartes] = useState<Cartes | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    getProfil()
-      .then((profil) => {
-        if (!cancelled) setPoints(profil.points_cumules ?? 0);
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,17 +53,7 @@ export default function CartesScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Cartes</Text>
-          <View style={styles.headerRight}>
-            <View style={styles.pointsBadge}>
-              <Text style={styles.pointsBadgeText}>{points} ★</Text>
-            </View>
-            <TouchableOpacity style={styles.iconButton} activeOpacity={0.8}>
-              <Ionicons name="notifications" size={16} color={Colors.aubergine} />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <ScreenHeader title="Cartes" />
 
         {loading && (
           <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />
@@ -321,35 +296,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 54,
     paddingBottom: 126,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconButton: {
-    marginLeft: 10,
-  },
-  pointsBadge: {
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    backgroundColor: '#E8E4E6',
-  },
-  pointsBadgeText: {
-    color: Colors.aubergine,
-    fontWeight: '700',
-    fontSize: 12,
   },
   loader: {
     marginTop: 40,
