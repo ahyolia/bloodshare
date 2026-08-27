@@ -52,6 +52,10 @@ export default function QuizDeroulementScreen() {
   //    modale « Abandonner le quiz ? » au lieu de laisser passer la navigation.
   const soumissionEnCours = useRef(false);
 
+  // 📖 Idem pour l'abandon confirmé : une fois que l'utilisateur a dit « Abandonner », on
+  //    laisse passer le `navigation.dispatch` sans réafficher la modale (sinon 2 confirmations).
+  const sortieConfirmee = useRef(false);
+
   const annulerAutoAvance = () => {
     if (autoAvanceTimer.current) {
       clearTimeout(autoAvanceTimer.current);
@@ -104,25 +108,29 @@ export default function QuizDeroulementScreen() {
     }).start();
   }, [questionIndex, quiz, progressAnim]);
 
-  // 📖 Intercepte toute tentative de quitter l'écran (bouton back custom, geste natif Android,
-  //    bouton matériel) pour proposer la même confirmation d'abandon dans tous les cas
+  // 📖 Point d'interception UNIQUE pour toute sortie de l'écran (bouton back custom, geste natif
+  //    Android, bouton matériel) : on ne montre la confirmation d'abandon qu'ici, une seule fois.
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
-      if (soumissionEnCours.current) return;
+      // Soumission en cours ou abandon déjà confirmé → on laisse la navigation se faire
+      if (soumissionEnCours.current || sortieConfirmee.current) return;
 
       e.preventDefault();
-      confirmerAbandon(() => navigation.dispatch(e.data.action));
+      Alert.alert('Abandonner le quiz ?', 'Votre progression sera perdue.', [
+        { text: 'Continuer le quiz', style: 'cancel' },
+        {
+          text: 'Abandonner',
+          style: 'destructive',
+          onPress: () => {
+            sortieConfirmee.current = true;
+            navigation.dispatch(e.data.action);
+          },
+        },
+      ]);
     });
 
     return unsubscribe;
   }, [navigation]);
-
-  const confirmerAbandon = (onConfirm: () => void) => {
-    Alert.alert('Abandonner le quiz ?', 'Votre progression sera perdue.', [
-      { text: 'Continuer le quiz', style: 'cancel' },
-      { text: 'Abandonner', style: 'destructive', onPress: onConfirm },
-    ]);
-  };
 
   const toggleReponse = (question: Question, reponseId: number) => {
     setReponses((prev) => {
@@ -240,10 +248,7 @@ export default function QuizDeroulementScreen() {
     <View style={styles.screen}>
       <View style={styles.header}>
         <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => confirmerAbandon(() => router.back())}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
 
