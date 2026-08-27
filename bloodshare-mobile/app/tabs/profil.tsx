@@ -2,22 +2,25 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../../constants/colors';
-import { getProfil, Profil } from '../../services/profil.service';
-import { removeToken } from '../../stores/auth.store';
+import { logout } from '../../services/auth.service';
+import { getUser, removeToken } from '../../stores/auth.store';
+import type { Utilisateur } from '../../services/auth.service';
 
 export default function ProfilScreen() {
-  const [profil, setProfil] = useState<Profil | null>(null);
+  const [user, setUser] = useState<Utilisateur | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    getProfil()
+    // Affichage minimal à partir des données de connexion stockées.
+    // 📖 L'écran Profil complet (GET /me) est traité dans une branche dédiée.
+    getUser()
       .then((data) => {
-        if (!cancelled) setProfil(data);
+        if (!cancelled) setUser(data);
       })
       .catch((error) => {
-        console.error('Erreur lors de la récupération du profil', error);
+        console.error("Erreur lors de la récupération de l'utilisateur", error);
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -29,6 +32,15 @@ export default function ProfilScreen() {
   }, []);
 
   const handleLogout = async () => {
+    // 1. On invalide le token côté serveur. En cas d'échec (hors ligne, token déjà expiré)
+    // on continue quand même : sinon l'utilisateur resterait bloqué connecté sur le téléphone.
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion côté serveur', error);
+    }
+
+    // 2. Puis on purge le token et les données utilisateur du SecureStore
     try {
       await removeToken();
 
@@ -51,11 +63,11 @@ export default function ProfilScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>Mon Profil</Text>
 
-        {profil && (
+        {user && (
           <View style={styles.userInfo}>
-            <Text style={styles.text}>Pseudo : {profil.pseudo}</Text>
-            <Text style={styles.text}>Statut : {profil.statut}</Text>
-            <Text style={styles.text}>Points : {profil.points_cumules}</Text>
+            <Text style={styles.text}>Pseudo : {user.pseudo}</Text>
+            <Text style={styles.text}>Statut : {user.statut_donneur}</Text>
+            <Text style={styles.text}>Points : {user.points_cumules}</Text>
           </View>
         )}
 
