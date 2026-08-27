@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Colors } from '../../../constants/colors';
 import { TAB_BAR_STYLE } from '../_layout';
-import api from '../../../services/api';
+import { ResultatScan, soumettreScan } from '../../../services/scan.service';
 
 export default function ScanScreen() {
   const router = useRouter();
@@ -60,8 +60,7 @@ export default function ScanScreen() {
       <View style={styles.permissionScreen}>
         <Ionicons name="camera-outline" size={56} color={Colors.aubergine} />
         <Text style={styles.permissionText}>
-          BloodShare a besoin d&apos;accéder à votre caméra pour scanner le QR Code après
-          votre don.
+          BloodShare a besoin d&apos;accéder à votre caméra pour scanner le QR Code après votre don.
         </Text>
         <TouchableOpacity style={styles.primaryButton} onPress={requestPermission}>
           <Text style={styles.primaryButtonText}>Autoriser la caméra</Text>
@@ -93,12 +92,12 @@ export default function ScanScreen() {
     setLoading(true);
 
     try {
-      // 📖 On envoie le contenu du QR Code (token) au backend, qui seul sait le valider (don réel, éligibilité, expiration...)
-      // → Pourquoi côté serveur et pas côté app : un token de QR Code peut être falsifié ou rejoué ; toute la logique de validité doit rester côté backend, jamais faire confiance à ce que l'app "croit" avoir scanné
-      const response = await api.post('/scan', { token });
+      // 📖 La validation passe par la couche service (mock ou API selon USE_MOCK_DATA).
+      //    Le token n'est jamais interprété côté app : seul le backend sait le valider
+      //    (don réel, éligibilité, expiration...) — un QR Code peut être falsifié ou rejoué.
+      const data = await soumettreScan(token);
 
-      // 📖 response.data contient le corps JSON renvoyé par le backend (type, carte_obtenue, badges_debloques...)
-      handleSuccess(response.data);
+      handleSuccess(data);
     } catch (error) {
       // 📖 error.response existe quand le serveur A répondu mais avec un code d'erreur (404, 422...)
       //    error.request existe quand la requête est partie mais qu'AUCUNE réponse n'est arrivée (pas de réseau, timeout, serveur injoignable)
@@ -112,7 +111,7 @@ export default function ScanScreen() {
   // 📖 handleSuccess redirige vers l'écran résultat en transmettant les infos via les params de navigation
   // → Pourquoi router.push et pas router.replace : on garde l'écran de scan dans l'historique, pour que l'utilisateur puisse revenir en arrière si besoin (contrairement à resultat-scan → cartes/accueil, où on veut EMPÊCHER de revenir en arrière avec replace)
   // → Pourquoi passer par les params plutôt qu'un state global : le résultat du scan est une donnée éphémère, utile uniquement le temps d'afficher cet écran une fois ; pas besoin de la stocker durablement dans un store partagé par toute l'app
-  const handleSuccess = (data: any) => {
+  const handleSuccess = (data: ResultatScan) => {
     if (data.type === 'don' || data.type === 'evenement') {
       router.push({
         pathname: '/tabs/don/resultat-scan',
@@ -121,6 +120,7 @@ export default function ScanScreen() {
           carte_id: data.carte_obtenue?.id,
           carte_titre: data.carte_obtenue?.titre,
           carte_categorie: data.carte_obtenue?.categorie,
+          deja_possedee: String(data.carte_obtenue?.deja_possedee ?? false),
           badges: JSON.stringify(data.badges_debloques ?? []),
         },
       });
