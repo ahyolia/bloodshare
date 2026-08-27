@@ -11,43 +11,31 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../../constants/colors';
-import { login } from '../../services/auth.service';
-import { saveToken, saveUser } from '../../stores/auth.store';
+import { forgotPassword } from '../../services/auth.service';
 
-export default function LoginScreen() {
-  // États pour les champs de formulaire
+export default function MotDePasseOublieScreen() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  // États pour l'UX
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [envoye, setEnvoye] = useState(false);
 
-  const handleLogin = async () => {
+  const handleSubmit = async () => {
     setErrorMessage('');
-    if (!email || !password) {
-      setErrorMessage('Veuillez remplir tous les champs.');
+    if (!email) {
+      setErrorMessage('Veuillez saisir votre adresse e-mail.');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const { token, user } = await login(email.trim(), password);
-
-      await saveToken(token);
-      await saveUser(user);
-
-      router.replace('/tabs');
+      await forgotPassword(email.trim());
+      setEnvoye(true);
     } catch (error: any) {
-      console.error('Erreur de connexion:', error);
+      console.error('Erreur lors de la demande de réinitialisation:', error);
 
       if (error.response) {
-        if (error.response.status === 401) {
-          setErrorMessage(error.response.data?.message || 'Email ou mot de passe incorrect.');
-        } else {
-          setErrorMessage('Une erreur est survenue côté serveur.');
-        }
+        setErrorMessage(error.response.data?.message || 'Une erreur est survenue côté serveur.');
       } else if (error.request) {
         setErrorMessage('Impossible de joindre le serveur. Vérifiez votre connexion.');
       } else {
@@ -57,6 +45,28 @@ export default function LoginScreen() {
       setIsLoading(false);
     }
   };
+
+  if (envoye) {
+    return (
+      <KeyboardAvoidingView style={styles.screen}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <Text style={styles.title}>E-mail envoyé</Text>
+          <Text style={styles.subtitle}>
+            Si un compte est associé à {email.trim()}, vous recevrez un lien de réinitialisation
+            dans quelques minutes. Pensez à vérifier vos spams.
+          </Text>
+
+          <Pressable
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+            onPress={() => router.replace('/auth/login')}
+            accessibilityRole="button"
+          >
+            <Text style={styles.buttonText}>Retour à la connexion</Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -68,7 +78,11 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Connexion</Text>
+        <Text style={styles.title}>Mot de passe oublié</Text>
+        <Text style={styles.subtitle}>
+          Saisissez l&apos;adresse e-mail de votre compte : nous vous enverrons un lien pour
+          définir un nouveau mot de passe.
+        </Text>
 
         <TextInput
           style={styles.input}
@@ -81,23 +95,10 @@ export default function LoginScreen() {
           autoComplete="email"
           autoCorrect={false}
           editable={!isLoading}
+          onSubmitEditing={handleSubmit}
+          returnKeyType="send"
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Mot de passe"
-          placeholderTextColor={Colors.grisMoyen}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoCapitalize="none"
-          autoComplete="password"
-          editable={!isLoading}
-          onSubmitEditing={handleLogin}
-          returnKeyType="go"
-        />
-
-        {/* Affichage conditionnel du message d'erreur */}
         {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
         <Pressable
@@ -106,26 +107,19 @@ export default function LoginScreen() {
             pressed && styles.buttonPressed,
             isLoading && styles.buttonDisabled,
           ]}
-          onPress={handleLogin}
+          onPress={handleSubmit}
           disabled={isLoading}
           accessibilityRole="button"
         >
           {isLoading ? (
             <ActivityIndicator color={Colors.cremeClair} />
           ) : (
-            <Text style={styles.buttonText}>Se connecter</Text>
+            <Text style={styles.buttonText}>Envoyer le lien</Text>
           )}
         </Pressable>
 
-        <Pressable
-          onPress={() => router.push('/auth/mot-de-passe-oublie')}
-          style={styles.linkContainer}
-        >
-          <Text style={styles.linkText}>Mot de passe oublié ?</Text>
-        </Pressable>
-
-        <Pressable onPress={() => router.push('/auth/register')} style={styles.linkContainerSecond}>
-          <Text style={styles.linkText}>Pas encore de compte ? S&apos;inscrire</Text>
+        <Pressable onPress={() => router.back()} style={styles.linkContainer}>
+          <Text style={styles.linkText}>Retour à la connexion</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -146,9 +140,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: '800',
-    marginBottom: 32,
     textAlign: 'center',
     color: Colors.aubergine,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: Colors.grisMoyen,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginTop: 8,
+    marginBottom: 28,
   },
   input: {
     height: 52,
@@ -188,10 +189,6 @@ const styles = StyleSheet.create({
   },
   linkContainer: {
     marginTop: 24,
-    alignItems: 'center',
-  },
-  linkContainerSecond: {
-    marginTop: 14,
     alignItems: 'center',
   },
   linkText: {

@@ -16,11 +16,19 @@ export type Profil = {
   niveau: NiveauInfo;
 };
 
+// Liste blanche explicite : GET /me renvoie aussi `sexe`, une donnée d'identité que
+// CONTRIBUTING.md interdit de conserver. Tout champ non repris ici n'atteint pas les écrans.
+const filtrerProfil = (profil: Profil): Profil => ({
+  pseudo: profil.pseudo,
+  points_cumules: profil.points_cumules,
+  niveau: profil.niveau,
+});
+
 export const getProfil = async (): Promise<Profil> => {
   if (USE_MOCK_DATA) {
-    return profilMock as Profil;
+    return profilMock;
   }
 
   const response = await api.get<Profil>('/me');
-  return response.data;
+  return filtrerProfil(response.data);
 };
