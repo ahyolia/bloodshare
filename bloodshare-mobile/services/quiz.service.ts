@@ -39,6 +39,9 @@ export type Question = {
   type: 'unique' | 'multiple';
   ordre: number;
   reponses: Reponse[];
+  // 📖 Présent uniquement dans le mock (le vrai backend ne renvoie jamais les bonnes réponses
+  //    au client). Sert à la correction locale dans submitQuiz ci-dessous, jamais affiché.
+  correctes?: number[];
 };
 
 export type QuizDetail = {
@@ -64,11 +67,29 @@ export type ReponsePayload = {
   reponse_ids: number[];
 };
 
+export type DetailReponse = {
+  question_id: number;
+  correcte: boolean;
+};
+
 export type SoumissionResultat = {
   score: number;
   total_questions: number;
   points_gagnes: number;
   premiere_completion: boolean;
+  // 📖 Correction question par question. Optionnel : le vrai backend peut ne renvoyer
+  //    que le score global — l'écran score sait retomber sur un affichage approché.
+  details?: DetailReponse[];
+};
+
+// 📖 Deux ensembles d'ids sont "égaux" s'ils contiennent exactement les mêmes valeurs,
+//    sans tenir compte de l'ordre (une question multiple n'est juste que si TOUTES les
+//    bonnes réponses sont cochées et aucune mauvaise).
+const memesIds = (a: number[], b: number[]) => {
+  if (a.length !== b.length) return false;
+  const trie = (xs: number[]) => [...xs].sort((x, y) => x - y);
+  const [as, bs] = [trie(a), trie(b)];
+  return as.every((v, i) => v === bs[i]);
 };
 
 export const submitQuiz = async (
@@ -76,11 +97,18 @@ export const submitQuiz = async (
   reponses: ReponsePayload[]
 ): Promise<SoumissionResultat> => {
   if (USE_MOCK_DATA) {
-    // 📖 Simule une correction serveur : ici on ne peut pas vraiment calculer un score (les
-    // bonnes réponses ne sont jamais exposées côté mock, comme sur le vrai backend), donc on
-    // renvoie un résultat plausible pour permettre de tester l'écran score sans API réelle
-    const total = reponses.length;
-    const score = Math.max(1, Math.round(total * 0.8));
+    // 📖 Correction locale : on compare les réponses de l'utilisateur aux `correctes`
+    //    du mock, question par question, pour un score et un détail réellement fidèles.
+    const detail = (quizDetailsMock as Record<string, QuizDetail>)[String(id)];
+    const parQuestion = new Map(reponses.map((r) => [r.question_id, r.reponse_ids]));
+
+    const details: DetailReponse[] = (detail?.questions ?? []).map((q) => ({
+      question_id: q.id,
+      correcte: memesIds(parQuestion.get(q.id) ?? [], q.correctes ?? []),
+    }));
+
+    const total = detail?.questions.length ?? reponses.length;
+    const score = details.filter((d) => d.correcte).length;
 
     // 📖 On retrouve le quiz dans le catalogue mock pour renvoyer des points cohérents
     //    (points_attribues du quiz) et savoir s'il a déjà été complété → dans ce cas
@@ -95,6 +123,7 @@ export const submitQuiz = async (
       total_questions: total,
       points_gagnes: dejaComplete ? 0 : (quizConcerne?.points_attribues ?? 10),
       premiere_completion: !dejaComplete,
+      details,
     };
   }
 

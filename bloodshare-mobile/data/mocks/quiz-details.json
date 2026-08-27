@@ -9,6 +9,7 @@
         "intitule": "Quel âge minimum pour donner son sang ?",
         "type": "unique",
         "ordre": 1,
+        "correctes": [2],
         "reponses": [
           { "id": 1, "texte": "16 ans" },
           { "id": 2, "texte": "18 ans" },
@@ -20,6 +21,7 @@
         "intitule": "Quel poids minimum est requis pour donner ?",
         "type": "unique",
         "ordre": 2,
+        "correctes": [5],
         "reponses": [
           { "id": 4, "texte": "40 kg" },
           { "id": 5, "texte": "50 kg" },
@@ -31,6 +33,7 @@
         "intitule": "Quels critères peuvent temporairement empêcher un don ?",
         "type": "multiple",
         "ordre": 3,
+        "correctes": [7, 8, 9],
         "reponses": [
           { "id": 7, "texte": "Un tatouage récent" },
           { "id": 8, "texte": "Un rhume léger" },
@@ -43,6 +46,7 @@
         "intitule": "Combien de fois par an une femme peut-elle donner son sang total ?",
         "type": "unique",
         "ordre": 4,
+        "correctes": [11],
         "reponses": [
           { "id": 11, "texte": "4 fois" },
           { "id": 12, "texte": "6 fois" },
@@ -54,6 +58,7 @@
         "intitule": "Quelles conditions faut-il remplir pour être donneur ?",
         "type": "multiple",
         "ordre": 5,
+        "correctes": [14, 15, 16],
         "reponses": [
           { "id": 14, "texte": "Être majeur" },
           { "id": 15, "texte": "Peser au moins 50 kg" },
@@ -73,6 +78,7 @@
         "intitule": "Que faut-il faire avant de donner son sang ?",
         "type": "unique",
         "ordre": 1,
+        "correctes": [18],
         "reponses": [
           { "id": 18, "texte": "Bien s'hydrater et manger" },
           { "id": 19, "texte": "Être à jeun" },
@@ -84,6 +90,7 @@
         "intitule": "Que recommande-t-on après le don ?",
         "type": "multiple",
         "ordre": 2,
+        "correctes": [21, 22, 24],
         "reponses": [
           { "id": 21, "texte": "Se reposer quelques minutes" },
           { "id": 22, "texte": "Boire beaucoup d'eau" },
@@ -96,6 +103,7 @@
         "intitule": "Combien de temps dure le prélèvement d'un don de sang total ?",
         "type": "unique",
         "ordre": 3,
+        "correctes": [25],
         "reponses": [
           { "id": 25, "texte": "Environ 10 minutes" },
           { "id": 26, "texte": "Environ 45 minutes" },
@@ -107,6 +115,7 @@
         "intitule": "Peut-on reprendre le volant juste après un don ?",
         "type": "unique",
         "ordre": 4,
+        "correctes": [29],
         "reponses": [
           { "id": 28, "texte": "Oui, immédiatement" },
           { "id": 29, "texte": "Après un temps de repos et une collation" },
@@ -118,6 +127,7 @@
         "intitule": "Quels signes faut-il signaler à l'équipe médicale après le don ?",
         "type": "multiple",
         "ordre": 5,
+        "correctes": [31, 32],
         "reponses": [
           { "id": 31, "texte": "Un malaise" },
           { "id": 32, "texte": "Un hématome important au point de piqûre" },
@@ -136,6 +146,7 @@
         "intitule": "Combien de temps faut-il attendre entre deux dons de sang total ?",
         "type": "unique",
         "ordre": 1,
+        "correctes": [35],
         "reponses": [
           { "id": 34, "texte": "2 semaines" },
           { "id": 35, "texte": "8 semaines" },
@@ -147,6 +158,7 @@
         "intitule": "Combien de dons de sang total un homme peut-il faire par an au maximum ?",
         "type": "unique",
         "ordre": 2,
+        "correctes": [38],
         "reponses": [
           { "id": 37, "texte": "4 fois" },
           { "id": 38, "texte": "6 fois" },
@@ -158,6 +170,7 @@
         "intitule": "Après un don de plasma, quel délai avant un nouveau don de plasma ?",
         "type": "unique",
         "ordre": 3,
+        "correctes": [40],
         "reponses": [
           { "id": 40, "texte": "2 semaines" },
           { "id": 41, "texte": "8 semaines" },
@@ -169,6 +182,7 @@
         "intitule": "Quels types de dons existe-t-il ?",
         "type": "multiple",
         "ordre": 4,
+        "correctes": [43, 44, 45],
         "reponses": [
           { "id": 43, "texte": "Le don de sang total" },
           { "id": 44, "texte": "Le don de plasma" },
@@ -181,6 +195,7 @@
         "intitule": "Le délai entre deux dons dépend-il du type de don ?",
         "type": "unique",
         "ordre": 5,
+        "correctes": [47],
         "reponses": [
           { "id": 47, "texte": "Oui, il varie selon le don" },
           { "id": 48, "texte": "Non, c'est toujours 8 semaines" },
@@ -199,6 +214,7 @@
         "intitule": "Combien existe-t-il de groupes sanguins principaux dans le système ABO ?",
         "type": "unique",
         "ordre": 1,
+        "correctes": [51],
         "reponses": [
           { "id": 50, "texte": "2" },
           { "id": 51, "texte": "4" },
@@ -210,6 +226,7 @@
         "intitule": "Quels facteurs déterminent un groupe sanguin ?",
         "type": "multiple",
         "ordre": 2,
+        "correctes": [53, 54],
         "reponses": [
           { "id": 53, "texte": "Le système ABO" },
           { "id": 54, "texte": "Le facteur rhésus" },
@@ -218,13 +235,14 @@
       },
       {
         "id": 18,
-        "intitule": "Quel groupe sanguin est le plus répandu en France ?",
+        "intitule": "Quel groupe sanguin est le plus rare en France ?",
         "type": "unique",
         "ordre": 3,
+        "correctes": [56],
         "reponses": [
-          { "id": 56, "texte": "A positif" },
+          { "id": 56, "texte": "AB négatif" },
           { "id": 57, "texte": "O positif" },
-          { "id": 58, "texte": "AB négatif" }
+          { "id": 58, "texte": "A positif" }
         ]
       },
       {
@@ -232,6 +250,7 @@
         "intitule": "Que signifie un rhésus négatif ?",
         "type": "unique",
         "ordre": 4,
+        "correctes": [59],
         "reponses": [
           { "id": 59, "texte": "L'absence d'antigène D sur les globules rouges" },
           { "id": 60, "texte": "La présence d'antigène D sur les globules rouges" },
@@ -243,6 +262,7 @@
         "intitule": "Que peut-on dire des groupes sanguins ?",
         "type": "multiple",
         "ordre": 5,
+        "correctes": [62, 63],
         "reponses": [
           { "id": 62, "texte": "Ils sont héréditaires" },
           { "id": 63, "texte": "Ils sont déterminés par les gènes des parents" },
@@ -261,6 +281,7 @@
         "intitule": "Quel groupe sanguin est le donneur universel de globules rouges ?",
         "type": "unique",
         "ordre": 1,
+        "correctes": [65],
         "reponses": [
           { "id": 65, "texte": "O négatif" },
           { "id": 66, "texte": "AB positif" },
@@ -272,6 +293,7 @@
         "intitule": "Quel groupe sanguin est le receveur universel ?",
         "type": "unique",
         "ordre": 2,
+        "correctes": [68],
         "reponses": [
           { "id": 68, "texte": "AB positif" },
           { "id": 69, "texte": "O négatif" },
@@ -283,6 +305,7 @@
         "intitule": "Quel groupe est donneur universel pour le plasma ?",
         "type": "unique",
         "ordre": 3,
+        "correctes": [71],
         "reponses": [
           { "id": 71, "texte": "Groupe AB" },
           { "id": 72, "texte": "Groupe O" },
@@ -294,6 +317,7 @@
         "intitule": "Pourquoi le O négatif est-il particulièrement précieux ?",
         "type": "multiple",
         "ordre": 4,
+        "correctes": [74, 75],
         "reponses": [
           { "id": 74, "texte": "Il est transfusable à tous en situation d'urgence" },
           { "id": 75, "texte": "Il est relativement rare dans la population" },
@@ -305,6 +329,7 @@
         "intitule": "Un receveur de groupe O positif peut recevoir du sang de quels groupes ?",
         "type": "unique",
         "ordre": 5,
+        "correctes": [77],
         "reponses": [
           { "id": 77, "texte": "Du O positif et du O négatif" },
           { "id": 78, "texte": "De tous les groupes" },
@@ -323,6 +348,7 @@
         "intitule": "Que signifie le sigle ADSB-NC ?",
         "type": "unique",
         "ordre": 1,
+        "correctes": [80],
         "reponses": [
           { "id": 80, "texte": "Association des Donneurs de Sang Bénévoles de Nouvelle-Calédonie" },
           { "id": 81, "texte": "Agence Centrale du Don d'Organes" },
@@ -334,6 +360,7 @@
         "intitule": "En France, le don de sang est :",
         "type": "unique",
         "ordre": 2,
+        "correctes": [83],
         "reponses": [
           { "id": 83, "texte": "Bénévole et anonyme" },
           { "id": 84, "texte": "Rémunéré" },
@@ -345,6 +372,7 @@
         "intitule": "Quelles valeurs fondent le don du sang ?",
         "type": "multiple",
         "ordre": 3,
+        "correctes": [86, 87, 88],
         "reponses": [
           { "id": 86, "texte": "Le bénévolat" },
           { "id": 87, "texte": "L'anonymat" },
@@ -357,6 +385,7 @@
         "intitule": "Qui peut organiser une collecte de sang ?",
         "type": "unique",
         "ordre": 4,
+        "correctes": [90],
         "reponses": [
           { "id": 90, "texte": "L'établissement de transfusion et les associations partenaires" },
           { "id": 91, "texte": "N'importe quel particulier" },
@@ -368,6 +397,7 @@
         "intitule": "Quels sont les rôles d'une association de donneurs de sang ?",
         "type": "multiple",
         "ordre": 5,
+        "correctes": [93, 94, 95],
         "reponses": [
           { "id": 93, "texte": "Sensibiliser le public au don" },
           { "id": 94, "texte": "Organiser des collectes" },

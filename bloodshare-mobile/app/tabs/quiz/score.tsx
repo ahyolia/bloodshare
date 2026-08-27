@@ -21,20 +21,39 @@ export default function QuizScoreScreen() {
     }, [navigation])
   );
 
-  const { quiz_id, quiz_titre, score, total_questions, points_gagnes, premiere_completion } =
-    useLocalSearchParams<{
-      quiz_id: string;
-      quiz_titre: string;
-      score: string;
-      total_questions: string;
-      points_gagnes: string;
-      premiere_completion: string;
-    }>();
+  const {
+    quiz_id,
+    quiz_titre,
+    score,
+    total_questions,
+    points_gagnes,
+    premiere_completion,
+    details,
+  } = useLocalSearchParams<{
+    quiz_id: string;
+    quiz_titre: string;
+    score: string;
+    total_questions: string;
+    points_gagnes: string;
+    premiere_completion: string;
+    details: string;
+  }>();
 
   const scoreNum = Number(score);
   const totalNum = Number(total_questions);
   const pointsNum = Number(points_gagnes);
   const estPremiere = premiere_completion === 'true';
+
+  // 📖 Détail de la correction question par question (sérialisé en param de navigation).
+  //    Si absent ou illisible → on retombe sur un affichage approché (les `scoreNum` premières).
+  const detailsCorrection: { question_id: number; correcte: boolean }[] = (() => {
+    try {
+      const parsed = JSON.parse(details ?? '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
 
   const message =
     scoreNum === totalNum
@@ -70,20 +89,27 @@ export default function QuizScoreScreen() {
 
         <View style={styles.separateur} />
 
-        {/* 📖 La V1 de l'API ne renvoie que le score global, pas le détail question par question :
-            on approxime visuellement en coloriant les `scoreNum` premières pills, sans prétendre
-            savoir LESQUELLES étaient correctes (amélioration V2 côté API) */}
+        <Text style={styles.recapLabel}>
+          {scoreNum} bonne{scoreNum > 1 ? 's' : ''} réponse{scoreNum > 1 ? 's' : ''} sur {totalNum}
+        </Text>
+
+        {/* 📖 Une pastille par question, colorée selon la correction réelle renvoyée par le
+            serveur (details). Vert = juste, corail = faux. Sans details : approximation
+            sur les `scoreNum` premières. */}
         <View style={styles.pillsRow}>
           {Array.from({ length: totalNum }).map((_, index) => {
-            const reussie = index < scoreNum;
+            const reussie =
+              detailsCorrection.length > 0
+                ? Boolean(detailsCorrection[index]?.correcte)
+                : index < scoreNum;
 
             return (
               <View
                 key={index}
                 style={[styles.pill, reussie ? styles.pillReussie : styles.pillRatee]}
               >
-                <Text style={[styles.pillText, reussie && styles.pillTextReussie]}>
-                  {index + 1}
+                <Text style={[styles.pillText, reussie ? styles.pillTextReussie : styles.pillTextRatee]}>
+                  {reussie ? '✓' : '✕'} {index + 1}
                 </Text>
               </View>
             );
@@ -189,6 +215,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.fondGris,
     marginVertical: 20,
   },
+  recapLabel: {
+    color: Colors.aubergine,
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 14,
+  },
   pillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -196,22 +229,25 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   pill: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 20,
   },
   pillReussie: {
-    backgroundColor: Colors.aubergine,
+    backgroundColor: Colors.succes,
   },
   pillRatee: {
-    backgroundColor: Colors.fondGris,
+    backgroundColor: Colors.fondRose,
   },
   pillText: {
-    color: Colors.grisMoyen,
     fontWeight: '700',
+    fontSize: 13,
   },
   pillTextReussie: {
     color: Colors.blanc,
+  },
+  pillTextRatee: {
+    color: Colors.corail[600],
   },
   rejoueText: {
     color: Colors.grisMoyen,

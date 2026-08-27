@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -55,6 +56,11 @@ export default function QuizDeroulementScreen() {
   // 📖 Idem pour l'abandon confirmé : une fois que l'utilisateur a dit « Abandonner », on
   //    laisse passer le `navigation.dispatch` sans réafficher la modale (sinon 2 confirmations).
   const sortieConfirmee = useRef(false);
+
+  // 📖 Modale d'abandon custom (au lieu de Alert natif) : on met en attente l'action de sortie
+  //    interceptée, la modale décide de la rejouer ou non.
+  const [modaleAbandon, setModaleAbandon] = useState(false);
+  const actionSortie = useRef<unknown>(null);
 
   const annulerAutoAvance = () => {
     if (autoAvanceTimer.current) {
@@ -116,21 +122,23 @@ export default function QuizDeroulementScreen() {
       if (soumissionEnCours.current || sortieConfirmee.current) return;
 
       e.preventDefault();
-      Alert.alert('Abandonner le quiz ?', 'Votre progression sera perdue.', [
-        { text: 'Continuer le quiz', style: 'cancel' },
-        {
-          text: 'Abandonner',
-          style: 'destructive',
-          onPress: () => {
-            sortieConfirmee.current = true;
-            navigation.dispatch(e.data.action);
-          },
-        },
-      ]);
+      actionSortie.current = e.data.action;
+      setModaleAbandon(true);
     });
 
     return unsubscribe;
   }, [navigation]);
+
+  const confirmerAbandon = () => {
+    sortieConfirmee.current = true;
+    setModaleAbandon(false);
+    if (actionSortie.current) navigation.dispatch(actionSortie.current as never);
+  };
+
+  const annulerAbandon = () => {
+    actionSortie.current = null;
+    setModaleAbandon(false);
+  };
 
   const toggleReponse = (question: Question, reponseId: number) => {
     setReponses((prev) => {
@@ -203,6 +211,9 @@ export default function QuizDeroulementScreen() {
           total_questions: String(resultat.total_questions),
           points_gagnes: String(resultat.points_gagnes),
           premiere_completion: String(resultat.premiere_completion),
+          // 📖 Les params de navigation sont des chaînes : on sérialise le détail de la
+          //    correction, l'écran score le relit pour colorier chaque question.
+          details: JSON.stringify(resultat.details ?? []),
         },
       });
     } catch {
@@ -345,6 +356,42 @@ export default function QuizDeroulementScreen() {
           <Text style={styles.submittingText}>Envoi en cours...</Text>
         </View>
       )}
+
+      <Modal
+        visible={modaleAbandon}
+        transparent
+        animationType="fade"
+        onRequestClose={annulerAbandon}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalIconCercle}>
+              <Text style={styles.modalIcon}>🩸</Text>
+            </View>
+
+            <Text style={styles.modalTitre}>Abandonner le quiz ?</Text>
+            <Text style={styles.modalTexte}>
+              Ta progression sur ce quiz sera perdue. Tu pourras le recommencer plus tard.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.modalBoutonPrincipal}
+              onPress={annulerAbandon}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.modalBoutonPrincipalTexte}>Continuer le quiz</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalBoutonSecondaire}
+              onPress={confirmerAbandon}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.modalBoutonSecondaireTexte}>Abandonner</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -528,5 +575,74 @@ const styles = StyleSheet.create({
   submittingText: {
     color: Colors.blanc,
     marginTop: 12,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 20,
+    padding: 24,
+    backgroundColor: Colors.blanc,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 8,
+  },
+  modalIconCercle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.fondRose,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  modalIcon: {
+    fontSize: 26,
+  },
+  modalTitre: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.aubergine,
+    textAlign: 'center',
+  },
+  modalTexte: {
+    fontSize: 14,
+    color: Colors.grisMoyen,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  modalBoutonPrincipal: {
+    width: '100%',
+    backgroundColor: Colors.aubergine,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  modalBoutonPrincipalTexte: {
+    color: Colors.blanc,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  modalBoutonSecondaire: {
+    width: '100%',
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  modalBoutonSecondaireTexte: {
+    color: Colors.corail[600],
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
