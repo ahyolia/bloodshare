@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   readingContent: {
     paddingHorizontal: 18,
-    paddingBottom: 48,
+    paddingBottom: 126,
   },
   text: {
     color: Colors.aubergine,

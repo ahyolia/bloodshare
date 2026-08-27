@@ -16,9 +16,4 @@ export const Colors = {
   succes: '#6E9B3E',
   attention: '#F0A03C',
   fondNeutre: '#F0EDEE',
-  fondRose: '#FFE8E4',
-  fondBleu: '#E4F3F5',
-  fondVert: '#E8F4E8',
-  fondGris: '#E8E4E6',
-  fondGrisClair: '#FAFAFA',
 };
