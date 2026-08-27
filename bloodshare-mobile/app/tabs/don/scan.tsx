@@ -120,6 +120,7 @@ export default function ScanScreen() {
           carte_id: data.carte_obtenue?.id,
           carte_titre: data.carte_obtenue?.titre,
           carte_categorie: data.carte_obtenue?.categorie,
+          deja_possedee: String(data.carte_obtenue?.deja_possedee ?? false),
           badges: JSON.stringify(data.badges_debloques ?? []),
         },
       });

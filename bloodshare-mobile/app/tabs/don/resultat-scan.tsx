@@ -17,12 +17,17 @@ export default function ResultatScanScreen() {
 
   // 📖 Tous les params arrivent en string (ou string[] pour Expo Router), même carte_id qui était un number côté API
   // → Pourquoi : les params de navigation transitent comme une query string, qui ne connaît que le texte
-  const { type, carte_titre, carte_categorie, badges } = useLocalSearchParams<{
+  const { type, carte_titre, carte_categorie, badges, deja_possedee } = useLocalSearchParams<{
     type: string;
     carte_titre: string;
     carte_categorie: string;
     badges: string;
+    deja_possedee: string;
   }>();
+
+  // 📖 Carte déjà possédée : le don est validé, mais pas de nouvelle carte-souvenir ni badge
+  //    (les cartes du mois sont uniques, et un don ne rapporte jamais de récompense en double).
+  const dejaPossedee = deja_possedee === 'true';
 
   // 📖 On retransforme la chaîne JSON en tableau JS ; si badges est absent (undefined), on retombe sur un tableau vide
   // → Pourquoi le fallback [] : sans lui, badgesList.length planterait si aucun badge n'a été débloqué (badges serait undefined)
@@ -40,12 +45,20 @@ export default function ResultatScanScreen() {
       <Text style={styles.titre}>{titre}</Text>
 
       <View style={styles.card}>
-        <Text style={styles.cardLabel}>Carte obtenue</Text>
+        <Text style={styles.cardLabel}>
+          {dejaPossedee ? 'Carte déjà obtenue' : 'Carte obtenue'}
+        </Text>
         <Text style={styles.cardTitre}>{carte_titre}</Text>
         <Text style={styles.cardCategorie}>{categorieLabel}</Text>
+        {dejaPossedee && (
+          <Text style={styles.dejaPossedeeNote}>
+            Vous possédez déjà cette carte : elle ne peut être obtenue qu&apos;une seule fois.
+            Aucun point n&apos;est attribué pour un don.
+          </Text>
+        )}
       </View>
 
-      {badgesList.length > 0 && (
+      {!dejaPossedee && badgesList.length > 0 && (
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Badges débloqués 🏆</Text>
           {badgesList.map((badge) => (
@@ -65,7 +78,7 @@ export default function ResultatScanScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.outlineButton} onPress={() => router.replace('/tabs')}>
-        <Text style={styles.outlineButtonText}>Retour à l'accueil</Text>
+        <Text style={styles.outlineButtonText}>Retour à l&apos;accueil</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -122,6 +135,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.aubergine,
     marginTop: 4,
+  },
+  dejaPossedeeNote: {
+    fontSize: 13,
+    color: Colors.grisMoyen,
+    marginTop: 10,
+    lineHeight: 18,
   },
   badgeNom: {
     fontSize: 15,
