@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../../../constants/colors';
 import { FicheInfo, getFichesInfos } from '../../../services/fichesInfos.service';
 import { getProfil } from '../../../services/profil.service';
@@ -31,18 +31,25 @@ const CATEGORIES: Category[] = [
 
 export default function DonScreen() {
   const router = useRouter();
+  const { section } = useLocalSearchParams<{ section?: string }>();
   const [points, setPoints] = useState(0);
+  const [pseudo, setPseudo] = useState('');
   const [fiches, setFiches] = useState<FicheInfo[]>([]);
   const [fichesLoading, setFichesLoading] = useState(true);
   const [fichesError, setFichesError] = useState(false);
   const [openCategorie, setOpenCategorie] = useState<string | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const fichesY = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
 
     getProfil()
       .then((profil) => {
-        if (!cancelled) setPoints(profil.points_cumules ?? 0);
+        if (!cancelled) {
+          setPoints(profil.points_cumules ?? 0);
+          setPseudo(profil.pseudo ?? '');
+        }
       })
       .catch(() => {});
 
@@ -73,9 +80,16 @@ export default function DonScreen() {
   const fichesParCategorie = (categorie: string) =>
     fiches.filter((fiche) => fiche.categorie === categorie);
 
+  useEffect(() => {
+    if (section === 'fiches' && !fichesLoading) {
+      scrollRef.current?.scrollTo({ y: fichesY.current, animated: true });
+    }
+  }, [section, fichesLoading]);
+
   return (
     <View style={styles.screen}>
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -86,8 +100,11 @@ export default function DonScreen() {
             <View style={styles.pointsBadge}>
               <Text style={styles.pointsBadgeText}>{points} ★</Text>
             </View>
-            <View style={styles.bellBadge}>
-              <Ionicons name="notifications" size={16} color={Colors.aubergine} />
+            <Ionicons name="notifications" size={22} color={Colors.aubergine} />
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {pseudo ? pseudo.charAt(0).toUpperCase() : '?'}
+              </Text>
             </View>
           </View>
         </View>
@@ -146,10 +163,15 @@ export default function DonScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.fichesHeader}>
+        <View
+          style={styles.fichesHeader}
+          onLayout={(e) => {
+            fichesY.current = e.nativeEvent.layout.y;
+          }}
+        >
           <Text style={styles.sectionTitle}>Fiches pratiques</Text>
           <Text style={styles.fichesSubtitle}>
-            Pour plus d'informations, retrouvez des articles sur le site du{' '}
+            Pour plus d&apos;informations, retrouvez des articles sur le site du{' '}
             <Text style={styles.fichesLink} onPress={() => Linking.openURL(RESERVATION_URL)}>
               Centre du Don du Sang.
             </Text>
@@ -227,52 +249,54 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Colors.creme,
-    padding: 8,
   },
   scroll: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: 18,
+    padding: 18,
     paddingTop: 54,
     paddingBottom: 126,
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
   },
   headerTitle: {
-    fontSize: 30,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '700',
     color: Colors.aubergine,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
   pointsBadge: {
-    minWidth: 62,
-    borderWidth: 1.2,
-    borderColor: Colors.aubergine,
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    alignItems: 'center',
-    backgroundColor: '#F7F4ED',
-    marginRight: 10,
+    backgroundColor: Colors.fondNeutre,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   pointsBadgeText: {
     color: Colors.aubergine,
+    fontSize: 13,
     fontWeight: '700',
-    fontSize: 12,
   },
-  bellBadge: {
-    width: 22,
-    height: 22,
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.petrole[500],
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarText: {
+    color: Colors.blanc,
+    fontSize: 14,
+    fontWeight: '700',
   },
   rowCenter: {
     flexDirection: 'row',

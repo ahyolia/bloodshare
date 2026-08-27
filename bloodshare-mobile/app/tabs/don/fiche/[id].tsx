@@ -122,7 +122,7 @@ export default function FicheScreen() {
 
           {fiche.a_eviter && fiche.a_eviter.length > 0 && (
             <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Ce qu'il faut éviter avant le don</Text>
+              <Text style={styles.sectionTitle}>Ce qu&apos;il faut éviter avant le don</Text>
 
               {fiche.a_eviter.map((item) => (
                 <View key={item} style={styles.eviterRow}>
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   readingContent: {
     paddingHorizontal: 18,
-    paddingBottom: 48,
+    paddingBottom: 126,
   },
   text: {
     color: Colors.aubergine,

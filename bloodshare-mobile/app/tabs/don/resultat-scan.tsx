@@ -17,23 +17,22 @@ export default function ResultatScanScreen() {
 
   // 📖 Tous les params arrivent en string, même ceux qui étaient typés autrement côté API
   // → Pourquoi : les params de navigation transitent comme une query string, qui ne connaît que le texte
-  const { type, carte_titre, carte_categorie, carte_image_url, badges } = useLocalSearchParams<{
+  const { type, carte_titre, carte_categorie, badges, deja_possedee } = useLocalSearchParams<{
     type: string;
     carte_titre: string;
     carte_categorie: string;
     carte_image_url: string;
     badges: string;
+    deja_possedee: string;
   }>();
 
-  // 📖 On retombe sur un tableau vide si le JSON est absent ou invalide
-  // → Pourquoi le try/catch : on ne contrôle pas totalement ce qui arrive dans ce param (chaîne vide, JSON tronqué) ;
-  //   sans lui, une erreur de parsing ferait planter tout l'écran au lieu d'afficher simplement "pas de badges"
-  let badgesList: { id: number; nom: string }[] = [];
-  try {
-    badgesList = JSON.parse((badges as string) ?? '[]');
-  } catch {
-    badgesList = [];
-  }
+  // 📖 Carte déjà possédée : le don est validé, mais pas de nouvelle carte-souvenir ni badge
+  //    (les cartes du mois sont uniques, et un don ne rapporte jamais de récompense en double).
+  const dejaPossedee = deja_possedee === 'true';
+
+  // 📖 On retransforme la chaîne JSON en tableau JS ; si badges est absent (undefined), on retombe sur un tableau vide
+  // → Pourquoi le fallback [] : sans lui, badgesList.length planterait si aucun badge n'a été débloqué (badges serait undefined)
+  const badgesList: { id: number; nom: string }[] = badges ? JSON.parse(badges) : [];
 
   const estEvenement = type === 'evenement';
   const titre = estEvenement ? 'Présence confirmée ! 🎉' : 'Don validé ! 🩸';
@@ -81,55 +80,42 @@ export default function ResultatScanScreen() {
       <View style={styles.carteWrapper}>
         <Text style={styles.etoile}>✦</Text>
 
-        <Animated.View style={[styles.carte, cardAnimatedStyle]}>
-          {carte_image_url ? (
-            <Image
-              source={{ uri: carte_image_url }}
-              style={styles.carteImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.cartePlaceholder}>
-              <Text style={styles.carteIcone}>{icone}</Text>
-              <Text style={styles.carteTitre}>{carte_titre}</Text>
-            </View>
-          )}
-        </Animated.View>
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>
+          {dejaPossedee ? 'Carte déjà obtenue' : 'Carte obtenue'}
+        </Text>
+        <Text style={styles.cardTitre}>{carte_titre}</Text>
+        <Text style={styles.cardCategorie}>{categorieLabel}</Text>
+        {dejaPossedee && (
+          <Text style={styles.dejaPossedeeNote}>
+            Vous possédez déjà cette carte : elle ne peut être obtenue qu&apos;une seule fois.
+            Aucun point n&apos;est attribué pour un don.
+          </Text>
+        )}
       </View>
 
-      {badgesList.length > 0 && (
-        <View style={styles.badgesSection}>
-          <Text style={styles.badgesTitre}>🏆 Badges débloqués !</Text>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {badgesList.map((badge) => (
-              <View key={badge.id} style={styles.badgeCard}>
-                <View style={styles.badgeIcone}>
-                  <Text style={styles.badgeEmoji}>🏅</Text>
-                </View>
-                <Text style={styles.badgeNom} numberOfLines={2}>
-                  {badge.nom}
-                </Text>
-              </View>
-            ))}
-          </ScrollView>
+      {!dejaPossedee && badgesList.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>Badges débloqués 🏆</Text>
+          {badgesList.map((badge) => (
+            <Text key={badge.id} style={styles.badgeNom}>
+              {badge.nom}
+            </Text>
+          ))}
         </View>
       )}
 
-      <View style={styles.actions}>
-        {/* 📖 replace et non push : on ne veut pas que l'utilisateur puisse "revenir" sur cet écran de résultat
-            une fois qu'il l'a quitté (contrairement au retour vers le scanner depuis scan.tsx, où push est voulu) */}
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => router.replace('/tabs/cartes')}
-        >
-          <Text style={styles.primaryButtonText}>Ma collection</Text>
-        </TouchableOpacity>
+      {/* 📖 replace au lieu de push : on ne veut pas que l'utilisateur puisse "revenir" sur l'écran résultat avec le bouton retour une fois qu'il a quitté ce flux */}
+      <TouchableOpacity
+        style={styles.primaryButton}
+        onPress={() => router.replace('/tabs/cartes')}
+      >
+        <Text style={styles.primaryButtonText}>Voir ma collection</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.outlineButton} onPress={() => router.replace('/tabs')}>
-          <Text style={styles.outlineButtonText}>Retour à l'accueil</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={styles.outlineButton} onPress={() => router.replace('/tabs')}>
+        <Text style={styles.outlineButtonText}>Retour à l&apos;accueil</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -233,6 +219,12 @@ const styles = StyleSheet.create({
   },
   badgeEmoji: {
     fontSize: 18,
+  },
+  dejaPossedeeNote: {
+    fontSize: 13,
+    color: Colors.grisMoyen,
+    marginTop: 10,
+    lineHeight: 18,
   },
   badgeNom: {
     fontSize: 12,

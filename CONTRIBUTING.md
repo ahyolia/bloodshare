@@ -70,4 +70,4 @@ Avant de passer une tâche en "Terminé" :
 - **Anonymat** : aucune donnée médicale ni d'identité réelle (nom, date de naissance, n° donneur, groupe sanguin de l'utilisateur) collectée ou stockée.
 - **Accessibilité** : WCAG AA — couleur jamais seule, cibles ≥ 44–48 px.
 - **Architecture adaptateur** : tout accès aux données passe par la couche découplée (mock JSON ↔ API), sans toucher au métier.
-- Le don ne rapporte jamais de points (règle éthique ACDO-NC).
+- Le don ne rapporte jamais de points (règle éthique ADSB-NC).

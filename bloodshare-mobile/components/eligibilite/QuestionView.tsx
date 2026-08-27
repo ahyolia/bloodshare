@@ -72,7 +72,7 @@ export function QuestionView({
           <Text style={styles.buttonNonText}>Non</Text>
         </TouchableOpacity>
 
-        <Text style={styles.disclaimer}>Aucune donnée n'est enregistrée.</Text>
+        <Text style={styles.disclaimer}>Aucune donnée n&apos;est enregistrée.</Text>
       </View>
     </View>
   );

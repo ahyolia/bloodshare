@@ -72,7 +72,7 @@ Avant d'afficher le résultat, préviens l'utilisatrice si tu repères :
 
 - un fichier de migration en doublon (même nom logique, timestamps différents)
 - des données médicales ou d'identité réelle ajoutées au modèle de données (contrainte anonymat)
-- du code qui attribue des points lors d'un don (règle éthique ACDO-NC : un don ne rapporte jamais de points)
+- du code qui attribue des points lors d'un don (règle éthique ADSB-NC : un don ne rapporte jamais de points)
 - de la logique métier écrite directement dans un composant UI plutôt que dans la couche d'accès aux données (architecture adaptateur)
 - des commits mélangeant plusieurs types de travail (une PR = un type cohérent)
 

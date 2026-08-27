@@ -1,3 +1,11 @@
 {
-  "points_cumules": 120
+  "pseudo": "Spidey",
+  "points_cumules": 120,
+  "niveau": {
+    "niveau": 3,
+    "label": "Donneur engagé",
+    "points_actuels": 120,
+    "points_prochain_niveau": 200,
+    "progression": 60
+  }
 }

@@ -209,7 +209,7 @@ Catégorie 2 — Les groupes sanguins
 ├── Quiz : Compatibilités
 └── Quiz : Groupes rares
 
-Catégorie 3 — L'association ACDO-NC
+Catégorie 3 — L'association ADSB-NC
 ├── Quiz : Rôle de l'association
 ├── Quiz : Le centre CNT
 └── Quiz : Historique du don en NC
