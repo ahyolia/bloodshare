@@ -37,6 +37,29 @@
           { "id": 9, "texte": "Un voyage récent en zone à risque" },
           { "id": 10, "texte": "Avoir bien dormi" }
         ]
+      },
+      {
+        "id": 4,
+        "intitule": "Combien de fois par an une femme peut-elle donner son sang total ?",
+        "type": "unique",
+        "ordre": 4,
+        "reponses": [
+          { "id": 11, "texte": "4 fois" },
+          { "id": 12, "texte": "6 fois" },
+          { "id": 13, "texte": "12 fois" }
+        ]
+      },
+      {
+        "id": 5,
+        "intitule": "Quelles conditions faut-il remplir pour être donneur ?",
+        "type": "multiple",
+        "ordre": 5,
+        "reponses": [
+          { "id": 14, "texte": "Être majeur" },
+          { "id": 15, "texte": "Peser au moins 50 kg" },
+          { "id": 16, "texte": "Être en bonne santé" },
+          { "id": 17, "texte": "Être obligatoirement à jeun" }
+        ]
       }
     ]
   },
@@ -46,25 +69,59 @@
     "aleatoire": false,
     "questions": [
       {
-        "id": 4,
+        "id": 6,
         "intitule": "Que faut-il faire avant de donner son sang ?",
         "type": "unique",
         "ordre": 1,
         "reponses": [
-          { "id": 11, "texte": "Bien s'hydrater et manger" },
-          { "id": 12, "texte": "Être à jeun" },
-          { "id": 13, "texte": "Faire du sport intensif" }
+          { "id": 18, "texte": "Bien s'hydrater et manger" },
+          { "id": 19, "texte": "Être à jeun" },
+          { "id": 20, "texte": "Faire du sport intensif" }
         ]
       },
       {
-        "id": 5,
+        "id": 7,
         "intitule": "Que recommande-t-on après le don ?",
         "type": "multiple",
         "ordre": 2,
         "reponses": [
-          { "id": 14, "texte": "Se reposer quelques minutes" },
-          { "id": 15, "texte": "Boire beaucoup d'eau" },
-          { "id": 16, "texte": "Reprendre le sport immédiatement" }
+          { "id": 21, "texte": "Se reposer quelques minutes" },
+          { "id": 22, "texte": "Boire beaucoup d'eau" },
+          { "id": 23, "texte": "Reprendre le sport immédiatement" },
+          { "id": 24, "texte": "Éviter de fumer dans l'heure qui suit" }
+        ]
+      },
+      {
+        "id": 8,
+        "intitule": "Combien de temps dure le prélèvement d'un don de sang total ?",
+        "type": "unique",
+        "ordre": 3,
+        "reponses": [
+          { "id": 25, "texte": "Environ 10 minutes" },
+          { "id": 26, "texte": "Environ 45 minutes" },
+          { "id": 27, "texte": "Environ 2 heures" }
+        ]
+      },
+      {
+        "id": 9,
+        "intitule": "Peut-on reprendre le volant juste après un don ?",
+        "type": "unique",
+        "ordre": 4,
+        "reponses": [
+          { "id": 28, "texte": "Oui, immédiatement" },
+          { "id": 29, "texte": "Après un temps de repos et une collation" },
+          { "id": 30, "texte": "Non, pas avant 24 heures" }
+        ]
+      },
+      {
+        "id": 10,
+        "intitule": "Quels signes faut-il signaler à l'équipe médicale après le don ?",
+        "type": "multiple",
+        "ordre": 5,
+        "reponses": [
+          { "id": 31, "texte": "Un malaise" },
+          { "id": 32, "texte": "Un hématome important au point de piqûre" },
+          { "id": 33, "texte": "Une légère fatigue passagère" }
         ]
       }
     ]
@@ -75,14 +132,59 @@
     "aleatoire": false,
     "questions": [
       {
-        "id": 6,
+        "id": 11,
         "intitule": "Combien de temps faut-il attendre entre deux dons de sang total ?",
         "type": "unique",
         "ordre": 1,
         "reponses": [
-          { "id": 17, "texte": "2 semaines" },
-          { "id": 18, "texte": "8 semaines" },
-          { "id": 19, "texte": "6 mois" }
+          { "id": 34, "texte": "2 semaines" },
+          { "id": 35, "texte": "8 semaines" },
+          { "id": 36, "texte": "6 mois" }
+        ]
+      },
+      {
+        "id": 12,
+        "intitule": "Combien de dons de sang total un homme peut-il faire par an au maximum ?",
+        "type": "unique",
+        "ordre": 2,
+        "reponses": [
+          { "id": 37, "texte": "4 fois" },
+          { "id": 38, "texte": "6 fois" },
+          { "id": 39, "texte": "8 fois" }
+        ]
+      },
+      {
+        "id": 13,
+        "intitule": "Après un don de plasma, quel délai avant un nouveau don de plasma ?",
+        "type": "unique",
+        "ordre": 3,
+        "reponses": [
+          { "id": 40, "texte": "2 semaines" },
+          { "id": 41, "texte": "8 semaines" },
+          { "id": 42, "texte": "6 mois" }
+        ]
+      },
+      {
+        "id": 14,
+        "intitule": "Quels types de dons existe-t-il ?",
+        "type": "multiple",
+        "ordre": 4,
+        "reponses": [
+          { "id": 43, "texte": "Le don de sang total" },
+          { "id": 44, "texte": "Le don de plasma" },
+          { "id": 45, "texte": "Le don de plaquettes" },
+          { "id": 46, "texte": "Le don de globules blancs par ponction" }
+        ]
+      },
+      {
+        "id": 15,
+        "intitule": "Le délai entre deux dons dépend-il du type de don ?",
+        "type": "unique",
+        "ordre": 5,
+        "reponses": [
+          { "id": 47, "texte": "Oui, il varie selon le don" },
+          { "id": 48, "texte": "Non, c'est toujours 8 semaines" },
+          { "id": 49, "texte": "Non, c'est toujours 6 mois" }
         ]
       }
     ]
@@ -93,25 +195,58 @@
     "aleatoire": false,
     "questions": [
       {
-        "id": 7,
-        "intitule": "Combien existe-t-il de groupes sanguins principaux ?",
+        "id": 16,
+        "intitule": "Combien existe-t-il de groupes sanguins principaux dans le système ABO ?",
         "type": "unique",
         "ordre": 1,
         "reponses": [
-          { "id": 20, "texte": "2" },
-          { "id": 21, "texte": "4" },
-          { "id": 22, "texte": "8" }
+          { "id": 50, "texte": "2" },
+          { "id": 51, "texte": "4" },
+          { "id": 52, "texte": "8" }
         ]
       },
       {
-        "id": 8,
+        "id": 17,
         "intitule": "Quels facteurs déterminent un groupe sanguin ?",
         "type": "multiple",
         "ordre": 2,
         "reponses": [
-          { "id": 23, "texte": "Le système ABO" },
-          { "id": 24, "texte": "Le facteur rhésus" },
-          { "id": 25, "texte": "La couleur des yeux" }
+          { "id": 53, "texte": "Le système ABO" },
+          { "id": 54, "texte": "Le facteur rhésus" },
+          { "id": 55, "texte": "La couleur des yeux" }
+        ]
+      },
+      {
+        "id": 18,
+        "intitule": "Quel groupe sanguin est le plus répandu en France ?",
+        "type": "unique",
+        "ordre": 3,
+        "reponses": [
+          { "id": 56, "texte": "A positif" },
+          { "id": 57, "texte": "O positif" },
+          { "id": 58, "texte": "AB négatif" }
+        ]
+      },
+      {
+        "id": 19,
+        "intitule": "Que signifie un rhésus négatif ?",
+        "type": "unique",
+        "ordre": 4,
+        "reponses": [
+          { "id": 59, "texte": "L'absence d'antigène D sur les globules rouges" },
+          { "id": 60, "texte": "La présence d'antigène D sur les globules rouges" },
+          { "id": 61, "texte": "Un groupe sanguin O" }
+        ]
+      },
+      {
+        "id": 20,
+        "intitule": "Que peut-on dire des groupes sanguins ?",
+        "type": "multiple",
+        "ordre": 5,
+        "reponses": [
+          { "id": 62, "texte": "Ils sont héréditaires" },
+          { "id": 63, "texte": "Ils sont déterminés par les gènes des parents" },
+          { "id": 64, "texte": "Ils changent naturellement avec l'âge" }
         ]
       }
     ]
@@ -122,14 +257,58 @@
     "aleatoire": false,
     "questions": [
       {
-        "id": 9,
-        "intitule": "Quel groupe sanguin est considéré comme donneur universel ?",
+        "id": 21,
+        "intitule": "Quel groupe sanguin est le donneur universel de globules rouges ?",
         "type": "unique",
         "ordre": 1,
         "reponses": [
-          { "id": 26, "texte": "O négatif" },
-          { "id": 27, "texte": "AB positif" },
-          { "id": 28, "texte": "A négatif" }
+          { "id": 65, "texte": "O négatif" },
+          { "id": 66, "texte": "AB positif" },
+          { "id": 67, "texte": "A négatif" }
+        ]
+      },
+      {
+        "id": 22,
+        "intitule": "Quel groupe sanguin est le receveur universel ?",
+        "type": "unique",
+        "ordre": 2,
+        "reponses": [
+          { "id": 68, "texte": "AB positif" },
+          { "id": 69, "texte": "O négatif" },
+          { "id": 70, "texte": "B positif" }
+        ]
+      },
+      {
+        "id": 23,
+        "intitule": "Quel groupe est donneur universel pour le plasma ?",
+        "type": "unique",
+        "ordre": 3,
+        "reponses": [
+          { "id": 71, "texte": "Groupe AB" },
+          { "id": 72, "texte": "Groupe O" },
+          { "id": 73, "texte": "Groupe A" }
+        ]
+      },
+      {
+        "id": 24,
+        "intitule": "Pourquoi le O négatif est-il particulièrement précieux ?",
+        "type": "multiple",
+        "ordre": 4,
+        "reponses": [
+          { "id": 74, "texte": "Il est transfusable à tous en situation d'urgence" },
+          { "id": 75, "texte": "Il est relativement rare dans la population" },
+          { "id": 76, "texte": "Il se conserve indéfiniment" }
+        ]
+      },
+      {
+        "id": 25,
+        "intitule": "Un receveur de groupe O positif peut recevoir du sang de quels groupes ?",
+        "type": "unique",
+        "ordre": 5,
+        "reponses": [
+          { "id": 77, "texte": "Du O positif et du O négatif" },
+          { "id": 78, "texte": "De tous les groupes" },
+          { "id": 79, "texte": "Du AB uniquement" }
         ]
       }
     ]
@@ -140,14 +319,60 @@
     "aleatoire": false,
     "questions": [
       {
-        "id": 10,
+        "id": 26,
         "intitule": "Que signifie le sigle ADSB-NC ?",
         "type": "unique",
         "ordre": 1,
         "reponses": [
-          { "id": 29, "texte": "Association des Donneurs de Sang Bénévoles de Nouvelle-Calédonie" },
-          { "id": 30, "texte": "Agence Centrale du Don d'Organes" },
-          { "id": 31, "texte": "Aucune de ces réponses" }
+          { "id": 80, "texte": "Association des Donneurs de Sang Bénévoles de Nouvelle-Calédonie" },
+          { "id": 81, "texte": "Agence Centrale du Don d'Organes" },
+          { "id": 82, "texte": "Aucune de ces réponses" }
+        ]
+      },
+      {
+        "id": 27,
+        "intitule": "En France, le don de sang est :",
+        "type": "unique",
+        "ordre": 2,
+        "reponses": [
+          { "id": 83, "texte": "Bénévole et anonyme" },
+          { "id": 84, "texte": "Rémunéré" },
+          { "id": 85, "texte": "Réservé aux adhérents d'une association" }
+        ]
+      },
+      {
+        "id": 28,
+        "intitule": "Quelles valeurs fondent le don du sang ?",
+        "type": "multiple",
+        "ordre": 3,
+        "reponses": [
+          { "id": 86, "texte": "Le bénévolat" },
+          { "id": 87, "texte": "L'anonymat" },
+          { "id": 88, "texte": "Le volontariat" },
+          { "id": 89, "texte": "La recherche de profit" }
+        ]
+      },
+      {
+        "id": 29,
+        "intitule": "Qui peut organiser une collecte de sang ?",
+        "type": "unique",
+        "ordre": 4,
+        "reponses": [
+          { "id": 90, "texte": "L'établissement de transfusion et les associations partenaires" },
+          { "id": 91, "texte": "N'importe quel particulier" },
+          { "id": 92, "texte": "Les pharmacies" }
+        ]
+      },
+      {
+        "id": 30,
+        "intitule": "Quels sont les rôles d'une association de donneurs de sang ?",
+        "type": "multiple",
+        "ordre": 5,
+        "reponses": [
+          { "id": 93, "texte": "Sensibiliser le public au don" },
+          { "id": 94, "texte": "Organiser des collectes" },
+          { "id": 95, "texte": "Accueillir les donneurs" },
+          { "id": 96, "texte": "Fixer le prix du sang" }
         ]
       }
     ]

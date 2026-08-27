@@ -81,11 +81,20 @@ export const submitQuiz = async (
     // renvoie un résultat plausible pour permettre de tester l'écran score sans API réelle
     const total = reponses.length;
     const score = Math.max(1, Math.round(total * 0.8));
+
+    // 📖 On retrouve le quiz dans le catalogue mock pour renvoyer des points cohérents
+    //    (points_attribues du quiz) et savoir s'il a déjà été complété → dans ce cas
+    //    aucun nouveau point n'est accordé et l'écran score affiche le message "déjà complété"
+    const quizConcerne = (quizMock as CategorieQuiz[])
+      .flatMap((cat) => cat.quiz)
+      .find((q) => q.id === id);
+    const dejaComplete = quizConcerne?.complete ?? false;
+
     return {
       score,
       total_questions: total,
-      points_gagnes: 10,
-      premiere_completion: true,
+      points_gagnes: dejaComplete ? 0 : (quizConcerne?.points_attribues ?? 10),
+      premiere_completion: !dejaComplete,
     };
   }
 

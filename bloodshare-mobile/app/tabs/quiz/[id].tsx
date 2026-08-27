@@ -40,6 +40,19 @@ export default function QuizDeroulementScreen() {
 
   const progressAnim = useRef(new Animated.Value(0)).current;
 
+  // 📖 Timer d'auto-avance (questions à choix unique) : gardé dans un ref pour pouvoir
+  //    l'annuler si l'utilisateur re-tape une autre réponse ou quitte l'écran avant la fin du délai
+  const autoAvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const annulerAutoAvance = () => {
+    if (autoAvanceTimer.current) {
+      clearTimeout(autoAvanceTimer.current);
+      autoAvanceTimer.current = null;
+    }
+  };
+
+  useEffect(() => annulerAutoAvance, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -110,10 +123,23 @@ export default function QuizDeroulementScreen() {
       );
       return next;
     });
+
+    // 📖 Auto-avance sur les questions à choix unique : la réponse suffit à valider, on
+    //    enchaîne après 350 ms pour laisser voir la sélection. Les questions 'multiple'
+    //    et la dernière question gardent la validation manuelle par bouton.
+    const estDerniere = quiz ? questionIndex === quiz.questions.length - 1 : true;
+    if (question.type === 'unique' && !estDerniere) {
+      annulerAutoAvance();
+      autoAvanceTimer.current = setTimeout(() => {
+        setQuestionIndex((prev) => prev + 1);
+      }, 350);
+    }
   };
 
   const handleSuivant = () => {
     if (!quiz) return;
+
+    annulerAutoAvance();
 
     if (questionIndex < quiz.questions.length - 1) {
       setQuestionIndex((prev) => prev + 1);
@@ -253,7 +279,10 @@ export default function QuizDeroulementScreen() {
         {questionIndex > 0 && (
           <TouchableOpacity
             style={styles.precedentButton}
-            onPress={() => setQuestionIndex((prev) => prev - 1)}
+            onPress={() => {
+              annulerAutoAvance();
+              setQuestionIndex((prev) => prev - 1);
+            }}
           >
             <Text style={styles.precedentButtonText}>← Précédent</Text>
           </TouchableOpacity>
