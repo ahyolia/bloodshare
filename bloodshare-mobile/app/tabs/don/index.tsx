@@ -10,9 +10,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { AppHeader } from '../../../components/layout/AppHeader';
 import { Colors } from '../../../constants/colors';
 import { FicheInfo, getFichesInfos } from '../../../services/fichesInfos.service';
-import { getProfil } from '../../../services/profil.service';
 
 const RESERVATION_URL = 'https://www.dondusang.nc/reservation-en-ligne/';
 
@@ -32,31 +32,12 @@ const CATEGORIES: Category[] = [
 export default function DonScreen() {
   const router = useRouter();
   const { section } = useLocalSearchParams<{ section?: string }>();
-  const [points, setPoints] = useState(0);
-  const [pseudo, setPseudo] = useState('');
   const [fiches, setFiches] = useState<FicheInfo[]>([]);
   const [fichesLoading, setFichesLoading] = useState(true);
   const [fichesError, setFichesError] = useState(false);
   const [openCategorie, setOpenCategorie] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const fichesY = useRef(0);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    getProfil()
-      .then((profil) => {
-        if (!cancelled) {
-          setPoints(profil.points_cumules ?? 0);
-          setPseudo(profil.pseudo ?? '');
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,20 +75,7 @@ export default function DonScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Don</Text>
-          <View style={styles.headerRight}>
-            <View style={styles.pointsBadge}>
-              <Text style={styles.pointsBadgeText}>{points} ★</Text>
-            </View>
-            <Ionicons name="notifications" size={22} color={Colors.aubergine} />
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {pseudo ? pseudo.charAt(0).toUpperCase() : '?'}
-              </Text>
-            </View>
-          </View>
-        </View>
+        <AppHeader title="Don" />
 
         <TouchableOpacity
           style={styles.eligibilityCard}
@@ -257,46 +225,6 @@ const styles = StyleSheet.create({
     padding: 18,
     paddingTop: 54,
     paddingBottom: 126,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  pointsBadge: {
-    backgroundColor: Colors.fondNeutre,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  pointsBadgeText: {
-    color: Colors.aubergine,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.petrole[500],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: Colors.blanc,
-    fontSize: 14,
-    fontWeight: '700',
   },
   rowCenter: {
     flexDirection: 'row',
