@@ -10,7 +10,6 @@ import {
   View,
 } from 'react-native';
 import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/colors';
 import { supprimerCompte } from '../../../services/profil.service';
@@ -24,6 +23,28 @@ import {
 
 const URL_CONFIDENTIALITE = 'https://bloodshare.nc/privacy';
 const URL_CGU = 'https://bloodshare.nc/cgu';
+
+// 📖 expo-notifications ne fonctionne plus dans Expo Go (SDK 53+) et son simple
+//    import y jette une erreur. On le charge donc en `require()` paresseux, à
+//    l'intérieur d'un try/catch, et seulement hors Expo Go. En Expo Go on se
+//    contente d'enregistrer la préférence : la vraie demande de permission se
+//    fera sur un build de développement.
+const EST_EXPO_GO = Constants.executionEnvironment === 'storeClient';
+
+async function demanderPermissionNotifs(): Promise<boolean> {
+  if (EST_EXPO_GO) return true;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Notifications = require('expo-notifications');
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status === 'granted') return true;
+    const demande = await Notifications.requestPermissionsAsync();
+    return demande.status === 'granted';
+  } catch {
+    // Module indisponible (Expo Go) → on ne bloque pas l'utilisateur.
+    return true;
+  }
+}
 
 // 📖 AsyncStorage vs SecureStore pour les préférences :
 //    - SecureStore chiffre chaque valeur (keychain iOS / keystore Android).
@@ -56,16 +77,11 @@ export default function ParametresScreen() {
   //    permission système ; si elle est refusée, on remet le toggle à OFF.
   const basculerNotifs = async (valeur: boolean) => {
     if (valeur) {
-      const { status } = await Notifications.getPermissionsAsync();
-      let accorde = status === 'granted';
-      if (!accorde) {
-        const demande = await Notifications.requestPermissionsAsync();
-        accorde = demande.status === 'granted';
-      }
+      const accorde = await demanderPermissionNotifs();
       if (!accorde) {
         Alert.alert(
           'Permission refusée',
-          "Activez les notifications pour BloodShare dans les réglages de votre téléphone."
+          'Activez les notifications pour BloodShare dans les réglages de votre téléphone.'
         );
         setNotifs(false);
         await setNotificationsActivees(false);
