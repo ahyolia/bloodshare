@@ -1,0 +1,23 @@
+{
+  "total_dons": 3,
+  "dons": [
+    {
+      "id": 3,
+      "date_don": "2026-07-04",
+      "type": "don",
+      "carte_obtenue": { "id": 108, "titre": "Carte Août" }
+    },
+    {
+      "id": 2,
+      "date_don": "2026-04-30",
+      "type": "evenement",
+      "carte_obtenue": { "id": 212, "titre": "Journée du 18 avril" }
+    },
+    {
+      "id": 1,
+      "date_don": "2026-02-27",
+      "type": "don",
+      "carte_obtenue": null
+    }
+  ]
+}

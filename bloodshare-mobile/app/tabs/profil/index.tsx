@@ -1,170 +1,435 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-
-// 🛑 DONNÉES MOCKÉES
-const MOCK_USER = {
-  pseudo: 'Pseudo',
-  level: 10,
-  points: 1080,
-  maxPoints: 1100,
-  badgesCount: 6,
-  history: [
-    { id: 1, date: '04/07/26', number: 3 },
-    { id: 2, date: '30/04/26', number: 2 },
-    { id: 3, date: '27/02/26', number: 1 },
-  ]
-};
+import { useCallback } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { Colors } from '../../../constants/colors';
+import { useProfilComplet } from '../../../hooks/useProfilComplet';
+import { logout } from '../../../services/auth.service';
+import { removeToken } from '../../../stores/auth.store';
+import { LIBELLE_STATUT_DONNEUR, initialePseudo } from '../../../utils/profil';
 
 export default function ProfilScreen() {
   const router = useRouter();
+  const { apercu, profil, dons, badges, loading, error, reload } = useProfilComplet();
 
-  // Simulation de la déconnexion
+  // 📖 useFocusEffect (et pas useEffect) : l'écran Profil reste monté quand on
+  //    ouvre "Informations personnelles". Au retour, on veut le pseudo/l'avatar
+  //    à jour → on recharge à chaque fois que l'écran (re)prend le focus.
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload])
+  );
+
   const handleLogout = () => {
-    Alert.alert('Déconnexion', 'Êtes-vous sûr de vouloir vous déconnecter ?', [
+    Alert.alert('Se déconnecter', 'Voulez-vous vraiment vous déconnecter ?', [
       { text: 'Annuler', style: 'cancel' },
-      { text: 'Se déconnecter', style: 'destructive', onPress: () => router.replace('/auth/login') },
+      {
+        text: 'Se déconnecter',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await logout();
+          } catch {
+            // 📖 Même si l'appel /auth/logout échoue (réseau coupé), on purge
+            //    le token local : l'utilisateur doit pouvoir se déconnecter.
+          }
+          await removeToken();
+          router.replace('/auth/login');
+        },
+      },
     ]);
   };
 
-  // Simulation de la suppression
-  const handleDeleteAccount = () => {
-    Alert.alert('Supprimer le compte', 'Action irréversible. Voulez-vous vraiment supprimer votre compte ?', [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Supprimer', style: 'destructive', onPress: () => router.replace('/auth/login') },
-    ]);
-  };
+  // 📖 On peint dès qu'on a une info : le profil frais, sinon l'aperçu du cache.
+  const pseudo = profil?.pseudo ?? apercu?.pseudo ?? '';
+  const avatarUrl = profil?.avatar_url ?? apercu?.avatar_url ?? null;
+
+  const rienAAfficher = !profil && !apercu;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.pageTitle}>Réglages</Text>
-
-      {/* CARTE UTILISATEUR */}
-      <TouchableOpacity 
-        style={styles.card} 
-        onPress={() => console.log('Aller vers Réglages Profil')}
+    <View style={styles.screen}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.userRow}>
-          <View style={styles.avatarPlaceholder} />
-          <View style={styles.userInfo}>
-            <Text style={styles.pseudo}>{MOCK_USER.pseudo}</Text>
-            <Text style={styles.subText}>Profil et informations personnelles</Text>
-          </View>
-          <Text style={styles.chevron}>{'>'}</Text>
-        </View>
-      </TouchableOpacity>
+        {loading && rienAAfficher && (
+          <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />
+        )}
 
-      {/* CARTE NIVEAU & POINTS */}
-      <TouchableOpacity style={[styles.card, styles.levelCard]} onPress={() => console.log('Ouvrir Pop-up points')}>
-        <Text style={styles.levelText}>Niveau {MOCK_USER.level}</Text>
-        <View style={styles.progressBarContainer}>
-          <View style={[styles.progressBarFill, { width: `${(MOCK_USER.points / MOCK_USER.maxPoints) * 100}%` }]} />
-        </View>
-        <View style={styles.pointsBadge}>
-          <Text style={styles.pointsText}>{MOCK_USER.points} ★</Text>
-        </View>
-      </TouchableOpacity>
+        {error && rienAAfficher && (
+          <Text style={styles.errorText}>Impossible de charger votre profil.</Text>
+        )}
 
-      {/* CARTE BADGES */}
-      <TouchableOpacity style={styles.card} onPress={() => console.log('Aller vers Galerie Badges')}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Mes badges</Text>
-          <Text style={styles.badgesCount}>{MOCK_USER.badgesCount} badges obtenues</Text>
-        </View>
-        <View style={styles.badgesRow}>
-          {[1, 2, 3, 4].map((item) => (
-            <View key={item} style={styles.badgePlaceholder} />
-          ))}
-        </View>
-      </TouchableOpacity>
+        {!rienAAfficher && (
+          <>
+            {/* CARTE UTILISATEUR — sert de header, pas de titre "Profil" */}
+            <View style={styles.userCard}>
+              <View style={styles.userRow}>
+                {avatarUrl ? (
+                  <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+                ) : (
+                  <View style={[styles.avatar, styles.avatarFallback]}>
+                    <Text style={styles.avatarText}>{initialePseudo(pseudo)}</Text>
+                  </View>
+                )}
 
-      {/* CARTE HISTORIQUE */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Historique</Text>
-        {MOCK_USER.history.map((item) => (
-          <View key={item.id} style={styles.historyRow}>
-            <Text style={styles.historyText}>Don n°{item.number} : {item.date}</Text>
-            <View style={styles.historyPill}>
-              <Text style={styles.historyPillText}>Carte obtenu</Text>
+                <View style={styles.userInfo}>
+                  <Text style={styles.pseudo}>{pseudo}</Text>
+                  {profil?.statut_donneur && (
+                    <Text style={styles.statut}>
+                      {LIBELLE_STATUT_DONNEUR[profil.statut_donneur]}
+                    </Text>
+                  )}
+                </View>
+
+                <TouchableOpacity
+                  style={styles.modifierPill}
+                  onPress={() => router.push('/tabs/profil/informations')}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.modifierPillText}>Modifier ✏️</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        ))}
-        <TouchableOpacity style={styles.expandButton}>
-          <Text style={styles.chevronDown}>v</Text>
-        </TouchableOpacity>
-      </View>
 
-      {/* BOUTONS D'ACTION */}
-      <TouchableOpacity style={styles.primaryButton}>
-        <Text style={styles.primaryButtonText}>Parrainer quelqu'un</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.secondaryButton} onPress={handleLogout}>
-        <Text style={styles.secondaryButtonText}>Déconnexion</Text>
-      </TouchableOpacity>
-      
-      {/* Bouton pour la suppression */}
-      <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
-        <Text style={styles.deleteButtonText}>Supprimer le compte</Text>
-      </TouchableOpacity>
-    </ScrollView>
+            {/* NIVEAU ET POINTS */}
+            {profil && (
+              <View style={styles.niveauCard}>
+                <View style={styles.niveauRow}>
+                  <View style={styles.niveauGauche}>
+                    <Text style={styles.niveauTitre}>
+                      Niveau {profil.niveau.niveau} — {profil.niveau.label}
+                    </Text>
+                    <Text style={styles.niveauSousTitre}>
+                      {profil.points_cumules} points cumulés
+                    </Text>
+                  </View>
+                  <View style={styles.niveauBulle}>
+                    <Text style={styles.niveauBulleTexte}>{profil.niveau.niveau}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[styles.progressFill, { width: `${profil.niveau.progression}%` }]}
+                  />
+                </View>
+
+                <Text style={styles.progressLabel}>
+                  {profil.niveau.points_prochain_niveau !== null
+                    ? `${profil.points_cumules}/${profil.niveau.points_prochain_niveau} pts`
+                    : 'Niveau maximum atteint 🎉'}
+                </Text>
+              </View>
+            )}
+
+            {/* SECTION MON ACTIVITÉ */}
+            <Text style={styles.sectionTitle}>Mon activité</Text>
+            <View style={styles.sectionCard}>
+              <SettingsRow
+                emoji="🩸"
+                fond={Colors.fondRose}
+                label="Historique des dons"
+                valeur={dons ? `${dons.total_dons} dons` : undefined}
+                onPress={() => router.push('/tabs/profil/historique-dons')}
+              />
+              <SettingsRow
+                emoji="🏆"
+                fond={Colors.fondRose}
+                label="Mes badges"
+                valeur={badges ? `${badges.obtenus}/${badges.total}` : undefined}
+                onPress={() => router.push('/tabs/cartes')}
+              />
+              <SettingsRow
+                emoji="⭐"
+                fond={Colors.fondBleu}
+                label="Points et niveau"
+                onPress={() => router.push('/tabs/profil/points')}
+              />
+              <SettingsRow
+                emoji="🤝"
+                fond={Colors.fondVert}
+                label="Parrainage"
+                onPress={() => router.push('/tabs/profil/parrainage')}
+                dernier
+              />
+            </View>
+
+            {/* SECTION PARAMÈTRES */}
+            <Text style={styles.sectionTitle}>Paramètres</Text>
+            <View style={styles.sectionCard}>
+              <SettingsRow
+                emoji="⚙️"
+                fond={Colors.fondGris}
+                label="Paramètres du compte"
+                onPress={() => router.push('/tabs/profil/parametres')}
+              />
+              <SettingsRow
+                emoji="🔔"
+                fond={Colors.fondGris}
+                label="Notifications"
+                onPress={() => router.push('/tabs/profil/parametres')}
+                dernier
+              />
+            </View>
+
+            {/* DANGER ZONE — sans titre */}
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+              accessibilityRole="button"
+            >
+              <Text style={styles.logoutButtonText}>Se déconnecter</Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+function SettingsRow({
+  emoji,
+  fond,
+  label,
+  valeur,
+  onPress,
+  dernier,
+}: {
+  emoji: string;
+  fond: string;
+  label: string;
+  valeur?: string;
+  onPress: () => void;
+  dernier?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      style={[styles.row, dernier && styles.rowDernier]}
+      onPress={onPress}
+      accessibilityRole="button"
+    >
+      <View style={[styles.rowIcon, { backgroundColor: fond }]}>
+        <Text style={styles.rowIconEmoji}>{emoji}</Text>
+      </View>
+      <Text style={styles.rowLabel}>{label}</Text>
+      {valeur ? <Text style={styles.rowValeur}>{valeur}</Text> : null}
+      <Text style={styles.rowChevron}>›</Text>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9F9F9' },
-  content: { padding: 20, paddingBottom: 100 },
-  pageTitle: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, marginTop: 40 },
-  
-  // Cartes générales
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+  screen: {
+    flex: 1,
+    backgroundColor: Colors.creme,
+  },
+  scroll: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 18,
+    paddingTop: 54,
+    paddingBottom: 126,
+  },
+  loader: {
+    marginTop: 40,
+  },
+  errorText: {
+    color: Colors.grisMoyen,
+    textAlign: 'center',
+    marginTop: 40,
+  },
+
+  userCard: {
+    backgroundColor: Colors.blanc,
+    borderRadius: 16,
     padding: 20,
-    marginBottom: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
     elevation: 3,
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  cardTitle: { fontSize: 16, fontWeight: 'bold' },
-  
-  // Carte Utilisateur
-  userRow: { flexDirection: 'row', alignItems: 'center' },
-  avatarPlaceholder: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#E0E0E0', marginRight: 15 },
-  userInfo: { flex: 1 },
-  pseudo: { fontSize: 18, fontWeight: 'bold' },
-  subText: { fontSize: 12, color: '#777', marginTop: 4 },
-  chevron: { fontSize: 20, color: '#999', fontWeight: 'bold' },
-  
-  // Carte Niveau
-  levelCard: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15 },
-  levelText: { fontWeight: 'bold', marginRight: 10 },
-  progressBarContainer: { flex: 1, height: 6, backgroundColor: '#E0E0E0', borderRadius: 3, marginHorizontal: 10 },
-  progressBarFill: { height: '100%', backgroundColor: '#555', borderRadius: 3 },
-  pointsBadge: { backgroundColor: '#F0F0F0', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 15, borderWidth: 1, borderColor: '#DDD' },
-  pointsText: { fontSize: 12, fontWeight: 'bold' },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+  },
+  avatarFallback: {
+    backgroundColor: Colors.petrole[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: Colors.blanc,
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  userInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  pseudo: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.aubergine,
+  },
+  statut: {
+    fontSize: 13,
+    color: Colors.grisMoyen,
+    marginTop: 2,
+  },
+  modifierPill: {
+    borderWidth: 1,
+    borderColor: Colors.petrole[500],
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  modifierPillText: {
+    color: Colors.petrole[500],
+    fontSize: 12,
+    fontWeight: '600',
+  },
 
-  // Carte Badges
-  badgesCount: { fontSize: 12, color: '#777' },
-  badgesRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  badgePlaceholder: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#555' },
+  niveauCard: {
+    backgroundColor: Colors.blanc,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  niveauRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  niveauGauche: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  niveauTitre: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.aubergine,
+  },
+  niveauSousTitre: {
+    fontSize: 13,
+    color: Colors.grisMoyen,
+    marginTop: 2,
+  },
+  niveauBulle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.corail[600],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  niveauBulleTexte: {
+    color: Colors.blanc,
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.fondGris,
+    marginTop: 14,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.corail[600],
+  },
+  progressLabel: {
+    fontSize: 11,
+    color: Colors.grisMoyen,
+    textAlign: 'right',
+    marginTop: 6,
+  },
 
-  // Carte Historique
-  historyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  historyText: { fontSize: 14, color: '#333' },
-  historyPill: { backgroundColor: '#E0E0E0', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-  historyPillText: { fontSize: 12, color: '#555' },
-  expandButton: { alignItems: 'center', marginTop: 5 },
-  chevronDown: { fontSize: 16, color: '#999', fontWeight: 'bold' },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.grisMoyen,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  sectionCard: {
+    backgroundColor: Colors.blanc,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.fondNeutre,
+  },
+  rowDernier: {
+    borderBottomWidth: 0,
+  },
+  rowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  rowIconEmoji: {
+    fontSize: 16,
+  },
+  rowLabel: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.aubergine,
+  },
+  rowValeur: {
+    fontSize: 13,
+    color: Colors.grisMoyen,
+    marginRight: 8,
+  },
+  rowChevron: {
+    fontSize: 18,
+    color: Colors.grisMoyen,
+  },
 
-  // Boutons Actions
-  primaryButton: { backgroundColor: '#333', padding: 16, borderRadius: 25, alignItems: 'center', marginBottom: 15 },
-  primaryButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
-  secondaryButton: { backgroundColor: '#333', padding: 16, borderRadius: 25, alignItems: 'center', marginBottom: 15 },
-  secondaryButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
-  deleteButton: { alignItems: 'center', padding: 10 },
-  deleteButtonText: { color: '#777', fontSize: 12 },
+  logoutButton: {
+    backgroundColor: Colors.blanc,
+    borderWidth: 1.5,
+    borderColor: Colors.corail[600],
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  logoutButtonText: {
+    color: Colors.corail[600],
+    fontWeight: '700',
+  },
 });
