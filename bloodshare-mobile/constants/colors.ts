@@ -23,6 +23,17 @@ export const Colors = {
   fondRose: '#FFE8E4',
   fondBleu: '#E4F3F5',
   fondVert: '#E8F4E8',
+  fondOrange: '#FFF0E4',
   fondGris: '#E8E4E6',
   fondGrisClair: '#FAFAFA',
+  // 📖 Couleurs sémantiques des niveaux de stock de sang (partagées BO / mobile).
+  //    Certaines recoupent des tokens existants (bas ≈ attention, correct ≈ petrole[500],
+  //    bon ≈ succes) mais on les nomme explicitement : le sens « niveau de stock »
+  //    doit rester indépendant des autres usages de ces teintes.
+  status: {
+    critique: '#D8452C',
+    bas: '#F0A03C',
+    correct: '#2E93A0',
+    bon: '#6E9B3E',
+  },
 };
