@@ -1,11 +1,17 @@
 import { Stack } from 'expo-router';
 
+// 📖 Toutes les sous-pages du profil partagent le même Stack sans header natif :
+//    chaque écran dessine son propre "← Retour". On les déclare explicitement
+//    surtout pour fixer l'ordre et permettre, plus tard, des options par écran.
 export default function ProfilLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      {/* C'est ici que l'on déclarera les futures sous-pages si on a besoin 
-          d'options spécifiques pour elles (comme un header natif par exemple) */}
+      <Stack.Screen name="informations" />
+      <Stack.Screen name="historique-dons" />
+      <Stack.Screen name="points" />
+      <Stack.Screen name="parrainage" />
+      <Stack.Screen name="parametres" />
     </Stack>
   );
 }

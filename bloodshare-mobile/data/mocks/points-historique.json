@@ -1,0 +1,7 @@
+[
+  { "id": 5, "source": "defi", "points": 50, "date": "2026-07-01" },
+  { "id": 4, "source": "parrainage", "points": 30, "date": "2026-06-12" },
+  { "id": 3, "source": "quiz", "points": 10, "date": "2026-05-28" },
+  { "id": 2, "source": "quiz", "points": 10, "date": "2026-05-14" },
+  { "id": 1, "source": "parrainage", "points": 20, "date": "2026-04-02" }
+]
