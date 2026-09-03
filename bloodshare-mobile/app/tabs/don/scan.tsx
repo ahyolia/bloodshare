@@ -186,7 +186,7 @@ export default function ScanScreen() {
       {/* 📖 CameraView est le composant caméra léger d'expo-camera, dédié à l'AFFICHAGE + à la détection de codes-barres/QR
           → Pourquoi lui et pas "la caméra complète" : on n'a besoin ni de prendre des photos, ni de filmer ; CameraView embarque juste ce qu'il faut (flux vidéo + scanner de codes), ce qui est plus léger et plus simple à configurer que l'API caméra complète */}
       <CameraView
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         // 📖 barcodeTypes: ['qr'] filtre le scanner pour qu'il ne réagisse qu'aux QR Codes
         // → Pourquoi : CameraView sait aussi lire des codes-barres classiques (EAN, Code128...) ; sans ce filtre, l'app tenterait de scanner n'importe quel code visible, avec le risque de traiter un code-barres de supermarché comme un token BloodShare
         barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'space-between',
   },
   backButton: {
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
