@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "titre": "Journée mondiale du don du sang : merci aux 420 donneurs mobilisés",
+    "image_url": null,
+    "published_at": "2026-08-28"
+  },
+  {
+    "id": 2,
+    "titre": "Un nouveau centre de collecte ouvre à Dumbéa",
+    "image_url": null,
+    "published_at": "2026-08-12"
+  },
+  {
+    "id": 3,
+    "titre": "Le don de plasma expliqué en 3 minutes",
+    "image_url": null,
+    "published_at": "2026-07-30"
+  },
+  {
+    "id": 4,
+    "titre": "Retour en images sur la collecte de Païta",
+    "image_url": null,
+    "published_at": "2026-07-05"
+  }
+]
