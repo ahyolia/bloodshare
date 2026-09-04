@@ -339,7 +339,23 @@ export default function AccueilScreen() {
               scrollEventThrottle={16}
               contentContainerStyle={styles.actuRail}
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.actuCard} activeOpacity={0.9}>
+                <TouchableOpacity
+                  style={styles.actuCard}
+                  activeOpacity={0.9}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/tabs/accueil/actualite/[id]',
+                      params: {
+                        id: String(item.id),
+                        titre: item.titre,
+                        chapo: item.chapo ?? '',
+                        contenu: item.contenu ?? '',
+                        published_at: item.published_at,
+                        image_url: item.image_url ?? '',
+                      },
+                    })
+                  }
+                >
                   {item.image_url ? (
                     <Image source={{ uri: item.image_url }} style={styles.actuImage} />
                   ) : (
