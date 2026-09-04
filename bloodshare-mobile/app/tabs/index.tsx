@@ -352,149 +352,7 @@ export default function AccueilScreen() {
           !defiError && defi && <DefiCard defi={defi} />
         )}
 
-        {/* SECTION 4 — QUIZ EN COURS */}
-        {quizLoading ? (
-          <>
-            <Text style={styles.sectionTitle}>Quiz en cours</Text>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} style={styles.skeletonQuiz} />
-            ))}
-          </>
-        ) : (
-          // 📖 Erreur ou aucun quiz en cours → section entièrement masquée
-          //    (pas de bloc d'erreur : contenu de re-engagement, non essentiel).
-          !quizError &&
-          categoriesEnCours.length > 0 && (
-            <>
-              <View style={styles.quizTitreRow}>
-                <Text style={styles.sectionTitle}>Quiz en cours</Text>
-                <View style={styles.quizCountBadge}>
-                  <Text style={styles.quizCountText}>{nbQuizEnCours}</Text>
-                </View>
-              </View>
-
-              {categoriesEnCours.map((cat) => {
-                const ouvert = openQuiz.has(cat.categorie);
-                return (
-                  <View key={cat.categorie} style={styles.quizCard}>
-                    <TouchableOpacity
-                      style={styles.quizCardHeader}
-                      onPress={() => toggleQuiz(cat.categorie)}
-                      activeOpacity={0.8}
-                      accessibilityRole="button"
-                    >
-                      <View style={styles.quizIconCircle}>
-                        <Text style={styles.quizIconEmoji}>{emojiCategorie(cat.categorie)}</Text>
-                      </View>
-                      <View style={styles.quizCardCenter}>
-                        <Text style={styles.quizCardTitre}>{cat.categorie}</Text>
-                        <Text style={styles.quizCardSousTitre}>
-                          {cat.quiz.length} quiz en cours
-                        </Text>
-                      </View>
-                      <Ionicons
-                        name={ouvert ? 'chevron-down' : 'chevron-forward'}
-                        size={18}
-                        color={Colors.grisMoyen}
-                      />
-                    </TouchableOpacity>
-
-                    {ouvert &&
-                      cat.quiz.map((quiz) => (
-                        <QuizEnCoursCard
-                          key={quiz.id}
-                          quiz={quiz}
-                          onReprendre={() =>
-                            router.push({
-                              pathname: '/tabs/quiz/[id]',
-                              params: { id: quiz.id },
-                            })
-                          }
-                        />
-                      ))}
-                  </View>
-                );
-              })}
-            </>
-          )
-        )}
-
-        {/* SECTION 5 — ACTUALITÉS */}
-        <Text style={styles.sectionTitle}>Actualités</Text>
-        {actualitesLoading ? (
-          <ActualitesSkeleton />
-        ) : actualites.length === 0 ? (
-          <View style={styles.actuVide}>
-            <Text style={styles.actuVideEmoji}>📰</Text>
-            <Text style={styles.actuVideTitre}>Aucune actualité pour le moment</Text>
-            <Text style={styles.actuVideTexte}>
-              Revenez bientôt pour les dernières nouvelles de l&apos;association ADSB-NC.
-            </Text>
-          </View>
-        ) : (
-          <>
-            <FlatList
-              data={actualites}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              // 📖 Clé stable = identité métier. Sans elle, FlatList retombe sur
-              //    l'index → mauvaise réconciliation quand la liste change au refresh.
-              keyExtractor={(item) => String(item.id)}
-              // 📖 Toutes les cartes ont la même largeur fixe (ACTU_SNAP) → on peut
-              //    donner la géométrie sans mesure : rendu initial instantané,
-              //    scrollToIndex fiable, zéro jank.
-              getItemLayout={(_, index) => ({
-                length: ACTU_SNAP,
-                offset: ACTU_SNAP * index,
-                index,
-              })}
-              snapToInterval={ACTU_SNAP}
-              snapToAlignment="start"
-              decelerationRate="fast"
-              onScroll={onScrollActus}
-              scrollEventThrottle={16}
-              contentContainerStyle={styles.actuRail}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.actuCard} activeOpacity={0.9}>
-                  {item.image_url ? (
-                    <Image source={{ uri: item.image_url }} style={styles.actuImage} />
-                  ) : (
-                    <View style={styles.actuImagePlaceholder}>
-                      <Text style={styles.actuImagePlaceholderEmoji}>📰</Text>
-                    </View>
-                  )}
-                  {/* 📖 Voile aubergine translucide en bas de l'image : contraste
-                      si un jour un titre est incrusté, cohérence visuelle. */}
-                  <View style={styles.actuOverlay} />
-                  <View style={styles.actuTexte}>
-                    <Text style={styles.actuTitre} numberOfLines={2}>
-                      {item.titre}
-                    </Text>
-                    <Text style={styles.actuDate}>
-                      {new Date(item.published_at).toLocaleDateString('fr-FR', {
-                        day: 'numeric',
-                        month: 'long',
-                        timeZone: 'UTC',
-                      })}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
-            {actualites.length > 1 && (
-              <View style={styles.dots}>
-                {actualites.map((actu, i) => (
-                  <View
-                    key={actu.id}
-                    style={[styles.dot, i === actuIndex && styles.dotActif]}
-                  />
-                ))}
-              </View>
-            )}
-          </>
-        )}
-
-        {/* SECTION 6 — ÉVÉNEMENTS À VENIR */}
+        {/* SECTION 4 — ÉVÉNEMENTS À VENIR */}
         {/* 📖 Rien du tout si aucun événement : c'est l'état NORMAL la plupart du
             temps (contenu épisodique) → pas d'état vide, qui serait du bruit. */}
         {!evenementsLoading && evenements.length > 0 && (
@@ -569,6 +427,149 @@ export default function AccueilScreen() {
             )}
           </>
         )}
+
+        {/* SECTION 5 — QUIZ EN COURS */}
+        {quizLoading ? (
+          <>
+            <Text style={styles.sectionTitle}>Quiz en cours</Text>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} style={styles.skeletonQuiz} />
+            ))}
+          </>
+        ) : (
+          // 📖 Erreur ou aucun quiz en cours → section entièrement masquée
+          //    (pas de bloc d'erreur : contenu de re-engagement, non essentiel).
+          !quizError &&
+          categoriesEnCours.length > 0 && (
+            <>
+              <View style={styles.quizTitreRow}>
+                <Text style={styles.sectionTitle}>Quiz en cours</Text>
+                <View style={styles.quizCountBadge}>
+                  <Text style={styles.quizCountText}>{nbQuizEnCours}</Text>
+                </View>
+              </View>
+
+              {categoriesEnCours.map((cat) => {
+                const ouvert = openQuiz.has(cat.categorie);
+                return (
+                  <View key={cat.categorie} style={styles.quizCard}>
+                    <TouchableOpacity
+                      style={styles.quizCardHeader}
+                      onPress={() => toggleQuiz(cat.categorie)}
+                      activeOpacity={0.8}
+                      accessibilityRole="button"
+                    >
+                      <View style={styles.quizIconCircle}>
+                        <Text style={styles.quizIconEmoji}>{emojiCategorie(cat.categorie)}</Text>
+                      </View>
+                      <View style={styles.quizCardCenter}>
+                        <Text style={styles.quizCardTitre}>{cat.categorie}</Text>
+                        <Text style={styles.quizCardSousTitre}>
+                          {cat.quiz.length} quiz en cours
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name={ouvert ? 'chevron-down' : 'chevron-forward'}
+                        size={18}
+                        color={Colors.grisMoyen}
+                      />
+                    </TouchableOpacity>
+
+                    {ouvert &&
+                      cat.quiz.map((quiz) => (
+                        <QuizEnCoursCard
+                          key={quiz.id}
+                          quiz={quiz}
+                          onReprendre={() =>
+                            router.push({
+                              pathname: '/tabs/quiz/[id]',
+                              params: { id: quiz.id },
+                            })
+                          }
+                        />
+                      ))}
+                  </View>
+                );
+              })}
+            </>
+          )
+        )}
+
+        {/* SECTION 6 — ACTUALITÉS */}
+        <Text style={styles.sectionTitle}>Actualités</Text>
+        {actualitesLoading ? (
+          <ActualitesSkeleton />
+        ) : actualites.length === 0 ? (
+          <View style={styles.actuVide}>
+            <Text style={styles.actuVideEmoji}>📰</Text>
+            <Text style={styles.actuVideTitre}>Aucune actualité pour le moment</Text>
+            <Text style={styles.actuVideTexte}>
+              Revenez bientôt pour les dernières nouvelles de l&apos;association ADSB-NC.
+            </Text>
+          </View>
+        ) : (
+          <>
+            <FlatList
+              data={actualites}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              // 📖 Clé stable = identité métier. Sans elle, FlatList retombe sur
+              //    l'index → mauvaise réconciliation quand la liste change au refresh.
+              keyExtractor={(item) => String(item.id)}
+              // 📖 Toutes les cartes ont la même largeur fixe (ACTU_SNAP) → on peut
+              //    donner la géométrie sans mesure : rendu initial instantané,
+              //    scrollToIndex fiable, zéro jank.
+              getItemLayout={(_, index) => ({
+                length: ACTU_SNAP,
+                offset: ACTU_SNAP * index,
+                index,
+              })}
+              snapToInterval={ACTU_SNAP}
+              snapToAlignment="start"
+              decelerationRate="fast"
+              onScroll={onScrollActus}
+              scrollEventThrottle={16}
+              contentContainerStyle={styles.actuRail}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={styles.actuCard} activeOpacity={0.9}>
+                  {item.image_url ? (
+                    <Image source={{ uri: item.image_url }} style={styles.actuImage} />
+                  ) : (
+                    <View style={styles.actuImagePlaceholder}>
+                      <Text style={styles.actuImagePlaceholderEmoji}>📰</Text>
+                    </View>
+                  )}
+                  {/* 📖 Voile aubergine translucide en bas de l'image : contraste
+                      si un jour un titre est incrusté, cohérence visuelle. */}
+                  <View style={styles.actuOverlay} />
+                  <View style={styles.actuTexte}>
+                    <Text style={styles.actuTitre} numberOfLines={2}>
+                      {item.titre}
+                    </Text>
+                    <Text style={styles.actuDate}>
+                      {new Date(item.published_at).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        timeZone: 'UTC',
+                      })}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+            {actualites.length > 1 && (
+              <View style={styles.dots}>
+                {actualites.map((actu, i) => (
+                  <View
+                    key={actu.id}
+                    style={[styles.dot, i === actuIndex && styles.dotActif]}
+                  />
+                ))}
+              </View>
+            )}
+          </>
+        )}
+
       </ScrollView>
     </View>
   );
