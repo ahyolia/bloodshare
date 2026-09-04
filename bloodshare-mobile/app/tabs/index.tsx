@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -14,7 +14,6 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { Actualite, getActualites } from '../../services/actualites.service';
@@ -22,7 +21,6 @@ import { Banniere, getBanniere, TypeBanniere } from '../../services/bannieres.se
 import { DefiActuel, getDefiActuel } from '../../services/defis.service';
 import { Evenement, getEvenements } from '../../services/evenements.service';
 import { getProfil, Profil } from '../../services/profil.service';
-import { CategorieQuiz, getQuizCategories, QuizItem } from '../../services/quiz.service';
 import {
   getStockSang,
   GROUPES_SANGUINS,
@@ -49,14 +47,6 @@ const BANNIERE_STYLE: Record<TypeBanniere, { fond: string; bordure: string; icon
   alerte: { fond: Colors.fondOrange, bordure: Colors.status.bas, icone: '⚠️' },
   urgence: { fond: Colors.fondRose, bordure: Colors.corail[600], icone: '🚨' },
 };
-
-// 📖 Emoji par catégorie de quiz (repris de l'onglet Quiz pour rester cohérent).
-const CATEGORIE_EMOJI: Record<string, string> = {
-  'Les bases du don': '🩸',
-  'Les groupes sanguins': '🔬',
-  "L'association ADSB-NC": '🏥',
-};
-const emojiCategorie = (categorie: string) => CATEGORIE_EMOJI[categorie] ?? '💡';
 
 // 📖 Nombre d'items visibles « à la fois » dans le rail des stocks → sert à
 //    calculer le nombre de points de pagination (progressive disclosure).
@@ -105,10 +95,6 @@ export default function AccueilScreen() {
   const [defiLoading, setDefiLoading] = useState(true);
   const [defiError, setDefiError] = useState(false);
 
-  const [quizCategories, setQuizCategories] = useState<CategorieQuiz[]>([]);
-  const [quizLoading, setQuizLoading] = useState(true);
-  const [quizError, setQuizError] = useState(false);
-
   const [actualites, setActualites] = useState<Actualite[]>([]);
   const [actualitesLoading, setActualitesLoading] = useState(true);
   const [actualitesError, setActualitesError] = useState(false);
@@ -122,19 +108,6 @@ export default function AccueilScreen() {
   const [actuIndex, setActuIndex] = useState(0);
   // 📖 Bascule « 3 événements » ↔ « tous » (bouton « Voir tout »).
   const [tousEvenements, setTousEvenements] = useState(false);
-
-  // 📖 Catégories dépliées dans la section « Quiz en cours ». Un Set : plusieurs
-  //    peuvent être ouvertes en même temps, on ajoute/retire une clé sans toucher
-  //    aux autres.
-  const [openQuiz, setOpenQuiz] = useState<Set<string>>(new Set());
-  const toggleQuiz = (categorie: string) => {
-    setOpenQuiz((prev) => {
-      const next = new Set(prev);
-      if (next.has(categorie)) next.delete(categorie);
-      else next.add(categorie);
-      return next;
-    });
-  };
 
   // 📖 Évite un setState après démontage (l'écran peut être quitté avant la fin
   //    des requêtes) → warning React et fuite mémoire potentielle.
@@ -151,7 +124,7 @@ export default function AccueilScreen() {
   //    « cascading renders ». Les flags *Loading sont déjà à true au montage et
   //    ne sont pas remis à true lors d'un pull-to-refresh (contenu conservé).
   const chargerDonnees = useCallback(() => {
-    // 📖 allSettled : on lance les 7 appels en parallèle et on attend que TOUS
+    // 📖 allSettled : on lance les 6 appels en parallèle et on attend que TOUS
     //    soient retombés, qu'ils aient réussi ou échoué. Contrairement à
     //    Promise.all, un rejet n'annule pas les autres résultats.
     //    Les actualités/événements rejoignent ce bloc plutôt qu'un useEffect
@@ -163,10 +136,9 @@ export default function AccueilScreen() {
       getBanniere(),
       getStockSang(),
       getDefiActuel(),
-      getQuizCategories(),
       getActualites(),
       getEvenements(),
-    ]).then(([profilR, banniereR, stockR, defiR, quizR, actusR, eventsR]) => {
+    ]).then(([profilR, banniereR, stockR, defiR, actusR, eventsR]) => {
       if (!monte.current) return;
 
       // Header : pas de message d'erreur dédié, un simple repli visuel suffit.
@@ -195,14 +167,6 @@ export default function AccueilScreen() {
         setDefiError(true);
       }
       setDefiLoading(false);
-
-      if (quizR.status === 'fulfilled') {
-        setQuizCategories(quizR.value);
-        setQuizError(false);
-      } else {
-        setQuizError(true);
-      }
-      setQuizLoading(false);
 
       // 📖 Actualités : en erreur on affiche l'état vide (rubrique censée toujours
       //    avoir du contenu → on rassure plutôt que de masquer).
@@ -246,19 +210,6 @@ export default function AccueilScreen() {
     setActuIndex(Math.max(0, Math.min(index, actualites.length - 1)));
   };
 
-  // 📖 Un quiz « en cours » = commencé (nb_tentatives > 0) mais pas terminé
-  //    (complete === false). On ne garde que les catégories qui en contiennent.
-  const categoriesEnCours = useMemo(
-    () =>
-      quizCategories
-        .map((cat) => ({
-          categorie: cat.categorie,
-          quiz: cat.quiz.filter((q) => !q.complete && q.nb_tentatives > 0),
-        }))
-        .filter((cat) => cat.quiz.length > 0),
-    [quizCategories]
-  );
-  const nbQuizEnCours = categoriesEnCours.reduce((total, cat) => total + cat.quiz.length, 0);
   const nbDotsStocks = Math.ceil(GROUPES_SANGUINS.length / STOCKS_VISIBLES);
 
   // 📖 Événements déjà triés par date croissante côté service. On coupe à 3 sauf
@@ -352,7 +303,82 @@ export default function AccueilScreen() {
           !defiError && defi && <DefiCard defi={defi} />
         )}
 
-        {/* SECTION 4 — ÉVÉNEMENTS À VENIR */}
+        {/* SECTION 4 — ACTUALITÉS */}
+        <Text style={styles.sectionTitle}>Actualités</Text>
+        {actualitesLoading ? (
+          <ActualitesSkeleton />
+        ) : actualites.length === 0 ? (
+          <View style={styles.actuVide}>
+            <Text style={styles.actuVideEmoji}>📰</Text>
+            <Text style={styles.actuVideTitre}>Aucune actualité pour le moment</Text>
+            <Text style={styles.actuVideTexte}>
+              Revenez bientôt pour les dernières nouvelles de l&apos;association ADSB-NC.
+            </Text>
+          </View>
+        ) : (
+          <>
+            <FlatList
+              data={actualites}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              // 📖 Clé stable = identité métier. Sans elle, FlatList retombe sur
+              //    l'index → mauvaise réconciliation quand la liste change au refresh.
+              keyExtractor={(item) => String(item.id)}
+              // 📖 Toutes les cartes ont la même largeur fixe (ACTU_SNAP) → on peut
+              //    donner la géométrie sans mesure : rendu initial instantané,
+              //    scrollToIndex fiable, zéro jank.
+              getItemLayout={(_, index) => ({
+                length: ACTU_SNAP,
+                offset: ACTU_SNAP * index,
+                index,
+              })}
+              snapToInterval={ACTU_SNAP}
+              snapToAlignment="start"
+              decelerationRate="fast"
+              onScroll={onScrollActus}
+              scrollEventThrottle={16}
+              contentContainerStyle={styles.actuRail}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={styles.actuCard} activeOpacity={0.9}>
+                  {item.image_url ? (
+                    <Image source={{ uri: item.image_url }} style={styles.actuImage} />
+                  ) : (
+                    <View style={styles.actuImagePlaceholder}>
+                      <Text style={styles.actuImagePlaceholderEmoji}>📰</Text>
+                    </View>
+                  )}
+                  {/* 📖 Voile aubergine translucide en bas de l'image : contraste
+                      si un jour un titre est incrusté, cohérence visuelle. */}
+                  <View style={styles.actuOverlay} />
+                  <View style={styles.actuTexte}>
+                    <Text style={styles.actuTitre} numberOfLines={2}>
+                      {item.titre}
+                    </Text>
+                    <Text style={styles.actuDate}>
+                      {new Date(item.published_at).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        timeZone: 'UTC',
+                      })}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+            {actualites.length > 1 && (
+              <View style={styles.dots}>
+                {actualites.map((actu, i) => (
+                  <View
+                    key={actu.id}
+                    style={[styles.dot, i === actuIndex && styles.dotActif]}
+                  />
+                ))}
+              </View>
+            )}
+          </>
+        )}
+
+        {/* SECTION 5 — ÉVÉNEMENTS À VENIR */}
         {/* 📖 Rien du tout si aucun événement : c'est l'état NORMAL la plupart du
             temps (contenu épisodique) → pas d'état vide, qui serait du bruit. */}
         {!evenementsLoading && evenements.length > 0 && (
@@ -428,178 +454,7 @@ export default function AccueilScreen() {
           </>
         )}
 
-        {/* SECTION 5 — QUIZ EN COURS */}
-        {quizLoading ? (
-          <>
-            <Text style={styles.sectionTitle}>Quiz en cours</Text>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} style={styles.skeletonQuiz} />
-            ))}
-          </>
-        ) : (
-          // 📖 Erreur ou aucun quiz en cours → section entièrement masquée
-          //    (pas de bloc d'erreur : contenu de re-engagement, non essentiel).
-          !quizError &&
-          categoriesEnCours.length > 0 && (
-            <>
-              <View style={styles.quizTitreRow}>
-                <Text style={styles.sectionTitle}>Quiz en cours</Text>
-                <View style={styles.quizCountBadge}>
-                  <Text style={styles.quizCountText}>{nbQuizEnCours}</Text>
-                </View>
-              </View>
-
-              {categoriesEnCours.map((cat) => {
-                const ouvert = openQuiz.has(cat.categorie);
-                return (
-                  <View key={cat.categorie} style={styles.quizCard}>
-                    <TouchableOpacity
-                      style={styles.quizCardHeader}
-                      onPress={() => toggleQuiz(cat.categorie)}
-                      activeOpacity={0.8}
-                      accessibilityRole="button"
-                    >
-                      <View style={styles.quizIconCircle}>
-                        <Text style={styles.quizIconEmoji}>{emojiCategorie(cat.categorie)}</Text>
-                      </View>
-                      <View style={styles.quizCardCenter}>
-                        <Text style={styles.quizCardTitre}>{cat.categorie}</Text>
-                        <Text style={styles.quizCardSousTitre}>
-                          {cat.quiz.length} quiz en cours
-                        </Text>
-                      </View>
-                      <Ionicons
-                        name={ouvert ? 'chevron-down' : 'chevron-forward'}
-                        size={18}
-                        color={Colors.grisMoyen}
-                      />
-                    </TouchableOpacity>
-
-                    {ouvert &&
-                      cat.quiz.map((quiz) => (
-                        <QuizEnCoursCard
-                          key={quiz.id}
-                          quiz={quiz}
-                          onReprendre={() =>
-                            router.push({
-                              pathname: '/tabs/quiz/[id]',
-                              params: { id: quiz.id },
-                            })
-                          }
-                        />
-                      ))}
-                  </View>
-                );
-              })}
-            </>
-          )
-        )}
-
-        {/* SECTION 6 — ACTUALITÉS */}
-        <Text style={styles.sectionTitle}>Actualités</Text>
-        {actualitesLoading ? (
-          <ActualitesSkeleton />
-        ) : actualites.length === 0 ? (
-          <View style={styles.actuVide}>
-            <Text style={styles.actuVideEmoji}>📰</Text>
-            <Text style={styles.actuVideTitre}>Aucune actualité pour le moment</Text>
-            <Text style={styles.actuVideTexte}>
-              Revenez bientôt pour les dernières nouvelles de l&apos;association ADSB-NC.
-            </Text>
-          </View>
-        ) : (
-          <>
-            <FlatList
-              data={actualites}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              // 📖 Clé stable = identité métier. Sans elle, FlatList retombe sur
-              //    l'index → mauvaise réconciliation quand la liste change au refresh.
-              keyExtractor={(item) => String(item.id)}
-              // 📖 Toutes les cartes ont la même largeur fixe (ACTU_SNAP) → on peut
-              //    donner la géométrie sans mesure : rendu initial instantané,
-              //    scrollToIndex fiable, zéro jank.
-              getItemLayout={(_, index) => ({
-                length: ACTU_SNAP,
-                offset: ACTU_SNAP * index,
-                index,
-              })}
-              snapToInterval={ACTU_SNAP}
-              snapToAlignment="start"
-              decelerationRate="fast"
-              onScroll={onScrollActus}
-              scrollEventThrottle={16}
-              contentContainerStyle={styles.actuRail}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.actuCard} activeOpacity={0.9}>
-                  {item.image_url ? (
-                    <Image source={{ uri: item.image_url }} style={styles.actuImage} />
-                  ) : (
-                    <View style={styles.actuImagePlaceholder}>
-                      <Text style={styles.actuImagePlaceholderEmoji}>📰</Text>
-                    </View>
-                  )}
-                  {/* 📖 Voile aubergine translucide en bas de l'image : contraste
-                      si un jour un titre est incrusté, cohérence visuelle. */}
-                  <View style={styles.actuOverlay} />
-                  <View style={styles.actuTexte}>
-                    <Text style={styles.actuTitre} numberOfLines={2}>
-                      {item.titre}
-                    </Text>
-                    <Text style={styles.actuDate}>
-                      {new Date(item.published_at).toLocaleDateString('fr-FR', {
-                        day: 'numeric',
-                        month: 'long',
-                        timeZone: 'UTC',
-                      })}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
-            {actualites.length > 1 && (
-              <View style={styles.dots}>
-                {actualites.map((actu, i) => (
-                  <View
-                    key={actu.id}
-                    style={[styles.dot, i === actuIndex && styles.dotActif]}
-                  />
-                ))}
-              </View>
-            )}
-          </>
-        )}
-
       </ScrollView>
-    </View>
-  );
-}
-
-// 📖 Sous-carte d'un quiz commencé : titre + avancement (questions_repondues /
-//    nb_questions), barre de progression et bouton « Reprendre » qui ouvre
-//    directement ce quiz. Même rendu que l'onglet Quiz pour rester cohérent.
-function QuizEnCoursCard({ quiz, onReprendre }: { quiz: QuizItem; onReprendre: () => void }) {
-  const pct = quiz.nb_questions > 0 ? (quiz.questions_repondues / quiz.nb_questions) * 100 : 0;
-  return (
-    <View style={styles.quizSubCard}>
-      <View style={styles.quizSubRow}>
-        <Text style={styles.quizSubTitre}>{quiz.titre}</Text>
-        <Text style={styles.quizSubMeta}>
-          {quiz.questions_repondues}/{quiz.nb_questions} questions
-        </Text>
-      </View>
-      <View style={styles.quizProgressRow}>
-        <View style={styles.quizTrack}>
-          <View style={[styles.quizFill, { width: `${pct}%` }]} />
-        </View>
-        <TouchableOpacity
-          style={styles.reprendreBtn}
-          onPress={onReprendre}
-          accessibilityRole="button"
-        >
-          <Text style={styles.reprendreBtnText}>Reprendre</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -945,118 +800,6 @@ const styles = StyleSheet.create({
     color: Colors.grisMoyen,
   },
 
-  // QUIZ
-  quizTitreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  quizCountBadge: {
-    backgroundColor: Colors.aubergine,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
-  },
-  quizCountText: {
-    color: Colors.blanc,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  quizCard: {
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  quizCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-  },
-  quizIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.fondNeutre,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quizIconEmoji: {
-    fontSize: 18,
-  },
-  quizCardCenter: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  quizCardTitre: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  quizCardSousTitre: {
-    fontSize: 12,
-    color: Colors.grisMoyen,
-    marginTop: 2,
-  },
-  quizSubCard: {
-    backgroundColor: Colors.fondGrisClair,
-    borderRadius: 8,
-    margin: 8,
-    marginTop: 0,
-    padding: 12,
-  },
-  quizSubRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  quizSubTitre: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.aubergine,
-    marginRight: 8,
-  },
-  quizSubMeta: {
-    fontSize: 12,
-    color: Colors.grisMoyen,
-  },
-  quizProgressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  quizTrack: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.fondGris,
-    marginRight: 12,
-    overflow: 'hidden',
-  },
-  quizFill: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.corail[600],
-  },
-  reprendreBtn: {
-    backgroundColor: Colors.aubergine,
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  reprendreBtnText: {
-    color: Colors.blanc,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-
   // SKELETON
   skeleton: {
     backgroundColor: Colors.fondGris,
@@ -1075,10 +818,6 @@ const styles = StyleSheet.create({
   skeletonDefi: {
     height: 132,
     marginBottom: 16,
-  },
-  skeletonQuiz: {
-    height: 72,
-    marginBottom: 8,
   },
 
   // ACTUALITÉS
