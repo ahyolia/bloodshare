@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "titre": "Journée mondiale du don du sang : merci aux 420 donneurs mobilisés",
+    "image_url": null,
+    "published_at": "2026-08-28",
+    "chapo": "La collecte exceptionnelle du 14 juin a battu tous les records de participation en Nouvelle-Calédonie.",
+    "contenu": "Pour la Journée mondiale du don du sang, l'association a organisé une grande collecte sur trois sites : Nouméa, Dumbéa et Mont-Dore. 420 personnes se sont présentées, dont 87 nouveaux donneurs.\n\nLes réserves de globules rouges, qui étaient descendues à un niveau bas la semaine précédente, sont repassées au vert. Un grand merci à tous les bénévoles qui ont tenu les stands toute la journée.\n\nProchaine grande collecte prévue à la rentrée : restez attentifs à l'agenda de l'application."
+  },
+  {
+    "id": 2,
+    "titre": "Un nouveau centre de collecte ouvre à Dumbéa",
+    "image_url": null,
+    "published_at": "2026-08-12",
+    "chapo": "Plus besoin de se rendre à Nouméa : un point de collecte permanent ouvre à Dumbéa-sur-Mer.",
+    "contenu": "À partir du mois de septembre, un centre de collecte fixe accueille les donneurs du lundi au vendredi, de 8h à 15h, dans la galerie du centre commercial de Dumbéa-sur-Mer.\n\nLa prise de rendez-vous se fait directement depuis l'application, onglet « Don ». Les dons sans rendez-vous restent possibles selon l'affluence."
+  },
+  {
+    "id": 3,
+    "titre": "Le don de plasma expliqué en 3 minutes",
+    "image_url": null,
+    "published_at": "2026-07-30",
+    "chapo": "Moins connu que le don de sang total, le don de plasma est pourtant essentiel pour de nombreux patients.",
+    "contenu": "Le plasma est la partie liquide du sang. Il sert à fabriquer des médicaments pour les grands brûlés, les personnes atteintes de maladies auto-immunes ou de déficits immunitaires.\n\nUn don de plasma dure environ 45 minutes. On peut donner son plasma toutes les deux semaines, car les globules rouges sont restitués au donneur pendant le prélèvement."
+  },
+  {
+    "id": 4,
+    "titre": "Retour en images sur la collecte de Païta",
+    "image_url": null,
+    "published_at": "2026-07-05",
+    "chapo": "",
+    "contenu": ""
+  }
+]

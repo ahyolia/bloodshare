@@ -1,0 +1,45 @@
+[
+  {
+    "id": 1,
+    "titre": "Collecte mobile - Place des Cocotiers",
+    "date_heure": "2026-09-20T09:00:00Z",
+    "horaire_fin": "2026-09-20T17:00:00Z",
+    "lieu": "Place des Cocotiers, Nouméa",
+    "description": "L'unité mobile s'installe une journée en centre-ville. Venez donner votre sang sans rendez-vous, une collation vous sera offerte après le don. Pensez à apporter une pièce d'identité.",
+    "image_url": null
+  },
+  {
+    "id": 2,
+    "titre": "Don du sang au campus de l'UNC",
+    "date_heure": "2026-10-08T08:30:00Z",
+    "horaire_fin": "2026-10-08T13:00:00Z",
+    "lieu": "Hall de la BU, Nouville",
+    "description": "Collecte étudiante organisée avec le BDE. Premier don possible dès 18 ans.",
+    "image_url": null
+  },
+  {
+    "id": 3,
+    "titre": "Forum des associations de Dumbéa",
+    "date_heure": "2026-10-25T09:00:00Z",
+    "horaire_fin": "2026-10-25T16:00:00Z",
+    "lieu": "Salle omnisports, Dumbéa-sur-Mer",
+    "description": "",
+    "image_url": null
+  },
+  {
+    "id": 4,
+    "titre": "Collecte mobile - Bourail",
+    "date_heure": "2026-11-14T08:00:00Z",
+    "horaire_fin": "2026-11-14T12:30:00Z",
+    "lieu": "Mairie de Bourail",
+    "image_url": null
+  },
+  {
+    "id": 99,
+    "titre": "Collecte passée (ne doit pas s'afficher)",
+    "date_heure": "2026-01-10T09:00:00Z",
+    "horaire_fin": "2026-01-10T17:00:00Z",
+    "lieu": "Ancienne collecte",
+    "image_url": null
+  }
+]

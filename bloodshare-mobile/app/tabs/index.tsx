@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  FlatList,
+  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   RefreshControl,
@@ -12,13 +14,13 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
+import { Actualite, getActualites } from '../../services/actualites.service';
 import { Banniere, getBanniere, TypeBanniere } from '../../services/bannieres.service';
 import { DefiActuel, getDefiActuel } from '../../services/defis.service';
+import { Evenement, getEvenements } from '../../services/evenements.service';
 import { getProfil, Profil } from '../../services/profil.service';
-import { CategorieQuiz, getQuizCategories, QuizItem } from '../../services/quiz.service';
 import {
   getStockSang,
   GROUPES_SANGUINS,
@@ -46,17 +48,33 @@ const BANNIERE_STYLE: Record<TypeBanniere, { fond: string; bordure: string; icon
   urgence: { fond: Colors.fondRose, bordure: Colors.corail[600], icone: '🚨' },
 };
 
-// 📖 Emoji par catégorie de quiz (repris de l'onglet Quiz pour rester cohérent).
-const CATEGORIE_EMOJI: Record<string, string> = {
-  'Les bases du don': '🩸',
-  'Les groupes sanguins': '🔬',
-  "L'association ADSB-NC": '🏥',
-};
-const emojiCategorie = (categorie: string) => CATEGORIE_EMOJI[categorie] ?? '💡';
-
 // 📖 Nombre d'items visibles « à la fois » dans le rail des stocks → sert à
 //    calculer le nombre de points de pagination (progressive disclosure).
 const STOCKS_VISIBLES = 5;
+
+// 📖 Dimensions du carousel d'actualités. Le pas de snap = largeur carte + marge.
+//    Constantes (pas des valeurs magiques éparpillées) : réutilisées par le
+//    style, par snapToInterval ET par getItemLayout → une seule source de vérité.
+const ACTU_CARD_WIDTH = 260;
+const ACTU_CARD_MARGIN = 12;
+const ACTU_SNAP = ACTU_CARD_WIDTH + ACTU_CARD_MARGIN; // 272
+
+// 📖 Nombre d'événements affichés par défaut (les suivants derrière « Voir tout »).
+const EVENEMENTS_APERCU = 3;
+
+// 📖 Mois abrégés FR figés. Explicite plutôt que toLocaleDateString({month:'short'})
+//    dont les abréviations varient selon l'OS / la locale installée.
+const MOIS_ABREGES = [
+  'JAN', 'FÉV', 'MAR', 'AVR', 'MAI', 'JUIN',
+  'JUIL', 'AOÛ', 'SEP', 'OCT', 'NOV', 'DÉC',
+];
+
+// 📖 "2026-07-02T09:00:00Z" → "09h00". timeZone UTC : l'heure affichée = l'heure
+//    stockée, sans décalage selon le fuseau de l'appareil.
+const formatHeure = (iso: string) =>
+  new Date(iso)
+    .toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
+    .replace(':', 'h');
 
 export default function AccueilScreen() {
   const router = useRouter();
@@ -77,25 +95,19 @@ export default function AccueilScreen() {
   const [defiLoading, setDefiLoading] = useState(true);
   const [defiError, setDefiError] = useState(false);
 
-  const [quizCategories, setQuizCategories] = useState<CategorieQuiz[]>([]);
-  const [quizLoading, setQuizLoading] = useState(true);
-  const [quizError, setQuizError] = useState(false);
+  const [actualites, setActualites] = useState<Actualite[]>([]);
+  const [actualitesLoading, setActualitesLoading] = useState(true);
+  const [actualitesError, setActualitesError] = useState(false);
+
+  const [evenements, setEvenements] = useState<Evenement[]>([]);
+  const [evenementsLoading, setEvenementsLoading] = useState(true);
 
   const [refreshing, setRefreshing] = useState(false);
   const [stockPage, setStockPage] = useState(0);
-
-  // 📖 Catégories dépliées dans la section « Quiz en cours ». Un Set : plusieurs
-  //    peuvent être ouvertes en même temps, on ajoute/retire une clé sans toucher
-  //    aux autres.
-  const [openQuiz, setOpenQuiz] = useState<Set<string>>(new Set());
-  const toggleQuiz = (categorie: string) => {
-    setOpenQuiz((prev) => {
-      const next = new Set(prev);
-      if (next.has(categorie)) next.delete(categorie);
-      else next.add(categorie);
-      return next;
-    });
-  };
+  // 📖 Index de la carte d'actualité centrée → pilote les dots de pagination.
+  const [actuIndex, setActuIndex] = useState(0);
+  // 📖 Bascule « 3 événements » ↔ « tous » (bouton « Voir tout »).
+  const [tousEvenements, setTousEvenements] = useState(false);
 
   // 📖 Évite un setState après démontage (l'écran peut être quitté avant la fin
   //    des requêtes) → warning React et fuite mémoire potentielle.
@@ -112,16 +124,21 @@ export default function AccueilScreen() {
   //    « cascading renders ». Les flags *Loading sont déjà à true au montage et
   //    ne sont pas remis à true lors d'un pull-to-refresh (contenu conservé).
   const chargerDonnees = useCallback(() => {
-    // 📖 allSettled : on lance les 5 appels en parallèle et on attend que TOUS
+    // 📖 allSettled : on lance les 6 appels en parallèle et on attend que TOUS
     //    soient retombés, qu'ils aient réussi ou échoué. Contrairement à
     //    Promise.all, un rejet n'annule pas les autres résultats.
+    //    Les actualités/événements rejoignent ce bloc plutôt qu'un useEffect
+    //    séparé → le pull-to-refresh (qui rappelle chargerDonnees) les recharge
+    //    sans code en plus, et la garde monte.current / la gestion d'erreur
+    //    restent mutualisées.
     return Promise.allSettled([
       getProfil(),
       getBanniere(),
       getStockSang(),
       getDefiActuel(),
-      getQuizCategories(),
-    ]).then(([profilR, banniereR, stockR, defiR, quizR]) => {
+      getActualites(),
+      getEvenements(),
+    ]).then(([profilR, banniereR, stockR, defiR, actusR, eventsR]) => {
       if (!monte.current) return;
 
       // Header : pas de message d'erreur dédié, un simple repli visuel suffit.
@@ -151,13 +168,21 @@ export default function AccueilScreen() {
       }
       setDefiLoading(false);
 
-      if (quizR.status === 'fulfilled') {
-        setQuizCategories(quizR.value);
-        setQuizError(false);
+      // 📖 Actualités : en erreur on affiche l'état vide (rubrique censée toujours
+      //    avoir du contenu → on rassure plutôt que de masquer).
+      if (actusR.status === 'fulfilled') {
+        setActualites(actusR.value);
+        setActualitesError(false);
       } else {
-        setQuizError(true);
+        setActualites([]);
+        setActualitesError(true);
       }
-      setQuizLoading(false);
+      setActualitesLoading(false);
+
+      // 📖 Événements : pas de state d'erreur. Échec = liste vide = section
+      //    entièrement masquée (contenu épisodique, non bloquant).
+      setEvenements(eventsR.status === 'fulfilled' ? eventsR.value : []);
+      setEvenementsLoading(false);
     });
   }, []);
 
@@ -178,20 +203,20 @@ export default function AccueilScreen() {
     }
   };
 
-  // 📖 Un quiz « en cours » = commencé (nb_tentatives > 0) mais pas terminé
-  //    (complete === false). On ne garde que les catégories qui en contiennent.
-  const categoriesEnCours = useMemo(
-    () =>
-      quizCategories
-        .map((cat) => ({
-          categorie: cat.categorie,
-          quiz: cat.quiz.filter((q) => !q.complete && q.nb_tentatives > 0),
-        }))
-        .filter((cat) => cat.quiz.length > 0),
-    [quizCategories]
-  );
-  const nbQuizEnCours = categoriesEnCours.reduce((total, cat) => total + cat.quiz.length, 0);
+  // 📖 Index de la carte centrée = décalage horizontal / pas de snap, arrondi.
+  //    On borne pour ne jamais dépasser le dernier dot (dernière carte + padding).
+  const onScrollActus = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const index = Math.round(e.nativeEvent.contentOffset.x / ACTU_SNAP);
+    setActuIndex(Math.max(0, Math.min(index, actualites.length - 1)));
+  };
+
   const nbDotsStocks = Math.ceil(GROUPES_SANGUINS.length / STOCKS_VISIBLES);
+
+  // 📖 Événements déjà triés par date croissante côté service. On coupe à 3 sauf
+  //    si l'utilisateur a demandé « Voir tout ».
+  const evenementsAffiches = tousEvenements
+    ? evenements
+    : evenements.slice(0, EVENEMENTS_APERCU);
 
   return (
     <View style={styles.screen}>
@@ -278,102 +303,174 @@ export default function AccueilScreen() {
           !defiError && defi && <DefiCard defi={defi} />
         )}
 
-        {/* SECTION 4 — QUIZ EN COURS */}
-        {quizLoading ? (
-          <>
-            <Text style={styles.sectionTitle}>Quiz en cours</Text>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} style={styles.skeletonQuiz} />
-            ))}
-          </>
+        {/* SECTION 4 — ACTUALITÉS */}
+        <Text style={styles.sectionTitle}>Actualités</Text>
+        {actualitesLoading ? (
+          <ActualitesSkeleton />
+        ) : actualites.length === 0 ? (
+          <View style={styles.actuVide}>
+            <Text style={styles.actuVideEmoji}>📰</Text>
+            <Text style={styles.actuVideTitre}>Aucune actualité pour le moment</Text>
+            <Text style={styles.actuVideTexte}>
+              Revenez bientôt pour les dernières nouvelles de l&apos;association ADSB-NC.
+            </Text>
+          </View>
         ) : (
-          // 📖 Erreur ou aucun quiz en cours → section entièrement masquée
-          //    (pas de bloc d'erreur : contenu de re-engagement, non essentiel).
-          !quizError &&
-          categoriesEnCours.length > 0 && (
-            <>
-              <View style={styles.quizTitreRow}>
-                <Text style={styles.sectionTitle}>Quiz en cours</Text>
-                <View style={styles.quizCountBadge}>
-                  <Text style={styles.quizCountText}>{nbQuizEnCours}</Text>
-                </View>
-              </View>
-
-              {categoriesEnCours.map((cat) => {
-                const ouvert = openQuiz.has(cat.categorie);
-                return (
-                  <View key={cat.categorie} style={styles.quizCard}>
-                    <TouchableOpacity
-                      style={styles.quizCardHeader}
-                      onPress={() => toggleQuiz(cat.categorie)}
-                      activeOpacity={0.8}
-                      accessibilityRole="button"
-                    >
-                      <View style={styles.quizIconCircle}>
-                        <Text style={styles.quizIconEmoji}>{emojiCategorie(cat.categorie)}</Text>
-                      </View>
-                      <View style={styles.quizCardCenter}>
-                        <Text style={styles.quizCardTitre}>{cat.categorie}</Text>
-                        <Text style={styles.quizCardSousTitre}>
-                          {cat.quiz.length} quiz en cours
-                        </Text>
-                      </View>
-                      <Ionicons
-                        name={ouvert ? 'chevron-down' : 'chevron-forward'}
-                        size={18}
-                        color={Colors.grisMoyen}
-                      />
-                    </TouchableOpacity>
-
-                    {ouvert &&
-                      cat.quiz.map((quiz) => (
-                        <QuizEnCoursCard
-                          key={quiz.id}
-                          quiz={quiz}
-                          onReprendre={() =>
-                            router.push({
-                              pathname: '/tabs/quiz/[id]',
-                              params: { id: quiz.id },
-                            })
-                          }
-                        />
-                      ))}
-                  </View>
-                );
+          <>
+            <FlatList
+              data={actualites}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              // 📖 Clé stable = identité métier. Sans elle, FlatList retombe sur
+              //    l'index → mauvaise réconciliation quand la liste change au refresh.
+              keyExtractor={(item) => String(item.id)}
+              // 📖 Toutes les cartes ont la même largeur fixe (ACTU_SNAP) → on peut
+              //    donner la géométrie sans mesure : rendu initial instantané,
+              //    scrollToIndex fiable, zéro jank.
+              getItemLayout={(_, index) => ({
+                length: ACTU_SNAP,
+                offset: ACTU_SNAP * index,
+                index,
               })}
-            </>
-          )
+              snapToInterval={ACTU_SNAP}
+              snapToAlignment="start"
+              decelerationRate="fast"
+              onScroll={onScrollActus}
+              scrollEventThrottle={16}
+              contentContainerStyle={styles.actuRail}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.actuCard}
+                  activeOpacity={0.9}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/tabs/accueil/actualite/[id]',
+                      params: {
+                        id: String(item.id),
+                        titre: item.titre,
+                        chapo: item.chapo ?? '',
+                        contenu: item.contenu ?? '',
+                        published_at: item.published_at,
+                        image_url: item.image_url ?? '',
+                      },
+                    })
+                  }
+                >
+                  {item.image_url ? (
+                    <Image source={{ uri: item.image_url }} style={styles.actuImage} />
+                  ) : (
+                    <View style={styles.actuImagePlaceholder}>
+                      <Text style={styles.actuImagePlaceholderEmoji}>📰</Text>
+                    </View>
+                  )}
+                  {/* 📖 Voile aubergine translucide en bas de l'image : contraste
+                      si un jour un titre est incrusté, cohérence visuelle. */}
+                  <View style={styles.actuOverlay} />
+                  <View style={styles.actuTexte}>
+                    <Text style={styles.actuTitre} numberOfLines={2}>
+                      {item.titre}
+                    </Text>
+                    <Text style={styles.actuDate}>
+                      {new Date(item.published_at).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        timeZone: 'UTC',
+                      })}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+            {actualites.length > 1 && (
+              <View style={styles.dots}>
+                {actualites.map((actu, i) => (
+                  <View
+                    key={actu.id}
+                    style={[styles.dot, i === actuIndex && styles.dotActif]}
+                  />
+                ))}
+              </View>
+            )}
+          </>
         )}
-      </ScrollView>
-    </View>
-  );
-}
 
-// 📖 Sous-carte d'un quiz commencé : titre + avancement (questions_repondues /
-//    nb_questions), barre de progression et bouton « Reprendre » qui ouvre
-//    directement ce quiz. Même rendu que l'onglet Quiz pour rester cohérent.
-function QuizEnCoursCard({ quiz, onReprendre }: { quiz: QuizItem; onReprendre: () => void }) {
-  const pct = quiz.nb_questions > 0 ? (quiz.questions_repondues / quiz.nb_questions) * 100 : 0;
-  return (
-    <View style={styles.quizSubCard}>
-      <View style={styles.quizSubRow}>
-        <Text style={styles.quizSubTitre}>{quiz.titre}</Text>
-        <Text style={styles.quizSubMeta}>
-          {quiz.questions_repondues}/{quiz.nb_questions} questions
-        </Text>
-      </View>
-      <View style={styles.quizProgressRow}>
-        <View style={styles.quizTrack}>
-          <View style={[styles.quizFill, { width: `${pct}%` }]} />
-        </View>
-        <TouchableOpacity
-          style={styles.reprendreBtn}
-          onPress={onReprendre}
-          accessibilityRole="button"
-        >
-          <Text style={styles.reprendreBtnText}>Reprendre</Text>
-        </TouchableOpacity>
-      </View>
+        {/* SECTION 5 — ÉVÉNEMENTS À VENIR */}
+        {/* 📖 Rien du tout si aucun événement : c'est l'état NORMAL la plupart du
+            temps (contenu épisodique) → pas d'état vide, qui serait du bruit. */}
+        {!evenementsLoading && evenements.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Événements à venir</Text>
+            {evenementsAffiches.map((evenement) => (
+              <TouchableOpacity
+                key={evenement.id}
+                style={styles.eventCard}
+                activeOpacity={0.85}
+                onPress={() =>
+                  router.push({
+                    pathname: '/tabs/accueil/evenement/[id]',
+                    params: {
+                      id: String(evenement.id),
+                      titre: evenement.titre,
+                      description: evenement.description ?? '',
+                      date_heure: evenement.date_heure,
+                      horaire_fin: evenement.horaire_fin ?? '',
+                      lieu: evenement.lieu,
+                      image_url: evenement.image_url ?? '',
+                    },
+                  })
+                }
+              >
+                <View style={styles.eventRow}>
+                  <View style={styles.eventDateBloc}>
+                    <Text style={styles.eventJour}>
+                      {new Date(evenement.date_heure).toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        timeZone: 'UTC',
+                      })}
+                    </Text>
+                    <Text style={styles.eventMois}>
+                      {MOIS_ABREGES[new Date(evenement.date_heure).getUTCMonth()]}
+                    </Text>
+                  </View>
+                  <View style={styles.eventContenu}>
+                    <Text style={styles.eventTitre} numberOfLines={1}>
+                      {evenement.titre}
+                    </Text>
+                    <View style={styles.eventLigne}>
+                      <Text style={styles.eventIcone}>📍</Text>
+                      <Text style={styles.eventInfo} numberOfLines={1}>
+                        {evenement.lieu}
+                      </Text>
+                    </View>
+                    <View style={styles.eventLigne}>
+                      <Text style={styles.eventIcone}>🕐</Text>
+                      <Text style={styles.eventInfoPetit}>
+                        {evenement.horaire_fin
+                          ? `${formatHeure(evenement.date_heure)} → ${formatHeure(evenement.horaire_fin)}`
+                          : formatHeure(evenement.date_heure)}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.eventChevron}>›</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            {evenements.length > EVENEMENTS_APERCU && (
+              <TouchableOpacity
+                onPress={() => setTousEvenements((v) => !v)}
+                style={styles.eventVoirTout}
+              >
+                <Text style={styles.eventVoirToutText}>
+                  {tousEvenements
+                    ? 'Réduire'
+                    : `Voir tous les événements (${evenements.length}) →`}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+
+      </ScrollView>
     </View>
   );
 }
@@ -459,6 +556,34 @@ function Skeleton({ style }: { style?: ViewStyle | ViewStyle[] }) {
     return () => boucle.stop();
   }, [opacity]);
   return <Animated.View style={[styles.skeleton, style, { opacity }]} />;
+}
+
+// 📖 Skeleton du carousel : 3 blocs à la forme exacte d'une carte d'actualité,
+//    dont l'opacité pulse en boucle. Meilleur qu'un spinner ici : la forme est
+//    prévisible → l'attente est « meublée » et il n'y a aucun saut de layout
+//    quand les vraies cartes arrivent.
+function ActualitesSkeleton() {
+  const [opacity] = useState(() => new Animated.Value(1));
+  useEffect(() => {
+    // 📖 sequence = fondu descendant puis remontant ; loop = à l'infini →
+    //    pulsation « respiration ». useNativeDriver : tourne hors thread JS.
+    const boucle = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    boucle.start();
+    return () => boucle.stop();
+  }, [opacity]);
+
+  return (
+    <View style={styles.actuRail}>
+      {[0, 1, 2].map((i) => (
+        <Animated.View key={i} style={[styles.actuSkeleton, { opacity }]} />
+      ))}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -691,118 +816,6 @@ const styles = StyleSheet.create({
     color: Colors.grisMoyen,
   },
 
-  // QUIZ
-  quizTitreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  quizCountBadge: {
-    backgroundColor: Colors.aubergine,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
-  },
-  quizCountText: {
-    color: Colors.blanc,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  quizCard: {
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  quizCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-  },
-  quizIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.fondNeutre,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quizIconEmoji: {
-    fontSize: 18,
-  },
-  quizCardCenter: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  quizCardTitre: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  quizCardSousTitre: {
-    fontSize: 12,
-    color: Colors.grisMoyen,
-    marginTop: 2,
-  },
-  quizSubCard: {
-    backgroundColor: Colors.fondGrisClair,
-    borderRadius: 8,
-    margin: 8,
-    marginTop: 0,
-    padding: 12,
-  },
-  quizSubRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  quizSubTitre: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.aubergine,
-    marginRight: 8,
-  },
-  quizSubMeta: {
-    fontSize: 12,
-    color: Colors.grisMoyen,
-  },
-  quizProgressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  quizTrack: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.fondGris,
-    marginRight: 12,
-    overflow: 'hidden',
-  },
-  quizFill: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.corail[600],
-  },
-  reprendreBtn: {
-    backgroundColor: Colors.aubergine,
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  reprendreBtnText: {
-    color: Colors.blanc,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-
   // SKELETON
   skeleton: {
     backgroundColor: Colors.fondGris,
@@ -822,8 +835,164 @@ const styles = StyleSheet.create({
     height: 132,
     marginBottom: 16,
   },
-  skeletonQuiz: {
-    height: 72,
+
+  // ACTUALITÉS
+  actuRail: {
+    paddingRight: 16,
+    paddingBottom: 4,
+  },
+  actuSkeleton: {
+    width: ACTU_CARD_WIDTH,
+    height: 160,
+    marginRight: ACTU_CARD_MARGIN,
+    borderRadius: 12,
+    backgroundColor: Colors.fondGris,
+  },
+  actuCard: {
+    width: ACTU_CARD_WIDTH,
+    marginRight: ACTU_CARD_MARGIN,
+    backgroundColor: Colors.blanc,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  actuImage: {
+    width: '100%',
+    height: 120,
+  },
+  actuImagePlaceholder: {
+    width: '100%',
+    height: 120,
+    backgroundColor: Colors.creme,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actuImagePlaceholderEmoji: {
+    fontSize: 32,
+    color: Colors.grisMoyen,
+  },
+  actuOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 80,
+    height: 40,
+    backgroundColor: Colors.aubergine,
+    opacity: 0.3,
+  },
+  actuTexte: {
+    padding: 12,
+  },
+  actuTitre: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.aubergine,
+  },
+  actuDate: {
+    fontSize: 11,
+    color: Colors.grisMoyen,
+    marginTop: 4,
+  },
+  actuVide: {
+    backgroundColor: Colors.blanc,
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  actuVideEmoji: {
+    fontSize: 40,
     marginBottom: 8,
+  },
+  actuVideTitre: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.aubergine,
+    textAlign: 'center',
+  },
+  actuVideTexte: {
+    fontSize: 13,
+    color: Colors.grisMoyen,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+
+  // ÉVÉNEMENTS
+  eventCard: {
+    backgroundColor: Colors.blanc,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  eventRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  eventDateBloc: {
+    backgroundColor: Colors.corail[600],
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    minWidth: 52,
+  },
+  eventJour: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.blanc,
+  },
+  eventMois: {
+    fontSize: 11,
+    color: Colors.blanc,
+    textTransform: 'uppercase',
+  },
+  eventContenu: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  eventTitre: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.aubergine,
+  },
+  eventLigne: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  eventIcone: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  eventInfo: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.grisMoyen,
+  },
+  eventInfoPetit: {
+    fontSize: 12,
+    color: Colors.grisMoyen,
+  },
+  eventChevron: {
+    fontSize: 18,
+    color: Colors.grisMoyen,
+    marginLeft: 8,
+  },
+  eventVoirTout: {
+    marginTop: 8,
+  },
+  eventVoirToutText: {
+    fontSize: 14,
+    color: Colors.petrole[500],
+    textAlign: 'center',
   },
 });
