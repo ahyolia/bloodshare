@@ -16,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
+
+        // Derrière ngrok/Dokploy (Traefik), la requête arrive en HTTP en interne :
+        // sans ça, Laravel ignore X-Forwarded-Proto et génère des URLs d'assets
+        // en http:// sur une page servie en https:// (mixed content bloqué).
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
