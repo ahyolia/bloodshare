@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class DefiResource extends Resource
 {
@@ -19,33 +20,43 @@ class DefiResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationGroup = 'Gamification';
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('admin_id')
-                    ->numeric(),
                 Forms\Components\TextInput::make('titre')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\Textarea::make('description')
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('type')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('periode')
-                    ->required()
-                    ->maxLength(255),
                 Forms\Components\TextInput::make('objectif_chiffre')
                     ->numeric(),
                 Forms\Components\TextInput::make('points_attribues')
                     ->required()
                     ->numeric()
                     ->default(0),
-                Forms\Components\TextInput::make('statut')
+                Forms\Components\Select::make('statut')
+                    ->label('Statut')
+                    ->options([
+                        'brouillon' => 'Brouillon',
+                        'actif' => 'Actif',
+                        'termine' => 'Terminé',
+                    ])
                     ->required()
-                    ->maxLength(255)
                     ->default('brouillon'),
+
+                // 📖 Seules valeurs autorisées par les contraintes CHECK en BDD
+                // depuis la refacto "défis communautaires uniquement" (migration
+                // du 10/06/2026) : pas de choix à faire, on les fige.
+                Forms\Components\Hidden::make('type')
+                    ->default('communautaire'),
+                Forms\Components\Hidden::make('periode')
+                    ->default('mensuel'),
+
+                Forms\Components\Hidden::make('admin_id')
+                    ->default(fn () => Auth::id()),
             ]);
     }
 

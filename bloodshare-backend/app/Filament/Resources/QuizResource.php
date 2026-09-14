@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class QuizResource extends Resource
 {
@@ -19,12 +20,12 @@ class QuizResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationGroup = 'Gamification';
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('admin_id')
-                    ->numeric(),
                 Forms\Components\TextInput::make('titre')
                     ->required()
                     ->maxLength(255),
@@ -36,12 +37,19 @@ class QuizResource extends Resource
                     ->required()
                     ->numeric()
                     ->default(0),
-                Forms\Components\TextInput::make('statut')
+                Forms\Components\Select::make('statut')
+                    ->label('Statut')
+                    ->options([
+                        'brouillon' => 'Brouillon',
+                        'actif' => 'Actif',
+                        'inactif' => 'Inactif',
+                    ])
                     ->required()
-                    ->maxLength(255)
                     ->default('brouillon'),
                 Forms\Components\TextInput::make('categorie')
                     ->maxLength(255),
+                Forms\Components\Hidden::make('admin_id')
+                    ->default(fn () => Auth::id()),
                 Forms\Components\Repeater::make('questions')
                     ->relationship('questions')
                     ->label('Questions')
