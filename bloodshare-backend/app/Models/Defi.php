@@ -10,6 +10,8 @@ class Defi extends Model
         'admin_id',
         'titre',
         'description',
+        'type',
+        'periode',
         'objectif_chiffre',
         'points_attribues',
         'statut',
