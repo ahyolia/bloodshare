@@ -4,9 +4,8 @@ import api from './api';
 
 // 📖 Un événement organisé par l'association (collecte mobile, forum...).
 //    `date_heure` : ISO 8601 avec fuseau (ex. "2026-07-02T09:00:00Z").
-//    description / horaire_fin / image_url : absents du contrat API V1 minimal
-//    (/evenements ne renvoie que id, titre, date_heure, lieu), mais le backoffice
-//    peut les renseigner et l'écran détail les affiche s'ils sont présents.
+//    description / horaire_fin / image_url sont optionnels côté backoffice
+//    (peuvent rester vides) : l'écran détail les affiche s'ils sont présents.
 export type Evenement = {
   id: number;
   titre: string;
