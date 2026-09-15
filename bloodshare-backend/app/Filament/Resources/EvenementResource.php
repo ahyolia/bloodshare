@@ -36,10 +36,12 @@ class EvenementResource extends Resource
 
                 Forms\Components\DateTimePicker::make('date_heure')
                     ->label('Date et heure de début')
+                    ->seconds(false)
                     ->required(),
 
                 Forms\Components\DateTimePicker::make('horaire_fin')
-                    ->label('Date et heure de fin'),
+                    ->label('Date et heure de fin')
+                    ->seconds(false),
 
                 Forms\Components\TextInput::make('lieu')
                     ->label('Lieu')
