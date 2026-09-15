@@ -43,7 +43,6 @@
         }
       ],
       "expo-secure-store",
-      "expo-barcode-scanner",
       "expo-font",
       "expo-image",
       "expo-status-bar",
