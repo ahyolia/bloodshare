@@ -53,7 +53,7 @@ class ContenuController extends Controller
             Evenement::where('statut', 'publie')
                 ->where('date_heure', '>=', now())
                 ->orderBy('date_heure', 'asc')
-                ->get(['id', 'titre', 'date_heure', 'horaire_fin', 'lieu', 'image_url'])
+                ->get(['id', 'titre', 'description', 'date_heure', 'horaire_fin', 'lieu', 'image_url'])
         );
     }
 
