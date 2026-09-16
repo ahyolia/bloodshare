@@ -45,6 +45,10 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => <Ionicons name="compass" size={24} color={color} />,
         }}
       />
+      {/* 📖 Groupe de routes secondaires de l'accueil (détail d'un événement...).
+          href: null → la route existe (router.push la trouve) mais n'apparaît
+          PAS comme onglet dans la barre. */}
+      <Tabs.Screen name="accueil" options={{ href: null }} />
       <Tabs.Screen
         name="don"
         options={{

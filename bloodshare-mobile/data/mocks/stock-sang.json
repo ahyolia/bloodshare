@@ -1,0 +1,10 @@
+[
+  { "groupe": "O-", "niveau": "critique" },
+  { "groupe": "O+", "niveau": "bas" },
+  { "groupe": "A-", "niveau": "correct" },
+  { "groupe": "A+", "niveau": "bon" },
+  { "groupe": "B-", "niveau": "bas" },
+  { "groupe": "B+", "niveau": "correct" },
+  { "groupe": "AB-", "niveau": null },
+  { "groupe": "AB+", "niveau": "bon" }
+]

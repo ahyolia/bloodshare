@@ -1,6 +1,11 @@
 {
   "pseudo": "Spidey",
+  "statut_donneur": "quelques_dons",
+  "avatar_id": 2,
+  "avatar_url": null,
   "points_cumules": 120,
+  "code_parrainage": "SPIDEY7X",
+  "nb_parrainages_valides": 3,
   "niveau": {
     "niveau": 3,
     "label": "Donneur engagé",

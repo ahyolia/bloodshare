@@ -3,15 +3,14 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AppHeader } from '../../../components/layout/AppHeader';
 import { Colors } from '../../../constants/colors';
-import { getProfil, Profil } from '../../../services/profil.service';
 import { CategorieQuiz, getQuizCategories, QuizItem } from '../../../services/quiz.service';
 
 // 📖 Table de correspondance catégorie → icône + couleur de fond du cercle
@@ -29,7 +28,6 @@ export default function QuizScreen() {
   const router = useRouter();
 
   const [categories, setCategories] = useState<CategorieQuiz[] | null>(null);
-  const [profil, setProfil] = useState<Profil | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -40,18 +38,14 @@ export default function QuizScreen() {
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
   const [openEnCours, setOpenEnCours] = useState<Set<string>>(new Set());
 
-  const [showModalNiveau, setShowModalNiveau] = useState(false);
-
   useEffect(() => {
     let cancelled = false;
 
-    // 📖 Les deux appels sont indépendants (contenu des quiz vs points de l'utilisateur) : les lancer
-    //    en parallèle avec Promise.all divise le temps d'attente par ~2 par rapport à deux await en séquence
-    Promise.all([getQuizCategories(), getProfil()])
-      .then(([quizData, meData]) => {
-        if (cancelled) return;
-        setCategories(quizData);
-        setProfil(meData);
+    // 📖 Les points / le niveau de l'utilisateur sont désormais chargés par <AppHeader />
+    //    (hook useProfil) : cet écran ne récupère plus que le contenu des quiz.
+    getQuizCategories()
+      .then((quizData) => {
+        if (!cancelled) setCategories(quizData);
       })
       .catch(() => {
         if (!cancelled) setError(true);
@@ -113,8 +107,6 @@ export default function QuizScreen() {
     return { moyenne: moyenneCalculee, totalCompletes: quizCompletes.length };
   }, [categories]);
 
-  const initiale = profil?.pseudo ? profil.pseudo.charAt(0).toUpperCase() : '?';
-
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -123,7 +115,7 @@ export default function QuizScreen() {
     );
   }
 
-  if (error || !categories || !profil) {
+  if (error || !categories) {
     return (
       <View style={styles.centered}>
         <Text style={styles.errorText}>Impossible de charger les quiz.</Text>
@@ -134,21 +126,7 @@ export default function QuizScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Quiz</Text>
-
-          <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.pointsBadge} onPress={() => setShowModalNiveau(true)}>
-              <Text style={styles.pointsBadgeText}>{profil.points_cumules} ★</Text>
-            </TouchableOpacity>
-
-            <Ionicons name="notifications" size={22} color={Colors.aubergine} />
-
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initiale}</Text>
-            </View>
-          </View>
-        </View>
+        <AppHeader title="Quiz" />
 
         <Text style={styles.sectionTitle}>Quiz en cours</Text>
 
@@ -300,56 +278,6 @@ export default function QuizScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-
-      <Modal
-        visible={showModalNiveau}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowModalNiveau(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setShowModalNiveau(false)}
-        >
-          <TouchableOpacity style={styles.modalCard} activeOpacity={1}>
-            <View style={styles.modalPointsBadge}>
-              <Text style={styles.modalPointsBadgeText}>{profil.points_cumules} ★</Text>
-            </View>
-
-            <Text style={styles.modalNiveauLabel}>Vous êtes au niveau</Text>
-            <Text style={styles.modalNiveauNumero}>{profil.niveau.niveau}</Text>
-
-            <View style={styles.modalSeparateur} />
-
-            <Text style={styles.modalProgressionLabel}>
-              {profil.niveau.points_prochain_niveau !== null
-                ? `${profil.points_cumules}/${profil.niveau.points_prochain_niveau}`
-                : 'Niveau maximum atteint ! 🎉'}
-            </Text>
-
-            <View style={styles.modalProgressTrack}>
-              <View
-                style={[styles.modalProgressFill, { width: `${profil.niveau.progression}%` }]}
-              />
-            </View>
-
-            <View style={styles.modalInfoCard}>
-              <Text style={styles.modalInfoTitre}>Comment gagner des points ?</Text>
-              <Text style={styles.modalInfoItem}>• Faire les quiz</Text>
-              <Text style={styles.modalInfoItem}>• Participer au défi du mois</Text>
-              <Text style={styles.modalInfoItem}>• Parrainer un ami</Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setShowModalNiveau(false)}
-            >
-              <Text style={styles.modalCloseButtonText}>Fermer</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
     </View>
   );
 }
@@ -375,46 +303,6 @@ const styles = StyleSheet.create({
     padding: 18,
     paddingTop: 54,
     paddingBottom: 126,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  pointsBadge: {
-    backgroundColor: Colors.fondNeutre,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  pointsBadgeText: {
-    color: Colors.aubergine,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.petrole[500],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: Colors.blanc,
-    fontSize: 14,
-    fontWeight: '700',
   },
   sectionTitle: {
     fontSize: 20,
@@ -620,96 +508,6 @@ const styles = StyleSheet.create({
   fichesButtonText: {
     color: Colors.blanc,
     fontSize: 15,
-    fontWeight: '700',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCard: {
-    width: '85%',
-    borderRadius: 20,
-    padding: 24,
-    backgroundColor: Colors.blanc,
-    alignItems: 'center',
-  },
-  modalPointsBadge: {
-    backgroundColor: Colors.fondNeutre,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  modalPointsBadgeText: {
-    fontSize: 14,
-    color: Colors.aubergine,
-    fontWeight: '700',
-  },
-  modalNiveauLabel: {
-    color: Colors.grisMoyen,
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 16,
-  },
-  modalNiveauNumero: {
-    fontSize: 64,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    textAlign: 'center',
-  },
-  modalSeparateur: {
-    height: 1,
-    width: '100%',
-    backgroundColor: Colors.grisMoyen,
-    opacity: 0.3,
-  },
-  modalProgressionLabel: {
-    fontSize: 14,
-    color: Colors.grisMoyen,
-    textAlign: 'center',
-    marginTop: 12,
-  },
-  modalProgressTrack: {
-    width: '100%',
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.fondGris,
-    marginVertical: 12,
-    overflow: 'hidden',
-  },
-  modalProgressFill: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.corail[600],
-  },
-  modalInfoCard: {
-    width: '100%',
-    backgroundColor: Colors.creme,
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 8,
-  },
-  modalInfoTitre: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  modalInfoItem: {
-    fontSize: 13,
-    color: Colors.grisMoyen,
-    lineHeight: 24,
-  },
-  modalCloseButton: {
-    backgroundColor: Colors.aubergine,
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginTop: 16,
-    width: '100%',
-    alignItems: 'center',
-  },
-  modalCloseButtonText: {
-    color: Colors.blanc,
     fontWeight: '700',
   },
 });
