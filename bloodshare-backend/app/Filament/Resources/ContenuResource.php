@@ -38,9 +38,17 @@ class ContenuResource extends Resource
                     ->required()
                     ->maxLength(255),
 
-                Forms\Components\TextInput::make('categorie')
+                // 📖 Options figées sur les 4 clés attendues par l'écran mobile
+                //    (app/tabs/don/index.tsx, CATEGORIES) : une catégorie hors de cette
+                //    liste ne serait jamais regroupée/affichée côté app, en silence.
+                Forms\Components\Select::make('categorie')
                     ->label('Catégorie')
-                    ->maxLength(255)
+                    ->options([
+                        'eligibilite' => 'Éligibilité au don',
+                        'processus_don' => 'Processus du don',
+                        'apres_don' => 'Avant et après le don',
+                        'urgences' => 'Urgences et pénuries',
+                    ])
                     ->visible(fn ($get) => $get('type') === 'fiche_info'),
 
                 Forms\Components\Textarea::make('contenu')
@@ -63,7 +71,8 @@ class ContenuResource extends Resource
                     ->default('brouillon'),
 
                 Forms\Components\DateTimePicker::make('published_at')
-                    ->label('Date de publication'),
+                    ->label('Date de publication')
+                    ->seconds(false),
 
                 Forms\Components\Hidden::make('admin_id')
                     ->default(fn () => Auth::id()),
