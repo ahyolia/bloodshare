@@ -104,7 +104,14 @@ class ContenuResource extends Resource
 
                 Tables\Columns\TextColumn::make('categorie')
                     ->label('Catégorie')
-                    ->default('—'),
+                    ->default('—')
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'eligibilite' => 'Éligibilité au don',
+                        'processus_don' => 'Processus du don',
+                        'apres_don' => 'Avant et après le don',
+                        'urgences' => 'Urgences et pénuries',
+                        default => $state ?? '—',
+                    }),
 
                 Tables\Columns\BadgeColumn::make('statut')
                     ->label('Statut')
