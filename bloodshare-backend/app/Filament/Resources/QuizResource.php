@@ -22,6 +22,12 @@ class QuizResource extends Resource
 
     protected static ?string $navigationGroup = 'Gamification';
 
+    protected static ?string $navigationLabel = 'Quiz';
+
+    protected static ?string $modelLabel = 'quiz';
+
+    protected static ?string $pluralModelLabel = 'Quiz';
+
     public static function form(Form $form): Form
     {
         return $form
@@ -46,13 +52,30 @@ class QuizResource extends Resource
                     ])
                     ->required()
                     ->default('brouillon'),
-                Forms\Components\TextInput::make('categorie')
-                    ->maxLength(255),
+                // 📖 Options figées sur les catégories réellement utilisées par les quiz
+                //    du BO (mêmes 3 vues sur les quiz existants) : évite les doublons du
+                //    style "Les bases du don" / "les bases du don" qui casseraient le
+                //    regroupement par catégorie côté mobile.
+                Forms\Components\Select::make('categorie')
+                    ->label('Catégorie')
+                    ->options([
+                        'Les bases du don' => 'Les bases du don',
+                        'Les groupes sanguins' => 'Les groupes sanguins',
+                        "L'association ADSB-NC" => "L'association ADSB-NC",
+                    ]),
                 Forms\Components\Hidden::make('admin_id')
                     ->default(fn () => Auth::id()),
                 Forms\Components\Repeater::make('questions')
                     ->relationship('questions')
                     ->label('Questions')
+                    // 📖 orderColumn : Filament gère lui-même la colonne `ordre` via le
+                    //    glisser-déposer natif du Repeater — plus besoin de le saisir à la
+                    //    main (source de confusion), l'API /quiz/{id} qui trie par `ordre`
+                    //    reste alimentée correctement quand le quiz n'est pas aléatoire.
+                    ->orderColumn('ordre')
+                    ->collapsible()
+                    ->collapsed()
+                    ->itemLabel(fn (array $state): ?string => $state['intitule'] ?? null)
                     ->schema([
                         Forms\Components\TextInput::make('intitule')
                             ->required()
@@ -64,14 +87,14 @@ class QuizResource extends Resource
                             ])
                             ->required()
                             ->default('unique'),
-                        Forms\Components\TextInput::make('ordre')
-                            ->numeric()
-                            ->default(1),
                         Forms\Components\Toggle::make('aleatoire')
                             ->label('Réponses aléatoires'),
                         Forms\Components\Repeater::make('reponses')
                             ->relationship('reponses')
                             ->label('Réponses')
+                            ->collapsible()
+                            ->collapsed()
+                            ->itemLabel(fn (array $state): ?string => $state['texte'] ?? null)
                             ->schema([
                                 Forms\Components\TextInput::make('texte')
                                     ->required()
