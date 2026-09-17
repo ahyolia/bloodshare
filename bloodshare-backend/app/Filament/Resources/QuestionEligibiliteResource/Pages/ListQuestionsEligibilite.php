@@ -16,4 +16,11 @@ class ListQuestionsEligibilite extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+    public function getSubheading(): ?string
+    {
+        return "Ce sont des critères médicaux officiels du CHT. Seul le statut actif/inactif "
+            . "est modifiable par un admin standard — la modification du texte d'une question "
+            . 'est réservée au super_admin pour éviter toute erreur non maîtrisée.';
+    }
 }

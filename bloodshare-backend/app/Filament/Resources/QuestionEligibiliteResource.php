@@ -90,15 +90,17 @@ class QuestionEligibiliteResource extends Resource
                 Tables\Filters\TernaryFilter::make('actif')
                     ->label('Actif'),
             ])
-            // 📖 Pas d'EditAction volontairement : un critère médical du CHT ne doit
-            //    pas pouvoir être modifié à la légère depuis le tableau — seul le
-            //    statut actif/inactif reste ajustable au quotidien.
+            // 📖 Modifier le texte d'un critère médical reste réservé au super_admin :
+            //    un admin standard ne peut ajuster que le statut actif/inactif.
             ->actions([
                 Tables\Actions\Action::make('toggle')
                     ->label(fn (QuestionEligibilite $record): string => $record->actif ? 'Désactiver' : 'Activer')
                     ->icon(fn (QuestionEligibilite $record): string => $record->actif ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
                     ->color(fn (QuestionEligibilite $record): string => $record->actif ? 'warning' : 'success')
                     ->action(fn (QuestionEligibilite $record) => $record->update(['actif' => ! $record->actif])),
+                Tables\Actions\EditAction::make()
+                    ->label('Modifier')
+                    ->visible(fn () => auth()->user()->hasRole('super_admin')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -107,11 +109,19 @@ class QuestionEligibiliteResource extends Resource
             ]);
     }
 
+    // 📖 Filet de sécurité en plus du bouton masqué : empêche aussi l'accès direct
+    //    à l'URL d'édition pour un admin non super_admin.
+    public static function canEdit($record): bool
+    {
+        return auth()->user()->hasRole('super_admin');
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListQuestionsEligibilite::route('/'),
             'create' => Pages\CreateQuestionEligibilite::route('/create'),
+            'edit' => Pages\EditQuestionEligibilite::route('/{record}/edit'),
         ];
     }
 }
