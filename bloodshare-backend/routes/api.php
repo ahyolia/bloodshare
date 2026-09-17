@@ -20,6 +20,10 @@ Route::get('/faq', [ContenuController::class, 'faq']);
 Route::get('/stock-sang', [ContenuController::class, 'stockSang']);
 Route::get('/evenements', [ContenuController::class, 'evenements']);
 Route::get('/bannieres', [ContenuController::class, 'bannieres']);
+// 📖 Public : les critères d'éligibilité sont des questions médicales
+// génériques (CHT NC), aucune réponse individuelle n'y transite — contrainte
+// d'anonymat respectée.
+Route::get('/eligibilite', [ContenuController::class, 'eligibilite']);
 
 // Auth (pas besoin d'être connecté)
 Route::prefix('auth')->group(function () {

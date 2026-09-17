@@ -7,6 +7,7 @@ use App\Models\Banniere;
 use App\Models\Contenu;
 use App\Models\Evenement;
 use App\Models\Faq;
+use App\Models\QuestionEligibilite;
 use App\Models\StockSang;
 
 class ContenuController extends Controller
@@ -54,6 +55,15 @@ class ContenuController extends Controller
                 ->where('date_heure', '>=', now())
                 ->orderBy('date_heure', 'asc')
                 ->get(['id', 'titre', 'description', 'date_heure', 'horaire_fin', 'lieu', 'image_url'])
+        );
+    }
+
+    public function eligibilite()
+    {
+        return response()->json(
+            QuestionEligibilite::where('actif', true)
+                ->orderBy('ordre')
+                ->get(['id', 'ordre', 'question', 'type_reponse', 'reponse_bloquante', 'message_refus'])
         );
     }
 
