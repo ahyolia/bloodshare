@@ -28,7 +28,7 @@ class ContenuController extends Controller
             Contenu::where('type', 'fiche_info')
                 ->where('statut', 'publie')
                 ->orderBy('published_at', 'asc')
-                ->get(['id', 'titre', 'categorie', 'contenu', 'image_url', 'published_at'])
+                ->get(['id', 'titre', 'categorie', 'contenu', 'image_url', 'quiz_cta', 'le_saviez_vous', 'published_at'])
         );
     }
 

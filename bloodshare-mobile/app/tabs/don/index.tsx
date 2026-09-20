@@ -173,7 +173,10 @@ export default function DonScreen() {
                   </View>
                   <View style={styles.categorieTextContainer}>
                     <Text style={styles.categorieTitle}>{categorie.label}</Text>
-                    <Text style={styles.categorieSubtitle}>{items.length} fiches pratiques</Text>
+                    <Text style={styles.categorieSubtitle}>
+                      {items.length} fiche{items.length > 1 ? 's' : ''} pratique
+                      {items.length > 1 ? 's' : ''}
+                    </Text>
                   </View>
                   <Ionicons
                     name={isOpen ? 'chevron-up' : 'chevron-down'}

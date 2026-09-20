@@ -486,7 +486,24 @@ Alimente le carousel d'actualités sur l'écran d'accueil. **Réponse 200 :**
 ```
 
 ## `GET /fiches-infos`
-Alimente les fiches pratiques sur le don, affichées dans l'onglet Don. **Réponse 200 :** même structure que `/actualites`, avec un champ `categorie` en plus.
+Alimente les fiches pratiques sur le don, affichées dans l'onglet Don. **Réponse 200 :**
+
+```json
+[
+  {
+    "id": 4,
+    "titre": "Qui peut donner son sang ?",
+    "categorie": "eligibilite",
+    "contenu": "...",
+    "image_url": null,
+    "quiz_cta": true,
+    "le_saviez_vous": "Un don de sang peut sauver jusqu'à trois vies.",
+    "published_at": "2026-09-17T09:29:00Z"
+  }
+]
+```
+
+> `categorie` vaut `eligibilite`, `processus_don`, `apres_don` ou `urgences` (les seules clés que l'app regroupe). `quiz_cta` (booléen) indique s'il faut afficher sous la fiche l'invitation « Tester ses connaissances » ; `le_saviez_vous` (texte, `null` si absent) alimente le bloc « Le saviez-vous ? ». Ces deux champs se renseignent dans le backoffice (Contenus).
 ## `GET /faq`
 Alimente la section FAQ / Informations pratiques. **Réponse 200 :**
 

@@ -19,8 +19,9 @@ export type FicheInfo = {
   contenu: string;
   sections?: FicheSection[];
   a_eviter?: string[];
+  // Renseignés dans le backoffice (Contenus) ; `le_saviez_vous` vaut null quand il est vide.
   quiz_cta?: boolean;
-  le_saviez_vous?: string;
+  le_saviez_vous?: string | null;
 };
 
 export const getFichesInfos = async (): Promise<FicheInfo[]> => {
