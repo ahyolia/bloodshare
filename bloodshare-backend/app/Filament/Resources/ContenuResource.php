@@ -57,6 +57,22 @@ class ContenuResource extends Resource
                     ->rows(6)
                     ->columnSpanFull(),
 
+                // 📖 Blocs facultatifs affichés sous une fiche pratique dans l'app (uniquement
+                //    pour le type "Fiche info & don" : sans objet pour une actualité).
+                Forms\Components\Toggle::make('quiz_cta')
+                    ->label('Proposer « Tester ses connaissances »')
+                    ->helperText('Affiche sous la fiche une invitation à faire un quiz.')
+                    ->default(true)
+                    ->inline(false)
+                    ->visible(fn ($get) => $get('type') === 'fiche_info'),
+
+                Forms\Components\Textarea::make('le_saviez_vous')
+                    ->label('Le saviez-vous ?')
+                    ->helperText('Facultatif : un fait court affiché en bas de la fiche.')
+                    ->rows(3)
+                    ->columnSpanFull()
+                    ->visible(fn ($get) => $get('type') === 'fiche_info'),
+
                 Forms\Components\TextInput::make('image_url')
                     ->label('URL de l\'image')
                     ->maxLength(255),
