@@ -140,7 +140,9 @@ export default function ProfilScreen() {
                 emoji="🩸"
                 fond={Colors.fondRose}
                 label="Historique des dons"
-                valeur={dons ? `${dons.total_dons} dons` : undefined}
+                valeur={
+                  dons ? `${dons.total_dons} don${dons.total_dons > 1 ? 's' : ''}` : undefined
+                }
                 onPress={() => router.push('/tabs/profil/historique-dons')}
               />
               <SettingsRow
