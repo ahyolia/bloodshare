@@ -29,6 +29,7 @@ Ce document définit le format exact des requêtes et réponses entre l'applicat
 | Contenu | `GET /bannieres` | ✅ Implémenté |
 | Gamification | `GET /quiz` | ✅ Implémenté |
 | Gamification | `GET /quiz/{id}` | ✅ Implémenté |
+| Gamification | `PUT /quiz/{id}/progression` | ✅ Implémenté |
 | Gamification | `POST /quiz/{id}/soumettre` | ✅ Implémenté |
 | Gamification | `GET /defis/actuel` | ✅ Implémenté |
 
@@ -373,12 +374,16 @@ Alimente l'écran d'accueil de l'onglet Quiz — la liste de tous les quiz dispo
   {
     "categorie": "Les bases du don",
     "quiz": [
-      { "id": 1, "titre": "Qui peut donner ?", "points_attribues": 30, "complete": true },
-      { "id": 2, "titre": "Comment se préparer ?", "points_attribues": 30, "complete": false }
+      { "id": 1, "titre": "Qui peut donner ?", "points_attribues": 30, "complete": true,
+        "nb_questions": 5, "nb_tentatives": 2, "questions_repondues": 5, "score": 4 },
+      { "id": 2, "titre": "Comment se préparer ?", "points_attribues": 30, "complete": false,
+        "nb_questions": 5, "nb_tentatives": 0, "questions_repondues": 2, "score": null }
     ]
   }
 ]
 ```
+
+> Un quiz est **« en cours »** quand `complete` est `false` et `questions_repondues > 0` (progression enregistrée via `PUT /quiz/{id}/progression`). `score` vaut `null` tant que le quiz n'est pas terminé ; sinon c'est le nombre de bonnes réponses sur `nb_questions`.
 
 ## `GET /quiz/{id}`
 Récupère le contenu d'un quiz précis (ses questions et réponses possibles) — à appeler quand l'utilisateur clique sur un quiz pour le lancer. _Authentifié._
@@ -389,6 +394,9 @@ Récupère le contenu d'un quiz précis (ses questions et réponses possibles) �
   "id": 1,
   "titre": "Qui peut donner ?",
   "aleatoire": false,
+  "reponses_donnees": [
+    { "question_id": 1, "reponse_ids": [2] }
+  ],
   "questions": [
     {
       "id": 1,
@@ -405,6 +413,26 @@ Récupère le contenu d'un quiz précis (ses questions et réponses possibles) �
 ```
 
 > Le champ `est_correcte` n'est jamais renvoyé avant soumission.
+> `reponses_donnees` contient les choix déjà enregistrés lors d'une tentative non terminée (liste vide sinon) : c'est ce qui permet de reprendre le quiz là où l'utilisateur s'était arrêté. Elle ne révèle jamais les bonnes réponses.
+## `PUT /quiz/{id}/progression`
+Enregistre les réponses déjà données à un quiz **non terminé**, pour qu'il apparaisse dans « Quiz en cours » et puisse être repris. Ne corrige rien et n'attribue aucun point (seul `soumettre` le fait). Envoie l'ensemble des réponses données à ce stade : elles **remplacent** la progression précédente. _Authentifié._
+**Requête :**
+
+```json
+{
+  "reponses": [
+    { "question_id": 1, "reponse_ids": [2] }
+  ]
+}
+```
+
+**Réponse 200 :**
+
+```json
+{ "enregistree": true, "questions_repondues": 1 }
+```
+
+> Les questions ou réponses qui n'appartiennent pas au quiz sont ignorées. Si le quiz est déjà terminé, rien n'est modifié et la réponse est `{ "enregistree": false }`. La progression est effacée à la soumission finale.
 ## `POST /quiz/{id}/soumettre`
 Envoie les réponses choisies par l'utilisateur une fois le quiz terminé, et reçoit en retour le score et les points gagnés. _Authentifié._
 **Requête :**

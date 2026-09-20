@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -30,6 +30,8 @@ export default function QuizScreen() {
   const [categories, setCategories] = useState<CategorieQuiz[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  // Vrai dès qu'un chargement a réussi : un échec ultérieur ne doit pas masquer la liste.
+  const dejaCharge = useRef(false);
 
   // 📖 Une catégorie ouverte = sa clé (le nom de catégorie) présente dans le Set
   // → Pourquoi un Set et pas un simple string : plusieurs catégories peuvent être ouvertes en même temps ici
@@ -38,26 +40,34 @@ export default function QuizScreen() {
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
   const [openEnCours, setOpenEnCours] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    let cancelled = false;
+  // 📖 useFocusEffect et pas useEffect : l'onglet Quiz reste monté en arrière-plan, donc un
+  //    useEffect ne se relancerait pas quand on revient de l'écran d'un quiz (terminé ou
+  //    abandonné) → "Quiz en cours" et "Complété" seraient périmés jusqu'au prochain reload.
+  //    Si le rechargement échoue, on garde la liste déjà affichée.
+  //    Les points / le niveau sont chargés par <AppHeader /> (hook useProfil).
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
 
-    // 📖 Les points / le niveau de l'utilisateur sont désormais chargés par <AppHeader />
-    //    (hook useProfil) : cet écran ne récupère plus que le contenu des quiz.
-    getQuizCategories()
-      .then((quizData) => {
-        if (!cancelled) setCategories(quizData);
-      })
-      .catch(() => {
-        if (!cancelled) setError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+      getQuizCategories()
+        .then((quizData) => {
+          if (cancelled) return;
+          dejaCharge.current = true;
+          setCategories(quizData);
+          setError(false);
+        })
+        .catch(() => {
+          if (!cancelled && !dejaCharge.current) setError(true);
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
 
   const toggleCategorie = (categorie: string) => {
     setOpenCategories((prev) => {
@@ -77,13 +87,14 @@ export default function QuizScreen() {
     });
   };
 
-  // 📖 Un quiz "en cours" a été commencé (nb_tentatives > 0) mais pas terminé (complete === false)
+  // 📖 Un quiz "en cours" a au moins une réponse enregistrée (questions_repondues > 0) mais
+  //    n'est pas terminé (complete === false)
   const categoriesEnCours = useMemo(() => {
     if (!categories) return [];
     return categories
       .map((cat) => ({
         categorie: cat.categorie,
-        quiz: cat.quiz.filter((q) => !q.complete && q.nb_tentatives > 0),
+        quiz: cat.quiz.filter((q) => !q.complete && q.questions_repondues > 0),
       }))
       .filter((cat) => cat.quiz.length > 0);
   }, [categories]);
@@ -99,9 +110,13 @@ export default function QuizScreen() {
       .filter((q): q is QuizItem & { score: number } => q.complete && q.score !== null);
 
     const cinqDerniers = quizCompletes.slice(-5);
+    // 📖 Le score est un nombre de bonnes réponses sur nb_questions (variable d'un quiz à
+    //    l'autre) alors que l'affichage est "/5" : on ramène chaque quiz sur 5 avant de moyenner.
+    const surCinq = (q: QuizItem & { score: number }) =>
+      q.nb_questions > 0 ? (q.score / q.nb_questions) * 5 : 0;
     const moyenneCalculee =
       cinqDerniers.length > 0
-        ? cinqDerniers.reduce((somme, q) => somme + q.score, 0) / cinqDerniers.length
+        ? cinqDerniers.reduce((somme, q) => somme + surCinq(q), 0) / cinqDerniers.length
         : null;
 
     return { moyenne: moyenneCalculee, totalCompletes: quizCompletes.length };
