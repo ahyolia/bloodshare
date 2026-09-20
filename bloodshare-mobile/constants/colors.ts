@@ -15,7 +15,6 @@ export const Theme = {
     surface: Palette.neutre[0],
     surfaceEnfoncee: Palette.neutre[100],
     bordure: Palette.neutre[200],
-    /** Pastilles douces pour catégoriser un contenu (texte en texte.principal). */
     pastilleCorail: Palette.corail[100],
     pastillePetrole: Palette.petrole[100],
     pastilleMousse: Palette.mousse[100],
@@ -25,9 +24,7 @@ export const Theme = {
   texte: {
     principal: Palette.aubergine[900],
     secondaire: Palette.aubergine[500],
-    /** Texte posé sur un aplat sombre ou saturé (bouton primaire, bulle Don). */
     surAccent: Palette.neutre[0],
-    /** Uniquement pour un contrôle réellement inactif. Jamais du contenu. */
     desactive: Palette.aubergine[300],
   },
 
@@ -36,12 +33,9 @@ export const Theme = {
     primaire: Palette.corail[700],
     primairePresse: Palette.corail[500],
     primaireTexte: Palette.neutre[0],
-    /** Bouton secondaire : contour, pas d'aplat. */
     secondaireBordure: Palette.corail[700],
     secondaireTexte: Palette.corail[700],
-    /** Action discrète et réversible — déconnexion, annuler, passer. */
     discreteTexte: Palette.aubergine[500],
-    /** Action destructive et irréversible — supprimer mon compte. Rien d'autre. */
     destructiveTexte: Palette.brique[500],
     desactiveFond: Palette.neutre[100],
     desactiveTexte: Palette.aubergine[300],
@@ -49,52 +43,23 @@ export const Theme = {
 
   /** Couleur signature. Aplats et grandes surfaces uniquement. */
   accent: {
-    /** Jamais en texte ni en icône fine : 1.38:1 sur crème. */
     signatureAplat: Palette.lime[500],
-    /** Texte à poser sur cet aplat. */
     signatureTexte: Palette.aubergine[900], // 8.98:1
   },
 
-  /**
-   * Navigation (tab bar).
-   *
-   * La barre est une pilule sombre flottante : ses couleurs sont donc les
-   * seules du thème à être pensées SUR APLAT FONCÉ. C'est le seul endroit à
-   * modifier pour changer l'allure de la navigation.
-   */
+  /** Navigation (tab bar). */
   navigation: {
     fond: Palette.aubergine[900],
-    actif: Palette.neutre[0], // 12.6:1 sur la pilule
-    inactif: Palette.neutre[400], // 5.9:1 sur la pilule
+    actif: Palette.neutre[0],
+    inactif: Palette.neutre[400],
 
     /** Bulle centrale du Don. */
     bulleFond: Palette.neutre[0],
-    /**
-     * Anneau qui détache la bulle de la pilule. Volontairement de la même
-     * couleur que le fond de la barre : il se lit comme un vide découpé dans
-     * la pilule, pas comme un contour. Il ne signale donc RIEN — il est
-     * toujours visible, page Don ouverte ou non.
-     */
     bulleAnneau: Palette.aubergine[900],
-    /**
-     * C'est l'icône, elle, qui porte l'état de l'onglet Don : atténuée
-     * ailleurs dans l'app (6.4:1 sur la bulle crème), pleine et sombre sur la
-     * page Don (11.9:1).
-     */
     bulleIcone: Palette.aubergine[500],
     bulleIconeActif: Palette.aubergine[900],
   },
 
-  /**
-   * Niveaux de stock sanguin.
-   *
-   * ⚠️ Piège à contraste : aucune de ces 4 teintes ne peut porter du texte.
-   * Aubergine sur « correct » plein = 3.87:1, sur « critique » plein = 3.21:1.
-   * Le motif correct est donc :
-   *   `jauge`   = remplissage de la barre / du point (décoratif, sans texte)
-   *   `surface` = fond de la pastille, le libellé s'écrit en texte.principal
-   * Et toujours une icône + le mot (« Critique », « Bas »…) à côté.
-   */
   etat: {
     critique: { jauge: Palette.brique[500], surface: Palette.brique[100] },
     bas: { jauge: Palette.orange[500], surface: Palette.orange[100] },
@@ -102,7 +67,6 @@ export const Theme = {
     bon: { jauge: Palette.mousse[600], surface: Palette.mousse[100] },
   },
 
-  /** Retours système (erreur de formulaire, confirmation). */
   feedback: {
     erreurTexte: Palette.brique[500],
     erreurSurface: Palette.brique[100],
