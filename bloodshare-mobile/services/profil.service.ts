@@ -56,16 +56,34 @@ const filtrerProfil = (profil: Profil): Profil => ({
   points_cumules: profil.points_cumules,
   niveau: profil.niveau,
   code_parrainage: profil.code_parrainage,
-  nb_parrainages_valides: profil.nb_parrainages_valides,
+  // Absent des réponses de PUT /me : on retombe sur 0 plutôt que sur `undefined`.
+  nb_parrainages_valides: profil.nb_parrainages_valides ?? 0,
 });
+
+// Un échec ici ne doit jamais empêcher d'afficher le profil : le compteur retombe à 0.
+const getNbParrainagesValides = async (): Promise<number> => {
+  try {
+    const response = await api.get<{ code: string; nb_parrainages_valides: number }>(
+      '/parrainage/code'
+    );
+    return response.data.nb_parrainages_valides ?? 0;
+  } catch {
+    return 0;
+  }
+};
 
 export const getProfil = async (): Promise<Profil> => {
   if (USE_MOCK_DATA) {
     return profilMock as Profil;
   }
 
-  const response = await api.get<Profil>('/me');
-  return filtrerProfil(response.data);
+  // GET /me ne contient pas le nombre de parrainages validés (docs/contrat_API.md) : il vient
+  // de GET /parrainage/code, appelé en parallèle.
+  const [response, nbParrainagesValides] = await Promise.all([
+    api.get<Profil>('/me'),
+    getNbParrainagesValides(),
+  ]);
+  return filtrerProfil({ ...response.data, nb_parrainages_valides: nbParrainagesValides });
 };
 
 // 📖 PUT /me : met à jour pseudo + avatar + statut, puis renvoie le profil frais

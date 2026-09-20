@@ -64,4 +64,33 @@ describe('getProfil', () => {
 
     expect(profil).not.toHaveProperty('sexe');
   });
+
+  // GET /me ne renvoie pas le nombre de parrainages validés : il vient de GET /parrainage/code.
+  describe('nombre de parrainages validés', () => {
+    it('le lit depuis GET /parrainage/code', async () => {
+      apiGet.mockImplementation((chemin: string) =>
+        Promise.resolve(
+          chemin === '/parrainage/code'
+            ? { data: { code: 'XYZ98765', nb_parrainages_valides: 2 } }
+            : reponseApi
+        )
+      );
+
+      const profil = await getProfil();
+
+      expect(apiGet).toHaveBeenCalledWith('/parrainage/code');
+      expect(profil.nb_parrainages_valides).toBe(2);
+    });
+
+    it('retombe à 0 sans bloquer le profil si cet appel échoue', async () => {
+      apiGet.mockImplementation((chemin: string) =>
+        chemin === '/parrainage/code' ? Promise.reject(new Error('réseau')) : Promise.resolve(reponseApi)
+      );
+
+      const profil = await getProfil();
+
+      expect(profil.pseudo).toBe('BloodHero42');
+      expect(profil.nb_parrainages_valides).toBe(0);
+    });
+  });
 });
