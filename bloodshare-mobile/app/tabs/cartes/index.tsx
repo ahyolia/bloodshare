@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { AppHeader } from '../../../components/layout/AppHeader';
 import { Colors } from '../../../constants/colors';
 import {
@@ -17,6 +17,7 @@ import {
   CarteParrainage,
   CategorieEvenement,
   getCartes,
+  getCartesCache,
 } from '../../../services/cartes.service';
 
 export default function CartesScreen() {
@@ -25,24 +26,33 @@ export default function CartesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
+  // 📖 useFocusEffect et pas useEffect : l'onglet Cartes reste monté en arrière-plan, donc
+  //    un useEffect ne se relancerait pas quand on y revient après un scan → la carte
+  //    fraîchement obtenue n'apparaîtrait qu'après un rechargement de l'app.
+  //    Au rechargement, on garde les données déjà affichées si le réseau échoue
+  //    (getCartesCache() n'est renseigné que par un chargement réussi).
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
 
-    getCartes()
-      .then((data) => {
-        if (!cancelled) setCartes(data);
-      })
-      .catch(() => {
-        if (!cancelled) setError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+      getCartes()
+        .then((data) => {
+          if (cancelled) return;
+          setCartes(data);
+          setError(false);
+        })
+        .catch(() => {
+          if (!cancelled && !getCartesCache()) setError(true);
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
 
   const openScan = () => router.push('/tabs/don/scan');
 
