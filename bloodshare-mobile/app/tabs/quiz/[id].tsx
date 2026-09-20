@@ -20,6 +20,7 @@ import {
   Question,
   QuizDetail,
   ReponsePayload,
+  saveProgression,
   submitQuiz,
 } from '../../../services/quiz.service';
 
@@ -57,6 +58,10 @@ export default function QuizDeroulementScreen() {
   //    laisse passer le `navigation.dispatch` sans réafficher la modale (sinon 2 confirmations).
   const sortieConfirmee = useRef(false);
 
+  // 📖 Signature (JSON) des réponses déjà enregistrées côté serveur : évite de renvoyer la
+  //    même progression, notamment juste après la reprise d'un quiz commencé.
+  const derniereSauvegarde = useRef('[]');
+
   // 📖 Modale d'abandon custom (au lieu de Alert natif) : on met en attente l'action de sortie
   //    interceptée, la modale décide de la rejouer ou non.
   const [modaleAbandon, setModaleAbandon] = useState(false);
@@ -88,7 +93,22 @@ export default function QuizDeroulementScreen() {
 
     getQuizDetail(Number(id))
       .then((data) => {
-        if (!cancelled) setQuiz(data);
+        if (cancelled) return;
+        setQuiz(data);
+
+        // 📖 Reprise d'un quiz commencé : on restaure les réponses déjà données et on repart
+        //    de la première question sans réponse (l'ordre peut changer si le quiz est aléatoire,
+        //    d'où la recherche par id de question et non par position).
+        const donnees = data.reponses_donnees ?? [];
+        if (donnees.length > 0) {
+          setReponses(new Map(donnees.map((r) => [r.question_id, r.reponse_ids])));
+          derniereSauvegarde.current = JSON.stringify(donnees);
+
+          const premiereSansReponse = data.questions.findIndex(
+            (q) => !donnees.some((r) => r.question_id === q.id)
+          );
+          setQuestionIndex(premiereSansReponse === -1 ? data.questions.length - 1 : premiereSansReponse);
+        }
       })
       .catch(() => {
         if (!cancelled) setError(true);
@@ -129,7 +149,35 @@ export default function QuizDeroulementScreen() {
     return unsubscribe;
   }, [navigation]);
 
+  // 📖 Enregistre en arrière-plan les réponses données pour que le quiz apparaisse dans
+  //    "Quiz en cours" et puisse être repris. Un échec réseau ne doit jamais gêner le quiz :
+  //    on l'ignore et on retentera à la prochaine modification / à l'abandon.
+  const envoyerProgression = useCallback(() => {
+    if (!quiz || soumissionEnCours.current) return;
+
+    const payload: ReponsePayload[] = Array.from(reponses.entries())
+      .filter(([, reponseIds]) => reponseIds.length > 0)
+      .map(([question_id, reponse_ids]) => ({ question_id, reponse_ids }));
+
+    const signature = JSON.stringify(payload);
+    if (signature === derniereSauvegarde.current) return;
+
+    derniereSauvegarde.current = signature;
+    saveProgression(quiz.id, payload).catch(() => {
+      derniereSauvegarde.current = '';
+    });
+  }, [quiz, reponses]);
+
+  // 📖 Délai de 600 ms : regroupe les changements rapprochés (cases cochées à la suite)
+  //    en un seul appel réseau.
+  useEffect(() => {
+    const timer = setTimeout(envoyerProgression, 600);
+    return () => clearTimeout(timer);
+  }, [envoyerProgression]);
+
   const confirmerAbandon = () => {
+    // Envoi immédiat : la sortie de l'écran ne doit pas perdre la dernière réponse donnée.
+    envoyerProgression();
     sortieConfirmee.current = true;
     setModaleAbandon(false);
     if (actionSortie.current) navigation.dispatch(actionSortie.current as never);

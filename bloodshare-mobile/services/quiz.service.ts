@@ -49,6 +49,9 @@ export type QuizDetail = {
   titre: string;
   aleatoire: boolean;
   questions: Question[];
+  // 📖 Réponses déjà données lors d'une tentative non terminée (reprise du quiz). Ne contient
+  //    que les choix de l'utilisateur. Absent du mock.
+  reponses_donnees?: ReponsePayload[];
 };
 
 export const getQuizDetail = async (id: number): Promise<QuizDetail> => {
@@ -65,6 +68,14 @@ export const getQuizDetail = async (id: number): Promise<QuizDetail> => {
 export type ReponsePayload = {
   question_id: number;
   reponse_ids: number[];
+};
+
+// 📖 Enregistre côté serveur les réponses déjà données à un quiz non terminé, pour qu'il
+//    apparaisse dans "Quiz en cours" et puisse être repris. Sans effet sur le score/les points.
+export const saveProgression = async (id: number, reponses: ReponsePayload[]): Promise<void> => {
+  if (USE_MOCK_DATA) return;
+
+  await api.put(`/quiz/${id}/progression`, { reponses });
 };
 
 export type DetailReponse = {
