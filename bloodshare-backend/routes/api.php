@@ -53,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Gamification
     Route::get('/quiz', [QuizController::class, 'index']);
     Route::get('/quiz/{id}', [QuizController::class, 'show']);
+    Route::put('/quiz/{id}/progression', [QuizController::class, 'progression']);
     Route::post('/quiz/{id}/soumettre', [QuizController::class, 'soumettre']);
     Route::get('/defis/actuel', [DefiController::class, 'actuel']);
 });
