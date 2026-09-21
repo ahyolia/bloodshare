@@ -13,18 +13,23 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'pseudo' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-
+        // 📖 Tous les seeders sont idempotents : relancer ne duplique rien et ne plante pas.
+        //    Les rôles passent en premier (le super admin en a besoin).
         $this->call([
+            RolesAndPermissionsSeeder::class,
             AvatarSeeder::class,
             CarteSeeder::class,
             BadgeSeeder::class,
             QrCodeSeeder::class,
+            QuestionEligibiliteSeeder::class,
         ]);
+
+        // Compte de test pour l'app mobile, en local uniquement (jamais en production).
+        if (app()->environment('local')) {
+            User::firstOrCreate(
+                ['email' => 'test@example.com'],
+                ['pseudo' => 'Test User', 'password' => 'password']
+            );
+        }
     }
 }

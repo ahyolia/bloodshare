@@ -9,6 +9,9 @@ services:
       - "8000:8000"
     env_file:
       - ./bloodshare-backend/.env
+    environment:
+      # Données de référence + super admin au premier lancement (seeders idempotents)
+      RUN_SEEDERS: "true"
     volumes:
       - ./bloodshare-backend:/var/www/html
     dns:

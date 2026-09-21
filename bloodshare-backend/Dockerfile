@@ -21,4 +21,11 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 8000
+
+# 📖 Healthcheck : sans lui, une mise à jour Swarm "start-first" arrête l'ancien conteneur
+#    dès que le nouveau DÉMARRE, avant qu'il ait fini d'attendre la base et de migrer
+#    (quelques secondes d'erreurs). Avec lui, l'ancien reste en service tant que le nouveau
+#    n'a pas répondu sur /up. start-period large : attente de la base + migrations.
+HEALTHCHECK --interval=5s --timeout=3s --start-period=120s --retries=3     CMD curl -fsS http://localhost:8000/up || exit 1
+
 ENTRYPOINT ["/entrypoint.sh"]
