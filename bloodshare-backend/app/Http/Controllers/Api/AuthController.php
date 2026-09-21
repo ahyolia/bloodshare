@@ -16,6 +16,12 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        // 📖 Les codes de parrainage sont générés en majuscules : on tolère qu'ils soient
+        //    saisis en minuscules à la main.
+        if ($request->filled('code_parrainage')) {
+            $request->merge(['code_parrainage' => strtoupper(trim($request->input('code_parrainage')))]);
+        }
+
         $validated = $request->validate([
             'pseudo' => 'required|string|max:50|unique:users,pseudo',
             'email' => 'required|email|unique:users,email',
@@ -29,7 +35,11 @@ class AuthController extends Controller
             'sexe' => 'required|in:homme,femme',
             'statut_donneur' => 'nullable|in:donneur_regulier,quelques_dons,jamais_donne',
             'avatar_id' => 'nullable|exists:avatars,id',
-            'code_parrainage' => 'nullable|string',
+            // Un code inconnu était ignoré en silence (inscription réussie, aucun parrainage
+            // créé) : l'utilisateur croyait son code pris en compte. On refuse désormais.
+            'code_parrainage' => 'nullable|string|exists:users,code_parrainage',
+        ], [
+            'code_parrainage.exists' => "Ce code de parrainage n'existe pas. Vérifiez-le ou laissez le champ vide.",
         ]);
 
         $codeParrainage = strtoupper(Str::random(8));

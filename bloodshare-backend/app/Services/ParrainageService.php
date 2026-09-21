@@ -68,20 +68,23 @@ class ParrainageService
             return;
         }
 
-        $userCarte = UserCarte::where('user_id', $user->id)
+        // 📖 La carte Parrain / Filleul n'est donnée qu'une seule fois : à partir du 2e
+        //    filleul, un parrain ne gagne que des points (ni carte en plus, ni quantité
+        //    qui grimpe). Le badge Ambassadeur suit la même règle (cf. attribuerBadgeAmbassadeur).
+        $dejaObtenue = UserCarte::where('user_id', $user->id)
             ->where('carte_id', $carte->id)
-            ->first();
+            ->exists();
 
-        if ($userCarte) {
-            $userCarte->increment('quantite');
-        } else {
-            UserCarte::create([
-                'user_id'    => $user->id,
-                'carte_id'   => $carte->id,
-                'quantite'   => 1,
-                'obtenue_at' => now(),
-            ]);
+        if ($dejaObtenue) {
+            return;
         }
+
+        UserCarte::create([
+            'user_id'    => $user->id,
+            'carte_id'   => $carte->id,
+            'quantite'   => 1,
+            'obtenue_at' => now(),
+        ]);
     }
 
     private function attribuerBadgeAmbassadeur(User $parrain): ?array

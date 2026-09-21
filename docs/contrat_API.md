@@ -84,6 +84,7 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
 > mais il n'est jamais renvoyé dans la réponse et ne doit pas être conservé sur le téléphone.
 > `statut_donneur` accepte `donneur_regulier`, `quelques_dons` ou `jamais_donne`.
 > `password` doit faire au moins 8 caractères et contenir majuscule, minuscule et chiffre.
+> Si `code_parrainage` est renseigné, il doit être **celui d'un utilisateur existant** (la casse n'a pas d'importance) ; sinon l'inscription est refusée (422, voir ci-dessous) et aucun compte n'est créé. Laisser le champ vide ou l'omettre reste valable.
 
 **Réponse 201 :**
 
@@ -102,6 +103,17 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
 ```
 
 > `points_cumules` ne reflète que les points gagnés via quiz, défi du mois ou parrainage — jamais via un don ou un événement (voir section 3).
+
+**Réponse 422** (données invalides, par exemple un code de parrainage inconnu) :
+
+```json
+{
+  "message": "Ce code de parrainage n'existe pas. Vérifiez-le ou laissez le champ vide.",
+  "errors": {
+    "code_parrainage": ["Ce code de parrainage n'existe pas. Vérifiez-le ou laissez le champ vide."]
+  }
+}
+```
 
 ## `POST /auth/login`
 Connecte un utilisateur déjà inscrit et renvoie un nouveau token à stocker.
