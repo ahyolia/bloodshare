@@ -252,11 +252,18 @@ Les deux reçoivent une notification
 ```
 
 ## Règles
-*   Un utilisateur peut parrainer plusieurs personnes
+*   Un utilisateur peut parrainer plusieurs personnes, sans plafond de points : chaque filleul validé rapporte +75 pts au parrain
+*   La **carte Parrain** (et le badge Ambassadeur) ne sont donnés qu'**une seule fois**, au premier parrainage validé : les filleuls suivants n'ajoutent que des points
+*   Un code de parrainage inconnu à l'inscription est refusé (erreur 422), il n'est jamais ignoré en silence
 *   Un filleul ne peut être parrainé qu'une seule fois
 *   La validation se déclenche au 1er don du filleul — pas à l'inscription
 *   Le code de parrainage est unique, généré automatiquement à l'inscription
 *   L'anonymat est préservé — le parrain voit uniquement "1 parrainage validé", pas l'identité du filleul
+
+## Limites connues (à traiter dans de futures US)
+*   **Notification** : le flux ci-dessus prévoit que les deux parties soient prévenues ; ce n'est pas encore implémenté (le parrain ne voit ses points qu'en rouvrant l'application). Prévu : notifications push (US à créer ; non testables dans Expo Go, il faut un build de développement).
+*   **Risque d'abus (faux comptes filleuls)** : le QR Code du centre est un jeton **fixe**, sans preuve de présence physique, et l'inscription n'exige pas de vérification d'email. Quelqu'un disposant d'une photo du QR Code pourrait créer de faux comptes filleuls avec son propre code et cumuler +75 pts par faux compte. Non corrigé à ce stade ; le remède le plus efficace (QR Code du centre renouvelé régulièrement) change l'organisation au centre, à décider avec l'association.
+*   **Badge « Filleul »** : la spec en prévoit un pour le filleul ; il n'existe pas parmi les badges actuels (le filleul reçoit la carte Filleul). À traiter avec l'US badges.
 # 8\. Récapitulatif — Déclencheurs et récompenses
 
 ```scss
