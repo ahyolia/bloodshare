@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   FlatList,
   Image,
@@ -15,6 +16,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { EnTete } from '../../components/EnTete';
 import { Colors } from '../../constants/colors';
 import { Actualite, getActualites } from '../../services/actualites.service';
 import { Banniere, getBanniere, TypeBanniere } from '../../services/bannieres.service';
@@ -27,6 +29,7 @@ import {
   NiveauStock,
   StockGroupe,
 } from '../../services/stockSang.service';
+import { initialePseudo } from '../../utils/profil';
 
 // 📖 Table niveau de stock → couleur (Colors.status) + libellé lisible affiché
 //    sous la goutte. `null` (groupe sans donnée) est géré à part, en gris.
@@ -68,6 +71,12 @@ const MOIS_ABREGES = [
   'JAN', 'FÉV', 'MAR', 'AVR', 'MAI', 'JUIN',
   'JUIL', 'AOÛ', 'SEP', 'OCT', 'NOV', 'DÉC',
 ];
+
+// 📖 L'écran Notifications n'existe pas encore. On prévient plutôt que de laisser
+//    une cloche muette (un bouton annoncé aux lecteurs d'écran doit faire quelque
+//    chose). À remplacer par un router.push le jour où la route existe.
+const ouvrirNotifications = () =>
+  Alert.alert('Notifications', 'Cet écran arrive bientôt.');
 
 // 📖 "2026-07-02T09:00:00Z" → "09h00". timeZone UTC : l'heure affichée = l'heure
 //    stockée, sans décalage selon le fuseau de l'appareil.
@@ -269,7 +278,16 @@ export default function AccueilScreen() {
           />
         }
       >
-        <Header user={user} />
+        {/* 📖 Profil non chargé → repli « ? » / 0 point, jamais de spinner :
+            l'en-tête ne doit pas retarder l'affichage du reste de l'accueil. */}
+        <EnTete
+          variante="accueil"
+          pseudo={user?.pseudo ?? ''}
+          initiale={initialePseudo(user?.pseudo)}
+          points={user?.points_cumules ?? 0}
+          notificationsNonLues={0}
+          onPressNotifications={ouvrirNotifications}
+        />
 
         {horsLigne && (
           <Text style={styles.horsLigne}>
@@ -519,31 +537,6 @@ export default function AccueilScreen() {
   );
 }
 
-// 📖 Header personnalisé : avatar + « Hello! » + pseudo à gauche, points + cloche
-//    à droite. Profil non chargé → repli « — ★ » / « ? », jamais de spinner.
-function Header({ user }: { user: Profil | null }) {
-  const initiale = user?.pseudo ? user.pseudo.charAt(0).toUpperCase() : '?';
-  return (
-    <View style={styles.header}>
-      <View style={styles.headerLeft}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initiale}</Text>
-        </View>
-        <View style={styles.headerInfos}>
-          <Text style={styles.hello}>Hello!</Text>
-          {user?.pseudo ? <Text style={styles.pseudo}>{user.pseudo}</Text> : null}
-        </View>
-      </View>
-      <View style={styles.headerRight}>
-        <View style={styles.pointsBadge}>
-          <Text style={styles.pointsBadgeText}>{user ? `${user.points_cumules} ★` : '— ★'}</Text>
-        </View>
-        <Text style={styles.cloche}>🔔</Text>
-      </View>
-    </View>
-  );
-}
-
 function BanniereCard({ banniere }: { banniere: Banniere }) {
   const style = BANNIERE_STYLE[banniere.type];
   return (
@@ -641,62 +634,6 @@ const styles = StyleSheet.create({
     // 📖 La tab bar flottante (bottom 15, hauteur 72) recouvrirait la fin du
     //    contenu avec seulement 32 : on réserve la place.
     paddingBottom: 120,
-  },
-
-  // HEADER
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.grisMoyen,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: Colors.blanc,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  headerInfos: {
-    marginLeft: 12,
-  },
-  hello: {
-    fontSize: 14,
-    color: Colors.grisMoyen,
-  },
-  pseudo: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  pointsBadge: {
-    backgroundColor: Colors.fondGris,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  pointsBadgeText: {
-    color: Colors.aubergine,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  cloche: {
-    fontSize: 20,
-    marginLeft: 8,
   },
 
   // SECTIONS
