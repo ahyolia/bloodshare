@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -40,6 +42,26 @@ class User extends Authenticatable implements FilamentUser, HasName
         'password' => 'hashed',
     ];
 
+
+    // 📖 Le code de parrainage n'était généré qu'à l'inscription : les comptes créés
+    //    autrement (tinker, factory, seeder) n'en avaient jamais. On le génère donc à la
+    //    demande, à la première lecture, et on l'enregistre.
+    protected function codeParrainage(): Attribute
+    {
+        return Attribute::get(function (?string $code) {
+            if ($code || ! $this->exists) {
+                return $code;
+            }
+
+            do {
+                $code = strtoupper(Str::random(8));
+            } while (static::where('code_parrainage', $code)->exists());
+
+            $this->forceFill(['code_parrainage' => $code])->saveQuietly();
+
+            return $code;
+        });
+    }
 
     // Relations
     public function avatar()
