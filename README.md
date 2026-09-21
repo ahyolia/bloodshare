@@ -52,15 +52,24 @@ L'authentification de l'API repose sur Laravel Sanctum (tokens Bearer). Le forma
 git clone https://github.com/ahyolia/bloodshare.git
 cd bloodshare
 
-# Installer les dépendances Laravel via Docker
-docker run --rm -v "$(pwd)/bloodshare-backend:/app" composer:latest install --ignore-platform-reqs --no-scripts
-
-# Configurer l'environnement
+# Configurer l'environnement (valeurs déjà alignées sur le docker-compose)
 cp bloodshare-backend/.env.example bloodshare-backend/.env
 
-# Lancer les conteneurs
+# Tout lancer
 docker compose up --build
 ```
+
+Au premier démarrage, le conteneur `backend` fait automatiquement le reste : installation des
+dépendances (`composer install`), génération de `APP_KEY`, attente de la base, migrations, puis
+seeders (cartes, badges, avatars, QR Code du centre, 15 questions d'éligibilité, rôles, super
+admin). Les seeders sont idempotents : relancer `docker compose up` ne duplique rien.
+
+**Backoffice** : http://localhost:8000/admin avec `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`
+(définis dans `bloodshare-backend/.env`, par défaut `admin@bloodshare.local` / `Admin-local-1234`).
+Compte de test pour l'app mobile : `test@example.com` / `password`.
+
+> Cette base est **locale et indépendante** de celle des autres développeur·se·s : ce que vous
+> saisissez dans votre backoffice n'apparaît pas dans leur application, et inversement.
 
 ## Accès
 
