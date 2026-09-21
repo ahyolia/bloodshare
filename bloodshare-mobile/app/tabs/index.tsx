@@ -119,6 +119,22 @@ export default function AccueilScreen() {
     };
   }, []);
 
+  // 📖 Sections dont au moins un chargement a réussi. Si un rafraîchissement échoue
+  //    ensuite (réseau coupé), on garde leurs dernières données au lieu de les remplacer
+  //    par une erreur ou un état vide ; l'état d'erreur ne sert qu'aux sections qui
+  //    n'ont jamais rien chargé.
+  const dejaCharge = useRef({
+    user: false,
+    banniere: false,
+    stocks: false,
+    defi: false,
+    actualites: false,
+    evenements: false,
+  });
+  // Vrai quand un rafraîchissement a échoué alors que des données sont affichées :
+  // ce qu'on voit n'est peut-être plus à jour.
+  const [horsLigne, setHorsLigne] = useState(false);
+
   // 📖 Chaîne de promesses (pas async/await) : les setState vivent tous dans le
   //    callback `.then`, jamais dans le corps synchrone d'un effet → pas de
   //    « cascading renders ». Les flags *Loading sont déjà à true au montage et
@@ -141,13 +157,25 @@ export default function AccueilScreen() {
     ]).then(([profilR, banniereR, stockR, defiR, actusR, eventsR]) => {
       if (!monte.current) return;
 
+      const charge = dejaCharge.current;
+      const donneesAffichees = Object.values(charge).some(Boolean);
+      const echec = [profilR, banniereR, stockR, defiR, actusR, eventsR].some(
+        (r) => r.status === 'rejected'
+      );
+
       // Header : pas de message d'erreur dédié, un simple repli visuel suffit.
-      setUser(profilR.status === 'fulfilled' ? profilR.value : null);
+      if (profilR.status === 'fulfilled') {
+        setUser(profilR.value);
+        charge.user = true;
+      } else if (!charge.user) {
+        setUser(null);
+      }
 
       if (banniereR.status === 'fulfilled') {
         setBanniere(banniereR.value);
         setBanniereError(false);
-      } else {
+        charge.banniere = true;
+      } else if (!charge.banniere) {
         setBanniereError(true);
       }
       setBanniereLoading(false);
@@ -155,7 +183,8 @@ export default function AccueilScreen() {
       if (stockR.status === 'fulfilled') {
         setStocks(stockR.value);
         setStocksError(false);
-      } else {
+        charge.stocks = true;
+      } else if (!charge.stocks) {
         setStocksError(true);
       }
       setStocksLoading(false);
@@ -163,7 +192,8 @@ export default function AccueilScreen() {
       if (defiR.status === 'fulfilled') {
         setDefi(defiR.value);
         setDefiError(false);
-      } else {
+        charge.defi = true;
+      } else if (!charge.defi) {
         setDefiError(true);
       }
       setDefiLoading(false);
@@ -173,7 +203,8 @@ export default function AccueilScreen() {
       if (actusR.status === 'fulfilled') {
         setActualites(actusR.value);
         setActualitesError(false);
-      } else {
+        charge.actualites = true;
+      } else if (!charge.actualites) {
         setActualites([]);
         setActualitesError(true);
       }
@@ -181,8 +212,15 @@ export default function AccueilScreen() {
 
       // 📖 Événements : pas de state d'erreur. Échec = liste vide = section
       //    entièrement masquée (contenu épisodique, non bloquant).
-      setEvenements(eventsR.status === 'fulfilled' ? eventsR.value : []);
+      if (eventsR.status === 'fulfilled') {
+        setEvenements(eventsR.value);
+        charge.evenements = true;
+      } else if (!charge.evenements) {
+        setEvenements([]);
+      }
       setEvenementsLoading(false);
+
+      setHorsLigne(echec && donneesAffichees);
     });
   }, []);
 
@@ -232,6 +270,12 @@ export default function AccueilScreen() {
         }
       >
         <Header user={user} />
+
+        {horsLigne && (
+          <Text style={styles.horsLigne}>
+            Données non actualisées — vérifiez votre connexion.
+          </Text>
+        )}
 
         {/* SECTION 1 — BANNIÈRE ALERTE PÉNURIE */}
         {banniereLoading ? (
@@ -660,6 +704,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: Colors.aubergine,
+    marginBottom: 12,
+  },
+  horsLigne: {
+    color: Colors.grisMoyen,
+    fontSize: 12,
+    fontStyle: 'italic',
+    textAlign: 'center',
     marginBottom: 12,
   },
   sectionError: {
