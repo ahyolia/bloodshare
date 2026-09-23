@@ -47,6 +47,12 @@ class BadgeSeeder extends Seeder
                 'action_specifique' => 'trois_parrainages',
             ],
             [
+                'nom' => 'Bien accueilli',
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'inscrit_avec_code',
+            ],
+            [
                 'nom' => 'Collection en cours',
                 'condition_type' => 'action_specifique',
                 'condition_valeur' => null,

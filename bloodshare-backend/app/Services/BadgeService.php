@@ -44,6 +44,9 @@ class BadgeService
             'trois_parrainages' => $nbParrainagesValides >= 3,
             'premier_quiz' => $nbQuizCompletes >= 1,
             'cinq_quiz' => $nbQuizCompletes >= 5,
+            // 📖 Côté filleul, pas de condition de validation : le badge récompense le fait
+            //    de s'être inscrit avec un code (n'importe quel statut de parrainage).
+            'inscrit_avec_code' => Parrainage::where('filleul_id', $user->id)->exists(),
         ])->filter()->keys();
 
         $badgesEligibles = Badge::where('statut', 'actif')
