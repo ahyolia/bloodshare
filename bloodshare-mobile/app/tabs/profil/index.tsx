@@ -75,6 +75,7 @@ export default function ProfilScreen() {
           titre="Profil"
           initiale={initialePseudo(pseudo)}
           points={points}
+          profil={profil}
           notificationsNonLues={0}
           onPressNotifications={ouvrirNotifications}
         />

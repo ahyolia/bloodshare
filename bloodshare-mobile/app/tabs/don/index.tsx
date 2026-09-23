@@ -90,6 +90,7 @@ export default function DonScreen() {
           titre="Don"
           initiale={initialePseudo(profil?.pseudo)}
           points={profil?.points_cumules ?? 0}
+          profil={profil}
           notificationsNonLues={0}
           onPressNotifications={ouvrirNotifications}
         />

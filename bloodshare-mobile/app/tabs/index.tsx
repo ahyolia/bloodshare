@@ -285,6 +285,7 @@ export default function AccueilScreen() {
           pseudo={user?.pseudo ?? ''}
           initiale={initialePseudo(user?.pseudo)}
           points={user?.points_cumules ?? 0}
+          profil={user}
           notificationsNonLues={0}
           onPressNotifications={ouvrirNotifications}
         />

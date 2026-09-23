@@ -1,7 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Theme } from '../constants/colors';
+import type { Profil } from '../services/profil.service';
+import { NiveauModal } from './layout/NiveauModal';
 
 /* -------------------------------------------------------------------------
  * En-tête des écrans d'index d'onglets.
@@ -20,6 +23,14 @@ type ProprietesCommunes = {
   /** 1re lettre du pseudo, pour l'avatar. */
   initiale: string;
   points: number;
+  /**
+   * Profil complet, dont la modale de progression a besoin (niveau, seuil du
+   * palier suivant). Distinct de `points`, qui reste la valeur *affichée* : sur
+   * l'écran Profil elle peut venir du cache local alors que le niveau, lui,
+   * n'est connu qu'après GET /me. Tant que le profil n'est pas là, la pastille
+   * reste inerte plutôt que d'ouvrir une modale vide.
+   */
+  profil?: Profil | null;
   notificationsNonLues: number;
   onPressNotifications: () => void;
 };
@@ -51,7 +62,13 @@ const CLOCHE = 40;
 const PASTILLE_HAUTEUR = 34;
 
 export function EnTete(props: EnTeteProps) {
-  const { initiale, points, notificationsNonLues, onPressNotifications } = props;
+  const { initiale, points, profil, notificationsNonLues, onPressNotifications } = props;
+
+  // 📖 L'état de la modale vit ici et non dans chaque écran : les cinq écrans
+  //    d'onglets auraient sinon à déclarer le même useState et à rendre la même
+  //    modale. Ouvrir une modale à partir de données reçues en props ne rompt
+  //    pas le caractère présentationnel du composant — il ne charge toujours rien.
+  const [modaleVisible, setModaleVisible] = useState(false);
 
   return (
     <View style={styles.enTete}>
@@ -74,11 +91,21 @@ export function EnTete(props: EnTeteProps) {
       <View style={styles.droite}>
         <BlocActions
           points={points}
+          pointsInertes={!profil}
+          onPressPoints={() => setModaleVisible(true)}
           notificationsNonLues={notificationsNonLues}
           onPressNotifications={onPressNotifications}
         />
         {props.variante === 'page' && <Avatar initiale={initiale} taille={AVATAR_PAGE} />}
       </View>
+
+      {profil && (
+        <NiveauModal
+          visible={modaleVisible}
+          onClose={() => setModaleVisible(false)}
+          profil={profil}
+        />
+      )}
     </View>
   );
 }
@@ -89,19 +116,23 @@ export function EnTete(props: EnTeteProps) {
  */
 function BlocActions({
   points,
+  pointsInertes,
+  onPressPoints,
   notificationsNonLues,
   onPressNotifications,
-}: Pick<ProprietesCommunes, 'points' | 'notificationsNonLues' | 'onPressNotifications'>) {
-  const router = useRouter();
-
+}: Pick<ProprietesCommunes, 'points' | 'notificationsNonLues' | 'onPressNotifications'> & {
+  pointsInertes: boolean;
+  onPressPoints: () => void;
+}) {
   return (
     <>
       <Pressable
         style={styles.pastille}
-        onPress={() => router.push('/tabs/profil/points')}
+        onPress={onPressPoints}
+        disabled={pointsInertes}
         hitSlop={hitSlopPour(PASTILLE_HAUTEUR)}
         accessibilityRole="button"
-        accessibilityLabel={`${points} points, voir l'historique`}
+        accessibilityLabel={`${points} points, voir ma progression`}
       >
         <Text style={styles.pastilleTexte}>{points}</Text>
         <Ionicons name="star" size={13} color={Theme.accent.signatureTexte} />
