@@ -29,6 +29,24 @@ class BadgeSeeder extends Seeder
                 'action_specifique' => null,
             ],
             [
+                'nom' => 'Compagnon de route',
+                'condition_type' => 'nb_dons',
+                'condition_valeur' => 10,
+                'action_specifique' => null,
+            ],
+            [
+                'nom' => 'Grain de curiosité',
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'premier_quiz',
+            ],
+            [
+                'nom' => 'Bien entouré',
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'trois_parrainages',
+            ],
+            [
                 'nom' => 'Collection en cours',
                 'condition_type' => 'action_specifique',
                 'condition_valeur' => null,

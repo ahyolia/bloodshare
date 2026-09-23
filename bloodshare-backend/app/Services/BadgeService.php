@@ -30,14 +30,20 @@ class BadgeService
 
         $nbDons = Don::where('user_id', $user->id)->where('statut', 'valide')->count();
 
+        $nbParrainagesValides = Parrainage::where('parrain_id', $user->id)
+            ->where('statut', 'valide')
+            ->count();
+
+        $nbQuizCompletes = UserQuiz::where('user_id', $user->id)
+            ->where('complete', true)
+            ->count();
+
         $actionsEligibles = collect([
             'premier_don' => $nbDons >= 1,
-            'premier_parrainage' => Parrainage::where('parrain_id', $user->id)
-                ->where('statut', 'valide')
-                ->exists(),
-            'cinq_quiz' => UserQuiz::where('user_id', $user->id)
-                ->where('complete', true)
-                ->count() >= 5,
+            'premier_parrainage' => $nbParrainagesValides >= 1,
+            'trois_parrainages' => $nbParrainagesValides >= 3,
+            'premier_quiz' => $nbQuizCompletes >= 1,
+            'cinq_quiz' => $nbQuizCompletes >= 5,
         ])->filter()->keys();
 
         $badgesEligibles = Badge::where('statut', 'actif')
