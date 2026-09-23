@@ -176,7 +176,35 @@ npx expo start --tunnel
 
 ### Configuration de l'API selon l'environnement
 
-Dans `bloodshare-mobile/constants/api.ts`, l'URL de l'API doit pointer, en développement, vers l'IP locale de la machine hébergeant le backend Docker (ex. `http://192.168.x.x:8000`). L'URL de production sera définie une fois l'hébergement choisi.
+L'adresse du backend n'est pas versionnée : chaque poste la définit dans `bloodshare-mobile/.env.local`, à partir du modèle fourni.
+
+```bash
+cd bloodshare-mobile
+cp .env.example .env.local
+```
+
+Renseigner `EXPO_PUBLIC_API_URL` avec une adresse joignable **depuis l'appareil qui exécute l'app** — sur un téléphone, `localhost` désigne le téléphone lui-même, jamais la machine de dev. Trois cas, le backend écoutant sur le port 8000 (`docker compose up -d`) :
+
+| Situation | Valeur |
+| --- | --- |
+| Téléphone sur le même réseau que le PC | `http://192.168.x.x:8000/api` — IP LAN du PC |
+| Réseau qui isole les appareils entre eux (Wi-Fi d'établissement) | `https://<tunnel>.ngrok-free.dev/api` — voir `ngrok http 8000` |
+| Émulateur iOS ou test web | `http://localhost:8000/api` |
+
+Vérifier qu'on cible bien **son** backend et pas celui d'un autre poste :
+
+```bash
+curl -H "ngrok-skip-browser-warning: 1" <url>/api/stock-sang
+```
+
+> ⚠️ Après toute modification de `.env.local`, relancer le bundler avec `npx expo start -c`.
+> Les variables `EXPO_PUBLIC_*` sont inlinées dans le bundle au moment de la transformation, et Metro
+> conserve les modules transformés en cache : sans le `-c`, l'ancienne valeur reste active. Cela ne
+> concerne que ce fichier — le code applicatif continue de se recharger instantanément (Fast Refresh).
+
+Au démarrage, l'app affiche en console `[api] URL utilisée : …`, et avertit explicitement si `EXPO_PUBLIC_API_URL` est absent — auquel cas elle se replie sur `localhost`, injoignable depuis un téléphone.
+
+L'URL de production sera définie une fois l'hébergement choisi.
 
 ### Build d'un APK Android via EAS Build
 
