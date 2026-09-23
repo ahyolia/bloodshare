@@ -168,7 +168,7 @@ export default function ProfilScreen() {
                 fond={Colors.fondRose}
                 label="Mes badges"
                 valeur={badges ? `${badges.obtenus}/${badges.total}` : undefined}
-                onPress={() => router.push('/tabs/cartes')}
+                onPress={() => router.push('/tabs/profil/badges')}
               />
               <SettingsRow
                 emoji="⭐"

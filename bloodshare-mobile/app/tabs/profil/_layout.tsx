@@ -7,6 +7,7 @@ export default function ProfilLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
+      <Stack.Screen name="badges" />
       <Stack.Screen name="informations" />
       <Stack.Screen name="historique-dons" />
       <Stack.Screen name="points" />
