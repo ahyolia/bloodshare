@@ -91,6 +91,18 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request->email)->first();
+
+        // 📖 Un compte supprimé (DELETE /me) garde sa ligne en base (statut = 'supprime')
+        //    mais ne doit plus permettre de se reconnecter : sans ce contrôle, email +
+        //    mot de passe suffisaient à retrouver un compte "supprimé" avec ses données.
+        if ($user->statut === 'supprime') {
+            Auth::logout();
+
+            return response()->json([
+                'message' => 'Ce compte a été supprimé.',
+            ], 403);
+        }
+
         $user->update(['derniere_connexion' => now()]);
 
         $token = $user->createToken('mobile')->plainTextToken;
