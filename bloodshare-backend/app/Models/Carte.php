@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasStorageImageUrl;
 use Illuminate\Database\Eloquent\Model;
 
 class Carte extends Model
 {
+    use HasStorageImageUrl;
+
     protected $fillable = [
         'titre',
         'description',

@@ -172,10 +172,22 @@ class ScanController extends Controller
         $dejObtenuIds = UserBadge::where('user_id', $user->id)
             ->pluck('badge_id');
 
+        // 📖 « Premier Pas » (1er don) est seedé en action_specifique='premier_don' mais
+        //    n'était jamais vérifié ici : le badge n'était donc jamais attribué. On accepte
+        //    les deux façons de décrire une condition liée au nombre de dons.
         $badgesEligibles = Badge::where('statut', 'actif')
-            ->where('condition_type', 'nb_dons')
             ->whereNotIn('id', $dejObtenuIds)
-            ->where('condition_valeur', '<=', $nbDons)
+            ->where(function ($query) use ($nbDons) {
+                $query->where('condition_type', 'nb_dons')
+                    ->where('condition_valeur', '<=', $nbDons);
+
+                if ($nbDons >= 1) {
+                    $query->orWhere(function ($q) {
+                        $q->where('condition_type', 'action_specifique')
+                            ->where('action_specifique', 'premier_don');
+                    });
+                }
+            })
             ->get();
 
         $nouveauxBadges = [];
