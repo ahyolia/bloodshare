@@ -4,15 +4,9 @@ import { API_URL } from '../constants/api';
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    // 📖 Sans cet en-tête, un tunnel ngrok gratuit intercale sa page
-    //    d'avertissement HTML avec un statut 200 : axios recevrait du HTML là où
-    //    il attend du JSON, et le parsing échouerait sans erreur réseau visible.
-    //    Inoffensif quand l'API est jointe autrement (IP LAN, localhost).
-    'ngrok-skip-browser-warning': 'true',
   },
 });
 
