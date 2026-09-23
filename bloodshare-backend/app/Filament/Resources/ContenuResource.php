@@ -73,9 +73,11 @@ class ContenuResource extends Resource
                     ->columnSpanFull()
                     ->visible(fn ($get) => $get('type') === 'fiche_info'),
 
-                Forms\Components\TextInput::make('image_url')
-                    ->label('URL de l\'image')
-                    ->maxLength(255),
+                Forms\Components\FileUpload::make('image_url')
+                    ->label('Image')
+                    ->image()
+                    ->directory('contenus')
+                    ->columnSpanFull(),
 
                 Forms\Components\Select::make('statut')
                     ->label('Statut')
@@ -99,6 +101,10 @@ class ContenuResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('image_url')
+                    ->label('Image')
+                    ->size(48),
+
                 Tables\Columns\BadgeColumn::make('type')
                     ->label('Type')
                     ->colors([

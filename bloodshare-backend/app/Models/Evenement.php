@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasStorageImageUrl;
 use Illuminate\Database\Eloquent\Model;
 
 class Evenement extends Model
 {
+    use HasStorageImageUrl;
+
     protected $fillable = [
         'admin_id',
         'qr_code_id',
