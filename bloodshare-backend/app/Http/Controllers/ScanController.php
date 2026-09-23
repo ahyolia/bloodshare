@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Badge;
 use App\Models\Carte;
 use App\Models\Don;
 use App\Models\QrCode;
 use App\Models\QrCodeScan;
-use App\Models\UserBadge;
 use App\Models\UserCarte;
+use App\Services\BadgeService;
 use App\Services\ParrainageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -112,7 +111,7 @@ class ScanController extends Controller
 
         app(ParrainageService::class)->validerSiFilleul($user);
 
-        $badges = $this->attribuerBadgesDon($user);
+        $badges = app(BadgeService::class)->synchroniser($user);
 
         return response()->json([
             'type'             => 'don',
@@ -163,47 +162,4 @@ class ScanController extends Controller
         ]);
     }
 
-    private function attribuerBadgesDon($user): array
-    {
-        $nbDons = Don::where('user_id', $user->id)
-            ->where('statut', 'valide')
-            ->count();
-
-        $dejObtenuIds = UserBadge::where('user_id', $user->id)
-            ->pluck('badge_id');
-
-        // 📖 « Premier Pas » (1er don) est seedé en action_specifique='premier_don' mais
-        //    n'était jamais vérifié ici : le badge n'était donc jamais attribué. On accepte
-        //    les deux façons de décrire une condition liée au nombre de dons.
-        $badgesEligibles = Badge::where('statut', 'actif')
-            ->whereNotIn('id', $dejObtenuIds)
-            ->where(function ($query) use ($nbDons) {
-                $query->where('condition_type', 'nb_dons')
-                    ->where('condition_valeur', '<=', $nbDons);
-
-                if ($nbDons >= 1) {
-                    $query->orWhere(function ($q) {
-                        $q->where('condition_type', 'action_specifique')
-                            ->where('action_specifique', 'premier_don');
-                    });
-                }
-            })
-            ->get();
-
-        $nouveauxBadges = [];
-        foreach ($badgesEligibles as $badge) {
-            UserBadge::create([
-                'user_id'    => $user->id,
-                'badge_id'   => $badge->id,
-                'obtenu_at'  => now(),
-            ]);
-            $nouveauxBadges[] = [
-                'id'        => $badge->id,
-                'nom'       => $badge->nom,
-                'image_url' => $badge->image_url,
-            ];
-        }
-
-        return $nouveauxBadges;
-    }
 }

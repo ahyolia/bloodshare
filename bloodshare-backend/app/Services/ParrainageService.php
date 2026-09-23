@@ -2,12 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\Badge;
 use App\Models\Carte;
 use App\Models\Parrainage;
 use App\Models\PointsHistorique;
 use App\Models\User;
-use App\Models\UserBadge;
 use App\Models\UserCarte;
 
 class ParrainageService
@@ -48,7 +46,11 @@ class ParrainageService
         $this->attribuerCarte($parrain, 'parrain');
         $this->attribuerCarte($user, 'filleul');
 
-        $badgeDebloque = $this->attribuerBadgeAmbassadeur($parrain);
+        // 📖 Délégué à BadgeService, qui recalcule l'éligibilité du parrain à partir de
+        //    son état réel (ici : au moins un parrainage validé) plutôt que de ne vérifier
+        //    que ce seul événement — voir BadgeService::synchroniser pour le pourquoi.
+        $nouveauxBadges = app(BadgeService::class)->synchroniser($parrain);
+        $badgeDebloque = collect($nouveauxBadges)->firstWhere('nom', 'Ambassadeur');
 
         return [
             'parrainage_id'    => $parrainage->id,
@@ -87,35 +89,4 @@ class ParrainageService
         ]);
     }
 
-    private function attribuerBadgeAmbassadeur(User $parrain): ?array
-    {
-        $badge = Badge::where('statut', 'actif')
-            ->where('condition_type', 'action_specifique')
-            ->where('action_specifique', 'premier_parrainage')
-            ->first();
-
-        if (! $badge) {
-            return null;
-        }
-
-        $dejaObtenu = UserBadge::where('user_id', $parrain->id)
-            ->where('badge_id', $badge->id)
-            ->exists();
-
-        if ($dejaObtenu) {
-            return null;
-        }
-
-        UserBadge::create([
-            'user_id'   => $parrain->id,
-            'badge_id'  => $badge->id,
-            'obtenu_at' => now(),
-        ]);
-
-        return [
-            'id'        => $badge->id,
-            'nom'       => $badge->nom,
-            'image_url' => $badge->image_url,
-        ];
-    }
 }
