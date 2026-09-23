@@ -1,5 +1,5 @@
 import api from '../api';
-import { forgotPassword, login, logout } from '../auth.service';
+import { forgotPassword, login, logout, register } from '../auth.service';
 
 // On force le mode API : sans ça, les services renverraient le mock et
 // aucun appel réseau ne serait vérifiable.
@@ -59,6 +59,74 @@ describe('login', () => {
     const { user } = await login('user@example.com', 'MotDePasse123');
 
     expect(user).not.toHaveProperty('groupe_sanguin');
+  });
+});
+
+describe('register', () => {
+  const inscription = {
+    pseudo: 'BloodHero42',
+    email: 'user@example.com',
+    password: 'MotDePasse123',
+    password_confirmation: 'MotDePasse123',
+    sexe: 'femme' as const,
+    statut_donneur: 'quelques_dons',
+    avatar_id: 3,
+  };
+
+  it('appelle POST /auth/register avec le formulaire complet', async () => {
+    apiPost.mockResolvedValue(reponseApi);
+
+    await register(inscription);
+
+    expect(apiPost).toHaveBeenCalledWith('/auth/register', inscription);
+  });
+
+  it('transmet le code de parrainage quand il est fourni', async () => {
+    apiPost.mockResolvedValue(reponseApi);
+
+    await register({ ...inscription, code_parrainage: 'XYZ98765' });
+
+    expect(apiPost).toHaveBeenCalledWith(
+      '/auth/register',
+      expect.objectContaining({ code_parrainage: 'XYZ98765' })
+    );
+  });
+
+  it('renvoie le token et le profil créé', async () => {
+    apiPost.mockResolvedValue(reponseApi);
+
+    const { token, user } = await register(inscription);
+
+    expect(token).toBe('1|abcdef');
+    expect(user.pseudo).toBe('BloodHero42');
+  });
+
+  it("écarte les champs hors liste blanche renvoyés par l'API (contrainte anonymat)", async () => {
+    apiPost.mockResolvedValue(reponseApi);
+
+    const { user } = await register(inscription);
+
+    expect(user).not.toHaveProperty('groupe_sanguin');
+  });
+
+  // 📖 C'est sur cette erreur que repose tout l'affichage des messages par
+  //    étape dans l'écran d'inscription : si le service avalait la réponse 422,
+  //    l'écran n'aurait plus aucun champ à signaler.
+  it('propage la réponse 422 pour que l\'écran puisse cibler le champ fautif', async () => {
+    const erreur422 = {
+      response: {
+        status: 422,
+        data: {
+          message: "Ce code de parrainage n'existe pas.",
+          errors: { code_parrainage: ["Ce code de parrainage n'existe pas."] },
+        },
+      },
+    };
+    apiPost.mockRejectedValue(erreur422);
+
+    await expect(register(inscription)).rejects.toMatchObject({
+      response: { status: 422 },
+    });
   });
 });
 

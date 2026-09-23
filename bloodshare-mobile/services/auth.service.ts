@@ -55,3 +55,24 @@ export const forgotPassword = async (email: string): Promise<void> => {
 
   await api.post('/auth/forgot-password', { email });
 };
+
+export type RegisterPayload = {
+  pseudo: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+  sexe: 'homme' | 'femme';
+  statut_donneur: string | null;
+  avatar_id: number | null;
+  code_parrainage?: string;
+};
+
+export const register = async (payload: RegisterPayload): Promise<AuthResponse> => {
+  if (USE_MOCK_DATA) {
+    return authMock;
+  }
+
+  const response = await api.post<AuthResponse>('/auth/register', payload);
+  return { token: response.data.token, user: filtrerUtilisateur(response.data.user) };
+};
+

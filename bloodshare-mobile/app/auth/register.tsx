@@ -4,10 +4,20 @@ import {
   ActivityIndicator, ScrollView, SafeAreaView 
 } from 'react-native';
 import { router } from 'expo-router';
-import api from '../../services/api';
+import { register } from '../../services/auth.service';
 import { saveToken, saveUser } from '../../stores/auth.store';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+const ETAPE_PAR_CHAMP: Record<string, number> = {
+  pseudo: 1, email: 1, password: 1,
+  sexe: 2, code_parrainage: 2,
+  statut_donneur: 3,
+  avatar_id: 4,
+};
+const BOGUS_AVATARS = [1, 2, 3, 4, 5];
 export default function RegisterScreen() {
+
   // --- ÉTATS DU MULTI-STEP ---
   const [step, setStep] = useState(1);
 
@@ -28,14 +38,17 @@ export default function RegisterScreen() {
   const [localError, setLocalError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
-  const BOGUS_AVATARS = [1, 2, 3, 4, 5];
-
   // --- NAVIGATION ENTRE LES ÉTAPES ---
   const nextStep = () => {
     setLocalError('');
     // Validation basique par étape avant de continuer
     if (step === 1) {
       if (!pseudo || !email || !password || !passwordConfirmation) return setLocalError('Tous les champs sont obligatoires.');
+      if (!EMAIL_REGEX.test(email.trim())) return setLocalError('Adresse e-mail invalide.');
+      if (!PASSWORD_REGEX.test(password))
+        return setLocalError(
+          '8 caractères minimum, avec au moins une majuscule, une minuscule et un chiffre.'
+        );
       if (password !== passwordConfirmation) return setLocalError('Les mots de passe ne correspondent pas.');
     }
     if (step === 2) {
@@ -66,30 +79,39 @@ export default function RegisterScreen() {
     setIsLoading(true);
 
     try {
-      const response = await api.post('/auth/register', {
-        pseudo: pseudo.trim(),
-        email: email.trim(),
-        password,
-        password_confirmation: passwordConfirmation,
-        sexe,
-        statut_donneur: statutDonneur,
-        avatar_id: avatarId,
-        code_parrainage: codeParrainage.trim() || undefined,
-      });
+      const { token, user } = await register({
+      pseudo: pseudo.trim(),
+      email: email.trim(),
+      password,
+      password_confirmation: passwordConfirmation,
+      sexe: sexe!,
+      statut_donneur: statutDonneur,
+      avatar_id: avatarId,
+      code_parrainage: codeParrainage.trim() || undefined,
+    });
 
-      await saveToken(response.data.token);
-      await saveUser(response.data.user);
-      router.replace('/tabs');
+    await saveToken(token);
+    await saveUser(user);
+    router.replace('/tabs');
 
     } catch (error: any) {
       console.error("Erreur d'inscription:", error);
+
       if (error.response?.status === 422) {
-        setFieldErrors(error.response.data.errors);
-        // Si l'erreur concerne un champ des étapes précédentes, on ramène l'utilisateur à l'étape 1
-        setStep(1); 
-        setLocalError('Certaines informations sont incorrectes ou déjà utilisées.');
+        const errors = error.response.data?.errors ?? {};
+        setFieldErrors(errors);
+
+        // On renvoie l'utilisateur à la PREMIÈRE étape concernée, pas systématiquement
+        // à l'étape 1 : sinon une erreur sur le code de parrainage (étape 2) ou sur
+        // l'avatar (étape 4) était invisible et l'inscription ne pouvait jamais aboutir.
+        const etapes = Object.keys(errors).map((champ) => ETAPE_PAR_CHAMP[champ] ?? 1);
+        setStep(etapes.length ? Math.min(...etapes) : 1);
+
+        setLocalError(error.response.data?.message ?? 'Certaines informations sont incorrectes.');
+      } else if (error.request) {
+        setLocalError('Impossible de joindre le serveur. Vérifiez votre connexion.');
       } else {
-        setLocalError(error.response?.data?.message || "Une erreur inattendue s'est produite.");
+        setLocalError(error.response?.data?.message ?? "Une erreur inattendue s'est produite.");
       }
     } finally {
       setIsLoading(false);
@@ -136,7 +158,7 @@ export default function RegisterScreen() {
 
             <Text style={styles.label}>Mot de passe</Text>
             <TextInput style={styles.input} placeholder="********" value={password} onChangeText={setPassword} secureTextEntry />
-            <Text style={styles.hintText}>8 caractères minimum, avec au moins un chiffre et une majuscule.</Text>
+            <Text style={styles.hintText}>8 caractères minimum, avec au moins une majuscule, une minuscule et un chiffre.</Text>
             {renderFieldError('password')}
 
             <Text style={styles.label}>Confirmer le mot de passe</Text>
@@ -147,7 +169,7 @@ export default function RegisterScreen() {
             </Pressable>
 
             <Pressable onPress={() => router.replace('/auth/login')} style={styles.linkContainer}>
-              <Text style={styles.linkText}>Vous avez compte ? <Text style={styles.linkTextBold}>Connectez-vous</Text></Text>
+              <Text style={styles.linkText}>Vous avez un compte ? <Text style={styles.linkTextBold}>Connectez-vous</Text></Text>
             </Pressable>
           </View>
         )}
@@ -167,10 +189,12 @@ export default function RegisterScreen() {
                 </Pressable>
               ))}
             </View>
+            {renderFieldError('sexe')}
             <Text style={styles.hintText}>Sert à calculer votre délai d'éligibilité entre deux dons. Confidentiel, jamais affiché.</Text>
 
             <Text style={styles.label}>Code de parrainage</Text>
             <TextInput style={styles.input} placeholder="Code de parrainage (optionnel)" value={codeParrainage} onChangeText={setCodeParrainage} autoCapitalize="characters" />
+            {renderFieldError('code_parrainage')}
 
             {/* Cases à cocher (Mockées avec du texte pour simplifier) */}
             <View style={styles.checkboxContainer}>
@@ -207,6 +231,7 @@ export default function RegisterScreen() {
                 </Pressable>
               ))}
             </View>
+            {renderFieldError('statut_donneur')}
 
             <Pressable style={styles.primaryBtn} onPress={nextStep}>
               <Text style={styles.primaryBtnText}>Continuer</Text>
@@ -227,6 +252,7 @@ export default function RegisterScreen() {
                 </Pressable>
               ))}
             </View>
+            {renderFieldError('avatar_id')}
 
             <Pressable style={[styles.primaryBtn, isLoading && styles.btnDisabled]} onPress={handleRegister} disabled={isLoading}>
               {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>Créer mon compte</Text>}
