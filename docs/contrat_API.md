@@ -23,7 +23,6 @@ Ce document définit le format exact des requêtes et réponses entre l'applicat
 | Parrainage | `GET /parrainage/code` | ✅ Implémenté |
 | Contenu | `GET /actualites` | ✅ Implémenté |
 | Contenu | `GET /fiches-infos` | ✅ Implémenté |
-| Contenu | `GET /faq` | ✅ Implémenté |
 | Contenu | `GET /stock-sang` | ✅ Implémenté |
 | Contenu | `GET /evenements` | ✅ Implémenté |
 | Contenu | `GET /bannieres` | ✅ Implémenté |
@@ -516,15 +515,6 @@ Alimente les fiches pratiques sur le don, affichées dans l'onglet Don. **Répon
 ```
 
 > `categorie` vaut `eligibilite`, `processus_don`, `apres_don` ou `urgences` (les seules clés que l'app regroupe). `quiz_cta` (booléen) indique s'il faut afficher sous la fiche l'invitation « Tester ses connaissances » ; `le_saviez_vous` (texte, `null` si absent) alimente le bloc « Le saviez-vous ? ». Ces deux champs se renseignent dans le backoffice (Contenus).
-## `GET /faq`
-Alimente la section FAQ / Informations pratiques. **Réponse 200 :**
-
-```scheme
-[
-  { "id": 1, "categorie": "Éligibilité", "question": "Qui peut donner ?", "reponse": "..." }
-]
-```
-
 ## `GET /stock-sang`
 Alimente l'animation du stock de sang par groupe sanguin sur l'écran d'accueil. **Réponse 200 :**
 

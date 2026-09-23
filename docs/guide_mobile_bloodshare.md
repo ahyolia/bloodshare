@@ -436,7 +436,6 @@ Tous ces endpoints sont opérationnels et testés :
 | GET /api/bannieres | ❌ | Alerte pénurie |
 | GET /api/actualites | ❌ | Actualités |
 | GET /api/fiches-infos | ❌ | Fiches pratiques |
-| GET /api/faq | ❌ | FAQ |
 | GET /api/evenements | ❌ | Événements |
 | GET /api/quiz | ✅ | Liste quiz |
 | GET /api/quiz/{id} | ✅ | Détail quiz |

@@ -97,7 +97,6 @@ GET    /api/parrainage/code        Code + parrainages validés (authentifié)
 
 GET    /api/actualites             Actualités publiées (public)
 GET    /api/fiches-infos           Fiches info publiées (public)
-GET    /api/faq                    FAQ (public)
 GET    /api/stock-sang             Niveaux de stock par groupe sanguin (public)
 GET    /api/evenements             Événements à venir (public)
 GET    /api/bannieres              Bannière d'urgence active (public)

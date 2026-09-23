@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Banniere;
 use App\Models\Contenu;
 use App\Models\Evenement;
-use App\Models\Faq;
 use App\Models\QuestionEligibilite;
 use App\Models\StockSang;
 
@@ -29,15 +28,6 @@ class ContenuController extends Controller
                 ->where('statut', 'publie')
                 ->orderBy('published_at', 'asc')
                 ->get(['id', 'titre', 'categorie', 'contenu', 'image_url', 'quiz_cta', 'le_saviez_vous', 'published_at'])
-        );
-    }
-
-    public function faq()
-    {
-        return response()->json(
-            Faq::where('actif', true)
-                ->orderBy('ordre', 'asc')
-                ->get(['id', 'categorie', 'question', 'reponse'])
         );
     }
 
