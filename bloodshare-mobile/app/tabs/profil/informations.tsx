@@ -78,8 +78,8 @@ export default function InformationsScreen() {
         statut_donneur: statut,
       });
 
-      // 📖 On répercute dans le SecureStore pour que l'AppHeader et l'écran
-      //    Profil affichent la nouvelle valeur sans attendre un rechargement.
+      // 📖 On répercute dans le SecureStore pour que l'écranr
+      // Profil affichent la nouvelle valeur sans attendre un rechargement.
       const cache = await getUser();
       await saveUser({
         ...(cache ?? {}),

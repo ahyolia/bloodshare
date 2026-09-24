@@ -3,15 +3,23 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AppHeader } from '../../../components/layout/AppHeader';
+import { EnTete } from '../../../components/EnTete';
 import { Colors } from '../../../constants/colors';
+import { useProfil } from '../../../hooks/useProfil';
 import { CategorieQuiz, getQuizCategories, QuizItem } from '../../../services/quiz.service';
+import { initialePseudo } from '../../../utils/profil';
+
+// 📖 L'écran Notifications n'existe pas encore : on prévient plutôt que de laisser
+//    une cloche muette. À remplacer par un router.push quand la route existera.
+const ouvrirNotifications = () =>
+  Alert.alert('Notifications', 'Cet écran arrive bientôt.');
 
 // 📖 Table de correspondance catégorie → icône + couleur de fond du cercle
 // → Pourquoi une table plutôt qu'un switch : plus lisible, et facile à compléter si de nouvelles catégories de quiz apparaissent
@@ -26,6 +34,9 @@ const getCategorieStyle = (categorie: string) =>
 
 export default function QuizScreen() {
   const router = useRouter();
+  // 📖 <EnTete /> est purement présentationnel : c'est l'écran qui fournit les
+  //    données du profil (pseudo + points), via le hook partagé.
+  const { profil } = useProfil();
 
   const [categories, setCategories] = useState<CategorieQuiz[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,7 +55,6 @@ export default function QuizScreen() {
   //    useEffect ne se relancerait pas quand on revient de l'écran d'un quiz (terminé ou
   //    abandonné) → "Quiz en cours" et "Complété" seraient périmés jusqu'au prochain reload.
   //    Si le rechargement échoue, on garde la liste déjà affichée.
-  //    Les points / le niveau sont chargés par <AppHeader /> (hook useProfil).
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
@@ -141,7 +151,15 @@ export default function QuizScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AppHeader title="Quiz" />
+        <EnTete
+          variante="page"
+          titre="Quiz"
+          initiale={initialePseudo(profil?.pseudo)}
+          points={profil?.points_cumules ?? 0}
+          profil={profil}
+          notificationsNonLues={0}
+          onPressNotifications={ouvrirNotifications}
+        />
 
         <Text style={styles.sectionTitle}>Quiz en cours</Text>
 

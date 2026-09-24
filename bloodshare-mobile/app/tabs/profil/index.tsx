@@ -10,11 +10,18 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { EnTete } from '../../../components/EnTete';
 import { Colors } from '../../../constants/colors';
 import { useProfilComplet } from '../../../hooks/useProfilComplet';
 import { logout } from '../../../services/auth.service';
 import { removeToken } from '../../../stores/auth.store';
 import { LIBELLE_STATUT_DONNEUR, initialePseudo } from '../../../utils/profil';
+import { CONTENU_MARGE_BASSE } from '../_layout';
+
+// 📖 L'écran Notifications n'existe pas encore : on prévient plutôt que de laisser
+//    une cloche muette. À remplacer par un router.push quand la route existera.
+const ouvrirNotifications = () =>
+  Alert.alert('Notifications', 'Cet écran arrive bientôt.');
 
 export default function ProfilScreen() {
   const router = useRouter();
@@ -52,6 +59,7 @@ export default function ProfilScreen() {
   // 📖 On peint dès qu'on a une info : le profil frais, sinon l'aperçu du cache.
   const pseudo = profil?.pseudo ?? apercu?.pseudo ?? '';
   const avatarUrl = profil?.avatar_url ?? apercu?.avatar_url ?? null;
+  const points = profil?.points_cumules ?? apercu?.points_cumules ?? 0;
 
   const rienAAfficher = !profil && !apercu;
 
@@ -62,6 +70,16 @@ export default function ProfilScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        <EnTete
+          variante="page"
+          titre="Profil"
+          initiale={initialePseudo(pseudo)}
+          points={points}
+          profil={profil}
+          notificationsNonLues={0}
+          onPressNotifications={ouvrirNotifications}
+        />
+
         {loading && rienAAfficher && (
           <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />
         )}
@@ -72,7 +90,7 @@ export default function ProfilScreen() {
 
         {!rienAAfficher && (
           <>
-            {/* CARTE UTILISATEUR — sert de header, pas de titre "Profil" */}
+            {/* CARTE UTILISATEUR — identité + raccourci "Modifier", sous l'en-tête */}
             <View style={styles.userCard}>
               <View style={styles.userRow}>
                 {avatarUrl ? (
@@ -242,7 +260,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 18,
     paddingTop: 54,
-    paddingBottom: 126,
+    paddingBottom: CONTENU_MARGE_BASSE,
   },
   loader: {
     marginTop: 40,
