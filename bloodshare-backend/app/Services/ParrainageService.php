@@ -50,7 +50,10 @@ class ParrainageService
         //    son état réel (ici : au moins un parrainage validé) plutôt que de ne vérifier
         //    que ce seul événement — voir BadgeService::synchroniser pour le pourquoi.
         $nouveauxBadges = app(BadgeService::class)->synchroniser($parrain);
-        $badgeDebloque = collect($nouveauxBadges)->firstWhere('nom', 'Ambassadeur');
+        // 📖 On matche sur action_specifique (identifiant technique stable), pas sur le
+        //    libellé : celui-ci se modifie librement dans le BO, et un firstWhere('nom', ...)
+        //    renverrait alors null en silence dès qu'un admin renomme le badge (revue @nevizsh).
+        $badgeDebloque = collect($nouveauxBadges)->firstWhere('action_specifique', 'premier_parrainage');
 
         return [
             'parrainage_id'    => $parrainage->id,

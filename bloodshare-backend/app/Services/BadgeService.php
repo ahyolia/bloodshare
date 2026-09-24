@@ -8,6 +8,7 @@ use App\Models\Parrainage;
 use App\Models\User;
 use App\Models\UserBadge;
 use App\Models\UserQuiz;
+use Illuminate\Database\QueryException;
 
 class BadgeService
 {
@@ -69,16 +70,31 @@ class BadgeService
         $nouveauxBadges = [];
 
         foreach ($badgesEligibles as $badge) {
-            UserBadge::create([
-                'user_id' => $user->id,
-                'badge_id' => $badge->id,
-                'obtenu_at' => now(),
-            ]);
+            try {
+                UserBadge::create([
+                    'user_id' => $user->id,
+                    'badge_id' => $badge->id,
+                    'obtenu_at' => now(),
+                ]);
+            } catch (QueryException $e) {
+                // 📖 Deux requêtes concurrentes (ex. un scan et un GET /badges au même
+                //    instant) peuvent toutes les deux passer la vérification whereNotIn
+                //    ci-dessus avant qu'aucune n'ait inséré : la contrainte unique sur
+                //    (user_id, badge_id) — migration add_unique_constraint_to_user_badges_table
+                //    — fait respecter la règle au niveau base. Un doublon veut juste dire que
+                //    l'autre requête a gagné la course ; le badge est obtenu, rien d'autre à faire.
+                if (! str_contains($e->getMessage(), 'user_badges_user_id_badge_id_unique')) {
+                    throw $e;
+                }
+
+                continue;
+            }
 
             $nouveauxBadges[] = [
                 'id' => $badge->id,
                 'nom' => $badge->nom,
                 'image_url' => $badge->image_url,
+                'action_specifique' => $badge->action_specifique,
             ];
         }
 

@@ -103,22 +103,6 @@ export const BADGES_INFO: Record<string, BadgeInfo> = {
     description: 'Le défi collectif a réussi grâce à vous et à tous les donneurs.',
     condition: 'Participer à un défi collectif remporté',
   },
-
-  // 📖 Ces deux noms existent réellement dans la base (seed actuel) mais pas encore
-  //    dans le référentiel produit ci-dessus : gardés pour que l'écran reste correct
-  //    tant que le catalogue BO n'a pas été aligné sur les 15 badges définitifs.
-  'Collection en cours': {
-    emoji: '🗓️',
-    categorie: 'cartes',
-    description: 'Votre collection de cartes prend forme !',
-    condition: 'Obtenir 6 cartes Mois du don',
-  },
-  'Défi du mois': {
-    emoji: '🌊',
-    categorie: 'defis',
-    description: 'Ensemble on va plus loin. Votre don compte pour tous.',
-    condition: 'Contribuer à un défi du mois',
-  },
 };
 
 export const CATEGORIE_COLOR: Record<CategorieBadge, string> = {

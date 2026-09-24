@@ -53,12 +53,6 @@ class BadgeSeeder extends Seeder
                 'action_specifique' => 'inscrit_avec_code',
             ],
             [
-                'nom' => 'Collection en cours',
-                'condition_type' => 'action_specifique',
-                'condition_valeur' => null,
-                'action_specifique' => 'six_cartes_mois',
-            ],
-            [
                 'nom' => 'Ambassadeur',
                 'condition_type' => 'action_specifique',
                 'condition_valeur' => null,
@@ -69,12 +63,6 @@ class BadgeSeeder extends Seeder
                 'condition_type' => 'action_specifique',
                 'condition_valeur' => null,
                 'action_specifique' => 'cinq_quiz',
-            ],
-            [
-                'nom' => 'Défi du mois',
-                'condition_type' => 'action_specifique',
-                'condition_valeur' => null,
-                'action_specifique' => 'premier_defi_contribue',
             ],
         ];
 
@@ -90,5 +78,11 @@ class BadgeSeeder extends Seeder
                 ]
             );
         }
+
+        // 📖 « Collection en cours » (six_cartes_mois) et « Défi du mois »
+        //    (premier_defi_contribue) avaient été seedés mais ne sont vérifiés nulle part
+        //    dans le code : jamais attribuables. Retirés du catalogue produit (revue
+        //    @nevizsh) — supprimés explicitement pour les bases où ils existaient déjà.
+        Badge::whereIn('nom', ['Collection en cours', 'Défi du mois'])->delete();
     }
 }
