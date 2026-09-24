@@ -49,7 +49,10 @@ class User extends Authenticatable implements FilamentUser, HasName
     protected function codeParrainage(): Attribute
     {
         return Attribute::get(function (?string $code) {
-            if ($code || ! $this->exists) {
+            // 📖 Un compte supprimé (RGPD, voir ProfilController::destroy) a son code mis à
+            //    null volontairement : il ne doit pas en regagner un tout seul à la prochaine
+            //    lecture, sans quoi la suppression ne supprimerait jamais rien pour de bon.
+            if ($code || ! $this->exists || $this->statut === 'supprime') {
                 return $code;
             }
 
