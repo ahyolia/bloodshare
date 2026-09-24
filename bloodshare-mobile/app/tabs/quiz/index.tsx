@@ -55,7 +55,6 @@ export default function QuizScreen() {
   //    useEffect ne se relancerait pas quand on revient de l'écran d'un quiz (terminé ou
   //    abandonné) → "Quiz en cours" et "Complété" seraient périmés jusqu'au prochain reload.
   //    Si le rechargement échoue, on garde la liste déjà affichée.
-  //    Les points / le niveau sont chargés par <AppHeader /> (hook useProfil).
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
