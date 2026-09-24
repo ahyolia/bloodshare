@@ -92,16 +92,11 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        // 📖 Un compte supprimé (DELETE /me) garde sa ligne en base (statut = 'supprime')
-        //    mais ne doit plus permettre de se reconnecter : sans ce contrôle, email +
-        //    mot de passe suffisaient à retrouver un compte "supprimé" avec ses données.
-        if ($user->statut === 'supprime') {
-            Auth::logout();
-
-            return response()->json([
-                'message' => 'Ce compte a été supprimé.',
-            ], 403);
-        }
+        // 📖 Le contrôle statut === 'supprime' qui vivait ici (PR #64) est devenu du code
+        //    mort depuis l'anonymisation RGPD : DELETE /me remplace désormais l'email par une
+        //    valeur générée (supprime-{id}@bloodshare.local), donc plus aucune requête de login
+        //    ne peut retrouver ce compte par son ancien email — Auth::attempt aurait déjà
+        //    échoué avant d'arriver ici. Retiré (revue @nevizsh sur la PR RGPD).
 
         $user->update(['derniere_connexion' => now()]);
 

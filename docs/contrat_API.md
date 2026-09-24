@@ -151,11 +151,9 @@ Connecte un utilisateur déjà inscrit et renvoie un nouveau token à stocker.
 { "message": "Email ou mot de passe incorrect." }
 ```
 
-**Réponse 403** (compte supprimé via `DELETE /me`) :
-
-```json
-{ "message": "Ce compte a été supprimé." }
-```
+> Un compte supprimé via `DELETE /me` renvoie aussi 401 : l'email est anonymisé à la
+> suppression (`supprime-{id}@bloodshare.local`), donc l'ancien email ne correspond plus à
+> aucun compte.
 
 ## `POST /auth/logout`
 Invalide le token côté serveur. À appeler quand l'utilisateur clique sur "Se déconnecter" — penser aussi à effacer le token stocké localement sur le téléphone. _Authentifié._ Aucune requête body.
