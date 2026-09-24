@@ -4,12 +4,20 @@ namespace App\Notifications;
 
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Request;
 
 class ResetPasswordNotification extends ResetPassword
 {
     public function toMail($notifiable): MailMessage
     {
-        $url = config('app.url') . '/reset-password?token=' . $this->token . '&email=' . urlencode($notifiable->getEmailForPasswordReset());
+        // 📖 config('app.url') pointe, sur Dokploy, vers un domaine sslip.io auto-généré non
+        //    exposé publiquement (seul le tunnel ngrok l'est) : un lien construit avec cette
+        //    URL est injoignable depuis le mail d'un vrai destinataire — même défaut que les
+        //    URLs d'images (HasStorageImageUrl), corrigé de la même façon : on préfère l'hôte
+        //    de la requête en cours (celui par lequel forgot-password a été appelé) quand il
+        //    est disponible.
+        $hote = Request::hasHeader('host') ? Request::getSchemeAndHttpHost() : config('app.url');
+        $url = $hote . '/reset-password?token=' . $this->token . '&email=' . urlencode($notifiable->getEmailForPasswordReset());
 
         return (new MailMessage())
             ->subject('Réinitialisation de votre mot de passe BloodShare')
