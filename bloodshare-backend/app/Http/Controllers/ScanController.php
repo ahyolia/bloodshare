@@ -9,6 +9,7 @@ use App\Models\QrCodeScan;
 use App\Models\UserCarte;
 use App\Services\BadgeService;
 use App\Services\ParrainageService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -91,12 +92,26 @@ class ScanController extends Controller
             $dejaPossedee = (bool) $userCarte;
 
             if (! $userCarte) {
-                UserCarte::create([
-                    'user_id'    => $user->id,
-                    'carte_id'   => $carte->id,
-                    'quantite'   => 1,
-                    'obtenue_at' => now(),
-                ]);
+                // 📖 Deux scans concurrents du même don (double-tap, retry réseau) pourraient
+                //    tous deux passer ce `if (! $userCarte)` avant qu'aucun n'ait écrit : la
+                //    contrainte unique (user_id, carte_id) — migration
+                //    add_unique_constraint_to_user_cartes_table — fait respecter la règle au
+                //    niveau base. Un doublon veut juste dire que l'autre requête a gagné la
+                //    course ; la carte est déjà possédée, rien d'autre à faire.
+                try {
+                    UserCarte::create([
+                        'user_id'    => $user->id,
+                        'carte_id'   => $carte->id,
+                        'quantite'   => 1,
+                        'obtenue_at' => now(),
+                    ]);
+                } catch (QueryException $e) {
+                    if (! str_contains($e->getMessage(), 'user_cartes_user_id_carte_id_unique')) {
+                        throw $e;
+                    }
+
+                    $dejaPossedee = true;
+                }
             }
 
             $carteObtenue = [
@@ -137,12 +152,27 @@ class ScanController extends Controller
                 $userCarte->increment('quantite');
                 $quantite = $userCarte->fresh()->quantite;
             } else {
-                UserCarte::create([
-                    'user_id'    => $user->id,
-                    'carte_id'   => $carte->id,
-                    'quantite'   => 1,
-                    'obtenue_at' => now(),
-                ]);
+                // 📖 Même protection que dans handleDon : voir le commentaire là-bas.
+                try {
+                    UserCarte::create([
+                        'user_id'    => $user->id,
+                        'carte_id'   => $carte->id,
+                        'quantite'   => 1,
+                        'obtenue_at' => now(),
+                    ]);
+                } catch (QueryException $e) {
+                    if (! str_contains($e->getMessage(), 'user_cartes_user_id_carte_id_unique')) {
+                        throw $e;
+                    }
+
+                    // L'autre requête a créé la ligne la première : on incrémente celle-là.
+                    UserCarte::where('user_id', $user->id)
+                        ->where('carte_id', $carte->id)
+                        ->increment('quantite');
+                    $quantite = UserCarte::where('user_id', $user->id)
+                        ->where('carte_id', $carte->id)
+                        ->value('quantite');
+                }
             }
         }
 

@@ -37,19 +37,26 @@ class BadgeService
             ->where('statut', 'valide')
             ->count();
 
+        // 📖 Ne compte que les quiz COMPLÉTÉS DONT LE QUIZ EST ENCORE ACTIF : sinon, un quiz
+        //    complété puis désactivé compterait quand même dans $nbQuizCompletes, comparé plus
+        //    bas à $nbQuizActifs (qui lui ne compte que les quiz actifs) — un utilisateur ayant
+        //    complété d'anciens quiz depuis retirés obtiendrait « Incollable » sans avoir fait
+        //    un seul des quiz actuellement actifs.
         $nbQuizCompletes = UserQuiz::where('user_id', $user->id)
             ->where('complete', true)
+            ->whereHas('quiz', fn ($q) => $q->where('statut', 'actif'))
             ->count();
 
         $nbQuizActifs = Quiz::where('statut', 'actif')->count();
 
-        // 📖 « Cartes Mois du don obtenues » = nombre de lignes user_cartes distinctes pour la
-        //    catégorie mois_don : une carte par mois, jamais dupliquée (ScanController crée la
-        //    ligne une seule fois, cf. handleDon). « Cartes événement » suit une autre règle :
-        //    une seule ligne dont la quantité s'incrémente à chaque scan (handleEvenement).
+        // 📖 « Cartes Mois du don obtenues » = nombre de cartes DISTINCTES pour la catégorie
+        //    mois_don. user_cartes n'a pas de contrainte d'unicité sur (user_id, carte_id)
+        //    (seulement sa clé primaire) : un simple count() gonflerait le total au moindre
+        //    doublon. distinct('carte_id') s'en protège même si un doublon apparaissait.
         $nbCartesMoisDon = UserCarte::where('user_id', $user->id)
             ->whereHas('carte', fn ($q) => $q->where('categorie', 'mois_don'))
-            ->count();
+            ->distinct('carte_id')
+            ->count('carte_id');
 
         $nbCartesEvenement = (int) UserCarte::where('user_id', $user->id)
             ->whereHas('carte', fn ($q) => $q->where('categorie', 'evenement'))
