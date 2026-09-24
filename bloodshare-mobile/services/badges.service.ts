@@ -11,7 +11,13 @@ export type BadgesResume = {
 
 // Contrat réel de GET /badges (docs/contrat_API.md § 6) : la liste de tous les badges, chacun
 // avec un booléen `obtenu` — pas un résumé { obtenus, total }.
-type BadgeApi = { id: number; nom: string; obtenu: boolean };
+export type Badge = {
+  id: number;
+  nom: string;
+  image_url: string | null;
+  obtenu: boolean;
+  obtenu_at: string | null;
+};
 
 // Adaptateur : on calcule le résumé affiché par l'écran Profil à partir de la liste.
 export const getBadgesResume = async (): Promise<BadgesResume> => {
@@ -19,9 +25,22 @@ export const getBadgesResume = async (): Promise<BadgesResume> => {
     return badgesMock as BadgesResume;
   }
 
-  const response = await api.get<BadgeApi[]>('/badges');
+  const badges = await getBadges();
   return {
-    obtenus: response.data.filter((badge) => badge.obtenu).length,
-    total: response.data.length,
+    obtenus: badges.filter((badge) => badge.obtenu).length,
+    total: badges.length,
   };
+};
+
+// 📖 Liste complète (écran "Mes badges") : contrairement au résumé ci-dessus, on a besoin
+// ici de chaque badge (obtenu ou non) pour construire la grille avec ses cadenas.
+export const getBadges = async (): Promise<Badge[]> => {
+  if (USE_MOCK_DATA) {
+    // Pas de mock dédié : le résumé suffisait jusqu'ici. On renvoie une liste vide plutôt
+    // que de planter — l'écran affichera juste "0 badge" en mode démo.
+    return [];
+  }
+
+  const response = await api.get<Badge[]>('/badges');
+  return response.data;
 };

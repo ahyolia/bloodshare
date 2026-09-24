@@ -38,6 +38,11 @@ until php -r '
     sleep 2
 done
 
+# 📖 Sans ce lien symbolique, les images uploadées dans le backoffice (badges,
+#    cartes...) sont enregistrées dans storage/app/public mais jamais servies :
+#    404 côté app mobile. -f écrase un lien existant sans erreur au redémarrage.
+php artisan storage:link --force
+
 php artisan migrate --force
 
 # 📖 Données de référence (cartes, badges, avatars, rôles, super admin...) : uniquement

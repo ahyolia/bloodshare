@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Badge;
 use App\Models\Carte;
 use App\Models\Don;
 use App\Models\QrCode;
 use App\Models\QrCodeScan;
-use App\Models\UserBadge;
 use App\Models\UserCarte;
+use App\Services\BadgeService;
 use App\Services\ParrainageService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -92,12 +92,26 @@ class ScanController extends Controller
             $dejaPossedee = (bool) $userCarte;
 
             if (! $userCarte) {
-                UserCarte::create([
-                    'user_id'    => $user->id,
-                    'carte_id'   => $carte->id,
-                    'quantite'   => 1,
-                    'obtenue_at' => now(),
-                ]);
+                // 📖 Deux scans concurrents du même don (double-tap, retry réseau) pourraient
+                //    tous deux passer ce `if (! $userCarte)` avant qu'aucun n'ait écrit : la
+                //    contrainte unique (user_id, carte_id) — migration
+                //    add_unique_constraint_to_user_cartes_table — fait respecter la règle au
+                //    niveau base. Un doublon veut juste dire que l'autre requête a gagné la
+                //    course ; la carte est déjà possédée, rien d'autre à faire.
+                try {
+                    UserCarte::create([
+                        'user_id'    => $user->id,
+                        'carte_id'   => $carte->id,
+                        'quantite'   => 1,
+                        'obtenue_at' => now(),
+                    ]);
+                } catch (QueryException $e) {
+                    if (! str_contains($e->getMessage(), 'user_cartes_user_id_carte_id_unique')) {
+                        throw $e;
+                    }
+
+                    $dejaPossedee = true;
+                }
             }
 
             $carteObtenue = [
@@ -112,7 +126,7 @@ class ScanController extends Controller
 
         app(ParrainageService::class)->validerSiFilleul($user);
 
-        $badges = $this->attribuerBadgesDon($user);
+        $badges = app(BadgeService::class)->synchroniser($user);
 
         return response()->json([
             'type'             => 'don',
@@ -138,16 +152,36 @@ class ScanController extends Controller
                 $userCarte->increment('quantite');
                 $quantite = $userCarte->fresh()->quantite;
             } else {
-                UserCarte::create([
-                    'user_id'    => $user->id,
-                    'carte_id'   => $carte->id,
-                    'quantite'   => 1,
-                    'obtenue_at' => now(),
-                ]);
+                // 📖 Même protection que dans handleDon : voir le commentaire là-bas.
+                try {
+                    UserCarte::create([
+                        'user_id'    => $user->id,
+                        'carte_id'   => $carte->id,
+                        'quantite'   => 1,
+                        'obtenue_at' => now(),
+                    ]);
+                } catch (QueryException $e) {
+                    if (! str_contains($e->getMessage(), 'user_cartes_user_id_carte_id_unique')) {
+                        throw $e;
+                    }
+
+                    // L'autre requête a créé la ligne la première : on incrémente celle-là.
+                    UserCarte::where('user_id', $user->id)
+                        ->where('carte_id', $carte->id)
+                        ->increment('quantite');
+                    $quantite = UserCarte::where('user_id', $user->id)
+                        ->where('carte_id', $carte->id)
+                        ->value('quantite');
+                }
             }
         }
 
         $evenement = $qrCode->evenement;
+
+        // 📖 Manquait ici (contrairement à handleDon) : « Toujours partant » (3 cartes
+        //    événement) était bien attribué en base par BadgeService lu depuis GET /badges,
+        //    mais jamais annoncé dans la réponse du scan — pas de popup au bon moment.
+        $badges = app(BadgeService::class)->synchroniser($user);
 
         return response()->json([
             'type'             => 'evenement',
@@ -159,39 +193,8 @@ class ScanController extends Controller
                 'image_url' => $carte->image_url,
                 'quantite'  => $quantite,
             ] : null,
-            'badges_debloques' => [],
+            'badges_debloques' => $badges,
         ]);
     }
 
-    private function attribuerBadgesDon($user): array
-    {
-        $nbDons = Don::where('user_id', $user->id)
-            ->where('statut', 'valide')
-            ->count();
-
-        $dejObtenuIds = UserBadge::where('user_id', $user->id)
-            ->pluck('badge_id');
-
-        $badgesEligibles = Badge::where('statut', 'actif')
-            ->where('condition_type', 'nb_dons')
-            ->whereNotIn('id', $dejObtenuIds)
-            ->where('condition_valeur', '<=', $nbDons)
-            ->get();
-
-        $nouveauxBadges = [];
-        foreach ($badgesEligibles as $badge) {
-            UserBadge::create([
-                'user_id'    => $user->id,
-                'badge_id'   => $badge->id,
-                'obtenu_at'  => now(),
-            ]);
-            $nouveauxBadges[] = [
-                'id'        => $badge->id,
-                'nom'       => $badge->nom,
-                'image_url' => $badge->image_url,
-            ];
-        }
-
-        return $nouveauxBadges;
-    }
 }

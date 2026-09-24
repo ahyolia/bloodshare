@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Badge;
 use App\Models\PointsHistorique;
 use App\Models\Quiz;
-use App\Models\UserBadge;
 use App\Models\UserQuiz;
+use App\Services\BadgeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -241,7 +240,7 @@ class QuizController extends Controller
                 $user->increment('points_cumules', $quiz->points_attribues);
                 $pointsGagnes = $quiz->points_attribues;
 
-                $this->verifierBadgeQuizMaster($user);
+                app(BadgeService::class)->synchroniser($user);
             } else {
                 $userQuiz->increment('nb_tentatives');
             }
@@ -255,32 +254,4 @@ class QuizController extends Controller
         ]);
     }
 
-    private function verifierBadgeQuizMaster($user): void
-    {
-        $nbQuizCompletes = UserQuiz::where('user_id', $user->id)
-            ->where('complete', true)
-            ->count();
-
-        if ($nbQuizCompletes < 5) {
-            return;
-        }
-
-        $badge = Badge::where('nom', 'Quiz Master')->first();
-
-        if (! $badge) {
-            return;
-        }
-
-        $dejaObtenu = UserBadge::where('user_id', $user->id)
-            ->where('badge_id', $badge->id)
-            ->exists();
-
-        if (! $dejaObtenu) {
-            UserBadge::create([
-                'user_id' => $user->id,
-                'badge_id' => $badge->id,
-                'obtenu_at' => now(),
-            ]);
-        }
-    }
 }

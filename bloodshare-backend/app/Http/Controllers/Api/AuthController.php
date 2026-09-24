@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Parrainage;
 use App\Models\User;
+use App\Services\BadgeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -66,6 +67,11 @@ class AuthController extends Controller
                     'filleul_id' => $user->id,
                     'statut' => 'en_attente',
                 ]);
+
+                // 📖 « Bien accueilli » récompense le fait de s'inscrire avec un code, pas la
+                //    validation du parrainage (qui arrive plus tard, au 1er don) : on l'attribue
+                //    donc tout de suite, sans attendre un scan.
+                app(BadgeService::class)->synchroniser($user);
             }
         }
 

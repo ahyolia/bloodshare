@@ -29,10 +29,28 @@ class BadgeSeeder extends Seeder
                 'action_specifique' => null,
             ],
             [
-                'nom' => 'Collection en cours',
+                'nom' => 'Compagnon de route',
+                'condition_type' => 'nb_dons',
+                'condition_valeur' => 10,
+                'action_specifique' => null,
+            ],
+            [
+                'nom' => 'Grain de curiosité',
                 'condition_type' => 'action_specifique',
                 'condition_valeur' => null,
-                'action_specifique' => 'six_cartes_mois',
+                'action_specifique' => 'premier_quiz',
+            ],
+            [
+                'nom' => 'Bien entouré',
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'trois_parrainages',
+            ],
+            [
+                'nom' => 'Bien accueilli',
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'inscrit_avec_code',
             ],
             [
                 'nom' => 'Ambassadeur',
@@ -47,10 +65,28 @@ class BadgeSeeder extends Seeder
                 'action_specifique' => 'cinq_quiz',
             ],
             [
-                'nom' => 'Défi du mois',
+                'nom' => 'Incollable',
                 'condition_type' => 'action_specifique',
                 'condition_valeur' => null,
-                'action_specifique' => 'premier_defi_contribue',
+                'action_specifique' => 'toutes_categories_quiz',
+            ],
+            [
+                'nom' => 'Belle collection',
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'six_cartes_mois',
+            ],
+            [
+                'nom' => 'Année complète',
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'douze_cartes_mois',
+            ],
+            [
+                'nom' => 'Toujours partant',
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'trois_cartes_evenement',
             ],
         ];
 

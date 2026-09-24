@@ -1,5 +1,5 @@
 import api from '../api';
-import { getBadgesResume } from '../badges.service';
+import { getBadges, getBadgesResume } from '../badges.service';
 
 jest.mock('../../constants/config', () => ({ USE_MOCK_DATA: false }));
 
@@ -32,5 +32,15 @@ describe('getBadgesResume', () => {
     apiGet.mockResolvedValue({ data: [] });
 
     expect(await getBadgesResume()).toEqual({ obtenus: 0, total: 0 });
+  });
+});
+
+describe('getBadges', () => {
+  it('renvoie la liste telle que renvoyée par GET /badges', async () => {
+    const badges = [badge(1, true), badge(2, false)];
+    apiGet.mockResolvedValue({ data: badges });
+
+    expect(await getBadges()).toEqual(badges);
+    expect(apiGet).toHaveBeenCalledWith('/badges');
   });
 });
