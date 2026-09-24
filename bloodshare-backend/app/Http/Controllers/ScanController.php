@@ -148,6 +148,11 @@ class ScanController extends Controller
 
         $evenement = $qrCode->evenement;
 
+        // 📖 Manquait ici (contrairement à handleDon) : « Toujours partant » (3 cartes
+        //    événement) était bien attribué en base par BadgeService lu depuis GET /badges,
+        //    mais jamais annoncé dans la réponse du scan — pas de popup au bon moment.
+        $badges = app(BadgeService::class)->synchroniser($user);
+
         return response()->json([
             'type'             => 'evenement',
             'evenement'        => $evenement ? ['id' => $evenement->id, 'titre' => $evenement->titre] : null,
@@ -158,7 +163,7 @@ class ScanController extends Controller
                 'image_url' => $carte->image_url,
                 'quantite'  => $quantite,
             ] : null,
-            'badges_debloques' => [],
+            'badges_debloques' => $badges,
         ]);
     }
 

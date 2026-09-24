@@ -64,6 +64,30 @@ class BadgeSeeder extends Seeder
                 'condition_valeur' => null,
                 'action_specifique' => 'cinq_quiz',
             ],
+            [
+                'nom' => 'Incollable',
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'toutes_categories_quiz',
+            ],
+            [
+                'nom' => 'Belle collection',
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'six_cartes_mois',
+            ],
+            [
+                'nom' => 'Année complète',
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'douze_cartes_mois',
+            ],
+            [
+                'nom' => 'Toujours partant',
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'trois_cartes_evenement',
+            ],
         ];
 
         foreach ($badges as $badge) {

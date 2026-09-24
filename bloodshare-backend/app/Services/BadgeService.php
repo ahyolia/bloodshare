@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Models\Badge;
 use App\Models\Don;
 use App\Models\Parrainage;
+use App\Models\Quiz;
 use App\Models\User;
 use App\Models\UserBadge;
+use App\Models\UserCarte;
 use App\Models\UserQuiz;
 use Illuminate\Database\QueryException;
 
@@ -39,15 +41,36 @@ class BadgeService
             ->where('complete', true)
             ->count();
 
+        $nbQuizActifs = Quiz::where('statut', 'actif')->count();
+
+        // 📖 « Cartes Mois du don obtenues » = nombre de lignes user_cartes distinctes pour la
+        //    catégorie mois_don : une carte par mois, jamais dupliquée (ScanController crée la
+        //    ligne une seule fois, cf. handleDon). « Cartes événement » suit une autre règle :
+        //    une seule ligne dont la quantité s'incrémente à chaque scan (handleEvenement).
+        $nbCartesMoisDon = UserCarte::where('user_id', $user->id)
+            ->whereHas('carte', fn ($q) => $q->where('categorie', 'mois_don'))
+            ->count();
+
+        $nbCartesEvenement = (int) UserCarte::where('user_id', $user->id)
+            ->whereHas('carte', fn ($q) => $q->where('categorie', 'evenement'))
+            ->sum('quantite');
+
         $actionsEligibles = collect([
             'premier_don' => $nbDons >= 1,
             'premier_parrainage' => $nbParrainagesValides >= 1,
             'trois_parrainages' => $nbParrainagesValides >= 3,
             'premier_quiz' => $nbQuizCompletes >= 1,
             'cinq_quiz' => $nbQuizCompletes >= 5,
+            // 📖 « Toutes les catégories de quiz complétées » revient à dire « tous les quiz
+            //    actifs terminés » : une catégorie n'est qu'un regroupement d'affichage, elle
+            //    n'a pas d'état de complétion propre — il n'y a rien à vérifier en plus par quiz.
+            'toutes_categories_quiz' => $nbQuizActifs > 0 && $nbQuizCompletes >= $nbQuizActifs,
             // 📖 Côté filleul, pas de condition de validation : le badge récompense le fait
             //    de s'être inscrit avec un code (n'importe quel statut de parrainage).
             'inscrit_avec_code' => Parrainage::where('filleul_id', $user->id)->exists(),
+            'six_cartes_mois' => $nbCartesMoisDon >= 6,
+            'douze_cartes_mois' => $nbCartesMoisDon >= 12,
+            'trois_cartes_evenement' => $nbCartesEvenement >= 3,
         ])->filter()->keys();
 
         $badgesEligibles = Badge::where('statut', 'actif')
