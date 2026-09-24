@@ -484,12 +484,21 @@ Alimente le bloc "Défi du mois" affiché sur l'écran d'accueil, avec sa progre
   "description": "Aidons le centre à atteindre son objectif.",
   "objectif_chiffre": 100,
   "progression_actuelle": 67,
+  "ma_progression": 4,
   "points_attribues": 50,
+  "statut": "actif",
   "date_fin": "2026-06-30"
 }
 ```
 
-> Retourne `null` si aucun défi actif.
+> `progression_actuelle` reste le total collectif (tous les dons validés du mois, tous
+> utilisateurs confondus). `ma_progression` est propre à l'utilisateur connecté : le nombre de
+> ses dons qui ont compté pour CE défi (0 s'il n'a pas encore contribué).
+> `statut` vaut `actif` ou `termine` : quand `progression_actuelle` atteint `objectif_chiffre`,
+> le défi passe à `termine`, les points sont distribués une seule fois à chaque contributeur, et
+> cet endpoint continue de renvoyer ce défi (au lieu de basculer sur `null`) pour que l'app
+> puisse afficher le résultat.
+> Retourne `null` s'il n'existe aucun défi actif ni récemment terminé.
 # 10\. Contenu
 ## `GET /actualites`
 Alimente le carousel d'actualités sur l'écran d'accueil. **Réponse 200 :**
