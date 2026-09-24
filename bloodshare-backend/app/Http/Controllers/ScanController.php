@@ -8,6 +8,7 @@ use App\Models\QrCode;
 use App\Models\QrCodeScan;
 use App\Models\UserCarte;
 use App\Services\BadgeService;
+use App\Services\DefiService;
 use App\Services\ParrainageService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -125,6 +126,7 @@ class ScanController extends Controller
         }
 
         app(ParrainageService::class)->validerSiFilleul($user);
+        app(DefiService::class)->enregistrerContribution($user);
 
         $badges = app(BadgeService::class)->synchroniser($user);
 

@@ -33,6 +33,8 @@ class DefiResource extends Resource
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('objectif_chiffre')
                     ->numeric(),
+                Forms\Components\DatePicker::make('date_fin')
+                    ->label('Date de fin'),
                 Forms\Components\TextInput::make('points_attribues')
                     ->required()
                     ->numeric()
@@ -75,6 +77,10 @@ class DefiResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('objectif_chiffre')
                     ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('date_fin')
+                    ->label('Date de fin')
+                    ->date('d/m/Y')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('points_attribues')
                     ->numeric()
