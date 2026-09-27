@@ -19,6 +19,22 @@ class BadgeResource extends Resource
     protected static ?string $modelLabel = 'badge';
     protected static ?string $pluralModelLabel = 'Badges';
 
+    // 📖 Une seule source de vérité pour les libellés, réutilisée dans le formulaire et dans
+    //    la liste — un badge dont l'action ne serait pas dans cette liste (pas encore branchée
+    //    dans BadgeService) s'affiche avec sa valeur brute (cf. formatStateUsing plus bas).
+    private const ACTIONS_SPECIFIQUES = [
+        'premier_don' => 'Premier don validé',
+        'premier_parrainage' => 'Premier parrainage validé',
+        'trois_parrainages' => '3 parrainages validés',
+        'inscrit_avec_code' => "Inscription avec un code de parrainage",
+        'premier_quiz' => 'Premier quiz terminé',
+        'cinq_quiz' => '5 quiz terminés',
+        'toutes_categories_quiz' => 'Tous les quiz actifs terminés',
+        'six_cartes_mois' => '6 cartes « Mois du don » obtenues',
+        'douze_cartes_mois' => '12 cartes « Mois du don » obtenues',
+        'trois_cartes_evenement' => '3 cartes « Événement » obtenues',
+    ];
+
     public static function form(Form $form): Form
     {
         return $form
@@ -54,10 +70,15 @@ class BadgeResource extends Resource
                     ->visible(fn ($get) => $get('condition_type') === 'nb_dons')
                     ->required(fn ($get) => $get('condition_type') === 'nb_dons'),
 
-                Forms\Components\TextInput::make('action_specifique')
+                // 📖 Un champ texte libre laissait saisir n'importe quelle valeur, y compris une
+                //    faute de frappe silencieuse (« premier_dons » au lieu de « premier_don ») :
+                //    le badge ne serait alors jamais attribué, sans aucune erreur visible. Les
+                //    seules valeurs qui déclenchent réellement quelque chose sont celles vérifiées
+                //    dans BadgeService::synchroniser() — on ne peut donc choisir que parmi elles.
+                Forms\Components\Select::make('action_specifique')
                     ->label('Action spécifique')
-                    ->helperText('Identifiant technique vérifié dans le code (ex. premier_don, premier_parrainage).')
-                    ->maxLength(255)
+                    ->options(self::ACTIONS_SPECIFIQUES)
+                    ->helperText('Condition vérifiée par BadgeService à chaque scan, quiz, parrainage ou consultation des badges.')
                     ->nullable()
                     ->visible(fn ($get) => $get('condition_type') === 'action_specifique')
                     ->required(fn ($get) => $get('condition_type') === 'action_specifique'),
@@ -102,7 +123,10 @@ class BadgeResource extends Resource
 
                 Tables\Columns\TextColumn::make('action_specifique')
                     ->label('Action')
-                    ->default('—'),
+                    ->default('—')
+                    ->formatStateUsing(fn (?string $state): string => $state
+                        ? (self::ACTIONS_SPECIFIQUES[$state] ?? $state)
+                        : '—'),
 
                 Tables\Columns\BadgeColumn::make('statut')
                     ->label('Statut')
