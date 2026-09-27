@@ -295,6 +295,16 @@ _Authentifié._ Endpoint central — appelé après le scan d'un QR Code (centre
 { "message": "QR Code invalide ou expiré." }
 ```
 
+**Réponse 422 — événement non disponible (annulé, en brouillon, ou déjà terminé) :**
+
+```json
+{ "message": "Cet événement n'est plus disponible pour valider une participation." }
+```
+
+> Le scan d'un événement n'est accepté que si son statut est `publie` et que sa date de fin
+> (`horaire_fin`, ou `date_heure` si aucune heure de fin n'est renseignée) n'est pas encore
+> passée.
+
 # 4\. Dons
 ## `GET /dons`
 Liste les dons déjà validés par l'utilisateur — alimente l'écran "Historique des dons" du profil. _Authentifié._ Historique des dons de l'utilisateur connecté.
@@ -471,7 +481,7 @@ Envoie les réponses choisies par l'utilisateur une fois le quiz terminé, et re
 }
 ```
 
-> Si `premiere_completion` est `false`, `points_gagnes` sera `0` (quiz rejoué).
+> `points_gagnes` est **proportionnel au score** : `points_attribues du quiz × score / total_questions`, arrondi au point entier le plus proche (ex. `4/5` sur un quiz à 30 points → 24). Un score de 0 ne rapporte aucun point et ne crée aucune ligne dans l'historique. Si `premiere_completion` est `false`, `points_gagnes` sera `0` (quiz rejoué : les points ne sont attribués qu'à la première complétion).
 # 9\. Défi du mois
 ## `GET /defis/actuel`
 Alimente le bloc "Défi du mois" affiché sur l'écran d'accueil, avec sa progression en temps réel. _Authentifié._
