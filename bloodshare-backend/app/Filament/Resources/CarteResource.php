@@ -69,8 +69,9 @@ class CarteResource extends Resource
                     ->directory('cartes')
                     // 📖 image_url est exposé en URL absolue (accesseur, pour l'app mobile) ;
                     //    FileUpload attend le chemin relatif — sans ceci, l'image disparaît à
-                    //    l'édition. Voir HasStorageImageUrl::cheminRelatifImage().
-                    ->formatStateUsing(fn (?string $state) => Carte::cheminRelatifImage($state))
+                    //    l'édition. Pas de ->formatStateUsing() ici : il écraserait l'hydratation
+                    //    interne de FileUpload (500). Voir HasStorageImageUrl::etatFileUpload().
+                    ->afterStateHydrated(fn (\Filament\Forms\Components\FileUpload $component, $state) => $component->state(Carte::etatFileUpload($state)))
                     ->columnSpanFull(),
 
                 Forms\Components\Select::make('statut')

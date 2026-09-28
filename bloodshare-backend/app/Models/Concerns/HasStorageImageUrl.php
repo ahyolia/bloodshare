@@ -5,6 +5,7 @@ namespace App\Models\Concerns;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * 📖 `Forms\Components\FileUpload` enregistre un chemin RELATIF au disque
@@ -45,8 +46,8 @@ trait HasStorageImageUrl
      *    attend. Résultat, sans ce correctif : l'image ne s'affiche pas en édition, et si
      *    le formulaire est enregistré sans y retoucher, cette URL absolue écrase le chemin
      *    relatif en base — l'image devient définitivement introuvable (perdue).
-     *    À brancher sur `->formatStateUsing()` du FileUpload dans chaque Resource concernée
-     *    (Badge, Carte, Contenu, Evenement) pour lui redonner le chemin relatif attendu.
+     *    À brancher sur `->afterStateHydrated()` du FileUpload dans chaque Resource concernée
+     *    (Badge, Carte, Contenu, Evenement) — voir etatFileUpload().
      */
     public static function cheminRelatifImage(?string $valeur): ?string
     {
@@ -55,5 +56,24 @@ trait HasStorageImageUrl
         }
 
         return preg_replace('#^https?://[^/]+/storage/#', '', $valeur) ?? $valeur;
+    }
+
+    /**
+     * 📖 État attendu par Filament pour un FileUpload à fichier unique : un tableau
+     *    `[uuid => chemin relatif]` (ou `[]` sans fichier). `->formatStateUsing()` ne convient
+     *    PAS ici : Filament l'implémente comme un `afterStateHydrated` qui remplace celui de
+     *    FileUpload (qui fabrique justement ce tableau) — le champ recevait alors une simple
+     *    chaîne et plantait avec un 500 (« foreach() argument must be of type array|object »).
+     *    On reproduit donc à la main ce que fait Filament, en retirant juste l'hôte.
+     */
+    public static function etatFileUpload(mixed $valeur): array
+    {
+        if (is_array($valeur)) {
+            $valeur = reset($valeur) ?: null;
+        }
+
+        $chemin = static::cheminRelatifImage($valeur ?: null);
+
+        return $chemin ? [(string) Str::uuid() => $chemin] : [];
     }
 }
