@@ -166,11 +166,25 @@ export default function ScanScreen() {
     const status = error.response?.status;
 
     if (status === 422) {
-      Alert.alert(
-        'Don non validé',
-        `Vous n'êtes pas encore éligible.\nProchain don possible le : ${error.response.data.prochaine_eligibilite}`,
-        [{ text: 'OK', onPress: () => setScanned(false) }]
-      );
+      // 📖 Deux refus différents partagent le code 422 : un don trop rapproché du précédent
+      //    (le backend joint alors `prochaine_eligibilite`) et un QR d'événement annulé, non
+      //    publié ou terminé (simple `message`). Sans cette distinction, le second affichait
+      //    « Don non validé … Prochain don possible le : undefined ».
+      const { prochaine_eligibilite, message } = error.response.data ?? {};
+
+      if (prochaine_eligibilite) {
+        Alert.alert(
+          'Don non validé',
+          `Vous n'êtes pas encore éligible.\nProchain don possible le : ${prochaine_eligibilite}`,
+          [{ text: 'OK', onPress: () => setScanned(false) }]
+        );
+      } else {
+        Alert.alert(
+          'Scan non validé',
+          message ?? "Ce QR Code n'a pas pu être validé.",
+          [{ text: 'OK', onPress: () => setScanned(false) }]
+        );
+      }
       return;
     }
 
