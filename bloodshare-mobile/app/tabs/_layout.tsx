@@ -219,13 +219,6 @@ export default function TabsLayout() {
           ),
         }}
       />
-      {/* 📖 `accueil/` n'est pas un onglet : c'est la pile des pages de détail
-          de l'accueil (actualité, événement). Comme expo-router transforme
-          TOUT dossier de app/tabs/ en onglet, il faut le masquer
-          explicitement — sinon un 6e bouton apparaît à droite du profil et ne
-          mène nulle part (le dossier n'a pas d'index). `href: null` retire le
-          bouton mais garde les routes navigables. */}
-      <Tabs.Screen name="accueil" options={{ href: null }} />
       <Tabs.Screen
         name="quiz"
         options={{
