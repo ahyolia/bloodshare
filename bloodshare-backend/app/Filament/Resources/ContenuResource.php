@@ -77,6 +77,10 @@ class ContenuResource extends Resource
                     ->label('Image')
                     ->image()
                     ->directory('contenus')
+                    // 📖 image_url est exposé en URL absolue (accesseur, pour l'app mobile) ;
+                    //    FileUpload attend le chemin relatif — sans ceci, l'image disparaît à
+                    //    l'édition. Voir HasStorageImageUrl::cheminRelatifImage().
+                    ->formatStateUsing(fn (?string $state) => Contenu::cheminRelatifImage($state))
                     ->columnSpanFull(),
 
                 Forms\Components\Select::make('statut')

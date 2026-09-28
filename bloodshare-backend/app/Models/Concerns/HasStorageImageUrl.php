@@ -37,4 +37,23 @@ trait HasStorageImageUrl
             return $chemin;
         });
     }
+
+    /**
+     * 📖 Filament lit `image_url` via l'accesseur ci-dessus pour préremplir le champ
+     *    `FileUpload` d'un formulaire d'édition : il reçoit donc l'URL absolue
+     *    ("https://.../storage/badges/xxx.png"), pas le chemin relatif que `FileUpload`
+     *    attend. Résultat, sans ce correctif : l'image ne s'affiche pas en édition, et si
+     *    le formulaire est enregistré sans y retoucher, cette URL absolue écrase le chemin
+     *    relatif en base — l'image devient définitivement introuvable (perdue).
+     *    À brancher sur `->formatStateUsing()` du FileUpload dans chaque Resource concernée
+     *    (Badge, Carte, Contenu, Evenement) pour lui redonner le chemin relatif attendu.
+     */
+    public static function cheminRelatifImage(?string $valeur): ?string
+    {
+        if (! $valeur) {
+            return $valeur;
+        }
+
+        return preg_replace('#^https?://[^/]+/storage/#', '', $valeur) ?? $valeur;
+    }
 }

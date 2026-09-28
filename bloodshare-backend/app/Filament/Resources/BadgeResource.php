@@ -48,6 +48,10 @@ class BadgeResource extends Resource
                     ->label('Image')
                     ->image()
                     ->directory('badges')
+                    // 📖 image_url est exposé en URL absolue (accesseur, pour l'app mobile) ;
+                    //    FileUpload attend le chemin relatif — sans ceci, l'image disparaît à
+                    //    l'édition. Voir HasStorageImageUrl::cheminRelatifImage().
+                    ->formatStateUsing(fn (?string $state) => Badge::cheminRelatifImage($state))
                     ->columnSpanFull(),
 
                 // 📖 Deux façons de déclencher un badge : un seuil numérique (nombre de

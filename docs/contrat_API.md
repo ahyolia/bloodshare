@@ -492,11 +492,11 @@ Alimente le bloc "Défi du mois" affiché sur l'écran d'accueil, avec sa progre
 > Retourne `null` si aucun défi actif.
 # 10\. Contenu
 ## `GET /actualites`
-Alimente le carousel d'actualités sur l'écran d'accueil. **Réponse 200 :**
+Alimente le carousel d'actualités sur l'écran d'accueil, et le contenu de l'écran de détail (pas d'appel dédié par id : le détail se construit à partir de cette liste). **Réponse 200 :**
 
 ```scheme
 [
-  { "id": 1, "titre": "Journée mondiale du don", "image_url": "...", "published_at": "2026-06-01" }
+  { "id": 1, "titre": "Journée mondiale du don", "contenu": "Le corps complet de l'article...", "image_url": "...", "published_at": "2026-06-01" }
 ]
 ```
 

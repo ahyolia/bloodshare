@@ -52,6 +52,10 @@ class EvenementResource extends Resource
                     ->label('Image')
                     ->image()
                     ->directory('evenements')
+                    // 📖 image_url est exposé en URL absolue (accesseur, pour l'app mobile) ;
+                    //    FileUpload attend le chemin relatif — sans ceci, l'image disparaît à
+                    //    l'édition. Voir HasStorageImageUrl::cheminRelatifImage().
+                    ->formatStateUsing(fn (?string $state) => Evenement::cheminRelatifImage($state))
                     ->columnSpanFull(),
 
                 Forms\Components\Select::make('statut')
