@@ -235,6 +235,25 @@ pg_dump -h <host> -U bloodshare -d bloodshare -F c -f "bloodshare_backup_$(date 
 
 La stratégie de sauvegarde en production sera précisée une fois l'hébergement choisi.
 
+### Images envoyées depuis le backoffice (déploiement Dokploy)
+
+Les images téléversées dans le BO (badges, cartes, actualités, événements) sont écrites dans
+`storage/app/public` **à l'intérieur du conteneur**. Sans volume persistant, chaque
+redéploiement recrée le conteneur et **efface toutes ces images**, alors que la base garde leurs
+chemins : l'app affiche alors des images cassées et il faut tout renvoyer.
+
+Sur Dokploy, monter un volume sur ce dossier (service backend → *Advanced* → *Volumes / Mounts*) :
+
+| Champ | Valeur |
+| --- | --- |
+| Type | Volume |
+| Nom | `bloodshare-storage` |
+| Chemin dans le conteneur | `/var/www/html/storage/app/public` |
+
+Vérification après redéploiement : `docker inspect <conteneur> --format '{{json .Mounts}}'` doit
+lister ce volume (un résultat `[]` signifie que les images seront perdues au prochain déploiement).
+En local, `docker-compose.yml` monte déjà le dépôt en volume : rien à faire.
+
 ---
 
 Documentation maintenue par l'équipe BloodShare.
