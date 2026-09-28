@@ -2,10 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useNavigation, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Linking,
   StyleSheet,
   Text,
@@ -37,7 +38,21 @@ export default function ScanScreen() {
 
   // 📖 permission = l'état actuel (accordée/refusée/inconnue), requestPermission = la fonction qui déclenche la popup système
   // → Pourquoi : useCameraPermissions ne fait QUE lire l'état ; c'est nous qui décidons quand appeler requestPermission (au clic, jamais au montage)
-  const [permission, requestPermission] = useCameraPermissions();
+  const [permission, requestPermission, getPermission] = useCameraPermissions();
+
+  // 📖 Au retour des Réglages du téléphone (où l'utilisateur vient d'autoriser la caméra),
+  //    l'app repasse au premier plan mais useCameraPermissions ne relit PAS l'état tout seul :
+  //    l'écran « Accès refusé » restait affiché, il fallait quitter puis rouvrir le scanner.
+  //    On relit donc la permission à chaque retour au premier plan.
+  useEffect(() => {
+    const abonnement = AppState.addEventListener('change', (etat) => {
+      if (etat === 'active') {
+        getPermission();
+      }
+    });
+
+    return () => abonnement.remove();
+  }, [getPermission]);
 
   // 📖 scanned évite de traiter plusieurs fois le même QR Code tant qu'un scan est en cours de traitement
   // → Si on ne le faisait pas : la caméra détecte le même QR Code plusieurs fois par seconde et enverrait des dizaines de requêtes /scan pour un seul passage devant le lecteur
@@ -58,6 +73,14 @@ export default function ScanScreen() {
   if (!permission.granted && permission.canAskAgain) {
     return (
       <View style={styles.permissionScreen}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.retourPermission}
+          accessibilityRole="button"
+          accessibilityLabel="Retour"
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.aubergine} />
+        </TouchableOpacity>
         <Ionicons name="camera-outline" size={56} color={Colors.aubergine} />
         <Text style={styles.permissionText}>
           BloodShare a besoin d&apos;accéder à votre caméra pour scanner le QR Code après votre don.
@@ -74,6 +97,14 @@ export default function ScanScreen() {
   if (!permission.granted) {
     return (
       <View style={styles.permissionScreen}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.retourPermission}
+          accessibilityRole="button"
+          accessibilityLabel="Retour"
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.aubergine} />
+        </TouchableOpacity>
         <Ionicons name="camera-outline" size={56} color={Colors.aubergine} />
         <Text style={styles.permissionText}>
           Accès à la caméra refusé. Activez-le dans les paramètres de votre téléphone.
@@ -265,6 +296,14 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFill,
     justifyContent: 'space-between',
+  },
+  // 📖 Retour sur les écrans de permission : la tab bar est masquée ici et le bouton de
+  //    l'écran caméra n'existe pas dans ces deux cas.
+  retourPermission: {
+    position: 'absolute',
+    top: 54,
+    left: 18,
+    padding: 6,
   },
   backButton: {
     marginTop: 54,
