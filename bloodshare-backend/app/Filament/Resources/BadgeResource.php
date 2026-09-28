@@ -33,6 +33,8 @@ class BadgeResource extends Resource
         'six_cartes_mois' => '6 cartes « Mois du don » obtenues',
         'douze_cartes_mois' => '12 cartes « Mois du don » obtenues',
         'trois_cartes_evenement' => '3 cartes « Événement » obtenues',
+        'defi_contribue' => 'Première contribution à un défi',
+        'defi_remporte' => 'Défi collectif remporté',
     ];
 
     public static function form(Form $form): Form
