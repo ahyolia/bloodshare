@@ -413,7 +413,7 @@ export default function AccueilScreen() {
                   activeOpacity={0.9}
                   onPress={() =>
                     router.push({
-                      pathname: '/tabs/accueil/actualite/[id]',
+                      pathname: '/detail/actualite/[id]',
                       params: {
                         id: String(item.id),
                         titre: item.titre,
@@ -476,7 +476,7 @@ export default function AccueilScreen() {
                 activeOpacity={0.85}
                 onPress={() =>
                   router.push({
-                    pathname: '/tabs/accueil/evenement/[id]',
+                    pathname: '/detail/evenement/[id]',
                     params: {
                       id: String(evenement.id),
                       titre: evenement.titre,

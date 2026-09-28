@@ -1,9 +1,7 @@
-import { useCallback } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { Colors } from '../../../../constants/colors';
-import { TAB_BAR_STYLE } from '../../_layout';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Colors } from '../../../constants/colors';
 
 // 📖 "2026-06-01" → "1 juin 2026". timeZone UTC : la date affichée = la date
 //    stockée, sans décalage selon le fuseau de l'appareil.
@@ -28,19 +26,7 @@ export default function ActualiteDetailScreen() {
     image_url: string;
   }>();
   const router = useRouter();
-  const navigation = useNavigation();
 
-  // 📖 On masque la tab bar flottante pendant la lecture (contenu plein écran,
-  //    scrollable) et on la restaure en quittant l'écran. Même comportement que
-  //    la fiche pratique du don et le détail d'un événement.
-  useFocusEffect(
-    useCallback(() => {
-      navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
-      return () => {
-        navigation.getParent()?.setOptions({ tabBarStyle: TAB_BAR_STYLE });
-      };
-    }, [navigation])
-  );
 
   return (
     <View style={styles.screen}>

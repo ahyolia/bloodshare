@@ -1,9 +1,7 @@
-import { useCallback } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { Colors } from '../../../../constants/colors';
-import { TAB_BAR_STYLE } from '../../_layout';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Colors } from '../../../constants/colors';
 
 // 📖 "2026-07-02T09:00:00Z" → "09h00". timeZone UTC : on affiche l'heure telle
 //    qu'elle est stockée, sans décalage selon le fuseau de l'appareil.
@@ -37,19 +35,7 @@ export default function EvenementDetailScreen() {
       image_url: string;
     }>();
   const router = useRouter();
-  const navigation = useNavigation();
 
-  // 📖 On masque la tab bar flottante pendant la lecture (contenu plein écran,
-  //    scrollable, avec un CTA en bas) et on la restaure en quittant l'écran.
-  //    Même comportement que la fiche pratique du don.
-  useFocusEffect(
-    useCallback(() => {
-      navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
-      return () => {
-        navigation.getParent()?.setOptions({ tabBarStyle: TAB_BAR_STYLE });
-      };
-    }, [navigation])
-  );
 
   const horaires = horaire_fin
     ? `${formatHeure(date_heure)} → ${formatHeure(horaire_fin)}`
@@ -111,7 +97,7 @@ export default function EvenementDetailScreen() {
           </Text>
           <TouchableOpacity
             style={styles.presenceBtn}
-            onPress={() => router.push('/tabs/don/scan')}
+            onPress={() => router.navigate('/tabs/don/scan')}
             activeOpacity={0.9}
           >
             <Text style={styles.presenceBtnText}>Scanner le QR Code</Text>
