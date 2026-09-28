@@ -13,8 +13,13 @@ class Defi extends Model
         'type',
         'periode',
         'objectif_chiffre',
+        'date_fin',
         'points_attribues',
         'statut',
+    ];
+
+    protected $casts = [
+        'date_fin' => 'date',
     ];
 
     public function admin()

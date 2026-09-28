@@ -88,6 +88,18 @@ class BadgeSeeder extends Seeder
                 'condition_valeur' => null,
                 'action_specifique' => 'trois_cartes_evenement',
             ],
+            [
+                'nom' => "Esprit d'équipe",
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'defi_contribue',
+            ],
+            [
+                'nom' => 'Objectif atteint',
+                'condition_type' => 'action_specifique',
+                'condition_valeur' => null,
+                'action_specifique' => 'defi_remporte',
+            ],
         ];
 
         foreach ($badges as $badge) {

@@ -9,6 +9,7 @@ use App\Models\Quiz;
 use App\Models\User;
 use App\Models\UserBadge;
 use App\Models\UserCarte;
+use App\Models\UserDefi;
 use App\Models\UserQuiz;
 use Illuminate\Database\QueryException;
 
@@ -78,6 +79,13 @@ class BadgeService
             'six_cartes_mois' => $nbCartesMoisDon >= 6,
             'douze_cartes_mois' => $nbCartesMoisDon >= 12,
             'trois_cartes_evenement' => $nbCartesEvenement >= 3,
+            // 📖 « Esprit d'équipe » récompense la participation, pas le résultat : dès qu'un
+            //    don a compté pour un défi (progression > 0), peu importe si ce défi a ensuite
+            //    réussi ou non. « Objectif atteint » ne s'obtient que si ce défi est allé au
+            //    bout (complete=true, posé par DefiService quand l'objectif collectif est
+            //    franchi et les points distribués).
+            'defi_contribue' => UserDefi::where('user_id', $user->id)->where('progression', '>', 0)->exists(),
+            'defi_remporte' => UserDefi::where('user_id', $user->id)->where('complete', true)->exists(),
         ])->filter()->keys();
 
         $badgesEligibles = Badge::where('statut', 'actif')
