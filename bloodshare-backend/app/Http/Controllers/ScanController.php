@@ -139,6 +139,22 @@ class ScanController extends Controller
 
     private function handleEvenement($user, QrCodeScan $scan, QrCode $qrCode): JsonResponse
     {
+        $evenement = $qrCode->evenement;
+
+        // 📖 Règle tranchée le 28/09 : le QR d'un événement annulé, en brouillon, ou déjà
+        // terminé (horaire_fin, ou date_heure si pas d'heure de fin) ne donne plus la carte.
+        // Avant ce contrôle, n'importe quel statut/date donnait quand même la carte —
+        // ScanController ne vérifiait ni l'un ni l'autre.
+        if ($evenement) {
+            $finEvenement = $evenement->horaire_fin ?? $evenement->date_heure;
+
+            if ($evenement->statut !== 'publie' || $finEvenement->isPast()) {
+                return response()->json([
+                    'message' => 'Cet événement n\'est plus disponible pour valider une participation.',
+                ], 422);
+            }
+        }
+
         // Carte générique événement (la première active trouvée)
         $carte = Carte::where('categorie', 'evenement')
             ->where('statut', 'active')
@@ -177,8 +193,6 @@ class ScanController extends Controller
                 }
             }
         }
-
-        $evenement = $qrCode->evenement;
 
         // 📖 Manquait ici (contrairement à handleDon) : « Toujours partant » (3 cartes
         //    événement) était bien attribué en base par BadgeService lu depuis GET /badges,

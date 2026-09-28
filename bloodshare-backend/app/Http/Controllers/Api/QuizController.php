@@ -207,7 +207,14 @@ class QuizController extends Controller
         $premiereCompletion = $userQuiz === null || ! $userQuiz->complete;
         $pointsGagnes = 0;
 
-        DB::transaction(function () use ($premiereCompletion, $userQuiz, $user, $quiz, $score, &$pointsGagnes) {
+        // 📖 Règle tranchée le 28/09 : les points sont désormais proportionnels au score, et
+        // non plus fixes quel que soit le résultat (0/4 rapportait auparavant les mêmes
+        // points qu'un sans-faute). Arrondi au point entier le plus proche.
+        $pointsProportionnels = $totalQuestions > 0
+            ? (int) round($quiz->points_attribues * $score / $totalQuestions)
+            : 0;
+
+        DB::transaction(function () use ($premiereCompletion, $userQuiz, $user, $quiz, $score, $pointsProportionnels, &$pointsGagnes) {
             if ($premiereCompletion) {
                 if ($userQuiz) {
                     $userQuiz->update([
@@ -230,15 +237,20 @@ class QuizController extends Controller
                     ]);
                 }
 
-                PointsHistorique::create([
-                    'user_id' => $user->id,
-                    'points' => $quiz->points_attribues,
-                    'source' => 'quiz',
-                    'source_id' => $quiz->id,
-                ]);
+                // 📖 Pas de ligne d'historique pour 0 point : rien à tracer, et ça évite une
+                // ligne "0 pts" bruyante dans l'historique des points de l'utilisateur.
+                if ($pointsProportionnels > 0) {
+                    PointsHistorique::create([
+                        'user_id' => $user->id,
+                        'points' => $pointsProportionnels,
+                        'source' => 'quiz',
+                        'source_id' => $quiz->id,
+                    ]);
 
-                $user->increment('points_cumules', $quiz->points_attribues);
-                $pointsGagnes = $quiz->points_attribues;
+                    $user->increment('points_cumules', $pointsProportionnels);
+                }
+
+                $pointsGagnes = $pointsProportionnels;
 
                 app(BadgeService::class)->synchroniser($user);
             } else {
