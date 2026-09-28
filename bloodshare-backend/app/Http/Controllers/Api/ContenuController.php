@@ -13,11 +13,15 @@ class ContenuController extends Controller
 {
     public function actualites()
     {
+        // 📖 Le corps de l'article (`contenu`) manquait de cette sélection : l'écran de détail
+        //    mobile le lit depuis les params de navigation construits à partir de cette liste
+        //    (pas d'appel dédié par id), donc une actualité s'ouvrait toujours avec un contenu
+        //    vide.
         return response()->json(
             Contenu::where('type', 'actualite')
                 ->where('statut', 'publie')
                 ->orderBy('published_at', 'desc')
-                ->get(['id', 'titre', 'image_url', 'published_at'])
+                ->get(['id', 'titre', 'contenu', 'image_url', 'published_at'])
         );
     }
 
