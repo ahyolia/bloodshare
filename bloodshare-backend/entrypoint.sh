@@ -7,7 +7,7 @@ cd /var/www/html
 #    déjà là et cette étape ne fait rien.
 if [ ! -f vendor/autoload.php ]; then
     echo "[entrypoint] vendor/ absent : composer install..."
-    composer install --no-interaction --no-scripts --optimize-autoloader --ignore-platform-reqs
+    composer install --no-interaction --no-scripts --optimize-autoloader
 fi
 
 # 📖 Clé de chiffrement Laravel : générée une seule fois dans le .env local. Sans .env
