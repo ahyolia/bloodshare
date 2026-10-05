@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import {
-  Alert,
   Linking,
   ScrollView,
   StyleSheet,
@@ -20,6 +19,7 @@ import {
   setNotificationsActivees,
   setPenurieActivee,
 } from '../../../utils/preferences';
+import { useDialogue } from '../../../components/DialogueProvider';
 
 const URL_CONFIDENTIALITE = 'https://bloodshare.nc/privacy';
 const URL_CGU = 'https://bloodshare.nc/cgu';
@@ -56,6 +56,7 @@ async function demanderPermissionNotifs(): Promise<boolean> {
 //    → Les deux toggles ci-dessous vont dans AsyncStorage (via utils/preferences).
 export default function ParametresScreen() {
   const router = useRouter();
+  const { confirmer, informer } = useDialogue();
   const [notifs, setNotifs] = useState(false);
   const [penurie, setPenurie] = useState(false);
 
@@ -79,7 +80,7 @@ export default function ParametresScreen() {
     if (valeur) {
       const accorde = await demanderPermissionNotifs();
       if (!accorde) {
-        Alert.alert(
+        await informer(
           'Permission refusée',
           'Activez les notifications pour BloodShare dans les réglages de votre téléphone.'
         );
@@ -99,35 +100,31 @@ export default function ParametresScreen() {
 
   // 📖 Double confirmation : la suppression est irréversible. Un premier Alert
   //    explique, un second force un choix "destructive" volontaire.
-  const supprimer = () => {
-    Alert.alert(
+    // 📖 Double confirmation : la suppression est irréversible. Une première modale
+  //    explique, une seconde force un choix volontaire. Avec `await`, les deux
+  //    étapes se lisent de haut en bas au lieu d'être imbriquées dans des onPress.
+  const supprimer = async () => {
+    const etape1 = await confirmer(
       'Supprimer mon compte',
       'Cette action est irréversible. Toutes vos données seront supprimées.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Continuer',
-          style: 'destructive',
-          onPress: () =>
-            Alert.alert('Dernière confirmation', 'Voulez-vous vraiment tout supprimer ?', [
-              { text: 'Annuler', style: 'cancel' },
-              {
-                text: 'Supprimer définitivement',
-                style: 'destructive',
-                onPress: async () => {
-                  try {
-                    await supprimerCompte();
-                    await removeToken();
-                    router.replace('/auth/login');
-                  } catch {
-                    Alert.alert('Erreur', 'La suppression a échoué. Réessayez.');
-                  }
-                },
-              },
-            ]),
-        },
-      ]
+      'Continuer'
     );
+    if (!etape1) return;
+
+    const etape2 = await confirmer(
+      'Dernière confirmation',
+      'Voulez-vous vraiment tout supprimer ?',
+      'Supprimer définitivement'
+    );
+    if (!etape2) return;
+
+    try {
+      await supprimerCompte();
+      await removeToken();
+      router.replace('/auth/login');
+    } catch {
+      await informer('Erreur', 'La suppression a échoué. Réessayez.');
+    }
   };
 
   const version = Constants.expoConfig?.version ?? '1.0.0';
