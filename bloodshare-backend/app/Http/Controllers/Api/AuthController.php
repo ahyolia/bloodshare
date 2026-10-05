@@ -31,6 +31,12 @@ class AuthController extends Controller
             $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
         }
 
+        // 📖 Un espace en fin de pseudo saisi au clavier mobile créerait un compte
+        //    visuellement identique mais distinct en base (unicité stricte sur la chaîne).
+        if ($request->filled('pseudo')) {
+            $request->merge(['pseudo' => trim($request->input('pseudo'))]);
+        }
+
         $validated = $request->validate([
             'pseudo' => 'required|string|max:50|unique:users,pseudo',
             'email' => 'required|email|unique:users,email',
