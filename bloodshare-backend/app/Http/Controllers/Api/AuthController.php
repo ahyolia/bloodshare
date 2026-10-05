@@ -23,6 +23,16 @@ class AuthController extends Controller
             $request->merge(['code_parrainage' => strtoupper(trim($request->input('code_parrainage')))]);
         }
 
+        // 📖 pseudo/email ne sont pas en citext côté PostgreSQL : sans normalisation,
+        //    "Test.insc1" et "test.insc1" passeraient la contrainte unique comme deux
+        //    comptes distincts, alors que c'est le même pseudo perçu côté utilisateur.
+        if ($request->filled('pseudo')) {
+            $request->merge(['pseudo' => mb_strtolower(trim($request->input('pseudo')))]);
+        }
+        if ($request->filled('email')) {
+            $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
+        }
+
         $validated = $request->validate([
             'pseudo' => 'required|string|max:50|unique:users,pseudo',
             'email' => 'required|email|unique:users,email',
