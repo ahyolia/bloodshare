@@ -75,7 +75,10 @@ class AuthController extends Controller
         if (!empty($validated['code_parrainage'])) {
             $parrain = User::where('code_parrainage', $validated['code_parrainage'])->first();
 
-            if ($parrain) {
+            // 📖 Impossible à l'inscription (le compte $user vient d'être créé, son propre
+            //    code_parrainage ne peut pas déjà exister ailleurs) : garde défensive si ce
+            //    bloc est un jour réutilisé pour un rattachement a posteriori.
+            if ($parrain && $parrain->id !== $user->id) {
                 Parrainage::create([
                     'parrain_id' => $parrain->id,
                     'filleul_id' => $user->id,
