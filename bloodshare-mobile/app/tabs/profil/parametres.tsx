@@ -12,6 +12,7 @@ import {
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/colors';
+import { subscribe as sAbonnerNotifsWeb, unsubscribe as seDesabonnerNotifsWeb } from '../../../services/notifications/webPush';
 import { supprimerCompte } from '../../../services/profil.service';
 import { removeToken } from '../../../stores/auth.store';
 import {
@@ -87,6 +88,21 @@ export default function ParametresScreen() {
         await setNotificationsActivees(false);
         return;
       }
+
+      // 📖 No-op côté natif (Expo Push repoussé en V2) : seule la version web
+      //    (PWA) s'abonne réellement au Web Push ici — voir webPush.web.ts.
+      const abonne = await sAbonnerNotifsWeb();
+      if (!abonne) {
+        Alert.alert(
+          'Permission refusée',
+          'Activez les notifications pour BloodShare dans les réglages de votre navigateur.'
+        );
+        setNotifs(false);
+        await setNotificationsActivees(false);
+        return;
+      }
+    } else {
+      await seDesabonnerNotifsWeb();
     }
     setNotifs(valeur);
     await setNotificationsActivees(valeur);
