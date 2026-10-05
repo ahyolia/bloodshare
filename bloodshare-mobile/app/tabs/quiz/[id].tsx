@@ -4,7 +4,6 @@ import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Modal,
   ScrollView,
@@ -23,11 +22,13 @@ import {
   saveProgression,
   submitQuiz,
 } from '../../../services/quiz.service';
+import { useDialogue } from '../../../components/DialogueProvider';
 
 export default function QuizDeroulementScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const navigation = useNavigation();
+  const { informer } = useDialogue();
 
   const [quiz, setQuiz] = useState<QuizDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -265,11 +266,12 @@ export default function QuizDeroulementScreen() {
         },
       });
     } catch {
-      // 📖 Échec de l'envoi : on reste sur le quiz, donc on réarme la confirmation d'abandon
+      // 📖 Échec de l'envoi : on reste sur le quiz, donc on réarme la confirmation d'abandon.
+      //    On retire l'overlay « Envoi en cours… » AVANT d'afficher l'erreur, sinon il
+      //    resterait visible derrière la modale jusqu'à sa fermeture.
       soumissionEnCours.current = false;
-      Alert.alert('Erreur', 'Impossible de soumettre le quiz. Vérifiez votre connexion.', [
-        { text: 'OK' },
-      ]);
+      setSubmitting(false);
+      await informer('Erreur', 'Impossible de soumettre le quiz. Vérifiez votre connexion.');
     } finally {
       setSubmitting(false);
     }
