@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -20,9 +19,11 @@ import {
 } from '../../../services/profil.service';
 import { saveUser, getUser } from '../../../stores/auth.store';
 import { OPTIONS_STATUT_DONNEUR, initialePseudo } from '../../../utils/profil';
+import { useDialogue } from '../../../components/DialogueProvider';
 
 export default function InformationsScreen() {
   const router = useRouter();
+  const { informer } = useDialogue();
 
   // 📖 "Controlled input" : la valeur affichée par le TextInput vient TOUJOURS
   //    du state React (value={pseudo}), et chaque frappe passe par
@@ -66,7 +67,7 @@ export default function InformationsScreen() {
 
   const enregistrer = async () => {
     if (pseudo.trim().length === 0) {
-      Alert.alert('Pseudo requis', 'Merci de saisir un pseudo.');
+      await informer('Pseudo requis', 'Merci de saisir un pseudo.');
       return;
     }
 
@@ -90,7 +91,7 @@ export default function InformationsScreen() {
 
       router.back();
     } catch {
-      Alert.alert('Erreur', "L'enregistrement a échoué. Réessayez.");
+        await informer('Erreur', "L'enregistrement a échoué. Réessayez.");
     } finally {
       setSaving(false);
     }
