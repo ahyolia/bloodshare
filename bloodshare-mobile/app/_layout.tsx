@@ -22,7 +22,15 @@ export default function RootLayout() {
     // 📖 On relit le token à chaque changement de groupe de routes plutôt que de le garder
     // dans un state : sinon, après un login, ce composant garderait l'ancienne valeur (null)
     // et renverrait aussitôt l'utilisateur sur /auth/login.
-    getToken().then((token) => {
+    getToken()
+      // 📖 Si la lecture du token échoue (stockage indisponible, module natif absent sur
+      //    web…), on traite l'échec comme « pas de token » : l'utilisateur est renvoyé
+      //    vers le login au lieu de rester bloqué sur l'écran de chargement.
+      .catch((error) => {
+        if (__DEV__) console.warn('[auth] lecture du token impossible :', error);
+        return null;
+      })
+      .then((token) => {
       if (cancelled) return;
 
       if (!token && !inAuthGroup) {
