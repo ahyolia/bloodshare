@@ -26,7 +26,11 @@ export async function subscribe(): Promise<boolean> {
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') return false;
 
-  const registration = await navigator.serviceWorker.register('/sw.js');
+  await navigator.serviceWorker.register('/sw.js');
+  // 📖 register() se résout dès l'enregistrement créé, pas une fois le service
+  //    worker actif : s'abonner tout de suite échoue parfois avec "no active
+  //    Service Worker". `.ready` n'aboutit qu'une fois un worker réellement actif.
+  const registration = await navigator.serviceWorker.ready;
   const abonnement = await registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
