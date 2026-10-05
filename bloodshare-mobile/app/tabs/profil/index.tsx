@@ -17,6 +17,7 @@ import { logout } from '../../../services/auth.service';
 import { removeToken } from '../../../stores/auth.store';
 import { LIBELLE_STATUT_DONNEUR, initialePseudo } from '../../../utils/profil';
 import { CONTENU_MARGE_BASSE } from '../_layout';
+import { useDialogue } from '../../../components/DialogueProvider';
 
 // 📖 L'écran Notifications n'existe pas encore : on prévient plutôt que de laisser
 //    une cloche muette. À remplacer par un router.push quand la route existera.
@@ -25,6 +26,7 @@ const ouvrirNotifications = () =>
 
 export default function ProfilScreen() {
   const router = useRouter();
+  const { confirmer } = useDialogue();
   const { apercu, profil, dons, badges, loading, error, reload } = useProfilComplet();
 
   // 📖 useFocusEffect (et pas useEffect) : l'écran Profil reste monté quand on
@@ -36,24 +38,22 @@ export default function ProfilScreen() {
     }, [reload])
   );
 
-  const handleLogout = () => {
-    Alert.alert('Se déconnecter', 'Voulez-vous vraiment vous déconnecter ?', [
-      { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Se déconnecter',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await logout();
-          } catch {
-            // 📖 Même si l'appel /auth/logout échoue (réseau coupé), on purge
-            //    le token local : l'utilisateur doit pouvoir se déconnecter.
-          }
-          await removeToken();
-          router.replace('/auth/login');
-        },
-      },
-    ]);
+  const handleLogout = async () => {
+    const ok = await confirmer(
+      'Se déconnecter',
+      'Voulez-vous vraiment vous déconnecter ?',
+      'Se déconnecter'
+    );
+    if (!ok) return;
+
+    try {
+      await logout();
+    } catch {
+      // 📖 Même si l'appel /auth/logout échoue (réseau coupé), on purge
+      //    le token local : l'utilisateur doit pouvoir se déconnecter.
+    }
+    await removeToken();
+    router.replace('/auth/login');
   };
 
   // 📖 On peint dès qu'on a une info : le profil frais, sinon l'aperçu du cache.

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { getToken } from '../stores/auth.store';
+import { DialogueProvider } from '../components/DialogueProvider';
 
 export default function RootLayout() {
   const router = useRouter();
@@ -50,5 +51,9 @@ export default function RootLayout() {
     // tableau à chaque rendu, ce qui redéclencherait cet effet en boucle.
   }, [inAuthGroup, inTabsGroup, navigationState?.key, router]);
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <DialogueProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </DialogueProvider>
+  );
 }
