@@ -11,7 +11,7 @@ BloodShare encourage les non-donneurs à passer à l'acte et fidélise les donne
 | Composant | Technologie |
 |---|---|
 | Application mobile | React Native (Expo) |
-| Backend & API REST | Laravel 11 + Sanctum |
+| Backend & API REST | Laravel 12 + Sanctum |
 | Backoffice | Laravel + Filament |
 | Base de données | PostgreSQL 15 |
 | Gestion des rôles | Spatie Laravel Permission |

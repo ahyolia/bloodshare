@@ -1,10 +1,10 @@
 # BloodShare — Backend 🩸
 
-Backend Laravel 11 de l'application BloodShare. Gère à la fois l'API REST pour l'application mobile et le backoffice d'administration via Filament.
+Backend Laravel 12 de l'application BloodShare. Gère à la fois l'API REST pour l'application mobile et le backoffice d'administration via Filament.
 
 ## Stack
 
-- **Framework** : Laravel 11
+- **Framework** : Laravel 12
 - **PHP** : 8.3
 - **Base de données** : PostgreSQL 15
 - **Auth API** : Laravel Sanctum

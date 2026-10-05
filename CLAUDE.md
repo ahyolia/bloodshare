@@ -1,7 +1,7 @@
 # BloodShare Backend — Contexte projet
 
 ## Stack
-- Laravel 11 + PHP 8.3
+- Laravel 12 + PHP 8.3
 - Filament 3 (backoffice)
 - PostgreSQL 15
 - Spatie Laravel Permission (rôles : super_admin, admin)
