@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Badge;
+use App\Notifications\BadgeDebloqueNotification;
 use App\Models\Don;
 use App\Models\Parrainage;
 use App\Models\Quiz;
@@ -127,6 +128,8 @@ class BadgeService
 
                 continue;
             }
+
+            $user->notify(new BadgeDebloqueNotification($badge));
 
             $nouveauxBadges[] = [
                 'id' => $badge->id,

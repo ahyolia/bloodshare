@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CarteController;
 use App\Http\Controllers\Api\ContenuController;
 use App\Http\Controllers\Api\DefiController;
 use App\Http\Controllers\Api\DonController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ParrainageController;
 use App\Http\Controllers\Api\PointsController;
 use App\Http\Controllers\Api\ProfilController;
@@ -55,4 +56,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/quiz/{id}/progression', [QuizController::class, 'progression']);
     Route::post('/quiz/{id}/soumettre', [QuizController::class, 'soumettre']);
     Route::get('/defis/actuel', [DefiController::class, 'actuel']);
+
+    // Notifications push (PWA / Web Push)
+    Route::post('/notifications/subscription', [NotificationController::class, 'storeSubscription']);
+    Route::delete('/notifications/subscription', [NotificationController::class, 'destroySubscription']);
 });
