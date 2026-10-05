@@ -7,6 +7,7 @@ use App\Models\Parrainage;
 use App\Models\PointsHistorique;
 use App\Models\User;
 use App\Models\UserCarte;
+use App\Notifications\PremierDonFilleulNotification;
 
 class ParrainageService
 {
@@ -34,6 +35,7 @@ class ParrainageService
             'source_id' => $parrainage->id,
         ]);
         $parrain->increment('points_cumules', 75);
+        $parrain->notify(new PremierDonFilleulNotification());
 
         PointsHistorique::create([
             'user_id'   => $user->id,

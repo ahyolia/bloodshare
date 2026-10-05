@@ -67,6 +67,13 @@ class User extends Authenticatable implements FilamentUser, HasName
         });
     }
 
+    protected static function booted(): void
+    {
+        static::updated(function (User $user) {
+            app(\App\Services\NotificationService::class)->verifierNouveauNiveau($user);
+        });
+    }
+
     // Relations
     public function avatar()
     {

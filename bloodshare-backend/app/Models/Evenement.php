@@ -26,6 +26,16 @@ class Evenement extends Model
         'horaire_fin' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (Evenement $evenement) {
+            if ($evenement->wasChanged('statut') && $evenement->statut === 'publie') {
+                app(\App\Services\NotificationService::class)
+                    ->notifierTousLesUsers(new \App\Notifications\NouvelEvenementNotification($evenement));
+            }
+        });
+    }
+
     public function admin()
     {
         return $this->belongsTo(User::class, 'admin_id');
