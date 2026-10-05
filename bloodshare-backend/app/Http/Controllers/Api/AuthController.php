@@ -23,12 +23,10 @@ class AuthController extends Controller
             $request->merge(['code_parrainage' => strtoupper(trim($request->input('code_parrainage')))]);
         }
 
-        // 📖 pseudo/email ne sont pas en citext côté PostgreSQL : sans normalisation,
-        //    "Test.insc1" et "test.insc1" passeraient la contrainte unique comme deux
-        //    comptes distincts, alors que c'est le même pseudo perçu côté utilisateur.
-        if ($request->filled('pseudo')) {
-            $request->merge(['pseudo' => mb_strtolower(trim($request->input('pseudo')))]);
-        }
+        // 📖 email n'est pas en citext côté PostgreSQL : sans normalisation,
+        //    "Test@example.test" et "test@example.test" passeraient la contrainte unique
+        //    comme deux comptes distincts, alors que c'est la même adresse. Le pseudo,
+        //    lui, garde la casse saisie : c'est un nom affiché, pas un identifiant technique.
         if ($request->filled('email')) {
             $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
         }
@@ -99,6 +97,11 @@ class AuthController extends Controller
             'email' => 'required',
             'password' => 'required',
         ]);
+
+        // 📖 email est stocké en minuscules depuis l'inscription (voir register) : sans
+        //    cette normalisation ici aussi, se connecter avec une casse différente de celle
+        //    saisie à l'inscription échouerait alors que c'est la même adresse.
+        $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
 
         if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json([
