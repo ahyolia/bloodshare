@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useCameraPermissions } from 'expo-camera';
+import { QrScanner } from '../../../components/scanner/QrScanner';
+import { useDialogue } from '../../../components/DialogueProvider';
 import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   AppState,
   Linking,
   StyleSheet,
@@ -20,6 +21,7 @@ import { ResultatScan, soumettreScan } from '../../../services/scan.service';
 export default function ScanScreen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const { informer } = useDialogue();
 
   // 📖 On masque la tab bar tant que cet écran est affiché, et on la remet dès qu'on le quitte
   // → Pourquoi : le scanner occupe déjà tout l'écran (plein écran caméra) ; la tab bar flottante par-dessus gênerait le cadrage du QR Code et n'a aucune utilité pendant un scan
@@ -118,24 +120,21 @@ export default function ScanScreen() {
 
   // 📖 handleScan reçoit l'objet renvoyé par CameraView à chaque QR Code détecté ; on ne garde que son champ `data` (le contenu textuel du QR Code), renommé `token`
   // → Pourquoi setScanned(true) en premier : la caméra scanne plusieurs fois par seconde. Si on attendait la réponse de l'API pour bloquer les scans suivants, on enverrait déjà 3 ou 4 requêtes avant que la première ne réponde. En le mettant AVANT l'appel API, on bloque immédiatement les scans suivants dès la première détection.
-  const handleScan = async ({ data: token }: { data: string }) => {
+  const handleScan = async (token: string) => {
     setScanned(true);
     setLoading(true);
 
     try {
-      // 📖 La validation passe par la couche service (mock ou API selon USE_MOCK_DATA).
-      //    Le token n'est jamais interprété côté app : seul le backend sait le valider
+      // 📖 Le token n'est jamais interprété côté app : seul le backend sait le valider
       //    (don réel, éligibilité, expiration...) — un QR Code peut être falsifié ou rejoué.
       const data = await soumettreScan(token);
-
+      setLoading(false);
       handleSuccess(data);
     } catch (error) {
-      // 📖 error.response existe quand le serveur A répondu mais avec un code d'erreur (404, 422...)
-      //    error.request existe quand la requête est partie mais qu'AUCUNE réponse n'est arrivée (pas de réseau, timeout, serveur injoignable)
-      // → Pourquoi la distinction compte : un 422 veut dire "le serveur a compris ta demande mais elle est invalide" (ex: pas éligible), alors qu'une absence de réponse veut dire "problème réseau" — le message à afficher n'est pas le même
-      handleError(error);
-    } finally {
+      // 📖 On retire l'overlay « Validation en cours… » AVANT d'afficher l'erreur,
+      //    sinon il resterait visible derrière la modale.
       setLoading(false);
+      await handleError(error);
     }
   };
 
@@ -162,82 +161,50 @@ export default function ScanScreen() {
   // → Pourquoi des codes HTTP différents plutôt qu'un code d'erreur générique : le code HTTP dit la NATURE du problème (422 = requête comprise mais refusée pour une raison métier, 404 = ressource introuvable) ; ça permet à l'app d'adapter le message sans avoir à parser un texte d'erreur fragile
   // → Le "?." (optional chaining) : error.response peut être `undefined` (erreur réseau, cf. ci-dessus) ; sans le "?", error.response.status planterait l'app avec un "Cannot read property 'status' of undefined"
   // → Pourquoi remettre scanned à false seulement en cas d'erreur : après un succès, on quitte l'écran de scan (navigation vers resultat-scan), donc pas besoin de le réautoriser ; après une erreur, l'utilisateur reste sur l'écran caméra et doit pouvoir rescanner
-  const handleError = (error: any) => {
+    // 📖 handleError choisit le message selon le code HTTP renvoyé par le backend
+  //    (422 = refus métier, 404 = QR introuvable, 401 = session, 503 = config backoffice).
+  //    error.response est undefined en cas de problème réseau, d'où le « ?. ».
+  const handleError = async (error: any) => {
     const status = error.response?.status;
+    let titre = 'Erreur';
+    let message = 'Une erreur est survenue. Vérifiez votre connexion et réessayez.';
 
     if (status === 422) {
-      // 📖 Deux refus différents partagent le code 422 : un don trop rapproché du précédent
-      //    (le backend joint alors `prochaine_eligibilite`) et un QR d'événement annulé, non
-      //    publié ou terminé (simple `message`). Sans cette distinction, le second affichait
-      //    « Don non validé … Prochain don possible le : undefined ».
-      const { prochaine_eligibilite, message } = error.response.data ?? {};
-
+      // 📖 Deux refus partagent le 422 : un don trop rapproché (le backend joint
+      //    `prochaine_eligibilite`) et un QR d'événement annulé ou terminé (simple `message`).
+      const { prochaine_eligibilite, message: messageServeur } = error.response.data ?? {};
       if (prochaine_eligibilite) {
-        Alert.alert(
-          'Don non validé',
-          `Vous n'êtes pas encore éligible.\nProchain don possible le : ${prochaine_eligibilite}`,
-          [{ text: 'OK', onPress: () => setScanned(false) }]
-        );
+        titre = 'Don non validé';
+        message = `Vous n'êtes pas encore éligible.\nProchain don possible le : ${prochaine_eligibilite}`;
       } else {
-        Alert.alert(
-          'Scan non validé',
-          message ?? "Ce QR Code n'a pas pu être validé.",
-          [{ text: 'OK', onPress: () => setScanned(false) }]
-        );
+        titre = 'Scan non validé';
+        message = messageServeur ?? "Ce QR Code n'a pas pu être validé.";
       }
-      return;
+    } else if (status === 404) {
+      titre = 'QR Code invalide';
+      message = 'Ce QR Code est invalide ou expiré.';
+    } else if (status === 401) {
+      titre = 'Session expirée';
+      message = 'Vous devez être connecté pour valider un scan. Reconnectez-vous puis réessayez.';
+    } else if (status === 503) {
+      titre = 'Service temporairement indisponible';
+      message = "La carte à débloquer n'est pas encore configurée. Réessayez plus tard.";
     }
 
-    if (status === 404) {
-      Alert.alert(
-        'QR Code invalide',
-        'Ce QR Code est invalide ou expiré.',
-        [{ text: 'Réessayer', onPress: () => setScanned(false) }]
-      );
-      return;
-    }
-
-    // 📖 401 = l'utilisateur n'a pas de session valide (token absent, expiré, ou jamais connecté)
-    // → Pourquoi un message dédié : l'intercepteur de services/api.ts efface le token stocké sur un 401, mais ne redirige pas vers l'écran de login automatiquement ; sans ce cas, l'utilisateur verrait "vérifiez votre connexion" et penserait à un problème réseau, alors que le vrai souci est qu'il doit se reconnecter
-    if (status === 401) {
-      Alert.alert(
-        'Session expirée',
-        'Vous devez être connecté pour valider un scan. Reconnectez-vous puis réessayez.',
-        [{ text: 'OK', onPress: () => setScanned(false) }]
-      );
-      return;
-    }
-
-    // 📖 503 = le backend a bien compris et accepté la requête, mais ne peut pas la traiter (ex: carte du mois pas encore créée dans le backoffice)
-    // → Pourquoi un message dédié : ce n'est ni un problème de connexion utilisateur, ni un token expiré, ni un QR invalide — c'est un souci de configuration côté backoffice, que l'utilisateur ne peut pas résoudre lui-même en réessayant
-    if (status === 503) {
-      Alert.alert(
-        'Service temporairement indisponible',
-        "La carte à débloquer n'est pas encore configurée. Réessayez plus tard.",
-        [{ text: 'OK', onPress: () => setScanned(false) }]
-      );
-      return;
-    }
-
-    Alert.alert(
-      'Erreur',
-      'Une erreur est survenue. Vérifiez votre connexion et réessayez.',
-      [{ text: 'OK', onPress: () => setScanned(false) }]
-    );
+    await informer(titre, message);
+    // 📖 On réautorise le scan seulement après la fermeture du message : sinon la caméra
+    //    relirait le même QR derrière la modale et enverrait une nouvelle requête.
+    setScanned(false);
   };
 
   return (
     <View style={styles.screen}>
       {/* 📖 CameraView est le composant caméra léger d'expo-camera, dédié à l'AFFICHAGE + à la détection de codes-barres/QR
           → Pourquoi lui et pas "la caméra complète" : on n'a besoin ni de prendre des photos, ni de filmer ; CameraView embarque juste ce qu'il faut (flux vidéo + scanner de codes), ce qui est plus léger et plus simple à configurer que l'API caméra complète */}
-      <CameraView
+      <QrScanner
         style={StyleSheet.absoluteFill}
-        // 📖 barcodeTypes: ['qr'] filtre le scanner pour qu'il ne réagisse qu'aux QR Codes
-        // → Pourquoi : CameraView sait aussi lire des codes-barres classiques (EAN, Code128...) ; sans ce filtre, l'app tenterait de scanner n'importe quel code visible, avec le risque de traiter un code-barres de supermarché comme un token BloodShare
-        barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-        // 📖 onBarcodeScanned n'appelle handleScan que si !scanned
-        // → Pourquoi : CameraView continue d'appeler ce callback à chaque frame où un QR Code est détecté ; sans cette garde, on redéclencherait handleScan en boucle tant que le QR Code reste dans le cadre
-        onBarcodeScanned={!scanned ? handleScan : undefined}
+        actif={!scanned}
+        onScan={handleScan}
       />
 
       <View style={styles.overlay} pointerEvents="box-none">
