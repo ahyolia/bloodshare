@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Parrainage;
 use App\Models\User;
-use App\Notifications\FilleulInscritNotification;
 use App\Services\BadgeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -90,8 +89,6 @@ class AuthController extends Controller
                 //    validation du parrainage (qui arrive plus tard, au 1er don) : on l'attribue
                 //    donc tout de suite, sans attendre un scan.
                 app(BadgeService::class)->synchroniser($user);
-
-                $parrain->notify(new FilleulInscritNotification());
             }
         }
 

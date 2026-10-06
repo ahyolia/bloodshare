@@ -11,10 +11,6 @@ import {
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import { Colors } from "../../../constants/colors";
-import {
-  subscribe as sAbonnerNotifsWeb,
-  unsubscribe as seDesabonnerNotifsWeb,
-} from "../../../services/notifications/webPush";
 import { supprimerCompte } from "../../../services/profil.service";
 import { removeToken } from "../../../stores/auth.store";
 import {
@@ -93,32 +89,6 @@ export default function ParametresScreen() {
         setNotifs(false);
         await setNotificationsActivees(false);
         return;
-      }
-
-      // 📖 No-op côté natif (Expo Push repoussé en V2) : seule la version web
-      //    (PWA) s'abonne réellement au Web Push ici — voir webPush.web.ts.
-      let abonne = false;
-      try {
-        abonne = await sAbonnerNotifsWeb();
-      } catch {
-        abonne = false;
-      }
-      if (!abonne) {
-        await informer(
-          "Permission refusée",
-          "Activez les notifications pour BloodShare dans les réglages de votre navigateur.",
-        );
-        setNotifs(false);
-        await setNotificationsActivees(false);
-        return;
-      }
-    } else {
-      try {
-        await seDesabonnerNotifsWeb();
-      } catch {
-        // 📖 Le désabonnement est une opération de confort (évite de recevoir des
-        //    push inutiles) : son échec ne doit pas bloquer la désactivation du
-        //    toggle localement.
       }
     }
     setNotifs(valeur);

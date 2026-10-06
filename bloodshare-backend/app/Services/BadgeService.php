@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Badge;
-use App\Notifications\BadgeDebloqueNotification;
 use App\Models\Don;
 use App\Models\Parrainage;
 use App\Models\Quiz;
@@ -13,7 +12,6 @@ use App\Models\UserCarte;
 use App\Models\UserDefi;
 use App\Models\UserQuiz;
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\DB;
 
 class BadgeService
 {
@@ -129,10 +127,6 @@ class BadgeService
 
                 continue;
             }
-
-            // 📖 Après commit : synchroniser() tourne pendant la transaction du scan — notifier
-            //    avant son commit annoncerait un badge que l'échec du scan annulerait ensuite.
-            DB::afterCommit(fn () => $user->notify(new BadgeDebloqueNotification($badge)));
 
             $nouveauxBadges[] = [
                 'id' => $badge->id,
