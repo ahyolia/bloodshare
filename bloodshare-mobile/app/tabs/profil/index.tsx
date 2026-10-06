@@ -14,6 +14,7 @@ import { EnTete } from '../../../components/EnTete';
 import { Colors } from '../../../constants/colors';
 import { useProfilComplet } from '../../../hooks/useProfilComplet';
 import { logout } from '../../../services/auth.service';
+import { unsubscribe as seDesabonnerNotifsWeb } from '../../../services/notifications/webPush';
 import { removeToken } from '../../../stores/auth.store';
 import { LIBELLE_STATUT_DONNEUR, initialePseudo } from '../../../utils/profil';
 import { CONTENU_MARGE_BASSE } from '../_layout';
@@ -43,6 +44,15 @@ export default function ProfilScreen() {
         text: 'Se déconnecter',
         style: 'destructive',
         onPress: async () => {
+          try {
+            // 📖 Avant logout() : le désabonnement appelle l'API avec le token
+            //    encore valide. Après, l'appareil continuerait de recevoir les
+            //    push de ce compte malgré la déconnexion.
+            await seDesabonnerNotifsWeb();
+          } catch {
+            // 📖 Le désabonnement est une opération de confort : son échec ne
+            //    doit pas empêcher la déconnexion.
+          }
           try {
             await logout();
           } catch {

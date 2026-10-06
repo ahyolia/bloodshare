@@ -21,7 +21,7 @@ class Banniere extends Model
     protected static function booted(): void
     {
         static::saved(function (Banniere $banniere) {
-            if ($banniere->wasChanged('active') && $banniere->active && $banniere->type === 'urgence') {
+            if (($banniere->wasChanged('active') || $banniere->wasRecentlyCreated) && $banniere->active && $banniere->type === 'urgence') {
                 app(\App\Services\NotificationService::class)
                     ->notifierTousLesUsers(new \App\Notifications\BanniereUrgenteNotification($banniere));
             }

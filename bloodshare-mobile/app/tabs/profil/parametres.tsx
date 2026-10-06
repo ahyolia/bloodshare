@@ -91,7 +91,12 @@ export default function ParametresScreen() {
 
       // 📖 No-op côté natif (Expo Push repoussé en V2) : seule la version web
       //    (PWA) s'abonne réellement au Web Push ici — voir webPush.web.ts.
-      const abonne = await sAbonnerNotifsWeb();
+      let abonne = false;
+      try {
+        abonne = await sAbonnerNotifsWeb();
+      } catch {
+        abonne = false;
+      }
       if (!abonne) {
         Alert.alert(
           'Permission refusée',
@@ -102,7 +107,13 @@ export default function ParametresScreen() {
         return;
       }
     } else {
-      await seDesabonnerNotifsWeb();
+      try {
+        await seDesabonnerNotifsWeb();
+      } catch {
+        // 📖 Le désabonnement est une opération de confort (évite de recevoir des
+        //    push inutiles) : son échec ne doit pas bloquer la désactivation du
+        //    toggle localement.
+      }
     }
     setNotifs(valeur);
     await setNotificationsActivees(valeur);

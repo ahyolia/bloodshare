@@ -13,7 +13,9 @@ class NotificationService
             endpoint: $abonnement['endpoint'],
             key: $abonnement['keys']['p256dh'] ?? null,
             token: $abonnement['keys']['auth'] ?? null,
-            contentEncoding: $abonnement['contentEncoding'] ?? 'aesgcm',
+            // 📖 aes128gcm (rfc8291) par défaut : Safari/iOS n'acceptent QUE cet encodage,
+            //    contrairement à Chrome/Firefox qui tolèrent aussi l'ancien aesgcm.
+            contentEncoding: $abonnement['contentEncoding'] ?? 'aes128gcm',
         );
     }
 

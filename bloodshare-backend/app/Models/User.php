@@ -92,6 +92,10 @@ class User extends Authenticatable implements FilamentUser, HasName
             'avatar_id' => null,
             'code_parrainage' => null,
         ]);
+
+        // 📖 Un compte supprimé ne doit plus recevoir de notification : sans ça, l'appareil
+        //    reste abonné et continuerait de recevoir les push de l'ancien compte.
+        $this->pushSubscriptions()->delete();
     }
 
     // Relations

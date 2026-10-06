@@ -8,6 +8,7 @@ use App\Models\PointsHistorique;
 use App\Models\User;
 use App\Models\UserCarte;
 use App\Notifications\PremierDonFilleulNotification;
+use Illuminate\Support\Facades\DB;
 
 class ParrainageService
 {
@@ -35,7 +36,9 @@ class ParrainageService
             'source_id' => $parrainage->id,
         ]);
         $parrain->increment('points_cumules', 75);
-        $parrain->notify(new PremierDonFilleulNotification());
+        // 📖 Après commit : validerSiFilleul() tourne pendant la transaction du scan — notifier
+        //    avant son commit annoncerait un parrainage validé que l'échec du scan annulerait.
+        DB::afterCommit(fn () => $parrain->notify(new PremierDonFilleulNotification()));
 
         PointsHistorique::create([
             'user_id'   => $user->id,

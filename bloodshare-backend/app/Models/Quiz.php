@@ -25,7 +25,7 @@ class Quiz extends Model
     protected static function booted(): void
     {
         static::saved(function (Quiz $quiz) {
-            if ($quiz->wasChanged('statut') && $quiz->statut === 'actif') {
+            if (($quiz->wasChanged('statut') || $quiz->wasRecentlyCreated) && $quiz->statut === 'actif') {
                 app(\App\Services\NotificationService::class)
                     ->notifierTousLesUsers(new \App\Notifications\NouveauQuizNotification($quiz));
             }

@@ -29,7 +29,7 @@ class Evenement extends Model
     protected static function booted(): void
     {
         static::saved(function (Evenement $evenement) {
-            if ($evenement->wasChanged('statut') && $evenement->statut === 'publie') {
+            if (($evenement->wasChanged('statut') || $evenement->wasRecentlyCreated) && $evenement->statut === 'publie') {
                 app(\App\Services\NotificationService::class)
                     ->notifierTousLesUsers(new \App\Notifications\NouvelEvenementNotification($evenement));
             }
