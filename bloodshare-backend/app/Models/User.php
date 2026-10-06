@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -72,6 +73,25 @@ class User extends Authenticatable implements FilamentUser, HasName
         static::updated(function (User $user) {
             app(\App\Services\NotificationService::class)->verifierNouveauNiveau($user);
         });
+    }
+
+    // 📖 RGPD : la ligne reste en base (dons, points, badges... gardent leur historique pour
+    //    les statistiques de l'association), mais tout ce qui identifie la personne est effacé.
+    //    `email` doit rester unique et non nul en base, d'où le suffixe id. `password` est
+    //    réécrit avec une valeur aléatoire : même si `login()` refuse déjà les comptes
+    //    `statut='supprime'`, un compte ne doit plus être utilisable si cette règle venait à
+    //    changer un jour. Appelé depuis l'API (DELETE /me) et le BO (action "Supprimer le
+    //    compte") : les deux chemins de suppression doivent produire le même état.
+    public function anonymiser(): void
+    {
+        $this->update([
+            'statut' => 'supprime',
+            'pseudo' => 'Utilisateur supprimé',
+            'email' => "supprime-{$this->id}@bloodshare.local",
+            'password' => Hash::make(Str::random(40)),
+            'avatar_id' => null,
+            'code_parrainage' => null,
+        ]);
     }
 
     // Relations

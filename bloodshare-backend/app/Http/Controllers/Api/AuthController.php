@@ -24,6 +24,20 @@ class AuthController extends Controller
             $request->merge(['code_parrainage' => strtoupper(trim($request->input('code_parrainage')))]);
         }
 
+        // 📖 email n'est pas en citext côté PostgreSQL : sans normalisation,
+        //    "Test@example.test" et "test@example.test" passeraient la contrainte unique
+        //    comme deux comptes distincts, alors que c'est la même adresse. Le pseudo,
+        //    lui, garde la casse saisie : c'est un nom affiché, pas un identifiant technique.
+        if ($request->filled('email')) {
+            $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
+        }
+
+        // 📖 Un espace en fin de pseudo saisi au clavier mobile créerait un compte
+        //    visuellement identique mais distinct en base (unicité stricte sur la chaîne).
+        if ($request->filled('pseudo')) {
+            $request->merge(['pseudo' => trim($request->input('pseudo'))]);
+        }
+
         $validated = $request->validate([
             'pseudo' => 'required|string|max:50|unique:users,pseudo',
             'email' => 'required|email|unique:users,email',
@@ -62,7 +76,10 @@ class AuthController extends Controller
         if (!empty($validated['code_parrainage'])) {
             $parrain = User::where('code_parrainage', $validated['code_parrainage'])->first();
 
-            if ($parrain) {
+            // 📖 Impossible à l'inscription (le compte $user vient d'être créé, son propre
+            //    code_parrainage ne peut pas déjà exister ailleurs) : garde défensive si ce
+            //    bloc est un jour réutilisé pour un rattachement a posteriori.
+            if ($parrain && $parrain->id !== $user->id) {
                 Parrainage::create([
                     'parrain_id' => $parrain->id,
                     'filleul_id' => $user->id,
@@ -92,6 +109,11 @@ class AuthController extends Controller
             'email' => 'required',
             'password' => 'required',
         ]);
+
+        // 📖 email est stocké en minuscules depuis l'inscription (voir register) : sans
+        //    cette normalisation ici aussi, se connecter avec une casse différente de celle
+        //    saisie à l'inscription échouerait alors que c'est la même adresse.
+        $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
 
         if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json([
@@ -128,6 +150,8 @@ class AuthController extends Controller
 
     public function forgotPassword(Request $request)
     {
+        $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
+
         $request->validate([
             'email' => 'required',
         ]);
