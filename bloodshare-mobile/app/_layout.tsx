@@ -1,18 +1,23 @@
-import { useEffect } from 'react';
-import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
-import { getToken } from '../stores/auth.store';
-import { DialogueProvider } from '../components/DialogueProvider';
+import { useEffect } from "react";
+import {
+  Stack,
+  useRouter,
+  useSegments,
+  useRootNavigationState,
+} from "expo-router";
+import { getToken } from "../stores/auth.store";
+import { DialogueProvider } from "../components/DialogueProvider";
 
 export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
   const navigationState = useRootNavigationState();
 
-  const inAuthGroup = segments[0] === 'auth';
+  const inAuthGroup = segments[0] === "auth";
   // 📖 `detail` = écrans ouverts par-dessus les onglets (actualité, événement) : pour le
   //    garde ci-dessous, c'est de la zone connectée au même titre que `tabs`. Sans ça,
   //    l'ouverture d'un détail renverrait aussitôt l'utilisateur sur /tabs.
-  const inTabsGroup = segments[0] === 'tabs' || segments[0] === 'detail';
+  const inTabsGroup = segments[0] === "tabs" || segments[0] === "detail";
 
   useEffect(() => {
     // Attendre que la navigation soit prête
@@ -28,21 +33,22 @@ export default function RootLayout() {
       //    web…), on traite l'échec comme « pas de token » : l'utilisateur est renvoyé
       //    vers le login au lieu de rester bloqué sur l'écran de chargement.
       .catch((error) => {
-        if (__DEV__) console.warn('[auth] lecture du token impossible :', error);
+        if (__DEV__)
+          console.warn("[auth] lecture du token impossible :", error);
         return null;
       })
       .then((token) => {
-      if (cancelled) return;
+        if (cancelled) return;
 
-      if (!token && !inAuthGroup) {
-        router.replace('/auth/login');
-      } else if (token && !inTabsGroup) {
-        // 📖 `!inTabsGroup` et non `inAuthGroup` : au lancement on est sur `app/index.tsx`
-        // (ni `auth`, ni `tabs`). Avec `inAuthGroup`, aucune des deux branches ne se
-        // déclenchait et l'utilisateur connecté restait bloqué sur l'écran de chargement.
-        router.replace('/tabs');
-      }
-    });
+        if (!token && !inAuthGroup) {
+          router.replace("/auth/login");
+        } else if (token && !inTabsGroup) {
+          // 📖 `!inTabsGroup` et non `inAuthGroup` : au lancement on est sur `app/index.tsx`
+          // (ni `auth`, ni `tabs`). Avec `inAuthGroup`, aucune des deux branches ne se
+          // déclenchait et l'utilisateur connecté restait bloqué sur l'écran de chargement.
+          router.replace("/tabs");
+        }
+      });
 
     return () => {
       cancelled = true;

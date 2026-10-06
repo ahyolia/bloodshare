@@ -1,7 +1,7 @@
-import { useFocusEffect } from 'expo-router';
-import { useNavigation, useRouter } from 'expo-router';
-import { useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -11,9 +11,9 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { Colors } from '../../../constants/colors';
-import { TAB_BAR_STYLE } from '../_layout';
+} from "react-native";
+import { Colors } from "../../../constants/colors";
+import { TAB_BAR_STYLE } from "../_layout";
 import {
   getQuizDetail,
   Question,
@@ -21,8 +21,8 @@ import {
   ReponsePayload,
   saveProgression,
   submitQuiz,
-} from '../../../services/quiz.service';
-import { useDialogue } from '../../../components/DialogueProvider';
+} from "../../../services/quiz.service";
+import { useDialogue } from "../../../components/DialogueProvider";
 
 export default function QuizDeroulementScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -61,7 +61,7 @@ export default function QuizDeroulementScreen() {
 
   // 📖 Signature (JSON) des réponses déjà enregistrées côté serveur : évite de renvoyer la
   //    même progression, notamment juste après la reprise d'un quiz commencé.
-  const derniereSauvegarde = useRef('[]');
+  const derniereSauvegarde = useRef("[]");
 
   // 📖 Modale d'abandon custom (au lieu de Alert natif) : on met en attente l'action de sortie
   //    interceptée, la modale décide de la rejouer ou non.
@@ -81,12 +81,12 @@ export default function QuizDeroulementScreen() {
   //    le footer (boutons Précédent / Suivant / Terminer). On la restaure en quittant l'écran.
   useFocusEffect(
     useCallback(() => {
-      navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
+      navigation.getParent()?.setOptions({ tabBarStyle: { display: "none" } });
 
       return () => {
         navigation.getParent()?.setOptions({ tabBarStyle: TAB_BAR_STYLE });
       };
-    }, [navigation])
+    }, [navigation]),
   );
 
   useEffect(() => {
@@ -102,13 +102,19 @@ export default function QuizDeroulementScreen() {
         //    d'où la recherche par id de question et non par position).
         const donnees = data.reponses_donnees ?? [];
         if (donnees.length > 0) {
-          setReponses(new Map(donnees.map((r) => [r.question_id, r.reponse_ids])));
+          setReponses(
+            new Map(donnees.map((r) => [r.question_id, r.reponse_ids])),
+          );
           derniereSauvegarde.current = JSON.stringify(donnees);
 
           const premiereSansReponse = data.questions.findIndex(
-            (q) => !donnees.some((r) => r.question_id === q.id)
+            (q) => !donnees.some((r) => r.question_id === q.id),
           );
-          setQuestionIndex(premiereSansReponse === -1 ? data.questions.length - 1 : premiereSansReponse);
+          setQuestionIndex(
+            premiereSansReponse === -1
+              ? data.questions.length - 1
+              : premiereSansReponse,
+          );
         }
       })
       .catch(() => {
@@ -138,7 +144,7 @@ export default function QuizDeroulementScreen() {
   // 📖 Point d'interception UNIQUE pour toute sortie de l'écran (bouton back custom, geste natif
   //    Android, bouton matériel) : on ne montre la confirmation d'abandon qu'ici, une seule fois.
   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e: any) => {
       // Soumission en cours ou abandon déjà confirmé → on laisse la navigation se faire
       if (soumissionEnCours.current || sortieConfirmee.current) return;
 
@@ -165,7 +171,7 @@ export default function QuizDeroulementScreen() {
 
     derniereSauvegarde.current = signature;
     saveProgression(quiz.id, payload).catch(() => {
-      derniereSauvegarde.current = '';
+      derniereSauvegarde.current = "";
     });
   }, [quiz, reponses]);
 
@@ -181,7 +187,8 @@ export default function QuizDeroulementScreen() {
     envoyerProgression();
     sortieConfirmee.current = true;
     setModaleAbandon(false);
-    if (actionSortie.current) navigation.dispatch(actionSortie.current as never);
+    if (actionSortie.current)
+      navigation.dispatch(actionSortie.current as never);
   };
 
   const annulerAbandon = () => {
@@ -193,7 +200,7 @@ export default function QuizDeroulementScreen() {
     setReponses((prev) => {
       const next = new Map(prev);
 
-      if (question.type === 'unique') {
+      if (question.type === "unique") {
         next.set(question.id, [reponseId]);
         return next;
       }
@@ -204,7 +211,7 @@ export default function QuizDeroulementScreen() {
         question.id,
         dejaSelectionnee
           ? actuelles.filter((id) => id !== reponseId)
-          : [...actuelles, reponseId]
+          : [...actuelles, reponseId],
       );
       return next;
     });
@@ -212,8 +219,10 @@ export default function QuizDeroulementScreen() {
     // 📖 Auto-avance sur les questions à choix unique : la réponse suffit à valider, on
     //    enchaîne après 350 ms pour laisser voir la sélection. Les questions 'multiple'
     //    et la dernière question gardent la validation manuelle par bouton.
-    const estDerniere = quiz ? questionIndex === quiz.questions.length - 1 : true;
-    if (question.type === 'unique' && !estDerniere) {
+    const estDerniere = quiz
+      ? questionIndex === quiz.questions.length - 1
+      : true;
+    if (question.type === "unique" && !estDerniere) {
       annulerAutoAvance();
       autoAvanceTimer.current = setTimeout(() => {
         setQuestionIndex((prev) => prev + 1);
@@ -243,16 +252,16 @@ export default function QuizDeroulementScreen() {
     try {
       // 📖 Notre Map interne (accès rapide par question_id) n'a pas de forme JSON native :
       //    on la convertit ici vers le tableau attendu par l'API au moment de l'envoi
-      const reponsesPayload: ReponsePayload[] = Array.from(reponses.entries()).map(
-        ([question_id, reponse_ids]) => ({ question_id, reponse_ids })
-      );
+      const reponsesPayload: ReponsePayload[] = Array.from(
+        reponses.entries(),
+      ).map(([question_id, reponse_ids]) => ({ question_id, reponse_ids }));
 
       const resultat = await submitQuiz(quiz.id, reponsesPayload);
 
       // 📖 replace : on ne veut pas qu'un retour arrière depuis l'écran score ramène sur le
       //    quiz déjà soumis (même logique que resultat-scan → cartes/accueil)
       router.replace({
-        pathname: '/tabs/quiz/score',
+        pathname: "/tabs/quiz/score",
         params: {
           quiz_id: String(quiz.id),
           quiz_titre: quiz.titre,
@@ -272,7 +281,10 @@ export default function QuizDeroulementScreen() {
       //    router.replace quitte l'écran, il n'y a rien à réinitialiser.
       soumissionEnCours.current = false;
       setSubmitting(false);
-      await informer('Erreur', 'Impossible de soumettre le quiz. Vérifiez votre connexion.');
+      await informer(
+        "Erreur",
+        "Impossible de soumettre le quiz. Vérifiez votre connexion.",
+      );
     }
   };
 
@@ -301,14 +313,18 @@ export default function QuizDeroulementScreen() {
   //    - choix unique (hors dernière) → auto-avance à la sélection, PAS de bouton (sinon doublon)
   //    - choix multiple → bouton « Suivant » manuel (on laisse cocher plusieurs cases avant de valider)
   //    - dernière question (quel que soit le type) → bouton « Terminer ✓ » manuel
-  const afficherBoutonSuivant = question.type === 'multiple' || derniereQuestion;
+  const afficherBoutonSuivant =
+    question.type === "multiple" || derniereQuestion;
   const afficherFooter = questionIndex > 0 || afficherBoutonSuivant;
 
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
         <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
 
@@ -330,7 +346,7 @@ export default function QuizDeroulementScreen() {
               {
                 width: progressAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: ['0%', '100%'],
+                  outputRange: ["0%", "100%"],
                 }),
               },
             ]}
@@ -338,11 +354,16 @@ export default function QuizDeroulementScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.intitule}>{question.intitule}</Text>
 
-        {question.type === 'multiple' && (
-          <Text style={styles.multipleHint}>(Plusieurs réponses possibles)</Text>
+        {question.type === "multiple" && (
+          <Text style={styles.multipleHint}>
+            (Plusieurs réponses possibles)
+          </Text>
         )}
 
         {question.reponses.map((reponse) => {
@@ -351,16 +372,29 @@ export default function QuizDeroulementScreen() {
           return (
             <TouchableOpacity
               key={reponse.id}
-              style={[styles.reponseCard, selectionnee && styles.reponseCardSelectionnee]}
+              style={[
+                styles.reponseCard,
+                selectionnee && styles.reponseCardSelectionnee,
+              ]}
               onPress={() => toggleReponse(question, reponse.id)}
               activeOpacity={0.85}
             >
-              {question.type === 'unique' ? (
-                <View style={[styles.radio, selectionnee && styles.radioSelectionne]}>
+              {question.type === "unique" ? (
+                <View
+                  style={[
+                    styles.radio,
+                    selectionnee && styles.radioSelectionne,
+                  ]}
+                >
                   {selectionnee && <View style={styles.radioInterieur} />}
                 </View>
               ) : (
-                <View style={[styles.checkbox, selectionnee && styles.checkboxSelectionne]}>
+                <View
+                  style={[
+                    styles.checkbox,
+                    selectionnee && styles.checkboxSelectionne,
+                  ]}
+                >
                   {selectionnee && <Text style={styles.checkboxCheck}>✓</Text>}
                 </View>
               )}
@@ -387,12 +421,15 @@ export default function QuizDeroulementScreen() {
 
           {afficherBoutonSuivant && (
             <TouchableOpacity
-              style={[styles.suivantButton, !peutContinuer && styles.suivantButtonDesactive]}
+              style={[
+                styles.suivantButton,
+                !peutContinuer && styles.suivantButtonDesactive,
+              ]}
               onPress={handleSuivant}
               disabled={!peutContinuer}
             >
               <Text style={styles.suivantButtonText}>
-                {derniereQuestion ? 'Terminer ✓' : 'Suivant →'}
+                {derniereQuestion ? "Terminer ✓" : "Suivant →"}
               </Text>
             </TouchableOpacity>
           )}
@@ -420,7 +457,8 @@ export default function QuizDeroulementScreen() {
 
             <Text style={styles.modalTitre}>Abandonner le quiz ?</Text>
             <Text style={styles.modalTexte}>
-              Ta progression sur ce quiz sera perdue. Tu pourras le recommencer plus tard.
+              Ta progression sur ce quiz sera perdue. Tu pourras le recommencer
+              plus tard.
             </Text>
 
             <TouchableOpacity
@@ -428,7 +466,9 @@ export default function QuizDeroulementScreen() {
               onPress={annulerAbandon}
               activeOpacity={0.85}
             >
-              <Text style={styles.modalBoutonPrincipalTexte}>Continuer le quiz</Text>
+              <Text style={styles.modalBoutonPrincipalTexte}>
+                Continuer le quiz
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -453,14 +493,14 @@ const styles = StyleSheet.create({
   centered: {
     flex: 1,
     backgroundColor: Colors.creme,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 24,
   },
   errorText: {
     color: Colors.grisMoyen,
     fontSize: 15,
-    textAlign: 'center',
+    textAlign: "center",
   },
   header: {
     backgroundColor: Colors.creme,
@@ -468,8 +508,8 @@ const styles = StyleSheet.create({
     paddingTop: 54,
   },
   headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 12,
   },
   backButton: {
@@ -485,21 +525,21 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.aubergine,
-    textAlign: 'center',
+    textAlign: "center",
   },
   progressLabel: {
     color: Colors.grisMoyen,
     fontSize: 13,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 6,
   },
   progressTrack: {
     height: 6,
     borderRadius: 3,
     backgroundColor: Colors.fondGris,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   progressFill: {
     height: 6,
@@ -512,21 +552,21 @@ const styles = StyleSheet.create({
   },
   intitule: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.aubergine,
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   multipleHint: {
     color: Colors.grisMoyen,
     fontSize: 13,
-    fontStyle: 'italic',
-    textAlign: 'center',
+    fontStyle: "italic",
+    textAlign: "center",
     marginBottom: 16,
   },
   reponseCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.blanc,
     borderRadius: 12,
     padding: 16,
@@ -544,8 +584,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 2,
     borderColor: Colors.grisMoyen,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   radioSelectionne: {
     borderColor: Colors.corail[600],
@@ -563,8 +603,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.grisMoyen,
     backgroundColor: Colors.blanc,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   checkboxSelectionne: {
     borderColor: Colors.corail[600],
@@ -573,7 +613,7 @@ const styles = StyleSheet.create({
   checkboxCheck: {
     color: Colors.blanc,
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   reponseTexte: {
     flex: 1,
@@ -582,7 +622,7 @@ const styles = StyleSheet.create({
     color: Colors.aubergine,
   },
   footer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 16,
   },
   precedentButton: {
@@ -592,19 +632,19 @@ const styles = StyleSheet.create({
     borderColor: Colors.grisMoyen,
     borderRadius: 12,
     padding: 14,
-    alignItems: 'center',
+    alignItems: "center",
   },
   precedentButtonText: {
     color: Colors.grisMoyen,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   suivantButton: {
     flex: 1,
     backgroundColor: Colors.aubergine,
     borderRadius: 12,
     padding: 14,
-    alignItems: 'center',
+    alignItems: "center",
   },
   suivantButtonDesactive: {
     backgroundColor: Colors.grisMoyen,
@@ -613,13 +653,13 @@ const styles = StyleSheet.create({
   suivantButtonText: {
     color: Colors.blanc,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   submittingOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   submittingText: {
     color: Colors.blanc,
@@ -627,19 +667,19 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
     padding: 24,
   },
   modalCard: {
-    width: '100%',
+    width: "100%",
     maxWidth: 360,
     borderRadius: 20,
     padding: 24,
     backgroundColor: Colors.blanc,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOpacity: 0.18,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 12 },
@@ -650,8 +690,8 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     backgroundColor: Colors.fondRose,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 16,
   },
   modalIcon: {
@@ -659,39 +699,39 @@ const styles = StyleSheet.create({
   },
   modalTitre: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.aubergine,
-    textAlign: 'center',
+    textAlign: "center",
   },
   modalTexte: {
     fontSize: 14,
     color: Colors.grisMoyen,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
     marginTop: 8,
     marginBottom: 20,
   },
   modalBoutonPrincipal: {
-    width: '100%',
+    width: "100%",
     backgroundColor: Colors.aubergine,
     borderRadius: 12,
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
   },
   modalBoutonPrincipalTexte: {
     color: Colors.blanc,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   modalBoutonSecondaire: {
-    width: '100%',
+    width: "100%",
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 4,
   },
   modalBoutonSecondaireTexte: {
     color: Colors.corail[600],
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });

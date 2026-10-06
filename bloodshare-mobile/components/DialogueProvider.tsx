@@ -1,6 +1,14 @@
-import { createContext, ReactNode, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Colors } from '../constants/colors';
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Colors } from "../constants/colors";
 
 type Options = {
   titre: string;
@@ -11,7 +19,12 @@ type Options = {
 };
 
 type DialogueApi = {
-  confirmer: (titre: string, message: string, libelleOk: string, destructif?: boolean) => Promise<boolean>;
+  confirmer: (
+    titre: string,
+    message: string,
+    libelleOk: string,
+    destructif?: boolean,
+  ) => Promise<boolean>;
   informer: (titre: string, message: string) => Promise<void>;
 };
 
@@ -29,7 +42,7 @@ export function DialogueProvider({ children }: { children: ReactNode }) {
         resolveRef.current = resolve;
         setOptions(o);
       }),
-    []
+    [],
   );
 
   const fermer = (resultat: boolean) => {
@@ -41,12 +54,18 @@ export function DialogueProvider({ children }: { children: ReactNode }) {
   const api = useMemo<DialogueApi>(
     () => ({
       confirmer: (titre, message, libelleOk, destructif = true) =>
-        ouvrir({ titre, message, libelleOk, libelleAnnuler: 'Annuler', destructif }),
+        ouvrir({
+          titre,
+          message,
+          libelleOk,
+          libelleAnnuler: "Annuler",
+          destructif,
+        }),
       informer: async (titre, message) => {
-        await ouvrir({ titre, message, libelleOk: 'OK' });
+        await ouvrir({ titre, message, libelleOk: "OK" });
       },
     }),
-    [ouvrir]
+    [ouvrir],
   );
 
   return (
@@ -73,11 +92,18 @@ export function DialogueProvider({ children }: { children: ReactNode }) {
                   onPress={() => fermer(false)}
                   accessibilityRole="button"
                 >
-                  <Text style={styles.texteSecondaire}>{options.libelleAnnuler}</Text>
+                  <Text style={styles.texteSecondaire}>
+                    {options.libelleAnnuler}
+                  </Text>
                 </Pressable>
               )}
               <Pressable
-                style={[styles.bouton, options?.destructif ? styles.boutonDestructif : styles.boutonPrincipal]}
+                style={[
+                  styles.bouton,
+                  options?.destructif
+                    ? styles.boutonDestructif
+                    : styles.boutonPrincipal,
+                ]}
                 onPress={() => fermer(true)}
                 accessibilityRole="button"
               >
@@ -93,15 +119,18 @@ export function DialogueProvider({ children }: { children: ReactNode }) {
 
 export function useDialogue() {
   const ctx = useContext(DialogueContext);
-  if (!ctx) throw new Error('useDialogue doit être utilisé à l’intérieur de DialogueProvider');
+  if (!ctx)
+    throw new Error(
+      "useDialogue doit être utilisé à l’intérieur de DialogueProvider",
+    );
   return ctx;
 }
 
 const styles = StyleSheet.create({
   fond: {
     flex: 1,
-    backgroundColor: 'rgba(62, 36, 48, 0.45)', // aubergine translucide, pas de noir
-    justifyContent: 'center',
+    backgroundColor: "rgba(62, 36, 48, 0.45)", // aubergine translucide, pas de noir
+    justifyContent: "center",
     padding: 24,
   },
   carte: {
@@ -109,12 +138,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
     maxWidth: 400,
-    width: '100%',
-    alignSelf: 'center',
+    width: "100%",
+    alignSelf: "center",
   },
   titre: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.aubergine,
   },
   message: {
@@ -124,7 +153,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   boutons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginTop: 24,
   },
@@ -132,8 +161,8 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 48, // cible tactile WCAG
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 12,
   },
   boutonSecondaire: {
@@ -148,12 +177,12 @@ const styles = StyleSheet.create({
   },
   texteSecondaire: {
     color: Colors.aubergine,
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 15,
   },
   textePrincipal: {
     color: Colors.blanc,
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 15,
   },
 });
