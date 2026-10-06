@@ -52,7 +52,8 @@ class ViewUser extends ViewRecord
                 ->requiresConfirmation()
                 ->modalDescription('Cette action est irréversible.')
                 ->action(function (): void {
-                    $this->record->update(['statut' => 'supprime']);
+                    $this->record->tokens()->delete();
+                    $this->record->anonymiser();
                 }),
         ];
     }
