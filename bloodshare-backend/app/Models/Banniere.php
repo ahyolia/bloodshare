@@ -18,6 +18,16 @@ class Banniere extends Model
         'active' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (Banniere $banniere) {
+            if (($banniere->wasChanged('active') || $banniere->wasRecentlyCreated) && $banniere->active && $banniere->type === 'urgence') {
+                app(\App\Services\NotificationService::class)
+                    ->notifierTousLesUsers(new \App\Notifications\BanniereUrgenteNotification($banniere));
+            }
+        });
+    }
+
     // Une bannière est créée par un admin
     public function admin()
     {

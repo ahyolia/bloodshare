@@ -22,6 +22,16 @@ class Quiz extends Model
         'aleatoire' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (Quiz $quiz) {
+            if (($quiz->wasChanged('statut') || $quiz->wasRecentlyCreated) && $quiz->statut === 'actif') {
+                app(\App\Services\NotificationService::class)
+                    ->notifierTousLesUsers(new \App\Notifications\NouveauQuizNotification($quiz));
+            }
+        });
+    }
+
     public function admin()
     {
         return $this->belongsTo(User::class, 'admin_id');

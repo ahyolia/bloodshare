@@ -80,6 +80,7 @@ class DefiService
 
         $contributeurs = UserDefi::where('defi_id', $defi->id)
             ->where('progression', '>', 0)
+            ->with('user')
             ->get();
 
         foreach ($contributeurs as $userDefi) {
@@ -91,7 +92,10 @@ class DefiService
                     'source_id' => $defi->id,
                 ]);
 
-                User::where('id', $userDefi->user_id)->increment('points_cumules', $defi->points_attribues);
+                // 📖 increment() sur l'INSTANCE (pas sur une query builder statique) : seule
+                //    cette forme déclenche l'événement 'updated' du modèle User, dont dépend
+                //    la détection d'un nouveau palier (NotificationService::verifierNouveauNiveau).
+                $userDefi->user->increment('points_cumules', $defi->points_attribues);
             }
 
             $userDefi->update(['complete' => true, 'completed_at' => now()]);

@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 use Spatie\Permission\Traits\HasRoles;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasName;
@@ -16,7 +17,7 @@ use Filament\Panel;
 
 class User extends Authenticatable implements FilamentUser, HasName
 {
-    use HasApiTokens, HasFactory, HasRoles, Notifiable;
+    use HasApiTokens, HasFactory, HasPushSubscriptions, HasRoles, Notifiable;
 
     protected $fillable = [
         'pseudo',
@@ -67,6 +68,13 @@ class User extends Authenticatable implements FilamentUser, HasName
         });
     }
 
+    protected static function booted(): void
+    {
+        static::updated(function (User $user) {
+            app(\App\Services\NotificationService::class)->verifierNouveauNiveau($user);
+        });
+    }
+
     // 📖 RGPD : la ligne reste en base (dons, points, badges... gardent leur historique pour
     //    les statistiques de l'association), mais tout ce qui identifie la personne est effacé.
     //    `email` doit rester unique et non nul en base, d'où le suffixe id. `password` est
@@ -84,6 +92,10 @@ class User extends Authenticatable implements FilamentUser, HasName
             'avatar_id' => null,
             'code_parrainage' => null,
         ]);
+
+        // 📖 Un compte supprimé ne doit plus recevoir de notification : sans ça, l'appareil
+        //    reste abonné et continuerait de recevoir les push de l'ancien compte.
+        $this->pushSubscriptions()->delete();
     }
 
     // Relations
