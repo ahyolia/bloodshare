@@ -268,12 +268,11 @@ export default function QuizDeroulementScreen() {
     } catch {
       // 📖 Échec de l'envoi : on reste sur le quiz, donc on réarme la confirmation d'abandon.
       //    On retire l'overlay « Envoi en cours… » AVANT d'afficher l'erreur, sinon il
-      //    resterait visible derrière la modale jusqu'à sa fermeture.
+      //    resterait visible derrière la modale. Pas de `finally` : en cas de succès,
+      //    router.replace quitte l'écran, il n'y a rien à réinitialiser.
       soumissionEnCours.current = false;
       setSubmitting(false);
       await informer('Erreur', 'Impossible de soumettre le quiz. Vérifiez votre connexion.');
-    } finally {
-      setSubmitting(false);
     }
   };
 
