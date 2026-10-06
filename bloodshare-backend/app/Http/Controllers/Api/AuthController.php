@@ -147,6 +147,8 @@ class AuthController extends Controller
 
     public function forgotPassword(Request $request)
     {
+        $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
+
         $request->validate([
             'email' => 'required',
         ]);
