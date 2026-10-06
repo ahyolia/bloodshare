@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -9,20 +8,22 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { Colors } from '../../../constants/colors';
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Colors } from "../../../constants/colors";
 import {
   AVATARS,
   getProfil,
   StatutDonneur,
   updateProfil,
-} from '../../../services/profil.service';
-import { saveUser, getUser } from '../../../stores/auth.store';
-import { OPTIONS_STATUT_DONNEUR, initialePseudo } from '../../../utils/profil';
+} from "../../../services/profil.service";
+import { saveUser, getUser } from "../../../stores/auth.store";
+import { OPTIONS_STATUT_DONNEUR, initialePseudo } from "../../../utils/profil";
+import { useDialogue } from "../../../components/DialogueProvider";
 
 export default function InformationsScreen() {
   const router = useRouter();
+  const { informer } = useDialogue();
 
   // 📖 "Controlled input" : la valeur affichée par le TextInput vient TOUJOURS
   //    du state React (value={pseudo}), et chaque frappe passe par
@@ -30,9 +31,9 @@ export default function InformationsScreen() {
   //    valider, tronquer ou formater la saisie avant qu'elle ne s'affiche.
   //    Sans `value`, l'input serait "uncontrolled" : le natif garderait sa
   //    propre valeur, impossible à lire de façon fiable au moment du submit.
-  const [pseudo, setPseudo] = useState('');
+  const [pseudo, setPseudo] = useState("");
   const [avatarId, setAvatarId] = useState<number | null>(null);
-  const [statut, setStatut] = useState<StatutDonneur>('jamais_donne');
+  const [statut, setStatut] = useState<StatutDonneur>("jamais_donne");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -66,7 +67,7 @@ export default function InformationsScreen() {
 
   const enregistrer = async () => {
     if (pseudo.trim().length === 0) {
-      Alert.alert('Pseudo requis', 'Merci de saisir un pseudo.');
+      await informer("Pseudo requis", "Merci de saisir un pseudo.");
       return;
     }
 
@@ -90,7 +91,7 @@ export default function InformationsScreen() {
 
       router.back();
     } catch {
-      Alert.alert('Erreur', "L'enregistrement a échoué. Réessayez.");
+      await informer("Erreur", "L'enregistrement a échoué. Réessayez.");
     } finally {
       setSaving(false);
     }
@@ -98,16 +99,26 @@ export default function InformationsScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity onPress={() => router.back()} accessibilityRole="button">
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          accessibilityRole="button"
+        >
           <Text style={styles.retour}>← Retour</Text>
         </TouchableOpacity>
         <Text style={styles.titre}>Informations personnelles</Text>
 
-        {loading && <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />}
+        {loading && (
+          <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />
+        )}
 
         {!loading && error && (
-          <Text style={styles.errorText}>Impossible de charger vos informations.</Text>
+          <Text style={styles.errorText}>
+            Impossible de charger vos informations.
+          </Text>
         )}
 
         {!loading && !error && (
@@ -121,14 +132,22 @@ export default function InformationsScreen() {
                   <TouchableOpacity
                     key={a.id}
                     onPress={() => setAvatarId(a.id)}
-                    style={[styles.avatar, actif ? styles.avatarActif : styles.avatarInactif]}
+                    style={[
+                      styles.avatar,
+                      actif ? styles.avatarActif : styles.avatarInactif,
+                    ]}
                     accessibilityRole="button"
                     accessibilityState={{ selected: actif }}
                   >
                     {a.image_url ? (
-                      <Image source={{ uri: a.image_url }} style={styles.avatarImage} />
+                      <Image
+                        source={{ uri: a.image_url }}
+                        style={styles.avatarImage}
+                      />
                     ) : (
-                      <Text style={styles.avatarInitiale}>{initialePseudo(pseudo)}</Text>
+                      <Text style={styles.avatarInitiale}>
+                        {initialePseudo(pseudo)}
+                      </Text>
                     )}
                   </TouchableOpacity>
                 );
@@ -158,7 +177,7 @@ export default function InformationsScreen() {
                   accessibilityRole="radio"
                   accessibilityState={{ selected: actif }}
                 >
-                  <Text style={styles.radioPuce}>{actif ? '◉' : '○'}</Text>
+                  <Text style={styles.radioPuce}>{actif ? "◉" : "○"}</Text>
                   <Text style={styles.radioLabel}>{opt.libelle}</Text>
                 </TouchableOpacity>
               );
@@ -197,11 +216,11 @@ const styles = StyleSheet.create({
   retour: {
     fontSize: 15,
     color: Colors.petrole[500],
-    fontWeight: '600',
+    fontWeight: "600",
   },
   titre: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.aubergine,
     marginTop: 8,
     marginBottom: 12,
@@ -211,30 +230,30 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: Colors.grisMoyen,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 40,
   },
   label: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.grisMoyen,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
     marginTop: 24,
     marginBottom: 10,
   },
   avatarRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   avatar: {
     width: 60,
     height: 60,
     borderRadius: 30,
     backgroundColor: Colors.petrole[500],
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
   },
   avatarActif: {
     borderWidth: 3,
@@ -243,16 +262,16 @@ const styles = StyleSheet.create({
   },
   avatarInactif: {
     borderWidth: 3,
-    borderColor: 'transparent',
+    borderColor: "transparent",
   },
   avatarImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   avatarInitiale: {
     color: Colors.blanc,
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   input: {
     backgroundColor: Colors.fondNeutre,
@@ -262,8 +281,8 @@ const styles = StyleSheet.create({
     color: Colors.aubergine,
   },
   radio: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     borderColor: Colors.fondNeutre,
     borderRadius: 10,
@@ -288,7 +307,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.aubergine,
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 28,
   },
   boutonDesactive: {
@@ -296,7 +315,7 @@ const styles = StyleSheet.create({
   },
   boutonTexte: {
     color: Colors.blanc,
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 16,
   },
 });
