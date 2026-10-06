@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -8,25 +8,28 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { EnTete } from '../../../components/EnTete';
-import { Colors } from '../../../constants/colors';
-import { useProfilComplet } from '../../../hooks/useProfilComplet';
-import { logout } from '../../../services/auth.service';
-import { unsubscribe as seDesabonnerNotifsWeb } from '../../../services/notifications/webPush';
-import { removeToken } from '../../../stores/auth.store';
-import { LIBELLE_STATUT_DONNEUR, initialePseudo } from '../../../utils/profil';
-import { CONTENU_MARGE_BASSE } from '../_layout';
+} from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { EnTete } from "../../../components/EnTete";
+import { Colors } from "../../../constants/colors";
+import { useProfilComplet } from "../../../hooks/useProfilComplet";
+import { logout } from "../../../services/auth.service";
+import { unsubscribe as seDesabonnerNotifsWeb } from "../../../services/notifications/webPush";
+import { removeToken } from "../../../stores/auth.store";
+import { LIBELLE_STATUT_DONNEUR, initialePseudo } from "../../../utils/profil";
+import { CONTENU_MARGE_BASSE } from "../_layout";
+import { useDialogue } from "../../../components/DialogueProvider";
 
 // 📖 L'écran Notifications n'existe pas encore : on prévient plutôt que de laisser
 //    une cloche muette. À remplacer par un router.push quand la route existera.
 const ouvrirNotifications = () =>
-  Alert.alert('Notifications', 'Cet écran arrive bientôt.');
+  Alert.alert("Notifications", "Cet écran arrive bientôt.");
 
 export default function ProfilScreen() {
   const router = useRouter();
-  const { apercu, profil, dons, badges, loading, error, reload } = useProfilComplet();
+  const { confirmer } = useDialogue();
+  const { apercu, profil, dons, badges, loading, error, reload } =
+    useProfilComplet();
 
   // 📖 useFocusEffect (et pas useEffect) : l'écran Profil reste monté quand on
   //    ouvre "Informations personnelles". Au retour, on veut le pseudo/l'avatar
@@ -34,40 +37,38 @@ export default function ProfilScreen() {
   useFocusEffect(
     useCallback(() => {
       reload();
-    }, [reload])
+    }, [reload]),
   );
 
-  const handleLogout = () => {
-    Alert.alert('Se déconnecter', 'Voulez-vous vraiment vous déconnecter ?', [
-      { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Se déconnecter',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            // 📖 Avant logout() : le désabonnement appelle l'API avec le token
-            //    encore valide. Après, l'appareil continuerait de recevoir les
-            //    push de ce compte malgré la déconnexion.
-            await seDesabonnerNotifsWeb();
-          } catch {
-            // 📖 Le désabonnement est une opération de confort : son échec ne
-            //    doit pas empêcher la déconnexion.
-          }
-          try {
-            await logout();
-          } catch {
-            // 📖 Même si l'appel /auth/logout échoue (réseau coupé), on purge
-            //    le token local : l'utilisateur doit pouvoir se déconnecter.
-          }
-          await removeToken();
-          router.replace('/auth/login');
-        },
-      },
-    ]);
+  const handleLogout = async () => {
+    const ok = await confirmer(
+      "Se déconnecter",
+      "Voulez-vous vraiment vous déconnecter ?",
+      "Se déconnecter",
+    );
+    if (!ok) return;
+
+    try {
+      // 📖 Avant logout() : le désabonnement appelle l'API avec le token
+      //    encore valide. Après, l'appareil continuerait de recevoir les
+      //    push de ce compte malgré la déconnexion.
+      await seDesabonnerNotifsWeb();
+    } catch {
+      // 📖 Le désabonnement est une opération de confort : son échec ne
+      //    doit pas empêcher la déconnexion.
+    }
+    try {
+      await logout();
+    } catch {
+      // 📖 Même si l'appel /auth/logout échoue (réseau coupé), on purge
+      //    le token local : l'utilisateur doit pouvoir se déconnecter.
+    }
+    await removeToken();
+    router.replace("/auth/login");
   };
 
   // 📖 On peint dès qu'on a une info : le profil frais, sinon l'aperçu du cache.
-  const pseudo = profil?.pseudo ?? apercu?.pseudo ?? '';
+  const pseudo = profil?.pseudo ?? apercu?.pseudo ?? "";
   const avatarUrl = profil?.avatar_url ?? apercu?.avatar_url ?? null;
   const points = profil?.points_cumules ?? apercu?.points_cumules ?? 0;
 
@@ -95,7 +96,9 @@ export default function ProfilScreen() {
         )}
 
         {error && rienAAfficher && (
-          <Text style={styles.errorText}>Impossible de charger votre profil.</Text>
+          <Text style={styles.errorText}>
+            Impossible de charger votre profil.
+          </Text>
         )}
 
         {!rienAAfficher && (
@@ -107,7 +110,9 @@ export default function ProfilScreen() {
                   <Image source={{ uri: avatarUrl }} style={styles.avatar} />
                 ) : (
                   <View style={[styles.avatar, styles.avatarFallback]}>
-                    <Text style={styles.avatarText}>{initialePseudo(pseudo)}</Text>
+                    <Text style={styles.avatarText}>
+                      {initialePseudo(pseudo)}
+                    </Text>
                   </View>
                 )}
 
@@ -122,7 +127,7 @@ export default function ProfilScreen() {
 
                 <TouchableOpacity
                   style={styles.modifierPill}
-                  onPress={() => router.push('/tabs/profil/informations')}
+                  onPress={() => router.push("/tabs/profil/informations")}
                   accessibilityRole="button"
                 >
                   <Text style={styles.modifierPillText}>Modifier ✏️</Text>
@@ -143,20 +148,25 @@ export default function ProfilScreen() {
                     </Text>
                   </View>
                   <View style={styles.niveauBulle}>
-                    <Text style={styles.niveauBulleTexte}>{profil.niveau.niveau}</Text>
+                    <Text style={styles.niveauBulleTexte}>
+                      {profil.niveau.niveau}
+                    </Text>
                   </View>
                 </View>
 
                 <View style={styles.progressTrack}>
                   <View
-                    style={[styles.progressFill, { width: `${profil.niveau.progression}%` }]}
+                    style={[
+                      styles.progressFill,
+                      { width: `${profil.niveau.progression}%` },
+                    ]}
                   />
                 </View>
 
                 <Text style={styles.progressLabel}>
                   {profil.niveau.points_prochain_niveau !== null
                     ? `${profil.points_cumules}/${profil.niveau.points_prochain_niveau} pts`
-                    : 'Niveau maximum atteint 🎉'}
+                    : "Niveau maximum atteint 🎉"}
                 </Text>
               </View>
             )}
@@ -169,28 +179,32 @@ export default function ProfilScreen() {
                 fond={Colors.fondRose}
                 label="Historique des dons"
                 valeur={
-                  dons ? `${dons.total_dons} don${dons.total_dons > 1 ? 's' : ''}` : undefined
+                  dons
+                    ? `${dons.total_dons} don${dons.total_dons > 1 ? "s" : ""}`
+                    : undefined
                 }
-                onPress={() => router.push('/tabs/profil/historique-dons')}
+                onPress={() => router.push("/tabs/profil/historique-dons")}
               />
               <SettingsRow
                 emoji="🏆"
                 fond={Colors.fondRose}
                 label="Mes badges"
-                valeur={badges ? `${badges.obtenus}/${badges.total}` : undefined}
-                onPress={() => router.push('/tabs/profil/badges')}
+                valeur={
+                  badges ? `${badges.obtenus}/${badges.total}` : undefined
+                }
+                onPress={() => router.push("/tabs/profil/badges")}
               />
               <SettingsRow
                 emoji="⭐"
                 fond={Colors.fondBleu}
                 label="Points et niveau"
-                onPress={() => router.push('/tabs/profil/points')}
+                onPress={() => router.push("/tabs/profil/points")}
               />
               <SettingsRow
                 emoji="🤝"
                 fond={Colors.fondVert}
                 label="Parrainage"
-                onPress={() => router.push('/tabs/profil/parrainage')}
+                onPress={() => router.push("/tabs/profil/parrainage")}
                 dernier
               />
             </View>
@@ -202,13 +216,13 @@ export default function ProfilScreen() {
                 emoji="⚙️"
                 fond={Colors.fondGris}
                 label="Paramètres du compte"
-                onPress={() => router.push('/tabs/profil/parametres')}
+                onPress={() => router.push("/tabs/profil/parametres")}
               />
               <SettingsRow
                 emoji="🔔"
                 fond={Colors.fondGris}
                 label="Notifications"
-                onPress={() => router.push('/tabs/profil/parametres')}
+                onPress={() => router.push("/tabs/profil/parametres")}
                 dernier
               />
             </View>
@@ -277,7 +291,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: Colors.grisMoyen,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 40,
   },
 
@@ -285,15 +299,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.blanc,
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
     elevation: 3,
   },
   userRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   avatar: {
     width: 64,
@@ -302,13 +316,13 @@ const styles = StyleSheet.create({
   },
   avatarFallback: {
     backgroundColor: Colors.petrole[500],
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarText: {
     color: Colors.blanc,
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   userInfo: {
     flex: 1,
@@ -316,7 +330,7 @@ const styles = StyleSheet.create({
   },
   pseudo: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.aubergine,
   },
   statut: {
@@ -334,7 +348,7 @@ const styles = StyleSheet.create({
   modifierPillText: {
     color: Colors.petrole[500],
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   niveauCard: {
@@ -342,16 +356,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginTop: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   niveauRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   niveauGauche: {
     flex: 1,
@@ -359,7 +373,7 @@ const styles = StyleSheet.create({
   },
   niveauTitre: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.aubergine,
   },
   niveauSousTitre: {
@@ -372,20 +386,20 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     backgroundColor: Colors.corail[600],
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   niveauBulleTexte: {
     color: Colors.blanc,
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   progressTrack: {
     height: 6,
     borderRadius: 3,
     backgroundColor: Colors.fondGris,
     marginTop: 14,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   progressFill: {
     height: 6,
@@ -395,15 +409,15 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontSize: 11,
     color: Colors.grisMoyen,
-    textAlign: 'right',
+    textAlign: "right",
     marginTop: 6,
   },
 
   sectionTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.grisMoyen,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
     marginTop: 24,
     marginBottom: 8,
@@ -411,11 +425,11 @@ const styles = StyleSheet.create({
   sectionCard: {
     backgroundColor: Colors.blanc,
     borderRadius: 12,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.fondNeutre,
@@ -427,8 +441,8 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
   },
   rowIconEmoji: {
@@ -455,11 +469,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.corail[600],
     borderRadius: 12,
     padding: 14,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 24,
   },
   logoutButtonText: {
     color: Colors.corail[600],
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });

@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
-  Alert,
   Linking,
   ScrollView,
   StyleSheet,
@@ -8,39 +7,43 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import Constants from 'expo-constants';
-import { useRouter } from 'expo-router';
-import { Colors } from '../../../constants/colors';
-import { subscribe as sAbonnerNotifsWeb, unsubscribe as seDesabonnerNotifsWeb } from '../../../services/notifications/webPush';
-import { supprimerCompte } from '../../../services/profil.service';
-import { removeToken } from '../../../stores/auth.store';
+} from "react-native";
+import Constants from "expo-constants";
+import { useRouter } from "expo-router";
+import { Colors } from "../../../constants/colors";
+import {
+  subscribe as sAbonnerNotifsWeb,
+  unsubscribe as seDesabonnerNotifsWeb,
+} from "../../../services/notifications/webPush";
+import { supprimerCompte } from "../../../services/profil.service";
+import { removeToken } from "../../../stores/auth.store";
 import {
   getNotificationsActivees,
   getPenurieActivee,
   setNotificationsActivees,
   setPenurieActivee,
-} from '../../../utils/preferences';
+} from "../../../utils/preferences";
+import { useDialogue } from "../../../components/DialogueProvider";
 
-const URL_CONFIDENTIALITE = 'https://bloodshare.nc/privacy';
-const URL_CGU = 'https://bloodshare.nc/cgu';
+const URL_CONFIDENTIALITE = "https://bloodshare.nc/privacy";
+const URL_CGU = "https://bloodshare.nc/cgu";
 
 // 📖 expo-notifications ne fonctionne plus dans Expo Go (SDK 53+) et son simple
 //    import y jette une erreur. On le charge donc en `require()` paresseux, à
 //    l'intérieur d'un try/catch, et seulement hors Expo Go. En Expo Go on se
 //    contente d'enregistrer la préférence : la vraie demande de permission se
 //    fera sur un build de développement.
-const EST_EXPO_GO = Constants.executionEnvironment === 'storeClient';
+const EST_EXPO_GO = Constants.executionEnvironment === "storeClient";
 
 async function demanderPermissionNotifs(): Promise<boolean> {
   if (EST_EXPO_GO) return true;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Notifications = require('expo-notifications');
+    const Notifications = require("expo-notifications");
     const { status } = await Notifications.getPermissionsAsync();
-    if (status === 'granted') return true;
+    if (status === "granted") return true;
     const demande = await Notifications.requestPermissionsAsync();
-    return demande.status === 'granted';
+    return demande.status === "granted";
   } catch {
     // Module indisponible (Expo Go) → on ne bloque pas l'utilisateur.
     return true;
@@ -57,16 +60,19 @@ async function demanderPermissionNotifs(): Promise<boolean> {
 //    → Les deux toggles ci-dessous vont dans AsyncStorage (via utils/preferences).
 export default function ParametresScreen() {
   const router = useRouter();
+  const { confirmer, informer } = useDialogue();
   const [notifs, setNotifs] = useState(false);
   const [penurie, setPenurie] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getNotificationsActivees(), getPenurieActivee()]).then(([n, p]) => {
-      if (cancelled) return;
-      setNotifs(n);
-      setPenurie(p);
-    });
+    Promise.all([getNotificationsActivees(), getPenurieActivee()]).then(
+      ([n, p]) => {
+        if (cancelled) return;
+        setNotifs(n);
+        setPenurie(p);
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -80,9 +86,9 @@ export default function ParametresScreen() {
     if (valeur) {
       const accorde = await demanderPermissionNotifs();
       if (!accorde) {
-        Alert.alert(
-          'Permission refusée',
-          'Activez les notifications pour BloodShare dans les réglages de votre téléphone.'
+        await informer(
+          "Permission refusée",
+          "Activez les notifications pour BloodShare dans les réglages de votre téléphone.",
         );
         setNotifs(false);
         await setNotificationsActivees(false);
@@ -98,9 +104,9 @@ export default function ParametresScreen() {
         abonne = false;
       }
       if (!abonne) {
-        Alert.alert(
-          'Permission refusée',
-          'Activez les notifications pour BloodShare dans les réglages de votre navigateur.'
+        await informer(
+          "Permission refusée",
+          "Activez les notifications pour BloodShare dans les réglages de votre navigateur.",
         );
         setNotifs(false);
         await setNotificationsActivees(false);
@@ -126,43 +132,58 @@ export default function ParametresScreen() {
 
   // 📖 Double confirmation : la suppression est irréversible. Un premier Alert
   //    explique, un second force un choix "destructive" volontaire.
-  const supprimer = () => {
-    Alert.alert(
-      'Supprimer mon compte',
-      'Cette action est irréversible. Toutes vos données seront supprimées.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Continuer',
-          style: 'destructive',
-          onPress: () =>
-            Alert.alert('Dernière confirmation', 'Voulez-vous vraiment tout supprimer ?', [
-              { text: 'Annuler', style: 'cancel' },
-              {
-                text: 'Supprimer définitivement',
-                style: 'destructive',
-                onPress: async () => {
-                  try {
-                    await supprimerCompte();
-                    await removeToken();
-                    router.replace('/auth/login');
-                  } catch {
-                    Alert.alert('Erreur', 'La suppression a échoué. Réessayez.');
-                  }
-                },
-              },
-            ]),
-        },
-      ]
+  // 📖 Double confirmation : la suppression est irréversible. Une première modale
+  //    explique, une seconde force un choix volontaire. Avec `await`, les deux
+  //    étapes se lisent de haut en bas au lieu d'être imbriquées dans des onPress.
+  const supprimer = async () => {
+    const etape1 = await confirmer(
+      "Supprimer mon compte",
+      "Cette action est irréversible. Toutes vos données seront supprimées.",
+      "Continuer",
     );
+    if (!etape1) return;
+
+    const etape2 = await confirmer(
+      "Dernière confirmation",
+      "Voulez-vous vraiment tout supprimer ?",
+      "Supprimer définitivement",
+    );
+    if (!etape2) return;
+
+    try {
+      await supprimerCompte();
+    } catch {
+      await informer("Erreur", "La suppression a échoué. Réessayez.");
+      return;
+    }
+
+    // 📖 À partir d'ici, le compte n'existe plus côté serveur : on ne doit plus jamais
+    //    afficher d'échec. On nettoie au mieux, puis on renvoie au login quoi qu'il arrive.
+    try {
+      await removeToken();
+    } catch {
+      // Le token est de toute façon invalide côté serveur : au prochain appel, l'API
+      // renverra 401 et l'intercepteur de services/api.ts le supprimera.
+    }
+    await informer(
+      "Compte supprimé",
+      "Votre compte et vos données ont bien été supprimés.",
+    );
+    router.replace("/auth/login");
   };
 
-  const version = Constants.expoConfig?.version ?? '1.0.0';
+  const version = Constants.expoConfig?.version ?? "1.0.0";
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity onPress={() => router.back()} accessibilityRole="button">
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          accessibilityRole="button"
+        >
           <Text style={styles.retour}>← Paramètres</Text>
         </TouchableOpacity>
 
@@ -171,11 +192,11 @@ export default function ParametresScreen() {
         <View style={styles.card}>
           <LigneLien
             label="Modifier mes informations"
-            onPress={() => router.push('/tabs/profil/informations')}
+            onPress={() => router.push("/tabs/profil/informations")}
           />
           <LigneLien
             label="Mot de passe oublié"
-            onPress={() => router.push('/auth/mot-de-passe-oublie')}
+            onPress={() => router.push("/auth/mot-de-passe-oublie")}
             dernier
           />
         </View>
@@ -183,7 +204,11 @@ export default function ParametresScreen() {
         {/* NOTIFICATIONS */}
         <Text style={styles.sectionTitle}>Notifications</Text>
         <View style={styles.card}>
-          <LigneSwitch label="Notifications push" valeur={notifs} onChange={basculerNotifs} />
+          <LigneSwitch
+            label="Notifications push"
+            valeur={notifs}
+            onChange={basculerNotifs}
+          />
           <LigneSwitch
             label="Alertes pénurie de sang"
             valeur={penurie}
@@ -281,13 +306,13 @@ const styles = StyleSheet.create({
   retour: {
     fontSize: 15,
     color: Colors.petrole[500],
-    fontWeight: '600',
+    fontWeight: "600",
   },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.grisMoyen,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
     marginTop: 24,
     marginBottom: 8,
@@ -295,12 +320,12 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.blanc,
     borderRadius: 12,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   ligne: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.fondNeutre,
@@ -322,15 +347,15 @@ const styles = StyleSheet.create({
     color: Colors.grisMoyen,
   },
   boutonSupprimer: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 1.5,
     borderColor: Colors.deconnexion[500],
     borderRadius: 12,
     padding: 14,
-    alignItems: 'center',
+    alignItems: "center",
   },
   boutonSupprimerTexte: {
     color: Colors.deconnexion[500],
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });
