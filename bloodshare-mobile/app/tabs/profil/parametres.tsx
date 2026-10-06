@@ -120,11 +120,21 @@ export default function ParametresScreen() {
 
     try {
       await supprimerCompte();
-      await removeToken();
-      router.replace('/auth/login');
     } catch {
       await informer('Erreur', 'La suppression a échoué. Réessayez.');
+      return;
     }
+
+    // 📖 À partir d'ici, le compte n'existe plus côté serveur : on ne doit plus jamais
+    //    afficher d'échec. On nettoie au mieux, puis on renvoie au login quoi qu'il arrive.
+    try {
+      await removeToken();
+    } catch {
+      // Le token est de toute façon invalide côté serveur : au prochain appel, l'API
+      // renverra 401 et l'intercepteur de services/api.ts le supprimera.
+    }
+    await informer('Compte supprimé', 'Votre compte et vos données ont bien été supprimés.');
+    router.replace('/auth/login');
   };
 
   const version = Constants.expoConfig?.version ?? '1.0.0';
