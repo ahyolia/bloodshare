@@ -167,6 +167,7 @@ class CarteResource extends Resource
                     ->action(fn (Carte $record) => $record->update([
                         'statut' => $record->statut === 'active' ? 'desactivee' : 'active',
                     ])),
+                Tables\Actions\EditAction::make()->label('Modifier'),
                 Tables\Actions\DeleteAction::make()->label('Supprimer'),
             ])
             ->bulkActions([
@@ -181,6 +182,7 @@ class CarteResource extends Resource
         return [
             'index'  => Pages\ListCartes::route('/'),
             'create' => Pages\CreateCarte::route('/create'),
+            'edit'   => Pages\EditCarte::route('/{record}/edit'),
         ];
     }
 }

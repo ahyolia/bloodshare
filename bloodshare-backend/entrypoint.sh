@@ -54,4 +54,4 @@ fi
 
 # exec : le serveur devient le processus principal du conteneur et reçoit directement
 # les signaux d'arrêt (docker stop / mise à jour Swarm), sans attendre le délai de 10 s.
-exec php artisan serve --host=0.0.0.0 --port=8000
+exec php artisan serve --host=0.0.0.0 --port=8000 --no-reload

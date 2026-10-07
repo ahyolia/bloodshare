@@ -30,6 +30,8 @@ class DatabaseSeeder extends Seeder
                 ['email' => 'test@example.com'],
                 ['pseudo' => 'Test User', 'password' => 'password']
             );
+
+            $this->call(DemoSeeder::class);
         }
     }
 }
