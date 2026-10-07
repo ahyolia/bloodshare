@@ -40,9 +40,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      # 📖 backend n'a pas de bloc healthcheck déclaré dans CE fichier compose (seulement
+      #    dans son Dockerfile) : condition: service_healthy fait alors échouer le "up"
+      #    ("container has no healthcheck configured"). service_started suffit ici.
       backend:
-        condition: service_healthy
+        condition: service_started
     entrypoint: ["php", "artisan", "schedule:work"]
+    # 📖 Couvre le premier lancement sur un clone neuf : si vendor/ n'est pas encore
+    #    installé (entrypoint.sh de backend pas encore passé), schedule:work plante au
+    #    démarrage — il redémarre jusqu'à ce que backend ait fini de s'installer.
+    restart: unless-stopped
 
   db:
     image: postgres:15-alpine
