@@ -19,7 +19,7 @@ class PremierDonFilleulNotification extends Notification
     public function toWebPush($notifiable, $notification): WebPushMessage
     {
         return (new WebPushMessage())
-            ->title('Votre parrainage est validé !')
+            ->title('Votre parrainage est validé ! 🩸')
             ->body('Votre filleul a fait son premier don : vous gagnez 75 points.');
     }
 }

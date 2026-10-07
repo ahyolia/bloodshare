@@ -19,6 +19,8 @@ class UserQuiz extends Model
         'nb_tentatives',
         'completed_at',
         'progression',
+        'commence_at',
+        'rappel_envoye',
     ];
 
     protected $casts = [
@@ -26,6 +28,8 @@ class UserQuiz extends Model
         'points_attribues' => 'boolean',
         'completed_at'     => 'datetime',
         'progression'      => 'array',
+        'commence_at'      => 'datetime',
+        'rappel_envoye'    => 'boolean',
     ];
 
     public function user()

@@ -24,7 +24,7 @@ class BadgeDebloqueNotification extends Notification
     public function toWebPush($notifiable, $notification): WebPushMessage
     {
         $message = (new WebPushMessage())
-            ->title('Nouveau badge débloqué !')
+            ->title('Nouveau badge débloqué ! 🏆')
             // 📖 Pas de détail du don/parrainage derrière le badge dans le texte : la
             //    notification reste un simple encouragement, aucune donnée sensible.
             ->body("Vous avez obtenu le badge « {$this->badge->nom} ».");

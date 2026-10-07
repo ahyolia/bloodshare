@@ -7,7 +7,7 @@ use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
 
-class FilleulInscritNotification extends Notification
+class RetourInactiviteNotification extends Notification
 {
     use Queueable;
 
@@ -19,9 +19,7 @@ class FilleulInscritNotification extends Notification
     public function toWebPush($notifiable, $notification): WebPushMessage
     {
         return (new WebPushMessage())
-            ->title('Votre code de parrainage a été utilisé ! 🤝')
-            // 📖 Pas de pseudo/identité du filleul dans le message : il n'a encore rien
-            //    validé (juste utilisé le code à l'inscription), et l'anonymat reste la règle.
-            ->body('Une nouvelle personne a rejoint BloodShare grâce à vous.');
+            ->title('On ne vous a pas vu récemment 👋')
+            ->body('BloodShare vous attend — revenez quand vous le souhaitez.');
     }
 }

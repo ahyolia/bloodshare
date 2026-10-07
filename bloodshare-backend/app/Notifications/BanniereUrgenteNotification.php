@@ -24,7 +24,10 @@ class BanniereUrgenteNotification extends Notification
     public function toWebPush($notifiable, $notification): WebPushMessage
     {
         return (new WebPushMessage())
-            ->title($this->banniere->titre)
+            // 📖 🚨 préfixé plutôt que laissé au contenu admin : le titre est saisi
+            //    librement dans le BO, uniformiser l'emoji en code garantit qu'il est
+            //    toujours là, sans dépendre de ce que l'admin a tapé.
+            ->title("🚨 {$this->banniere->titre}")
             ->body($this->banniere->message);
     }
 }

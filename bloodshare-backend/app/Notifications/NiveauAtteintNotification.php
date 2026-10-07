@@ -23,7 +23,7 @@ class NiveauAtteintNotification extends Notification
     public function toWebPush($notifiable, $notification): WebPushMessage
     {
         return (new WebPushMessage())
-            ->title('Nouveau niveau atteint !')
+            ->title('Nouveau niveau atteint ! 🎉')
             ->body("Vous êtes maintenant « {$this->label} ».");
     }
 }

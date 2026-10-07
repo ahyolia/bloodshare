@@ -2,14 +2,19 @@
 
 namespace App\Notifications;
 
+use App\Models\Quiz;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
 
-class FilleulInscritNotification extends Notification
+class QuizNonTermineNotification extends Notification
 {
     use Queueable;
+
+    public function __construct(private Quiz $quiz)
+    {
+    }
 
     public function via($notifiable): array
     {
@@ -19,9 +24,7 @@ class FilleulInscritNotification extends Notification
     public function toWebPush($notifiable, $notification): WebPushMessage
     {
         return (new WebPushMessage())
-            ->title('Votre code de parrainage a été utilisé ! 🤝')
-            // 📖 Pas de pseudo/identité du filleul dans le message : il n'a encore rien
-            //    validé (juste utilisé le code à l'inscription), et l'anonymat reste la règle.
-            ->body('Une nouvelle personne a rejoint BloodShare grâce à vous.');
+            ->title('Quiz en attente 🧠')
+            ->body("Vous n'avez pas terminé le quiz « {$this->quiz->titre} ».");
     }
 }
