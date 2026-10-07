@@ -50,6 +50,11 @@ services:
     #    installé (entrypoint.sh de backend pas encore passé), schedule:work plante au
     #    démarrage — il redémarre jusqu'à ce que backend ait fini de s'installer.
     restart: unless-stopped
+    # 📖 Sans ça, ce service HÉRITE du HEALTHCHECK de l'image (Dockerfile : curl sur le
+    #    port 8000) — mais schedule:work n'écoute aucun port. Toujours "unhealthy", et sur
+    #    Dokploy (Swarm) ça le redémarre en boucle.
+    healthcheck:
+      disable: true
 
   db:
     image: postgres:15-alpine
