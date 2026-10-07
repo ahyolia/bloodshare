@@ -154,7 +154,11 @@ class QuizController extends Controller
                 return response()->json(['enregistree' => true, 'questions_repondues' => 0]);
             }
 
-            $userQuiz = new UserQuiz(['user_id' => $user->id, 'quiz_id' => $quiz->id]);
+            $userQuiz = new UserQuiz([
+                'user_id' => $user->id,
+                'quiz_id' => $quiz->id,
+                'commence_at' => now(),
+            ]);
         }
 
         $userQuiz->progression = $progression === [] ? null : $progression;
