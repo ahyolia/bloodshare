@@ -8,13 +8,32 @@ Documentation DevOps du projet BloodShare (app mobile de sensibilisation au don 
 
 ## 1. Architecture Docker
 
-Le projet tourne entièrement en Docker (3 services), orchestrés par `docker-compose.yml` à la racine du repo.
+Le projet tourne entièrement en Docker (4 services), orchestrés par `docker-compose.yml` à la racine du repo.
 
 | Service | Image | Port local | Rôle |
 |---|---|---|---|
 | `backend` (`bloodshare_backend`) | build local (`bloodshare-backend/Dockerfile`, PHP 8.3-cli) | 8000 | API Laravel + Backoffice Filament |
+| `scheduler` (`bloodshare_scheduler`) | même image que `backend` | — | Exécute les tâches planifiées (`php artisan schedule:work`) |
 | `db` (`bloodshare_db`) | `postgres:15-alpine` | 5433 → 5432 | Base de données PostgreSQL |
 | `pgadmin` (`bloodshare_pgadmin`) | `dpage/pgadmin4` | 5050 → 80 | Interface d'administration de la BDD |
+
+### Service `scheduler`
+
+`bootstrap/app.php` déclare les tâches planifiées (`->withSchedule(...)`), mais cette
+déclaration seule ne fait rien tourner : il faut un process qui reste actif et les
+exécute. `backend` ne lance que `php artisan serve` (voir `entrypoint.sh`) — sans le
+service `scheduler` (`php artisan schedule:work`), aucune tâche planifiée (notifications
+automatiques, etc.) ne se déclenche jamais, silencieusement.
+
+**Sur Dokploy**, il n'y a pas de `docker-compose.yml` lu directement : dupliquer le
+service `backend` en créant un second service dans l'application Dokploy, avec :
+- la même image/build que `backend`
+- la commande de démarrage remplacée par `php artisan schedule:work`
+- aucun port exposé
+- les mêmes variables d'environnement que `backend`
+
+Vérifier qu'il tourne : `docker logs <conteneur scheduler>` doit afficher les tâches
+exécutées aux heures prévues (`php artisan schedule:list` liste les horaires).
 
 ### Dockerfile du backend
 
@@ -45,6 +64,7 @@ Pourquoi ces extensions PHP :
 | `intl` | Formatage des dates, nombres et chaînes localisées (fr-FR) |
 | `zip` | Lecture/écriture d'archives ZIP, requis par certaines dépendances Composer |
 | `gd` | Traitement d'images (redimensionnement, upload avatars/visuels de badges) |
+| `bcmath` | Calculs grands nombres pour la signature VAPID des notifications push (`minishlink/web-push`) — sans elle, l'avertissement qu'elle lève est transformé par Laravel en erreur 500 à chaque envoi |
 
 ### Commandes Docker utiles
 
@@ -66,6 +86,21 @@ Pourquoi ces extensions PHP :
 docker exec -it bloodshare_backend php artisan migrate
 docker exec -it bloodshare_backend php artisan db:seed
 docker exec -it bloodshare_backend php artisan make:filament-user
+```
+
+### Base de test (`bloodshare_testing`)
+
+`phpunit.xml` fait tourner `php artisan test` contre une base Postgres **séparée**
+(`bloodshare_testing`, même instance), pour que `RefreshDatabase` ne vide jamais la
+vraie base de dev.
+
+Sur un volume `postgres_data` neuf, `docker-entrypoint-initdb.d` (monté dans
+`docker-compose.yml`) la crée automatiquement au premier démarrage du conteneur `db` —
+rien à faire. Ce dossier ne s'exécute **que** sur un volume vide : si le volume existe
+déjà (mise à jour d'un poste existant), la créer à la main une fois :
+
+```bash
+docker exec bloodshare_db createdb -U bloodshare bloodshare_testing
 ```
 
 ---

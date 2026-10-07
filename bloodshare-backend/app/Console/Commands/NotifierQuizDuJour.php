@@ -33,7 +33,7 @@ class NotifierQuizDuJour extends Command
 
         $notifies = 0;
 
-        User::query()->each(function (User $user) use ($quizDuJour, &$notifies) {
+        User::whereHas('pushSubscriptions')->each(function (User $user) use ($quizDuJour, &$notifies) {
             $dejaComplete = UserQuiz::where('user_id', $user->id)
                 ->where('quiz_id', $quizDuJour->id)
                 ->where('complete', true)

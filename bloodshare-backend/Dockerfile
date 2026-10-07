@@ -1,5 +1,10 @@
 FROM php:8.3-cli
 
+# 📖 bcmath : minishlink/web-push (signature VAPID des notifications push) lève une
+#    ErrorException "recommended to install GMP or BCMath" sans extension de calcul
+#    bignum — et le error handler de Laravel transforme ce simple avertissement en
+#    exception fatale (500) à chaque envoi. bcmath est le plus simple des deux à
+#    installer ici (pas de paquet apt supplémentaire, contrairement à GMP).
 RUN apt-get update --fix-missing && apt-get install -y \
     git curl zip unzip libpq-dev libicu-dev libzip-dev \
     libpng-dev libjpeg-dev libfreetype6-dev \

@@ -21,6 +21,29 @@ services:
       db:
         condition: service_healthy
 
+  # 📖 ->withSchedule() ne fait que déclarer le planning : sans un process qui tourne en
+  #    continu pour l'exécuter, aucune des tâches planifiées (notifications...) ne se
+  #    lance jamais. Même image que "backend" (mêmes migrations/vendor), mais une
+  #    commande différente — pas de port exposé, pas de healthcheck HTTP (rien à y servir).
+  scheduler:
+    build:
+      context: ./bloodshare-backend
+      dockerfile: Dockerfile
+    container_name: bloodshare_scheduler
+    env_file:
+      - ./bloodshare-backend/.env
+    volumes:
+      - ./bloodshare-backend:/var/www/html
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    entrypoint: ["php", "artisan", "schedule:work"]
+
   db:
     image: postgres:15-alpine
     container_name: bloodshare_db
@@ -32,6 +55,10 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # 📖 Crée la base bloodshare_testing (voir phpunit.xml) — docker-entrypoint-initdb.d
+      # ne s'exécute qu'au tout premier démarrage, sur un volume postgres_data vide.
+      # Volume déjà existant : voir DEVOPS.md pour la commande createdb équivalente.
+      - ./bloodshare-backend/docker/postgres-init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U bloodshare"]
       interval: 5s

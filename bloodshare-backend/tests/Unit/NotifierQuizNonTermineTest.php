@@ -52,4 +52,22 @@ class NotifierQuizNonTermineTest extends TestCase
 
         Notification::assertNotSentTo($user, QuizNonTermineNotification::class);
     }
+
+    public function test_ne_relance_pas_un_quiz_desactive_depuis(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create();
+        $quiz = Quiz::create(['titre' => 'Quiz test', 'statut' => 'inactif']);
+        UserQuiz::create([
+            'user_id' => $user->id,
+            'quiz_id' => $quiz->id,
+            'complete' => false,
+            'commence_at' => now()->subDays(3),
+        ]);
+
+        Artisan::call('notifications:quiz-non-termine');
+
+        Notification::assertNotSentTo($user, QuizNonTermineNotification::class);
+    }
 }

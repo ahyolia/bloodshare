@@ -38,12 +38,40 @@ class StockSangNotificationTest extends TestCase
 
     public function test_une_sauvegarde_qui_ne_change_pas_le_niveau_ne_notifie_pas(): void
     {
+        $stock = StockSang::create(['groupe_sanguin' => 'O-', 'niveau' => 'critique']);
+        $user = User::factory()->create();
+
+        // 📖 Rechargé en base (comme le fait le BO en édition) plutôt que réutiliser la
+        //    même instance : wasRecentlyCreated reste vrai sur l'instance d'origine pour
+        //    toute sa durée de vie, un second save() sur CETTE instance redéclencherait
+        //    l'alerte même sans changement — un comportement qu'un vrai flux d'édition
+        //    (fetch frais) ne reproduit jamais.
+        $stockRecharge = StockSang::find($stock->id);
+
+        Notification::fake();
+        $stockRecharge->update(['maj_at' => now()]);
+
+        Notification::assertNothingSentTo($user);
+    }
+
+    public function test_un_stock_cree_directement_en_critique_declenche_l_alerte(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create();
+        StockSang::create(['groupe_sanguin' => 'O-', 'niveau' => 'critique']);
+
+        Notification::assertSentTo($user, AlertePenurieNotification::class);
+    }
+
+    public function test_passer_de_critique_a_bas_ne_remercie_pas(): void
+    {
         Notification::fake();
 
         $user = User::factory()->create();
         $stock = StockSang::create(['groupe_sanguin' => 'O-', 'niveau' => 'critique']);
-        $stock->update(['maj_at' => now()]);
+        $stock->update(['niveau' => 'bas']);
 
-        Notification::assertNothingSentTo($user);
+        Notification::assertNotSentTo($user, RemerciementPenurieNotification::class);
     }
 }

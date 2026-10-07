@@ -38,7 +38,7 @@ class NotifierCarteDuMois extends Command
 
         $notifies = 0;
 
-        User::query()->each(function (User $user) use ($carteDuMois, &$notifies) {
+        User::whereHas('pushSubscriptions')->each(function (User $user) use ($carteDuMois, &$notifies) {
             $dejaObtenue = UserCarte::where('user_id', $user->id)
                 ->where('carte_id', $carteDuMois->id)
                 ->exists();

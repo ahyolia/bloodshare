@@ -21,12 +21,17 @@ class StockSang extends Model
 
     // 📖 Même convention que Defi/Quiz/Evenement (booted() plutôt qu'un Observer séparé) :
     //    alerte générale pour l'instant, pas de ciblage par groupe sanguin déclaré (décision
-    //    anonymat en attente). On ne notifie qu'au PASSAGE à "critique" ou qu'à la SORTIE de
-    //    "critique" (wasChanged), jamais à une sauvegarde qui laisse le niveau inchangé.
+    //    anonymat en attente). wasRecentlyCreated couvre le cas d'un stock créé directement
+    //    en "critique" (wasChanged seul est faux à la création, rien à comparer) — même
+    //    garde que Defi/Quiz/Evenement::booted().
+    //    Remerciement seulement en sortie vers "correct"/"bon" : un critique → bas reste une
+    //    pénurie, "n'est plus en pénurie" serait un mensonge. 📖 Règle provisoire (@nevizsh
+    //    27/01) : à valider avec le PO si "bas" doit aussi déclencher un message dédié plutôt
+    //    que rien.
     protected static function booted(): void
     {
         static::saved(function (StockSang $stockSang) {
-            if (! $stockSang->wasChanged('niveau')) {
+            if (! $stockSang->wasChanged('niveau') && ! $stockSang->wasRecentlyCreated) {
                 return;
             }
 
@@ -37,7 +42,10 @@ class StockSang extends Model
                 return;
             }
 
-            if ($stockSang->getOriginal('niveau') === 'critique') {
+            if (
+                in_array($stockSang->niveau, ['correct', 'bon'], true)
+                && $stockSang->getOriginal('niveau') === 'critique'
+            ) {
                 app(\App\Services\NotificationService::class)
                     ->notifierTousLesUsers(new \App\Notifications\RemerciementPenurieNotification($stockSang));
             }

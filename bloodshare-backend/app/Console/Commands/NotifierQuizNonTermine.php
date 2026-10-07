@@ -18,6 +18,10 @@ class NotifierQuizNonTermine extends Command
             ->where('rappel_envoye', false)
             ->whereNotNull('commence_at')
             ->where('commence_at', '<=', now()->subDays(3))
+            // 📖 Sans ce filtre, un quiz désactivé/repassé en brouillon après avoir été
+            //    commencé relancerait quand même l'utilisateur pour un quiz que
+            //    QuizController::soumettre() refuse désormais (where('statut', 'actif')).
+            ->whereHas('quiz', fn ($q) => $q->where('statut', 'actif'))
             ->with(['user', 'quiz'])
             ->get();
 

@@ -100,8 +100,8 @@ class DefiService
 
             $userDefi->update(['complete' => true, 'completed_at' => now()]);
 
-            // 📖 Après la boucle de points plutôt qu'en dehors : si demain on veut inclure
-            //    les points gagnés dans le message, ils sont déjà crédités à ce moment-là.
+            // 📖 Après l'attribution des points (pas avant) : si demain on veut inclure les
+            //    points gagnés dans le message, ils sont déjà crédités à ce moment-là.
             DB::afterCommit(fn () => $userDefi->user->notify(new \App\Notifications\DefiReussiNotification($defi)));
         }
     }

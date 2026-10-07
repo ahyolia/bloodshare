@@ -29,6 +29,7 @@ class NotifierCarteDuMoisTest extends TestCase
 
         Carte::create(['titre' => 'Carte Janvier', 'categorie' => 'mois_don', 'mois_numero' => 1, 'statut' => 'active']);
         $user = User::factory()->create(['sexe' => 'homme']);
+        $user->pushSubscriptions()->create(['endpoint' => 'https://fcm.example/abc', 'public_key' => 'BDH68ZE3PNMnl74jKfsqoVnnk6FYKYn2Nr09BbU2NiiT0qhhX2Yh3jNO58fJYqOhDp8yWV7Gk5NAH085cH8DwQU', 'auth_token' => '0ZWyLlCGSsmRiCCImPm2Bw']);
 
         Artisan::call('notifications:carte-du-mois');
 
