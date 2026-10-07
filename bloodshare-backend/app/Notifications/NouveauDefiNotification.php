@@ -24,7 +24,7 @@ class NouveauDefiNotification extends Notification
     public function toWebPush($notifiable, $notification): WebPushMessage
     {
         return (new WebPushMessage())
-            ->title('Nouveau défi disponible !')
+            ->title('Nouveau défi disponible ! 🎯')
             ->body($this->defi->titre);
     }
 }

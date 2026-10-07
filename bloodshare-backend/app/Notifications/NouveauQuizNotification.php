@@ -24,7 +24,7 @@ class NouveauQuizNotification extends Notification
     public function toWebPush($notifiable, $notification): WebPushMessage
     {
         return (new WebPushMessage())
-            ->title('Nouveau quiz disponible !')
+            ->title('Nouveau quiz disponible ! 🧠')
             ->body($this->quiz->titre);
     }
 }
