@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { EnTete } from '../../../components/EnTete';
 import { Colors } from '../../../constants/colors';
+import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues';
 import { useProfil } from '../../../hooks/useProfil';
 import { CategorieQuiz, getQuizCategories, QuizItem } from '../../../services/quiz.service';
 import { initialePseudo } from '../../../utils/profil';
@@ -31,6 +32,7 @@ export default function QuizScreen() {
   // 📖 <EnTete /> est purement présentationnel : c'est l'écran qui fournit les
   //    données du profil (pseudo + points), via le hook partagé.
   const { profil } = useProfil();
+  const notificationsNonLues = useNotificationsNonLues();
 
   const [categories, setCategories] = useState<CategorieQuiz[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -151,7 +153,7 @@ export default function QuizScreen() {
           initiale={initialePseudo(profil?.pseudo)}
           points={profil?.points_cumules ?? 0}
           profil={profil}
-          notificationsNonLues={0}
+          notificationsNonLues={notificationsNonLues}
           onPressNotifications={() => router.push('/notifications')}
         />
 

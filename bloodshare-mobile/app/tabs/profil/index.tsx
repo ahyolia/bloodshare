@@ -11,6 +11,7 @@ import {
 import { useFocusEffect, useRouter } from "expo-router";
 import { EnTete } from "../../../components/EnTete";
 import { Colors } from "../../../constants/colors";
+import { useNotificationsNonLues } from "../../../hooks/useNotificationsNonLues";
 import { useProfilComplet } from "../../../hooks/useProfilComplet";
 import { logout } from "../../../services/auth.service";
 import { unsubscribe as seDesabonnerNotifsWeb } from "../../../services/notifications/webPush";
@@ -22,6 +23,7 @@ import { useDialogue } from "../../../components/DialogueProvider";
 export default function ProfilScreen() {
   const router = useRouter();
   const { confirmer } = useDialogue();
+  const notificationsNonLues = useNotificationsNonLues();
   const { apercu, profil, dons, badges, loading, error, reload } =
     useProfilComplet();
 
@@ -81,7 +83,7 @@ export default function ProfilScreen() {
           initiale={initialePseudo(pseudo)}
           points={points}
           profil={profil}
-          notificationsNonLues={0}
+          notificationsNonLues={notificationsNonLues}
           onPressNotifications={() => router.push('/notifications')}
         />
 

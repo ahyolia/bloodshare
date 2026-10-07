@@ -26,7 +26,15 @@ const formatDate = (iso: string) => {
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const { notifications, loading, error, marquerLue, marquerToutesLues } = useNotifications();
+  const {
+    notifications,
+    loading,
+    chargementSuite,
+    error,
+    marquerLue,
+    marquerToutesLues,
+    chargerPlus,
+  } = useNotifications();
 
   const aDesNonLues = notifications?.some((n) => !n.lue) ?? false;
 
@@ -62,8 +70,15 @@ export default function NotificationsScreen() {
           renderItem={({ item }) => (
             <NotificationRow notification={item} onPress={() => marquerLue(item.id)} />
           )}
+          onEndReached={chargerPlus}
+          onEndReachedThreshold={0.4}
           ListEmptyComponent={
             <Text style={styles.empty}>Vous n&apos;avez aucune notification pour l&apos;instant.</Text>
+          }
+          ListFooterComponent={
+            chargementSuite ? (
+              <ActivityIndicator color={Colors.corail[600]} style={styles.loaderSuite} />
+            ) : null
           }
         />
       )}
@@ -121,6 +136,9 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: 40,
+  },
+  loaderSuite: {
+    marginVertical: 16,
   },
   errorText: {
     color: Colors.grisMoyen,

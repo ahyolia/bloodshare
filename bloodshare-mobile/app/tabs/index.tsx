@@ -17,6 +17,7 @@ import {
 import { useRouter } from 'expo-router';
 import { EnTete } from '../../components/EnTete';
 import { Colors } from '../../constants/colors';
+import { useNotificationsNonLues } from '../../hooks/useNotificationsNonLues';
 import { Actualite, getActualites } from '../../services/actualites.service';
 import { Banniere, getBanniere, TypeBanniere } from '../../services/bannieres.service';
 import { DefiActuel, getDefiActuel } from '../../services/defis.service';
@@ -80,6 +81,7 @@ const formatHeure = (iso: string) =>
 
 export default function AccueilScreen() {
   const router = useRouter();
+  const notificationsNonLues = useNotificationsNonLues();
 
   // 📖 Un state par section : chaque appel réseau retombe indépendamment, on ne
   //    veut jamais qu'un échec masque les sections qui, elles, ont répondu.
@@ -279,7 +281,7 @@ export default function AccueilScreen() {
           initiale={initialePseudo(user?.pseudo)}
           points={user?.points_cumules ?? 0}
           profil={user}
-          notificationsNonLues={0}
+          notificationsNonLues={notificationsNonLues}
           onPressNotifications={() => router.push('/notifications')}
         />
 

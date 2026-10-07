@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { EnTete } from '../../../components/EnTete';
 import { Colors } from '../../../constants/colors';
+import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues';
 import { useProfil } from '../../../hooks/useProfil';
 import { FicheInfo, getFichesInfos } from '../../../services/fichesInfos.service';
 import { initialePseudo } from '../../../utils/profil';
@@ -36,6 +37,7 @@ export default function DonScreen() {
   const { section } = useLocalSearchParams<{ section?: string }>();
   // 📖 <EnTete /> ne charge rien : l'écran lui fournit pseudo + points.
   const { profil } = useProfil();
+  const notificationsNonLues = useNotificationsNonLues();
   const [fiches, setFiches] = useState<FicheInfo[]>([]);
   const [fichesLoading, setFichesLoading] = useState(true);
   const [fichesError, setFichesError] = useState(false);
@@ -85,7 +87,7 @@ export default function DonScreen() {
           initiale={initialePseudo(profil?.pseudo)}
           points={profil?.points_cumules ?? 0}
           profil={profil}
-          notificationsNonLues={0}
+          notificationsNonLues={notificationsNonLues}
           onPressNotifications={() => router.push('/notifications')}
         />
 
