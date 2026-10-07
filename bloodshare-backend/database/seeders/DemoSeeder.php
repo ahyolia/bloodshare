@@ -222,6 +222,15 @@ class DemoSeeder extends Seeder
 
     private function seedStockSang(?User $admin): void
     {
+        // 📖 updateOrCreate réécrirait les niveaux à chaque redémarrage du conteneur
+        //    (RUN_SEEDERS=true relance db:seed) : un niveau modifié depuis le BO serait
+        //    écrasé, et un groupe qui repasse à "critique" ici redéclencherait la notif
+        //    push de pénurie à tous les abonnés (hook saved de StockSang). Non rejoué si
+        //    déjà présent, comme les autres méthodes de ce seeder.
+        if (StockSang::count() > 0) {
+            return;
+        }
+
         $niveaux = [
             'A+' => 'correct', 'A-' => 'bas', 'B+' => 'bon', 'B-' => 'critique',
             'AB+' => 'correct', 'AB-' => 'bas', 'O+' => 'critique', 'O-' => 'critique',
