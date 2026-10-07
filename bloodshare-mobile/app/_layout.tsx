@@ -14,10 +14,11 @@ export default function RootLayout() {
   const navigationState = useRootNavigationState();
 
   const inAuthGroup = segments[0] === "auth";
-  // 📖 `detail` = écrans ouverts par-dessus les onglets (actualité, événement) : pour le
+  // 📖 `detail` et `notifications` = écrans ouverts par-dessus les onglets : pour le
   //    garde ci-dessous, c'est de la zone connectée au même titre que `tabs`. Sans ça,
-  //    l'ouverture d'un détail renverrait aussitôt l'utilisateur sur /tabs.
-  const inTabsGroup = segments[0] === "tabs" || segments[0] === "detail";
+  //    l'ouverture d'un de ces écrans renverrait aussitôt l'utilisateur sur /tabs.
+  const inTabsGroup =
+    segments[0] === "tabs" || segments[0] === "detail" || segments[0] === "notifications";
 
   useEffect(() => {
     // Attendre que la navigation soit prête
