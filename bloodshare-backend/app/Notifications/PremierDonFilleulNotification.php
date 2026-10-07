@@ -13,7 +13,7 @@ class PremierDonFilleulNotification extends Notification
 
     public function via($notifiable): array
     {
-        return [WebPushChannel::class];
+        return [WebPushChannel::class, 'database'];
     }
 
     public function toWebPush($notifiable, $notification): WebPushMessage
@@ -21,5 +21,12 @@ class PremierDonFilleulNotification extends Notification
         return (new WebPushMessage())
             ->title('Votre parrainage est validé ! 🩸')
             ->body('Votre filleul a fait son premier don : vous gagnez 75 points.');
+    }
+
+    // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app
+    //    (canal database) que dans la notification push.
+    public function toArray($notifiable): array
+    {
+        return $this->toWebPush($notifiable, null)->toArray();
     }
 }

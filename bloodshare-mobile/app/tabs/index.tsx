@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   FlatList,
   Image,
@@ -71,12 +70,6 @@ const MOIS_ABREGES = [
   'JAN', 'FÉV', 'MAR', 'AVR', 'MAI', 'JUIN',
   'JUIL', 'AOÛ', 'SEP', 'OCT', 'NOV', 'DÉC',
 ];
-
-// 📖 L'écran Notifications n'existe pas encore. On prévient plutôt que de laisser
-//    une cloche muette (un bouton annoncé aux lecteurs d'écran doit faire quelque
-//    chose). À remplacer par un router.push le jour où la route existe.
-const ouvrirNotifications = () =>
-  Alert.alert('Notifications', 'Cet écran arrive bientôt.');
 
 // 📖 "2026-07-02T09:00:00Z" → "09h00". timeZone UTC : l'heure affichée = l'heure
 //    stockée, sans décalage selon le fuseau de l'appareil.
@@ -287,7 +280,7 @@ export default function AccueilScreen() {
           points={user?.points_cumules ?? 0}
           profil={user}
           notificationsNonLues={0}
-          onPressNotifications={ouvrirNotifications}
+          onPressNotifications={() => router.push('/notifications')}
         />
 
         {horsLigne && (

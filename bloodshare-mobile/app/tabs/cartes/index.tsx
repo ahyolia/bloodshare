@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -22,11 +21,6 @@ import {
   getCartesCache,
 } from '../../../services/cartes.service';
 import { initialePseudo } from '../../../utils/profil';
-
-// 📖 L'écran Notifications n'existe pas encore : on prévient plutôt que de laisser
-//    une cloche muette. À remplacer par un router.push quand la route existera.
-const ouvrirNotifications = () =>
-  Alert.alert('Notifications', 'Cet écran arrive bientôt.');
 
 export default function CartesScreen() {
   const router = useRouter();
@@ -80,7 +74,7 @@ export default function CartesScreen() {
           points={profil?.points_cumules ?? 0}
           profil={profil}
           notificationsNonLues={0}
-          onPressNotifications={ouvrirNotifications}
+          onPressNotifications={() => router.push('/notifications')}
         />
 
         {loading && (

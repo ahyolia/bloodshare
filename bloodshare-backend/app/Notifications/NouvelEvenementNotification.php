@@ -18,7 +18,7 @@ class NouvelEvenementNotification extends Notification
 
     public function via($notifiable): array
     {
-        return [WebPushChannel::class];
+        return [WebPushChannel::class, 'database'];
     }
 
     public function toWebPush($notifiable, $notification): WebPushMessage
@@ -26,5 +26,12 @@ class NouvelEvenementNotification extends Notification
         return (new WebPushMessage())
             ->title('Nouvel événement BloodShare ! 🎪')
             ->body("{$this->evenement->titre} — {$this->evenement->lieu}");
+    }
+
+    // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app
+    //    (canal database) que dans la notification push.
+    public function toArray($notifiable): array
+    {
+        return $this->toWebPush($notifiable, null)->toArray();
     }
 }

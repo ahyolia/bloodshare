@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -19,11 +18,6 @@ import { removeToken } from "../../../stores/auth.store";
 import { LIBELLE_STATUT_DONNEUR, initialePseudo } from "../../../utils/profil";
 import { CONTENU_MARGE_BASSE } from "../_layout";
 import { useDialogue } from "../../../components/DialogueProvider";
-
-// 📖 L'écran Notifications n'existe pas encore : on prévient plutôt que de laisser
-//    une cloche muette. À remplacer par un router.push quand la route existera.
-const ouvrirNotifications = () =>
-  Alert.alert("Notifications", "Cet écran arrive bientôt.");
 
 export default function ProfilScreen() {
   const router = useRouter();
@@ -88,7 +82,7 @@ export default function ProfilScreen() {
           points={points}
           profil={profil}
           notificationsNonLues={0}
-          onPressNotifications={ouvrirNotifications}
+          onPressNotifications={() => router.push('/notifications')}
         />
 
         {loading && rienAAfficher && (
