@@ -41,7 +41,8 @@ Route::middleware(['auth:sanctum', MetAJourDerniereActivite::class])->group(func
     Route::get('/me', [ProfilController::class, 'show']);
     Route::put('/me', [ProfilController::class, 'update']);
     Route::delete('/me', [ProfilController::class, 'destroy']);
-    Route::post('/me/changer-mot-de-passe', [ProfilController::class, 'changerMotDePasse']);
+    Route::post('/me/changer-mot-de-passe', [ProfilController::class, 'changerMotDePasse'])
+        ->middleware('throttle:6,1');
 
     // Scan (déjà existant — ne pas toucher)
     Route::post('/scan', [ScanController::class, 'scan']);

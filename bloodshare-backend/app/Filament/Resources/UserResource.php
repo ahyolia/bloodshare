@@ -107,7 +107,8 @@ class UserResource extends Resource
                     ->label('Réinitialiser le mot de passe')
                     ->icon('heroicon-o-key')
                     ->color('warning')
-                    ->visible(fn (User $record): bool => $record->statut !== 'supprime')
+                    ->visible(fn (User $record): bool => $record->statut !== 'supprime'
+                        && ! $record->hasAnyRole(['super_admin', 'admin']))
                     ->requiresConfirmation()
                     ->modalDescription(
                         "Un mot de passe temporaire va être généré. Transmettez-le vous-même à "
@@ -117,12 +118,16 @@ class UserResource extends Resource
                     // 📖 Pas d'envoi de mail en V1 (pas de mail pro, voir CLAUDE.md) : le mdp
                     //    temporaire n'est affiché qu'une fois, ici, pour transmission manuelle.
                     ->action(function (User $record) {
-                        $motDePasseTemporaire = Str::password(10);
+                        $motDePasseTemporaire = Str::password(12, symbols: false);
 
                         $record->update([
                             'password' => Hash::make($motDePasseTemporaire),
                             'doit_changer_mdp' => true,
                         ]);
+
+                        // 📖 Un mdp réinitialisé doit invalider les sessions déjà ouvertes avec
+                        //    l'ancien, sans quoi un appareil resterait connecté malgré le reset.
+                        $record->tokens()->delete();
 
                         Notification::make()
                             ->title('Mot de passe temporaire généré')
