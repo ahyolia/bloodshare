@@ -11,9 +11,12 @@ use Filament\Forms\Form;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserResource extends Resource
 {
@@ -100,6 +103,34 @@ class UserResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()->label('Voir'),
+                Tables\Actions\Action::make('reinitialiser_mdp')
+                    ->label('Réinitialiser le mot de passe')
+                    ->icon('heroicon-o-key')
+                    ->color('warning')
+                    ->visible(fn (User $record): bool => $record->statut !== 'supprime')
+                    ->requiresConfirmation()
+                    ->modalDescription(
+                        "Un mot de passe temporaire va être généré. Transmettez-le vous-même à "
+                        . "l'utilisateur (l'association n'a pas encore de mail dédié à l'envoi "
+                        . "automatique) : il devra le changer dès sa prochaine connexion."
+                    )
+                    // 📖 Pas d'envoi de mail en V1 (pas de mail pro, voir CLAUDE.md) : le mdp
+                    //    temporaire n'est affiché qu'une fois, ici, pour transmission manuelle.
+                    ->action(function (User $record) {
+                        $motDePasseTemporaire = Str::password(10);
+
+                        $record->update([
+                            'password' => Hash::make($motDePasseTemporaire),
+                            'doit_changer_mdp' => true,
+                        ]);
+
+                        Notification::make()
+                            ->title('Mot de passe temporaire généré')
+                            ->body("Transmettez-le à l'utilisateur : {$motDePasseTemporaire}")
+                            ->warning()
+                            ->persistent()
+                            ->send();
+                    }),
             ])
             ->bulkActions([
                 //

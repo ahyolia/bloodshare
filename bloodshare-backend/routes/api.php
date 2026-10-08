@@ -32,8 +32,6 @@ Route::prefix('auth')->group(function () {
         ->middleware('throttle:15,1');
     Route::post('/login', [AuthController::class, 'login'])
         ->middleware('throttle:6,1');
-    Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])
-        ->middleware('throttle:6,1');
     Route::post('/logout', [AuthController::class, 'logout'])
         ->middleware('auth:sanctum');
 });
@@ -43,6 +41,7 @@ Route::middleware(['auth:sanctum', MetAJourDerniereActivite::class])->group(func
     Route::get('/me', [ProfilController::class, 'show']);
     Route::put('/me', [ProfilController::class, 'update']);
     Route::delete('/me', [ProfilController::class, 'destroy']);
+    Route::post('/me/changer-mot-de-passe', [ProfilController::class, 'changerMotDePasse']);
 
     // Scan (déjà existant — ne pas toucher)
     Route::post('/scan', [ScanController::class, 'scan']);

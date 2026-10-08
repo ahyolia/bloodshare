@@ -10,7 +10,6 @@ use App\Services\BadgeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 
@@ -148,21 +147,6 @@ class AuthController extends Controller
         ]);
     }
 
-    public function forgotPassword(Request $request)
-    {
-        $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
-
-        $request->validate([
-            'email' => 'required',
-        ]);
-
-        Password::sendResetLink($request->only('email'));
-
-        return response()->json([
-            'message' => 'Email de réinitialisation envoyé.',
-        ]);
-    }
-
     private function formatUser(User $user): array
     {
         return [
@@ -172,6 +156,7 @@ class AuthController extends Controller
             'statut_donneur' => $user->statut_donneur,
             'points_cumules' => $user->points_cumules,
             'code_parrainage' => $user->code_parrainage,
+            'doit_changer_mdp' => $user->doit_changer_mdp,
         ];
     }
 }

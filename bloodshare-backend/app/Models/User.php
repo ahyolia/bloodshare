@@ -31,6 +31,7 @@ class User extends Authenticatable implements FilamentUser, HasName
         'derniere_connexion',
         'avatar_id',
         'code_parrainage',
+        'doit_changer_mdp',
     ];
 
     protected $hidden = [
@@ -42,6 +43,7 @@ class User extends Authenticatable implements FilamentUser, HasName
         'email_verified_at' => 'datetime',
         'derniere_connexion' => 'datetime',
         'password' => 'hashed',
+        'doit_changer_mdp' => 'boolean',
     ];
 
 
@@ -147,11 +149,6 @@ class User extends Authenticatable implements FilamentUser, HasName
     public function parrainagesReçus()
     {
         return $this->hasMany(Parrainage::class, 'filleul_id');
-    }
-
-    public function sendPasswordResetNotification($token): void
-    {
-        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
     }
 
     // Dire à Filament d'utiliser pseudo comme nom d'affichage
