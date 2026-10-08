@@ -41,4 +41,43 @@ class NotificationController extends Controller
             'message' => 'Abonnement aux notifications retiré.',
         ]);
     }
+
+    public function index(Request $request)
+    {
+        $notifications = $request->user()
+            ->notifications()
+            ->latest()
+            ->paginate(20)
+            ->through(fn ($notification) => [
+                'id' => $notification->id,
+                'titre' => $notification->data['title'] ?? null,
+                'corps' => $notification->data['body'] ?? null,
+                'lue' => $notification->read_at !== null,
+                'created_at' => $notification->created_at,
+            ]);
+
+        return response()->json($notifications);
+    }
+
+    public function countUnread(Request $request)
+    {
+        return response()->json([
+            'count' => $request->user()->unreadNotifications()->count(),
+        ]);
+    }
+
+    public function markAsRead(Request $request, string $id)
+    {
+        $notification = $request->user()->notifications()->where('id', $id)->firstOrFail();
+        $notification->markAsRead();
+
+        return response()->json(['message' => 'Notification marquée comme lue.']);
+    }
+
+    public function markAllAsRead(Request $request)
+    {
+        $request->user()->unreadNotifications->markAsRead();
+
+        return response()->json(['message' => 'Notifications marquées comme lues.']);
+    }
 }

@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -13,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { EnTete } from '../../../components/EnTete';
 import { Colors } from '../../../constants/colors';
+import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues';
 import { useProfil } from '../../../hooks/useProfil';
 import {
   Cartes,
@@ -23,15 +23,11 @@ import {
 } from '../../../services/cartes.service';
 import { initialePseudo } from '../../../utils/profil';
 
-// 📖 L'écran Notifications n'existe pas encore : on prévient plutôt que de laisser
-//    une cloche muette. À remplacer par un router.push quand la route existera.
-const ouvrirNotifications = () =>
-  Alert.alert('Notifications', 'Cet écran arrive bientôt.');
-
 export default function CartesScreen() {
   const router = useRouter();
   // 📖 <EnTete /> ne charge rien : l'écran lui fournit pseudo + points.
   const { profil } = useProfil();
+  const notificationsNonLues = useNotificationsNonLues();
   const [cartes, setCartes] = useState<Cartes | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -79,8 +75,8 @@ export default function CartesScreen() {
           initiale={initialePseudo(profil?.pseudo)}
           points={profil?.points_cumules ?? 0}
           profil={profil}
-          notificationsNonLues={0}
-          onPressNotifications={ouvrirNotifications}
+          notificationsNonLues={notificationsNonLues}
+          onPressNotifications={() => router.push('/notifications')}
         />
 
         {loading && (

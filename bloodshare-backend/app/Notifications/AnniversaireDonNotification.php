@@ -13,7 +13,7 @@ class AnniversaireDonNotification extends Notification
 
     public function via($notifiable): array
     {
-        return [WebPushChannel::class];
+        return [WebPushChannel::class, 'database'];
     }
 
     public function toWebPush($notifiable, $notification): WebPushMessage
@@ -21,5 +21,12 @@ class AnniversaireDonNotification extends Notification
         return (new WebPushMessage())
             ->title('Un an déjà 🎂')
             ->body('Cela fait 1 an que vous avez fait votre premier don. Merci pour ce geste !');
+    }
+
+    // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app
+    //    (canal database) que dans la notification push.
+    public function toArray($notifiable): array
+    {
+        return $this->toWebPush($notifiable, null)->toArray();
     }
 }

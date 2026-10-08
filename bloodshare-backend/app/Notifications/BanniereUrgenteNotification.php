@@ -18,7 +18,7 @@ class BanniereUrgenteNotification extends Notification
 
     public function via($notifiable): array
     {
-        return [WebPushChannel::class];
+        return [WebPushChannel::class, 'database'];
     }
 
     public function toWebPush($notifiable, $notification): WebPushMessage
@@ -29,5 +29,12 @@ class BanniereUrgenteNotification extends Notification
             //    toujours là, sans dépendre de ce que l'admin a tapé.
             ->title("🚨 {$this->banniere->titre}")
             ->body($this->banniere->message);
+    }
+
+    // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app
+    //    (canal database) que dans la notification push.
+    public function toArray($notifiable): array
+    {
+        return $this->toWebPush($notifiable, null)->toArray();
     }
 }

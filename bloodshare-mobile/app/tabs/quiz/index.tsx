@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,14 +11,10 @@ import {
 } from 'react-native';
 import { EnTete } from '../../../components/EnTete';
 import { Colors } from '../../../constants/colors';
+import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues';
 import { useProfil } from '../../../hooks/useProfil';
 import { CategorieQuiz, getQuizCategories, QuizItem } from '../../../services/quiz.service';
 import { initialePseudo } from '../../../utils/profil';
-
-// 📖 L'écran Notifications n'existe pas encore : on prévient plutôt que de laisser
-//    une cloche muette. À remplacer par un router.push quand la route existera.
-const ouvrirNotifications = () =>
-  Alert.alert('Notifications', 'Cet écran arrive bientôt.');
 
 // 📖 Table de correspondance catégorie → icône + couleur de fond du cercle
 // → Pourquoi une table plutôt qu'un switch : plus lisible, et facile à compléter si de nouvelles catégories de quiz apparaissent
@@ -37,6 +32,7 @@ export default function QuizScreen() {
   // 📖 <EnTete /> est purement présentationnel : c'est l'écran qui fournit les
   //    données du profil (pseudo + points), via le hook partagé.
   const { profil } = useProfil();
+  const notificationsNonLues = useNotificationsNonLues();
 
   const [categories, setCategories] = useState<CategorieQuiz[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -157,8 +153,8 @@ export default function QuizScreen() {
           initiale={initialePseudo(profil?.pseudo)}
           points={profil?.points_cumules ?? 0}
           profil={profil}
-          notificationsNonLues={0}
-          onPressNotifications={ouvrirNotifications}
+          notificationsNonLues={notificationsNonLues}
+          onPressNotifications={() => router.push('/notifications')}
         />
 
         <Text style={styles.sectionTitle}>Quiz en cours</Text>

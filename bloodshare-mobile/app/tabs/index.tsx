@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   FlatList,
   Image,
@@ -18,6 +17,7 @@ import {
 import { useRouter } from 'expo-router';
 import { EnTete } from '../../components/EnTete';
 import { Colors } from '../../constants/colors';
+import { useNotificationsNonLues } from '../../hooks/useNotificationsNonLues';
 import { Actualite, getActualites } from '../../services/actualites.service';
 import { Banniere, getBanniere, TypeBanniere } from '../../services/bannieres.service';
 import { DefiActuel, getDefiActuel } from '../../services/defis.service';
@@ -72,12 +72,6 @@ const MOIS_ABREGES = [
   'JUIL', 'AOÛ', 'SEP', 'OCT', 'NOV', 'DÉC',
 ];
 
-// 📖 L'écran Notifications n'existe pas encore. On prévient plutôt que de laisser
-//    une cloche muette (un bouton annoncé aux lecteurs d'écran doit faire quelque
-//    chose). À remplacer par un router.push le jour où la route existe.
-const ouvrirNotifications = () =>
-  Alert.alert('Notifications', 'Cet écran arrive bientôt.');
-
 // 📖 "2026-07-02T09:00:00Z" → "09h00". timeZone UTC : l'heure affichée = l'heure
 //    stockée, sans décalage selon le fuseau de l'appareil.
 const formatHeure = (iso: string) =>
@@ -87,6 +81,7 @@ const formatHeure = (iso: string) =>
 
 export default function AccueilScreen() {
   const router = useRouter();
+  const notificationsNonLues = useNotificationsNonLues();
 
   // 📖 Un state par section : chaque appel réseau retombe indépendamment, on ne
   //    veut jamais qu'un échec masque les sections qui, elles, ont répondu.
@@ -286,8 +281,8 @@ export default function AccueilScreen() {
           initiale={initialePseudo(user?.pseudo)}
           points={user?.points_cumules ?? 0}
           profil={user}
-          notificationsNonLues={0}
-          onPressNotifications={ouvrirNotifications}
+          notificationsNonLues={notificationsNonLues}
+          onPressNotifications={() => router.push('/notifications')}
         />
 
         {horsLigne && (

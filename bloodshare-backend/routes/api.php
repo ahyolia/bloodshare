@@ -64,4 +64,11 @@ Route::middleware(['auth:sanctum', MetAJourDerniereActivite::class])->group(func
     // Notifications push (PWA / Web Push)
     Route::post('/notifications/subscription', [NotificationController::class, 'storeSubscription']);
     Route::delete('/notifications/subscription', [NotificationController::class, 'destroySubscription']);
+
+    // Historique des notifications (canal database)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/non-lues', [NotificationController::class, 'countUnread']);
+    Route::put('/notifications/lues', [NotificationController::class, 'markAllAsRead']);
+    Route::put('/notifications/{id}/lue', [NotificationController::class, 'markAsRead'])
+        ->whereUuid('id');
 });
