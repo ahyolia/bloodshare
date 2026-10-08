@@ -1,5 +1,5 @@
 import api from '../api';
-import { forgotPassword, login, logout, register } from '../auth.service';
+import { changerMotDePasse, login, logout, register } from '../auth.service';
 
 // On force le mode API : sans ça, les services renverraient le mock et
 // aucun appel réseau ne serait vérifiable.
@@ -146,14 +146,30 @@ describe('logout', () => {
   });
 });
 
-describe('forgotPassword', () => {
-  it("appelle POST /auth/forgot-password avec l'email", async () => {
-    apiPost.mockResolvedValue({ data: { message: 'Email de réinitialisation envoyé.' } });
+describe('changerMotDePasse', () => {
+  it('appelle POST /me/changer-mot-de-passe avec les mots de passe', async () => {
+    apiPost.mockResolvedValue({ data: { message: 'Mot de passe mis à jour.' } });
 
-    await forgotPassword('user@example.com');
+    await changerMotDePasse('AncienMdp123', 'NouveauMdp123', 'NouveauMdp123');
 
-    expect(apiPost).toHaveBeenCalledWith('/auth/forgot-password', {
-      email: 'user@example.com',
+    expect(apiPost).toHaveBeenCalledWith('/me/changer-mot-de-passe', {
+      mot_de_passe_actuel: 'AncienMdp123',
+      password: 'NouveauMdp123',
+      password_confirmation: 'NouveauMdp123',
     });
+  });
+
+  it("propage l'erreur 422 si le mot de passe actuel est incorrect", async () => {
+    const erreur422 = {
+      response: {
+        status: 422,
+        data: { message: 'Mot de passe actuel incorrect.' },
+      },
+    };
+    apiPost.mockRejectedValue(erreur422);
+
+    await expect(
+      changerMotDePasse('Mauvais123', 'NouveauMdp123', 'NouveauMdp123')
+    ).rejects.toMatchObject({ response: { status: 422 } });
   });
 });

@@ -195,6 +195,10 @@ export default function ParametresScreen() {
             onPress={() => router.push("/tabs/profil/informations")}
           />
           <LigneLien
+            label="Changer mon mot de passe"
+            onPress={() => router.push("/changer-mot-de-passe")}
+          />
+          <LigneLien
             label="Mot de passe oublié"
             onPress={() => router.push("/auth/mot-de-passe-oublie")}
             dernier

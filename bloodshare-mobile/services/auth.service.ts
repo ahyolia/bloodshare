@@ -12,6 +12,7 @@ export type Utilisateur = {
   statut_donneur: string | null;
   points_cumules: number;
   code_parrainage: string;
+  doit_changer_mdp: boolean;
 };
 
 export type AuthResponse = {
@@ -29,6 +30,7 @@ const filtrerUtilisateur = (user: Utilisateur): Utilisateur => ({
   statut_donneur: user.statut_donneur,
   points_cumules: user.points_cumules,
   code_parrainage: user.code_parrainage,
+  doit_changer_mdp: user.doit_changer_mdp,
 });
 
 export const login = async (email: string, password: string): Promise<AuthResponse> => {
@@ -48,12 +50,20 @@ export const logout = async (): Promise<void> => {
   await api.post('/auth/logout');
 };
 
-export const forgotPassword = async (email: string): Promise<void> => {
+export const changerMotDePasse = async (
+  motDePasseActuel: string,
+  motDePasse: string,
+  motDePasseConfirmation: string
+): Promise<void> => {
   if (USE_MOCK_DATA) {
     return;
   }
 
-  await api.post('/auth/forgot-password', { email });
+  await api.post('/me/changer-mot-de-passe', {
+    mot_de_passe_actuel: motDePasseActuel,
+    password: motDePasse,
+    password_confirmation: motDePasseConfirmation,
+  });
 };
 
 export type RegisterPayload = {
