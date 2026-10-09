@@ -17,6 +17,7 @@ import {
 import { Colors } from '../../../constants/colors';
 import { TAB_BAR_STYLE } from '../_layout';
 import { ResultatScan, soumettreScan } from '../../../services/scan.service';
+import { formaterDateLongue } from '../../../utils/dates';
 
 export default function ScanScreen() {
   const router = useRouter();
@@ -175,7 +176,7 @@ export default function ScanScreen() {
       const { prochaine_eligibilite, message: messageServeur } = error.response.data ?? {};
       if (prochaine_eligibilite) {
         titre = 'Don non validé';
-        message = `Vous n'êtes pas encore éligible.\nProchain don possible le : ${prochaine_eligibilite}`;
+        message = `Vous n'êtes pas encore éligible.\nProchain don possible le ${formaterDateLongue(prochaine_eligibilite)}`;
       } else {
         titre = 'Scan non validé';
         message = messageServeur ?? "Ce QR Code n'a pas pu être validé.";
