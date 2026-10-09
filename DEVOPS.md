@@ -1,6 +1,6 @@
-# DevOps — BloodShare
+# DevOps — Aïma
 
-Documentation DevOps du projet BloodShare (app mobile de sensibilisation au don du sang en Nouvelle-Calédonie pour l'association ADSB-NC) : architecture Docker, variables d'environnement, workflow Git, mobile Expo, monitoring.
+Documentation DevOps du projet Aïma (app mobile de sensibilisation au don du sang en Nouvelle-Calédonie pour l'association ADSB-NC) : architecture Docker, variables d'environnement, workflow Git, mobile Expo, monitoring.
 
 > Le déploiement en production n'est pas encore défini à ce stade — cette section sera ajoutée ultérieurement.
 
@@ -291,5 +291,5 @@ En local, `docker-compose.yml` monte déjà le dépôt en volume : rien à faire
 
 ---
 
-Documentation maintenue par l'équipe BloodShare.
+Documentation maintenue par l'équipe Aïma.
 Dernière mise à jour : août 2026.

@@ -1,6 +1,6 @@
-# BloodShare — Mobile 🩸
+# Aïma — Mobile 🩸
 
-Application mobile React Native (Expo) de BloodShare — plateforme gamifiée de sensibilisation au don du sang en Nouvelle-Calédonie.
+Application mobile React Native (Expo) d'Aïma — plateforme gamifiée de sensibilisation au don du sang en Nouvelle-Calédonie.
 
 ## Stack
 
