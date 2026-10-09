@@ -24,7 +24,7 @@ class NouvelEvenementNotification extends Notification
     public function toWebPush($notifiable, $notification): WebPushMessage
     {
         return (new WebPushMessage())
-            ->title('Nouvel événement BloodShare ! 🎪')
+            ->title('Nouvel événement Aïma ! 🎪')
             ->body("{$this->evenement->titre} — {$this->evenement->lieu}");
     }
 

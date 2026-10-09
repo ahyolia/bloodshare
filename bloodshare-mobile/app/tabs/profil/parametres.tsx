@@ -25,8 +25,8 @@ import {
 } from "../../../utils/preferences";
 import { useDialogue } from "../../../components/DialogueProvider";
 
-const URL_CONFIDENTIALITE = "https://bloodshare.nc/privacy";
-const URL_CGU = "https://bloodshare.nc/cgu";
+const URL_CONFIDENTIALITE = "https://aima.nc/privacy";
+const URL_CGU = "https://aima.nc/cgu";
 
 // 📖 expo-notifications ne fonctionne plus dans Expo Go (SDK 53+) et son simple
 //    import y jette une erreur. On le charge donc en `require()` paresseux, à
@@ -88,7 +88,7 @@ export default function ParametresScreen() {
       if (!accorde) {
         await informer(
           "Permission refusée",
-          "Activez les notifications pour BloodShare dans les réglages de votre téléphone.",
+          "Activez les notifications pour Aïma dans les réglages de votre téléphone.",
         );
         setNotifs(false);
         await setNotificationsActivees(false);
@@ -106,7 +106,7 @@ export default function ParametresScreen() {
       if (!abonne) {
         await informer(
           "Permission refusée",
-          "Activez les notifications pour BloodShare dans les réglages de votre navigateur.",
+          "Activez les notifications pour Aïma dans les réglages de votre navigateur.",
         );
         setNotifs(false);
         await setNotificationsActivees(false);

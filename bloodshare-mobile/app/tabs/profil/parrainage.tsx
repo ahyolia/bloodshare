@@ -46,9 +46,9 @@ export default function ParrainageScreen() {
     try {
       await Share.share({
         message:
-          `Rejoins BloodShare et donne ton sang ! 🩸\n` +
+          `Rejoins Aïma et donne ton sang ! 🩸\n` +
           `Utilise mon code de parrainage : ${profil.code_parrainage}\n` +
-          `https://bloodshare.nc`,
+          `https://aima.nc`,
       });
     } catch {
       // 📖 Partage annulé ou indisponible : rien à signaler à l'utilisateur.

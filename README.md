@@ -1,10 +1,10 @@
-# BloodShare 🩸
+# Aïma 🩸
 
 Application mobile gamifiée de sensibilisation et fidélisation des donneurs de sang en Nouvelle-Calédonie, développée pour l'association ADSB-NC.
 
 ## Concept
 
-BloodShare encourage les non-donneurs à passer à l'acte et fidélise les donneurs existants via un système de récompenses : points, badges et cartes à collectionner obtenus après chaque don ou participation à un événement.
+Aïma encourage les non-donneurs à passer à l'acte et fidélise les donneurs existants via un système de récompenses : points, badges et cartes à collectionner obtenus après chaque don ou participation à un événement.
 
 ## Stack technique
 

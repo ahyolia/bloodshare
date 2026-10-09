@@ -22,7 +22,7 @@ class FilleulInscritNotification extends Notification
             ->title('Votre code de parrainage a été utilisé ! 🤝')
             // 📖 Pas de pseudo/identité du filleul dans le message : il n'a encore rien
             //    validé (juste utilisé le code à l'inscription), et l'anonymat reste la règle.
-            ->body('Une nouvelle personne a rejoint BloodShare grâce à vous.');
+            ->body('Une nouvelle personne a rejoint Aïma grâce à vous.');
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

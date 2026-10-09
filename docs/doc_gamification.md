@@ -1,7 +1,7 @@
 # Gamification
 
 # Vue d'ensemble
-Blood Share utilise un système de gamification pour sensibiliser et fidéliser les donneurs de sang. L'utilisateur accumule des **points**, obtient des **boosters**, collectionne des **cartes**, débloque des **badges**, participe au **défi du mois** et complète des **quiz**.
+Aïma utilise un système de gamification pour sensibiliser et fidéliser les donneurs de sang. L'utilisateur accumule des **points**, obtient des **boosters**, collectionne des **cartes**, débloque des **badges**, participe au **défi du mois** et complète des **quiz**.
 Les points s'accumulent uniquement — ils ne se dépensent pas. Ils servent de **score de fidélité** visible sur le profil.
 # 1\. Points
 ## Principe

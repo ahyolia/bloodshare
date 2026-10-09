@@ -86,7 +86,7 @@ export default function ScanScreen() {
         </TouchableOpacity>
         <Ionicons name="camera-outline" size={56} color={Colors.aubergine} />
         <Text style={styles.permissionText}>
-          BloodShare a besoin d&apos;accéder à votre caméra pour scanner le QR Code après votre don.
+          Aïma a besoin d&apos;accéder à votre caméra pour scanner le QR Code après votre don.
         </Text>
         <TouchableOpacity style={styles.primaryButton} onPress={requestPermission}>
           <Text style={styles.primaryButtonText}>Autoriser la caméra</Text>

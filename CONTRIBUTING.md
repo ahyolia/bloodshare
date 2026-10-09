@@ -1,4 +1,4 @@
-# Contributing — BloodShare
+# Contributing — Aïma
 
 ## Types de travail
 
