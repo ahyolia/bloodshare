@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useFonts } from "expo-font";
 import {
   Stack,
   useRouter,
@@ -12,6 +13,16 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
   const navigationState = useRootNavigationState();
+
+  // 📖 Sur le web exporté, Netlify écarte les fichiers rangés sous `node_modules` :
+  //    la police d'@expo/vector-icons n'était jamais servie (icônes en carrés vides).
+  //    On charge donc une copie placée dans `assets/fonts/`, sous le même nom de
+  //    famille (`ionicons`) : le composant <Ionicons> la voit déjà chargée et ne va
+  //    plus chercher la sienne. ⚠️ À recopier depuis node_modules si
+  //    @expo/vector-icons change de version (montée de SDK Expo).
+  const [policesChargees, erreurPolices] = useFonts({
+    ionicons: require("../assets/fonts/Ionicons.ttf"),
+  });
 
   const inAuthGroup = segments[0] === "auth";
   const inChangerMdpGroup = segments[0] === "changer-mot-de-passe";
@@ -74,6 +85,11 @@ export default function RootLayout() {
     // 📖 On dépend de booléens et non de `segments` : useSegments() renvoie un nouveau
     // tableau à chaque rendu, ce qui redéclencherait cet effet en boucle.
   }, [inAuthGroup, inChangerMdpGroup, inTabsGroup, navigationState?.key, router]);
+
+  // 📖 On attend la police avant d'afficher l'app, sinon les icônes clignoteraient
+  //    en carrés le temps du chargement. En cas d'échec, on affiche quand même :
+  //    mieux vaut des icônes manquantes qu'une app bloquée.
+  if (!policesChargees && !erreurPolices) return null;
 
   return (
     <DialogueProvider>

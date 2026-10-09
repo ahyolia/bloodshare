@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Theme } from '../../constants/colors';
@@ -74,13 +74,16 @@ const RACCORD_LARGEUR =
   (RACCORD_DX * RACCORD_RAYON) / (BULLE_RAYON + RACCORD_RAYON);
 
 /**
- * 📖 Jeu d'icônes : MaterialCommunityIcons plutôt qu'Ionicons. Son tracé est
- * plus arrondi et plus doux, et surtout chaque pictogramme utilisé ici existe
- * en paire `nom` (plein) / `nom-outline` (contour) — c'est ce qui permet à
- * l'onglet actif de se remplir. Avant d'ajouter un onglet, vérifier que les
- * DEUX variantes existent, sinon l'état actif se casse silencieusement.
+ * 📖 Jeu d'icônes : Ionicons, comme le reste de l'app (une seule police à
+ * charger au démarrage, et un trait homogène partout). La barre utilisait
+ * MaterialCommunityIcons, abandonné car il fallait charger ~1,1 Mo de police
+ * en plus, rien que pour elle, sur la PWA.
+ * Chaque pictogramme utilisé ici existe en paire `nom` (plein) / `nom-outline`
+ * (contour) : c'est ce qui permet à l'onglet actif de se remplir. Avant
+ * d'ajouter un onglet, vérifier que les DEUX variantes existent, sinon l'état
+ * actif se casse silencieusement.
  */
-type NomIcone = keyof typeof MaterialCommunityIcons.glyphMap;
+type NomIcone = keyof typeof Ionicons.glyphMap;
 
 /**
  * L'onglet est-il celui de la page affichée ?
@@ -128,7 +131,7 @@ function BoutonOnglet({
       accessibilityLabel={label}
       accessibilityState={{ selected: focused }}
     >
-      <MaterialCommunityIcons
+      <Ionicons
         name={focused ? icone : (`${icone}-outline` as NomIcone)}
         size={24}
         color={couleur}
@@ -180,7 +183,7 @@ function BoutonDon({ onPress, ...props }: any) {
 
       <View style={styles.bulle}>
         <View style={styles.bulleInterieur}>
-          <MaterialCommunityIcons
+          <Ionicons
             name={focused ? 'water' : 'water-outline'}
             size={28}
             color={
@@ -215,7 +218,7 @@ export default function TabsLayout() {
         options={{
           title: 'Accueil',
           tabBarButton: (props) => (
-            <BoutonOnglet {...props} icone="home-variant" label="Accueil" />
+            <BoutonOnglet {...props} icone="home" label="Accueil" />
           ),
         }}
       />
@@ -224,7 +227,7 @@ export default function TabsLayout() {
         options={{
           title: 'Quiz',
           tabBarButton: (props) => (
-            <BoutonOnglet {...props} icone="lightbulb" label="Quiz" />
+            <BoutonOnglet {...props} icone="bulb" label="Quiz" />
           ),
         }}
       />
@@ -250,7 +253,7 @@ export default function TabsLayout() {
         options={{
           title: 'Cartes',
           tabBarButton: (props) => (
-            <BoutonOnglet {...props} icone="cards" label="Cartes" />
+            <BoutonOnglet {...props} icone="albums" label="Cartes" />
           ),
         }}
       />
@@ -259,7 +262,7 @@ export default function TabsLayout() {
         options={{
           title: 'Profil',
           tabBarButton: (props) => (
-            <BoutonOnglet {...props} icone="account-circle" label="Profil" />
+            <BoutonOnglet {...props} icone="person-circle" label="Profil" />
           ),
         }}
       />
