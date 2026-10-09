@@ -14,6 +14,8 @@ import { getNomMois } from './mois';
  *    dans Jest.
  * 📖 Si la chaîne n'a pas le format attendu, on la renvoie telle quelle : mieux
  *    vaut afficher la date brute que rien du tout ou faire planter l'écran.
+ * 📖 Le jour n'est pas vérifié selon le mois (« 2026-02-30 » donne « 30 février ») :
+ *    la date vient du back (`toDateString()`), donc d'une date réelle.
  */
 export function formaterDateLongue(dateIso: string): string {
   const morceaux = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateIso);
