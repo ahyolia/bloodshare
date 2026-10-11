@@ -93,7 +93,7 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
   "user": {
     "id": 12,
     "pseudo": "BloodHero42",
-    "avatar_url": "https://cdn.bloodshare.nc/avatars/3.webp",
+    "avatar_url": "https://cdn.aima.nc/avatars/3.webp",
     "statut_donneur": "quelques_dons",
     "points_cumules": 0,
     "code_parrainage": "XYZ98765"
@@ -134,7 +134,7 @@ Connecte un utilisateur déjà inscrit et renvoie un nouveau token à stocker.
   "user": {
     "id": 12,
     "pseudo": "BloodHero42",
-    "avatar_url": "https://cdn.bloodshare.nc/avatars/3.webp",
+    "avatar_url": "https://cdn.aima.nc/avatars/3.webp",
     "statut_donneur": "quelques_dons",
     "points_cumules": 250,
     "code_parrainage": "XYZ98765"
@@ -186,7 +186,7 @@ Récupère les informations complètes du profil de l'utilisateur actuellement c
 {
   "id": 12,
   "pseudo": "BloodHero42",
-  "avatar_url": "https://cdn.bloodshare.nc/avatars/3.webp",
+  "avatar_url": "https://cdn.aima.nc/avatars/3.webp",
   "statut_donneur": "quelques_dons",
   "sexe": "homme",
   "points_cumules": 250,
@@ -256,7 +256,7 @@ _Authentifié._ Endpoint central — appelé après le scan d'un QR Code (centre
     {
       "id": 2,
       "nom": "Donneur Confirmé",
-      "image_url": "https://cdn.bloodshare.nc/badges/2.webp"
+      "image_url": "https://cdn.aima.nc/badges/2.webp"
     }
   ]
 }

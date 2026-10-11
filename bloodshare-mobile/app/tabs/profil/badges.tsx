@@ -28,7 +28,7 @@ const INFO_PAR_DEFAUT: BadgeInfo = {
   emoji: '🏅',
   categorie: 'dons',
   description: 'Un nouveau badge à découvrir.',
-  condition: 'Continuez à utiliser BloodShare pour le débloquer.',
+  condition: 'Continuez à utiliser Aïma pour le débloquer.',
 };
 
 const infoDe = (nom: string): BadgeInfo => BADGES_INFO[nom] ?? INFO_PAR_DEFAUT;

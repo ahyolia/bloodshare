@@ -3,7 +3,7 @@
 // est couvert pour cette itération.
 
 self.addEventListener('push', (event) => {
-  let payload = { title: 'BloodShare', body: '' };
+  let payload = { title: 'Aïma', body: '' };
   try {
     payload = event.data.json();
   } catch {

@@ -1,4 +1,4 @@
-# BloodShare Backend — Contexte projet
+# Aïma Backend — Contexte projet
 
 ## Stack
 - Laravel 12 + PHP 8.3

@@ -20,7 +20,7 @@ class RetourInactiviteNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('On ne vous a pas vu récemment 👋')
-            ->body('BloodShare vous attend — revenez quand vous le souhaitez.');
+            ->body('Aïma vous attend — revenez quand vous le souhaitez.');
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

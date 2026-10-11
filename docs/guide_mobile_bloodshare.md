@@ -1,4 +1,4 @@
-# Guide de développement mobile — BloodShare 🩸
+# Guide de développement mobile — Aïma 🩸
 
 ## Stack technique
 
@@ -75,7 +75,7 @@ bloodshare-mobile/
 │   └── useApi.ts
 ├── constants/
 │   ├── api.ts                   → URL de base
-│   ├── colors.ts                → palette BloodShare
+│   ├── colors.ts                → palette Aïma
 │   └── groupes-sanguins.ts
 └── assets/
     ├── cartes/                  → images des 12+3 cartes
