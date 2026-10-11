@@ -1,0 +1,98 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Banniere;
+use App\Models\Contenu;
+use App\Models\Evenement;
+use App\Models\QuestionEligibilite;
+use App\Models\StockSang;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+// 📖 Ces routes sont publiques : aucun test ici ne se connecte.
+class ContenuPublicTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_liste_les_actualites_publiees_de_la_plus_recente_a_la_plus_ancienne(): void
+    {
+        Contenu::create(['type' => 'actualite', 'titre' => 'Ancienne', 'contenu' => 'Texte', 'statut' => 'publie', 'published_at' => now()->subWeek()]);
+        Contenu::create(['type' => 'actualite', 'titre' => 'Récente', 'contenu' => 'Corps', 'statut' => 'publie', 'published_at' => now()]);
+        Contenu::create(['type' => 'actualite', 'titre' => 'Brouillon', 'contenu' => 'X', 'statut' => 'brouillon']);
+        Contenu::create(['type' => 'fiche_info', 'titre' => 'Fiche', 'contenu' => 'X', 'statut' => 'publie']);
+
+        $this->getJson('/api/actualites')
+            ->assertOk()
+            ->assertJsonCount(2)
+            ->assertJsonPath('0.titre', 'Récente')
+            ->assertJsonPath('0.contenu', 'Corps');
+    }
+
+    public function test_liste_les_fiches_infos_publiees(): void
+    {
+        Contenu::create(['type' => 'fiche_info', 'titre' => 'Qui peut donner ?', 'contenu' => 'X', 'categorie' => 'Bases', 'statut' => 'publie', 'published_at' => now(), 'quiz_cta' => true]);
+        Contenu::create(['type' => 'fiche_info', 'titre' => 'Brouillon', 'contenu' => 'X', 'statut' => 'brouillon']);
+
+        $this->getJson('/api/fiches-infos')
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.titre', 'Qui peut donner ?')
+            ->assertJsonPath('0.quiz_cta', true);
+    }
+
+    public function test_renvoie_le_niveau_de_stock_par_groupe_sanguin(): void
+    {
+        StockSang::create(['groupe_sanguin' => 'O-', 'niveau' => 'critique']);
+        StockSang::create(['groupe_sanguin' => 'A+', 'niveau' => 'bon']);
+
+        $this->getJson('/api/stock-sang')
+            ->assertOk()
+            ->assertJsonCount(2)
+            ->assertJsonFragment(['groupe_sanguin' => 'O-', 'niveau' => 'critique']);
+    }
+
+    public function test_liste_uniquement_les_evenements_publies_a_venir(): void
+    {
+        Evenement::create(['titre' => 'Bientôt', 'lieu' => 'Nouméa', 'date_heure' => now()->addDays(2), 'statut' => 'publie']);
+        Evenement::create(['titre' => 'Demain', 'lieu' => 'Nouméa', 'date_heure' => now()->addDay(), 'statut' => 'publie']);
+        Evenement::create(['titre' => 'Passé', 'lieu' => 'Nouméa', 'date_heure' => now()->subDay(), 'statut' => 'publie']);
+        Evenement::create(['titre' => 'Annulé', 'lieu' => 'Nouméa', 'date_heure' => now()->addDay(), 'statut' => 'annule']);
+
+        $this->getJson('/api/evenements')
+            ->assertOk()
+            ->assertJsonCount(2)
+            ->assertJsonPath('0.titre', 'Demain')
+            ->assertJsonPath('1.titre', 'Bientôt');
+    }
+
+    public function test_liste_les_questions_d_eligibilite_actives_dans_l_ordre(): void
+    {
+        QuestionEligibilite::create(['ordre' => 2, 'question' => 'Deuxième ?', 'reponse_bloquante' => 'oui', 'actif' => true]);
+        QuestionEligibilite::create(['ordre' => 1, 'question' => 'Première ?', 'reponse_bloquante' => 'oui', 'actif' => true]);
+        QuestionEligibilite::create(['ordre' => 3, 'question' => 'Retirée ?', 'reponse_bloquante' => 'oui', 'actif' => false]);
+
+        $this->getJson('/api/eligibilite')
+            ->assertOk()
+            ->assertJsonCount(2)
+            ->assertJsonPath('0.question', 'Première ?')
+            ->assertJsonPath('1.question', 'Deuxième ?');
+    }
+
+    public function test_renvoie_la_derniere_banniere_active(): void
+    {
+        Banniere::create(['titre' => 'Inactive', 'message' => 'X', 'type' => 'info', 'active' => false]);
+        Banniere::create(['titre' => 'Urgence O-', 'message' => 'Venez donner', 'type' => 'urgence', 'active' => true]);
+
+        $this->getJson('/api/bannieres')
+            ->assertOk()
+            ->assertExactJson(['active' => true, 'type' => 'urgence', 'titre' => 'Urgence O-', 'message' => 'Venez donner']);
+    }
+
+    public function test_indique_l_absence_de_banniere_active(): void
+    {
+        Banniere::create(['titre' => 'Inactive', 'message' => 'X', 'active' => false]);
+
+        $this->getJson('/api/bannieres')->assertExactJson(['active' => false]);
+    }
+}
