@@ -39,6 +39,7 @@ export default function RootLayout() {
 
   const inAuthGroup = segments[0] === "auth";
   const inChangerMdpGroup = segments[0] === "changer-mot-de-passe";
+  const inPublicGroup = segments[0] === "documents";
   // 📖 `detail` et `notifications` = écrans ouverts par-dessus les onglets : pour le
   //    garde ci-dessous, c'est de la zone connectée au même titre que `tabs`. Sans ça,
   //    l'ouverture d'un de ces écrans renverrait aussitôt l'utilisateur sur /tabs.
@@ -90,6 +91,7 @@ export default function RootLayout() {
           inAuthGroup,
           inTabsGroup,
           inChangerMdpGroup,
+          inPublicGroup,
         });
         if (!destination) return;
 
@@ -113,7 +115,7 @@ export default function RootLayout() {
     };
     // 📖 On dépend de booléens et non de `segments` : useSegments() renvoie un nouveau
     // tableau à chaque rendu, ce qui redéclencherait cet effet en boucle.
-  }, [inAuthGroup, inChangerMdpGroup, inTabsGroup, surSplash, navigationState?.key, router]);
+  }, [inAuthGroup, inChangerMdpGroup, inTabsGroup, inPublicGroup, surSplash, navigationState?.key, router]);
 
   // 📖 On attend la police avant d'afficher l'app, sinon les icônes clignoteraient
   //    en carrés le temps du chargement. En cas d'échec, on affiche quand même :

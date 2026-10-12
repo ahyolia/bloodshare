@@ -10,10 +10,22 @@ const contexte = (modifs: Partial<ContexteNavigation> = {}): ContexteNavigation 
   inAuthGroup: false,
   inTabsGroup: false,
   inChangerMdpGroup: false,
+  inPublicGroup: false,
   ...modifs,
 });
 
 describe('choisirDestination', () => {
+  // 📖 Les CGU se lisent depuis l'inscription, avant d'avoir un token.
+  describe('documents juridiques (écrans publics)', () => {
+    it.each([
+      ['non connecté, onboarding pas vu', { token: null, onboardingVu: false }],
+      ['connecté', { token: '1|abc', onboardingVu: true }],
+      ['mot de passe à changer', { token: '1|abc', onboardingVu: true, doitChangerMdp: true }],
+    ])('ne redirige jamais (%s)', (_cas, modifs) => {
+      expect(choisirDestination(contexte({ inPublicGroup: true, ...modifs }))).toBeNull();
+    });
+  });
+
   describe('utilisateur non connecté', () => {
     it('envoie vers l’onboarding à la première ouverture', () => {
       expect(choisirDestination(contexte({ onboardingVu: false }))).toBe('/auth/onboarding');

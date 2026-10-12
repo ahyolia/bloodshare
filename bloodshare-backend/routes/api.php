@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Middleware\MetAJourDerniereActivite;
+use App\Models\DocumentJuridique;
 use App\Http\Controllers\Api\BadgeController;
 use App\Http\Controllers\Api\CarteController;
 use App\Http\Controllers\Api\ContenuController;
@@ -25,6 +26,10 @@ Route::get('/bannieres', [ContenuController::class, 'bannieres']);
 // génériques (CHT NC), aucune réponse individuelle n'y transite — contrainte
 // d'anonymat respectée.
 Route::get('/eligibilite', [ContenuController::class, 'eligibilite']);
+// 📖 Public : les CGU et la politique de confidentialité doivent pouvoir être lues
+//    avant de créer un compte (liens de l'écran d'inscription).
+Route::get('/documents-juridiques/{type}', [ContenuController::class, 'documentJuridique'])
+    ->whereIn('type', array_keys(DocumentJuridique::TYPES));
 
 // Auth (pas besoin d'être connecté)
 Route::prefix('auth')->group(function () {
