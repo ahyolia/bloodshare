@@ -2,12 +2,25 @@ import { useEffect } from "react";
 import { useFonts } from "expo-font";
 import {
   Stack,
+  usePathname,
   useRouter,
   useSegments,
   useRootNavigationState,
 } from "expo-router";
 import { getToken, getUser } from "../stores/auth.store";
 import { DialogueProvider } from "../components/DialogueProvider";
+import { choisirDestination } from "../utils/destination";
+import { getOnboardingVu } from "../utils/preferences";
+
+/** Durée minimale d'affichage du splash au lancement (critère du ticket FO-03). */
+const DUREE_MIN_SPLASH_MS = 1500;
+
+/**
+ * 📖 Instant d'ouverture de l'app. Mesuré au chargement du fichier, qui n'a lieu
+ *    qu'une fois, et non pendant le rendu : un composant React doit rester pur
+ *    (règle react-hooks/purity), et `Date.now()` change à chaque appel.
+ */
+const DEBUT_LANCEMENT = Date.now();
 
 export default function RootLayout() {
   const router = useRouter();
@@ -34,6 +47,11 @@ export default function RootLayout() {
     segments[0] === "detail" ||
     segments[0] === "notifications" ||
     inChangerMdpGroup;
+    
+  // 📖 Au lancement, on est sur `app/index.tsx` (le splash), dont le chemin est "/".
+  //    On teste le chemin et non `segments` : avec les routes typées, useSegments()
+  //    ne prévoit pas de tableau vide, ce qui rendrait la condition fragile.
+  const surSplash = usePathname() === "/";
 
   useEffect(() => {
     // Attendre que la navigation soit prête
@@ -56,27 +74,38 @@ export default function RootLayout() {
       .then(async (token) => {
         if (cancelled) return;
 
-        if (!token && !inAuthGroup) {
-          router.replace("/auth/login");
-          return;
+        // 📖 On ne lit que ce qui sert à la décision : l'onboarding pour un visiteur,
+        //    le profil pour un utilisateur connecté.
+        //    Si la lecture de l'onboarding échoue, on fait comme s'il était déjà vu :
+        //    mieux vaut le manquer que rester bloqué sur le splash.
+        const onboardingVu =
+          token || inAuthGroup ? true : await getOnboardingVu().catch(() => true);
+        const user = token ? await getUser().catch(() => null) : null;
+        if (cancelled) return;
+
+        const destination = choisirDestination({
+          token,
+          onboardingVu,
+          doitChangerMdp: user?.doit_changer_mdp ?? false,
+          inAuthGroup,
+          inTabsGroup,
+          inChangerMdpGroup,
+        });
+        if (!destination) return;
+
+        // 📖 Seul le départ du splash est retardé, pour qu'il reste visible au moins
+        //    DUREE_MIN_SPLASH_MS. Toutes les autres redirections restent immédiates.
+        if (surSplash) {
+          const restant = DUREE_MIN_SPLASH_MS - (Date.now() - DEBUT_LANCEMENT);
+          if (restant > 0) {
+            await new Promise((resolve) => setTimeout(resolve, restant));
+          }
+          // 📖 Pendant l'attente, l'effet a pu être relancé (navigation, login…) :
+          //    on ne redirige pas avec une décision devenue périmée.
+          if (cancelled) return;
         }
 
-        if (token) {
-          // 📖 Un mdp réinitialisé par un admin (voir UserResource) oblige l'utilisateur à
-          //    en choisir un nouveau avant d'accéder au reste de l'app, où qu'il navigue.
-          const user = await getUser().catch(() => null);
-          if (user?.doit_changer_mdp && !inChangerMdpGroup) {
-            router.replace("/changer-mot-de-passe?force=1");
-            return;
-          }
-
-          if (!inTabsGroup) {
-            // 📖 `!inTabsGroup` et non `inAuthGroup` : au lancement on est sur `app/index.tsx`
-            // (ni `auth`, ni `tabs`). Avec `inAuthGroup`, aucune des deux branches ne se
-            // déclenchait et l'utilisateur connecté restait bloqué sur l'écran de chargement.
-            router.replace("/tabs");
-          }
-        }
+        router.replace(destination);
       });
 
     return () => {
@@ -84,7 +113,7 @@ export default function RootLayout() {
     };
     // 📖 On dépend de booléens et non de `segments` : useSegments() renvoie un nouveau
     // tableau à chaque rendu, ce qui redéclencherait cet effet en boucle.
-  }, [inAuthGroup, inChangerMdpGroup, inTabsGroup, navigationState?.key, router]);
+  }, [inAuthGroup, inChangerMdpGroup, inTabsGroup, surSplash, navigationState?.key, router]);
 
   // 📖 On attend la police avant d'afficher l'app, sinon les icônes clignoteraient
   //    en carrés le temps du chargement. En cas d'échec, on affiche quand même :
