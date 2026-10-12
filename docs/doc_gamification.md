@@ -10,7 +10,6 @@ Les points s'accumulent tout au long de l'utilisation de l'appli. Ils reflètent
 
 | Action | Points | Conditions |
 | ---| ---| --- |
-| Présence à un événement (QR Code event) | 50 pts | 1 fois par événement |
 | Quiz complété | 30 pts | 1 fois par quiz (rejouable sans points) |
 | Parrainage validé (parrain) | 75 pts | Par filleul qui fait son 1er don |
 | Doublon carte commune | 10 pts | Conversion automatique |
@@ -19,6 +18,7 @@ Les points s'accumulent tout au long de l'utilisation de l'appli. Ils reflètent
 ## Règles importantes
 *   **Un don ne rapporte jamais de points** (règle éthique ADSB-NC) : ni le don lui-même, ni ce qu'il déclenche pour le donneur (validation de son parrainage en tant que filleul, objectif d'un défi atteint). Le don est récompensé par des cartes et des badges uniquement.
 *   Le **parrain** reste récompensé en points : il gagne pour avoir sensibilisé quelqu'un d'autre, pas pour son propre don
+*   La **présence à un événement** ne rapporte pas de points non plus : un événement est souvent une collecte de sang, y donner des points reviendrait à récompenser le don (cf. `contrat_API.md`, `POST /scan`). Elle est récompensée par la carte Événement et le badge « Toujours partant »
 *   Le **quiz** peut être rejoué mais les points ne sont donnés qu'à la première complétion — `points_attribues: true/false` dans `user_quiz`
 *   Le **parrainage** est validé automatiquement quand le filleul effectue son premier don
 *   Les **doublons** de cartes sont automatiquement convertis en points — jamais ajoutés en double dans la collection
@@ -268,7 +268,7 @@ Les deux reçoivent une notification
 Action utilisateur           Points    Booster   Badge possible
 ──────────────────────────────────────────────────────────────
 Don validé (QR Code centre)  —         ✓         Premier Pas, Donneur Confirmé...
-Événement (QR Code event)    +50       ✓         —
+Événement (QR Code event)    —         ✓         Toujours partant (3 cartes)
 Quiz complété (1ère fois)    +30       ✗         Quiz Master
 Défi du mois complété        —         ✗         Objectif atteint
 Parrainage validé (parrain)  +75       ✗         Ambassadeur
