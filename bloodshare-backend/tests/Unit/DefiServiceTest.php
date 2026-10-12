@@ -64,9 +64,9 @@ class DefiServiceTest extends TestCase
         $this->assertSame('actif', $defi->fresh()->statut);
     }
 
-    public function test_termine_le_defi_et_distribue_les_points_quand_l_objectif_est_atteint(): void
+    public function test_termine_le_defi_et_marque_les_contributeurs_quand_l_objectif_est_atteint(): void
     {
-        $defi = $this->creerDefi(['objectif_chiffre' => 2, 'points_attribues' => 30]);
+        $defi = $this->creerDefi(['objectif_chiffre' => 2]);
         $premier = $this->donneurAvecDon();
         app(DefiService::class)->enregistrerContribution($premier);
         $second = $this->donneurAvecDon();
@@ -75,10 +75,21 @@ class DefiServiceTest extends TestCase
 
         $this->assertSame('termine', $defi->fresh()->statut);
         foreach ([$premier, $second] as $user) {
-            $this->assertSame(30, $user->fresh()->points_cumules);
-            $this->assertDatabaseHas('points_historique', ['user_id' => $user->id, 'points' => 30, 'source' => 'defi']);
             $this->assertTrue(UserDefi::where('user_id', $user->id)->sole()->complete);
         }
+    }
+
+    // 📖 Règle éthique ADSB-NC : un don ne rapporte jamais de points. Les contributeurs d'un
+    //    défi sont ceux qui ont donné : aucun point ne doit leur être distribué.
+    public function test_ne_distribue_aucun_point_aux_contributeurs(): void
+    {
+        $this->creerDefi(['objectif_chiffre' => 1]);
+        $user = $this->donneurAvecDon();
+
+        app(DefiService::class)->enregistrerContribution($user);
+
+        $this->assertSame(0, $user->fresh()->points_cumules);
+        $this->assertDatabaseCount('points_historique', 0);
     }
 
     public function test_ne_compte_que_les_dons_valides_du_mois_en_cours(): void
@@ -94,17 +105,6 @@ class DefiServiceTest extends TestCase
         $this->assertSame('actif', $defi->fresh()->statut);
     }
 
-    public function test_ne_distribue_aucun_point_si_le_defi_n_en_prevoit_pas(): void
-    {
-        $defi = $this->creerDefi(['objectif_chiffre' => 1, 'points_attribues' => 0]);
-        $user = $this->donneurAvecDon();
-
-        app(DefiService::class)->enregistrerContribution($user);
-
-        $this->assertSame('termine', $defi->fresh()->statut);
-        $this->assertDatabaseCount('points_historique', 0);
-    }
-
     public function test_un_defi_sans_objectif_chiffre_ne_se_termine_jamais(): void
     {
         $defi = $this->creerDefi(['objectif_chiffre' => null]);
@@ -114,16 +114,14 @@ class DefiServiceTest extends TestCase
         $this->assertSame('actif', $defi->fresh()->statut);
     }
 
-    public function test_ne_redistribue_pas_les_points_d_un_defi_deja_termine(): void
+    public function test_un_don_apres_la_fin_du_defi_ne_compte_plus(): void
     {
-        $defi = $this->creerDefi(['objectif_chiffre' => 1, 'points_attribues' => 30]);
-        $user = $this->donneurAvecDon();
-        app(DefiService::class)->enregistrerContribution($user);
+        $defi = $this->creerDefi(['objectif_chiffre' => 1]);
+        app(DefiService::class)->enregistrerContribution($this->donneurAvecDon());
 
         // Le défi est terminé : un nouveau don ne trouve plus de défi actif.
         app(DefiService::class)->enregistrerContribution($this->donneurAvecDon());
 
-        $this->assertSame(30, $user->fresh()->points_cumules);
         $this->assertSame(1, UserDefi::where('defi_id', $defi->id)->count());
     }
 
@@ -134,7 +132,6 @@ class DefiServiceTest extends TestCase
             'type' => 'communautaire',
             'periode' => 'mensuel',
             'objectif_chiffre' => 10,
-            'points_attribues' => 20,
             'statut' => 'actif',
         ], $attributs));
     }

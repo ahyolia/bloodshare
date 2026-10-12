@@ -109,7 +109,6 @@ class DemoSeeder extends Seeder
             'type' => 'communautaire',
             'periode' => 'mensuel',
             'objectif_chiffre' => 50,
-            'points_attribues' => 15,
             'date_fin' => now()->endOfMonth(),
             'statut' => 'actif',
         ]);

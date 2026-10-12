@@ -49,16 +49,26 @@ class ParrainageServiceTest extends TestCase
         $this->assertNotNull($parrainage->valide_at);
     }
 
-    public function test_credite_75_points_au_parrain_et_50_au_filleul(): void
+    public function test_credite_75_points_au_parrain(): void
     {
         $this->creerParrainage();
 
         $this->valider();
 
         $this->assertSame(75, $this->parrain->fresh()->points_cumules);
-        $this->assertSame(50, $this->filleul->fresh()->points_cumules);
         $this->assertDatabaseHas('points_historique', ['user_id' => $this->parrain->id, 'points' => 75, 'source' => 'parrainage']);
-        $this->assertDatabaseHas('points_historique', ['user_id' => $this->filleul->id, 'points' => 50, 'source' => 'parrainage']);
+    }
+
+    // 📖 Règle éthique ADSB-NC : un don ne rapporte jamais de points. Le filleul est validé
+    //    par son propre premier don, il ne doit donc rien gagner en points.
+    public function test_ne_credite_aucun_point_au_filleul_pour_son_premier_don(): void
+    {
+        $this->creerParrainage();
+
+        $this->valider();
+
+        $this->assertSame(0, $this->filleul->fresh()->points_cumules);
+        $this->assertDatabaseMissing('points_historique', ['user_id' => $this->filleul->id]);
     }
 
     public function test_ne_valide_qu_une_seule_fois(): void

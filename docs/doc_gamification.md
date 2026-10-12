@@ -1,7 +1,7 @@
 # Gamification
 
 # Vue d'ensemble
-Aïma utilise un système de gamification pour sensibiliser et fidéliser les donneurs de sang. L'utilisateur accumule des **points**, obtient des **boosters**, collectionne des **cartes**, débloque des **badges**, participe au **défi du mois** et complète des **quiz**.
+Aïma utilise un système de gamification pour sensibiliser et fidéliser les donneurs de sang. L'utilisateur accumule des **points**, collectionne des **cartes**, débloque des **badges**, participe au **défi du mois** et complète des **quiz**.
 Les points s'accumulent uniquement — ils ne se dépensent pas. Ils servent de **score de fidélité** visible sur le profil.
 # 1\. Points
 ## Principe
@@ -10,156 +10,122 @@ Les points s'accumulent tout au long de l'utilisation de l'appli. Ils reflètent
 
 | Action | Points | Conditions |
 | ---| ---| --- |
-| Don effectué (QR Code centre) | 100 pts | 1 fois par don validé |
-| Présence à un événement (QR Code event) | 50 pts | 1 fois par événement |
-| Quiz complété | 30 pts | 1 fois par quiz (rejouable sans points) |
-| Défi du mois complété | Variable | Défini par l'admin |
+| Quiz complété | Défini par quiz dans le BO, proportionnel au score | 1 fois par quiz (rejouable sans points) |
 | Parrainage validé (parrain) | 75 pts | Par filleul qui fait son 1er don |
-| Parrainage validé (filleul) | 50 pts | À la validation du parrainage |
-| Doublon carte commune | 10 pts | Conversion automatique |
-| Doublon carte rare | 25 pts | Conversion automatique |
+
+Ce sont les **deux seules** sources de points. Le don, la présence à un événement, le défi du mois et les cartes n'en rapportent pas.
 
 ## Règles importantes
-*   Les points du **don** ne sont attribués qu'une fois le QR Code scanné et validé
+*   **Un don ne rapporte jamais de points** (règle éthique ADSB-NC) : ni le don lui-même, ni ce qu'il déclenche pour le donneur (validation de son parrainage en tant que filleul, objectif d'un défi atteint). Le don est récompensé par des cartes et des badges uniquement.
+*   Le **parrain** reste récompensé en points : il gagne pour avoir sensibilisé quelqu'un d'autre, pas pour son propre don
+*   La **présence à un événement** ne rapporte pas de points non plus : un événement est souvent une collecte de sang, y donner des points reviendrait à récompenser le don (cf. `contrat_API.md`, `POST /scan`). Elle est récompensée par la carte Événement et le badge « Toujours partant »
 *   Le **quiz** peut être rejoué mais les points ne sont donnés qu'à la première complétion — `points_attribues: true/false` dans `user_quiz`
 *   Le **parrainage** est validé automatiquement quand le filleul effectue son premier don
-*   Les **doublons** de cartes sont automatiquement convertis en points — jamais ajoutés en double dans la collection
+*   Une carte déjà possédée ne rapporte **rien en échange** (ni points, ni autre carte) : voir § 2
 ## Traçabilité
-Chaque gain de points est enregistré dans `points_historique` avec la source et la date.
-# 2\. Boosters
+Chaque gain de points est enregistré dans `points_historique` avec la source et la date, et cumulé dans `users.points_cumules`.
+## Niveaux
+Les points cumulés déterminent un niveau (`NiveauService`), affiché dans l'en-tête et sur le profil avec la progression vers le palier suivant :
+
+| Niveau | Libellé | Points cumulés |
+| ---| ---| --- |
+| 1 | Curieux | 0 – 99 |
+| 2 | Informé | 100 – 299 |
+| 3 | Engagé | 300 – 599 |
+| 4 | Ambassadeur | 600 – 999 |
+| 5 | Héros | 1000 et plus |
+
+Le passage à un niveau supérieur déclenche une notification « niveau atteint ».
+# 2\. Cartes
 ## Principe
-Un booster est un paquet de 3 cartes à collectionner obtenu après certaines actions. L'écran d'ouverture s'affiche automatiquement après le scan d'un QR Code — l'utilisateur ne peut pas reporter l'ouverture. Les boosters non ouverts ne sont pas visibles dans l'application.
-## Obtention
+Des cartes-souvenirs à collectionner, attribuées **directement** par une action précise : pas de tirage aléatoire, pas de booster, pas de rareté. Chaque carte appartient à une catégorie (colonne `categorie` de `cartes`), gérée dans le backoffice (titre, image, activation).
+## Catégories
 
-| Action | Booster attribué |
-| ---| --- |
-| Don validé (scan QR Code centre) | ✓ 1 booster |
-| Présence à un événement (scan QR Code event) | ✓ 1 booster |
+| Catégorie | Nombre | Obtention | Cumulable |
+| ---| ---| ---| --- |
+| `mois_don` — Carte du mois | 12 (une par mois) | Don validé au centre : carte du mois en cours | Non |
+| `evenement` — Carte Événement | 1 (générique) | Présence validée à un événement (1 fois par événement) | Oui (`quantite`) |
+| `parrain` — Carte Parrain | 1 | Premier parrainage validé | Non |
+| `filleul` — Carte Filleul | 1 | Validation de son parrainage (son 1er don) | Non |
 
-## Composition d'un booster
-
-```java
-1 booster = 3 cartes
-├── 2 cartes communes (tirées aléatoirement parmi les 8 communes)
-└── 1 carte rare garantie (tirée aléatoirement parmi les 4 rares)
-```
-
-## Règles importantes
-*   Le booster s'ouvre **immédiatement** après le scan — pas d'inventaire de boosters en attente
-*   L'ouverture est irréversible
-*   Les doublons sont convertis automatiquement en points (`source: "doublon"` dans `points_historique`)
-*   Le tirage est géré côté backend Laravel au moment de l'ouverture
-## Flux technique
+## Carte déjà possédée
+*   **Carte du mois** : si l'utilisateur la possède déjà (2e don dans le même mois de l'année, l'année suivante...), le don est bien validé mais aucune carte n'est redonnée. La réponse du scan l'indique (`deja_possedee: true`) et l'écran de résultat affiche « Carte déjà obtenue ». **Rien n'est donné en échange**, ni points ni autre carte.
+*   **Carte Événement** : elle est cumulable, chaque nouvel événement incrémente `quantite` au lieu de créer une ligne en double.
+*   **Cartes Parrain / Filleul** : données une seule fois ; les filleuls suivants n'ajoutent rien côté cartes.
+*   Une contrainte unique `(user_id, carte_id)` sur `user_cartes` garantit qu'une même carte n'apparaît jamais deux fois dans la collection, même en cas de scans simultanés.
+## Flux technique (don au centre)
 
 ```sql
-User scanne le QR Code
+User scanne le QR Code du centre
         ↓
-Validation du scan (points attribués)
+Contrôle d'éligibilité (56 j homme / 84 j femme depuis le dernier don validé)
         ↓
-Écran d'ouverture de booster affiché automatiquement
+Don enregistré (statut: valide) — aucun point
         ↓
-Animation d'ouverture
+Carte du mois en cours :
+├── pas encore possédée → ajout dans user_cartes
+└── déjà possédée       → rien (deja_possedee: true)
         ↓
-3 cartes révélées (2 communes + 1 rare)
+Parrainage validé si filleul, contribution au défi, synchronisation des badges
         ↓
-Pour chaque carte tirée :
-├── User ne possède pas encore cette carte
-│   └── Ajout dans user_cartes
-└── User possède déjà cette carte
-    └── +points dans points_historique (source: "doublon")
-        ├── Carte commune → +10 pts
-        └── Carte rare    → +25 pts
-        ↓
-Booster marqué ouvert en BDD (statut: ouvert, ouvert_at: now())
-        ↓
-Retour à l'écran précédent
-```
-
-# 3\. Cartes
-## Principe
-12 cartes à collectionner réparties en 2 raretés. L'utilisateur les obtient uniquement en ouvrant des boosters.
-## Catalogue (V1)
-
-| Rareté | Nombre | Rôle dans le booster |
-| ---| ---| --- |
-| Commune | 8 cartes | 2 tirées aléatoirement |
-| Rare | 4 cartes | 1 garantie par booster |
-
-## Thématique suggérée
-Les cartes représentent des figures ou moments liés au don du sang :
-_Illustrations à définir !_
-
-```scss
-Communes (8)
-├── Le Premier Don
-├── Le Donneur Régulier
-├── Le Groupe O-
-├── Le Don de Plaquettes
-├── Le Don de Plasma
-├── La Journée Mondiale
-├── Le Bénévole
-└── Le Centre CNT
-
-Rares (4)
-├── Le Donneur Universel
-├── Le Héros Silencieux
-├── Le Sang Rare
-└── Le Champion du Don
-```
-
-## Doublons
-Lorsqu'un utilisateur reçoit un exemplaire d'une carte qu'il possède déjà, la carte est automatiquement convertie en points :
-
-```plain
-Doublon commun → +10 pts
-Doublon rare   → +25 pts
+Écran de résultat (carte obtenue + badges débloqués)
 ```
 
 ## Affichage
 *   Onglet **Cartes** de l'appli mobile
-*   Collection complète visible (cartes non obtenues affichées en grisé)
-*   Pourcentage de collection complétée affiché
-# 4\. Badges
+*   Grille des 12 cartes du mois (non obtenues affichées en grisé) et pourcentage de complétion (sur 12)
+*   Carte Événement avec son nombre d'exemplaires, cartes Parrain / Filleul
+# 3\. Badges
 ## Principe
-Les badges récompensent des jalons importants. Ils sont attribués automatiquement par le système quand la condition est remplie.
-## Badges suggérés (V1)
+Les badges récompensent des jalons importants. Ils sont attribués automatiquement par le système quand la condition est remplie, une seule fois chacun, et ne rapportent pas de points.
+## Badges en place (V1)
+Créés par `BadgeSeeder` (et les migrations `seed_cartes_et_quiz_badges` / `seed_defis_badges` pour les environnements sans seeder). Un badge a une condition de l'un de deux types : `nb_dons` (seuil de dons validés, `condition_valeur`) ou `action_specifique` (identifiant technique, `action_specifique`).
 
-| Badge | Condition | Type condition |
-| ---| ---| --- |
-| Premier Pas | 1er don effectué | action\_specifique |
-| Donneur Confirmé | 3 dons effectués | nb\_dons: 3 |
-| Fidèle au Don | 5 dons effectués | nb\_dons: 5 |
-| Collectionneur | 6 cartes obtenues | action\_specifique |
-| Ambassadeur | 1 parrainage validé | action\_specifique |
-| Quiz Master | 5 quiz complétés | action\_specifique |
-| Défi du mois | 1er défi du mois complété | action\_specifique |
+| Thème | Badge | Condition | Type condition |
+| ---| ---| ---| --- |
+| Don | Premier Pas | 1er don validé | action\_specifique : `premier_don` |
+| Don | Donneur Confirmé | 3 dons validés | nb\_dons : 3 |
+| Don | Fidèle au Don | 5 dons validés | nb\_dons : 5 |
+| Don | Compagnon de route | 10 dons validés | nb\_dons : 10 |
+| Quiz | Grain de curiosité | 1er quiz complété | action\_specifique : `premier_quiz` |
+| Quiz | Quiz Master | 5 quiz complétés | action\_specifique : `cinq_quiz` |
+| Quiz | Incollable | Tous les quiz actifs complétés | action\_specifique : `toutes_categories_quiz` |
+| Parrainage | Ambassadeur | 1er parrainage validé (parrain) | action\_specifique : `premier_parrainage` |
+| Parrainage | Bien entouré | 3 parrainages validés (parrain) | action\_specifique : `trois_parrainages` |
+| Parrainage | Bien accueilli | Inscription avec un code de parrainage (filleul) | action\_specifique : `inscrit_avec_code` |
+| Cartes | Belle collection | 6 cartes du mois différentes | action\_specifique : `six_cartes_mois` |
+| Cartes | Année complète | Les 12 cartes du mois | action\_specifique : `douze_cartes_mois` |
+| Cartes | Toujours partant | 3 cartes Événement (3 événements) | action\_specifique : `trois_cartes_evenement` |
+| Défi | Esprit d'équipe | Avoir contribué à un défi (au moins 1 don compté) | action\_specifique : `defi_contribue` |
+| Défi | Objectif atteint | Avoir contribué à un défi dont l'objectif a été atteint | action\_specifique : `defi_remporte` |
+
+Les quiz comptés sont uniquement ceux encore **actifs** : un quiz complété puis désactivé ne compte plus. Un badge désactivé dans le BO n'est plus attribué. Le BO permet de créer d'autres badges, en choisissant le type de condition et, pour `action_specifique`, une action dans la liste ci-dessus.
 
 ## Attribution automatique
+`BadgeService::synchroniser()` recalcule l'état réel de l'utilisateur (dons validés, quiz complétés, parrainages, cartes, défis) et attribue **tout** badge éligible pas encore obtenu, quelle que soit l'action qui l'a rendu éligible.
 
 ```bash
-Après chaque action (don, scan, quiz, défi...)
+Scan validé (don ou événement) / quiz soumis / inscription avec un code /
+parrainage validé (côté parrain) / consultation de GET /badges
         ↓
-Laravel vérifie toutes les conditions de badges
+BadgeService::synchroniser() vérifie toutes les conditions
         ↓
 Si condition remplie et badge pas encore obtenu
         ↓
-Entrée créée dans user_badges
-Notification envoyée à l'utilisateur
+Entrée créée dans user_badges (contrainte unique : jamais en double)
+Notification « badge débloqué » envoyée après validation de l'action
 ```
+
+L'appel lors de la consultation de `GET /badges` sert de **rattrapage** : un don saisi autrement qu'au scan (BO, import) ou une condition remplie avant l'ajout d'un badge donne quand même le badge à la prochaine ouverture de l'écran.
 
 ## Affichage
 *   Section **Badges** dans l'onglet Profil
 *   Badge affiché en couleur si obtenu, grisé sinon
-# 5\. Défi du mois
+# 4\. Défi du mois
 ## Principe
 Un objectif collectif renouvelé chaque mois — tous les utilisateurs contribuent ensemble. Visible sur l'écran d'accueil.
-### Types d'objectifs communautaires
-
-```bash
-Volume        → "100 dons à Nouméa en mai"
-Groupe sanguin → "50 dons O− ce mois"
-Recrutement   → "30 nouveaux parrainages validés"
-```
+### Type d'objectif
+Un seul type est géré : un **nombre de dons validés dans le mois**, tous donneurs confondus (`objectif_chiffre`). Les défis par groupe sanguin ou par nombre de parrainages ne sont pas implémentés (le groupe sanguin n'est d'ailleurs jamais stocké, contrainte d'anonymat).
 
 #### Exemple
 
@@ -167,18 +133,24 @@ Recrutement   → "30 nouveaux parrainages validés"
 "Ce mois-ci, atteignons 100 dons collectifs !"
 ├── Objectif : 100 dons
 ├── Progression : X / 100 (temps réel)
-├── Récompense : points bonus pour chaque participant
-│   + badge spécial si objectif atteint
+├── Récompense : badge « Objectif atteint » si objectif atteint
+│   (pas de points : les participants sont des donneurs)
 └── Visible sur l'écran Accueil
 ```
 
 ## Règles
-*   Un seul défi actif à la fois
-*   Participation **automatique** dès qu'un don est validé pendant la période du défi
-*   Si l'objectif est atteint → tous les participants reçoivent les points attribués + badge spécial
-*   Le défi est renouvelé chaque mois par l'admin depuis le backoffice
-*   La progression est mise à jour en temps réel dans `user_defis.progression`
-# 6\. Quiz
+*   Un seul défi actif à la fois : le backend prend le défi au statut `actif` (statuts possibles : `brouillon`, `actif`, `termine`)
+*   Participation **automatique** dès qu'un don est validé pendant que le défi est actif
+*   **Progression collective** (`progression_actuelle`) : nombre de dons validés du mois en cours, tous utilisateurs confondus
+*   **Progression personnelle** (`ma_progression`) : nombre de dons de l'utilisateur comptés pour ce défi, dans `user_defis.progression`
+*   Quand la progression collective atteint `objectif_chiffre`, le défi passe à `termine` et chaque contributeur est marqué `complete` : badges « Esprit d'équipe » (dès la 1re contribution) et « Objectif atteint », **sans points** (un don ne rapporte jamais de points)
+*   Un défi terminé reste affiché sur l'accueil pour montrer le résultat, jusqu'à ce qu'un nouveau défi soit activé
+*   Le défi est créé et activé chaque mois par l'admin depuis le backoffice (titre, description, objectif, date de fin)
+## Notifications
+*   Activation d'un défi → notification « nouveau défi » à tous les utilisateurs
+*   Chaque lundi → notification de progression aux contributeurs du défi en cours
+*   Objectif atteint → notification « défi réussi » aux contributeurs
+# 5\. Quiz
 ## Principe
 Séries de quiz de culture générale sur le don du sang. Disponibles dans l'onglet **Quiz** de l'appli.
 ## Structure
@@ -192,47 +164,45 @@ Catégorie (ex: "Les bases du don")
 ```
 
 ## Règles
-*   Points attribués **une seule fois** à la première complétion
-*   Quiz **rejouable** après complétion sans gagner de points supplémentaires
-*   Ordre des questions peut être aléatoire (`aleatoire: true/false`)
-*   Types de questions : réponse unique ou réponses multiples
-## Catégories prévues pour la V1 (codées via seeders)
+*   Points attribués **une seule fois**, à la première complétion, **proportionnellement au score** : `points du quiz × bonnes réponses / nombre de questions`, arrondi à l'entier (ex. 4/5 sur un quiz à 30 pts → 24 pts). Un score de 0 ne rapporte rien
+*   Quiz **rejouable** après complétion sans gagner de points supplémentaires (le score de la 1re complétion est conservé)
+*   Une question à réponses multiples n'est juste que si **toutes** les bonnes réponses sont cochées et aucune mauvaise
+*   Ordre des questions aléatoire ou fixe selon le quiz (`aleatoire: true/false`)
+*   Les bonnes réponses ne sont **jamais envoyées** à l'application : la correction se fait côté serveur à la soumission
+*   **Reprise** : les réponses données sont enregistrées au fil de l'eau (`user_quiz.progression`) ; un quiz commencé apparaît dans « Quiz en cours » et reprend là où l'utilisateur s'était arrêté
+## Catégories
+Trois catégories, figées dans le formulaire du backoffice pour garantir un regroupement propre côté mobile :
 
 ```yaml
-Catégorie 1 — Les bases du don
-├── Quiz : Qui peut donner ?
-├── Quiz : Comment se préparer ?
-└── Quiz : Après le don
-
-Catégorie 2 — Les groupes sanguins
-├── Quiz : Connaître son groupe
-├── Quiz : Compatibilités
-└── Quiz : Groupes rares
-
-Catégorie 3 — L'association ADSB-NC
-├── Quiz : Rôle de l'association
-├── Quiz : Le centre CNT
-└── Quiz : Historique du don en NC
+Les bases du don
+Les groupes sanguins
+L'association ADSB-NC
 ```
 
+Les quiz eux-mêmes (questions, réponses, points, statut) sont créés dans le backoffice. En local, `DemoSeeder` en crée trois d'exemple.
 ## Scoring
 
 ```yaml
-Quiz complété pour la 1ère fois
+Quiz soumis pour la 1ère fois
         ↓
-Score calculé (nb bonnes réponses / total)
-Points attribués dans points_historique
-user_quiz mis à jour (complete: true, points_attribues: true)
+Correction côté serveur : score = nombre de bonnes réponses
+Points = points du quiz × score / total (arrondi), s'ils sont > 0 → points_historique
+user_quiz mis à jour (complete: true, points_attribues: true, progression effacée)
+Badges de quiz vérifiés
         ↓
 Quiz rejoué
         ↓
-Score calculé mais points_attribues: true → pas de nouveaux points
+Score calculé et renvoyé, mais aucun nouveau point
 nb_tentatives incrémenté
 ```
+## Notifications
+*   Quiz du jour, chaque matin
+*   Rappel unique, 3 jours après un quiz commencé et toujours pas terminé
+*   Quiz activé dans le backoffice → notification « nouveau quiz » à tous les utilisateurs
 
-# 7\. Parrainage
+# 6\. Parrainage
 ## Principe
-Un utilisateur peut parrainer un proche pour l'encourager à donner son sang. Les deux parties sont récompensées.
+Un utilisateur peut parrainer un proche pour l'encourager à donner son sang. Les deux parties sont récompensées : le parrain en points, carte et badges, le filleul en carte et badge uniquement (il est validé par son propre don, qui ne rapporte jamais de points).
 ## Flux
 
 ```rust
@@ -241,65 +211,76 @@ Parrain partage son code de parrainage
 Filleul s'inscrit avec le code
         ↓
 Entrée créée dans parrainages (statut: en_attente)
+Filleul reçoit le badge "Bien accueilli" (dès l'inscription, sans attendre de don)
+Parrain notifié : « votre code de parrainage a été utilisé »
         ↓
 Filleul effectue son 1er don
         ↓
 Parrainage validé automatiquement (statut: valide)
         ↓
-Parrain reçoit 75 pts + badge "Ambassadeur"
-Filleul reçoit 50 pts + badge "Filleul"
-Les deux reçoivent une notification
+Parrain reçoit 75 pts + carte Parrain + badge "Ambassadeur" (1er filleul)
+Parrain notifié : « votre filleul a fait son premier don »
+Filleul reçoit la carte Filleul (pas de points : c'est son propre don)
 ```
 
 ## Règles
 *   Un utilisateur peut parrainer plusieurs personnes, sans plafond de points : chaque filleul validé rapporte +75 pts au parrain
-*   La **carte Parrain** (et le badge Ambassadeur) ne sont donnés qu'**une seule fois**, au premier parrainage validé : les filleuls suivants n'ajoutent que des points
+*   La **carte Parrain** (et le badge Ambassadeur) ne sont donnés qu'**une seule fois**, au premier parrainage validé : les filleuls suivants n'ajoutent que des points (et le badge « Bien entouré » au 3e)
 *   Un code de parrainage inconnu à l'inscription est refusé (erreur 422), il n'est jamais ignoré en silence
 *   Un filleul ne peut être parrainé qu'une seule fois
 *   La validation se déclenche au 1er don du filleul — pas à l'inscription
-*   Le code de parrainage est unique, généré automatiquement à l'inscription
+*   Le code de parrainage est unique (8 caractères), généré automatiquement à l'inscription — ou à la première lecture pour un compte qui n'en avait pas ; il est accepté en minuscules à la saisie
 *   L'anonymat est préservé — le parrain voit uniquement "1 parrainage validé", pas l'identité du filleul
 
 ## Limites connues (à traiter dans de futures US)
-*   **Notification** : le flux ci-dessus prévoit que les deux parties soient prévenues ; ce n'est pas encore implémenté (le parrain ne voit ses points qu'en rouvrant l'application). Prévu : notifications push (US à créer ; non testables dans Expo Go, il faut un build de développement).
-*   **Risque d'abus (faux comptes filleuls)** : le QR Code du centre est un jeton **fixe**, sans preuve de présence physique, et l'inscription n'exige pas de vérification d'email. Quelqu'un disposant d'une photo du QR Code pourrait créer de faux comptes filleuls avec son propre code et cumuler +75 pts par faux compte. Non corrigé à ce stade ; le remède le plus efficace (QR Code du centre renouvelé régulièrement) change l'organisation au centre, à décider avec l'association.
-*   **Badge « Filleul »** : la spec en prévoit un pour le filleul ; il n'existe pas parmi les badges actuels (le filleul reçoit la carte Filleul). À traiter avec l'US badges.
-# 8\. Récapitulatif — Déclencheurs et récompenses
+*   **Notification du filleul** : seul le parrain est notifié ; le filleul ne reçoit pas de notification à la validation de son parrainage (il voit sa carte Filleul sur l'écran de résultat du scan).
+*   **Risque d'abus (faux comptes filleuls)** : le QR Code du centre est un jeton **fixe**, sans preuve de présence physique, et l'inscription n'exige pas de vérification d'email. Quelqu'un disposant d'une photo du QR Code pourrait créer de faux comptes filleuls avec son propre code et cumuler +75 pts par faux compte. Le backoffice permet de **régénérer** le QR Code centre (page « QR Code centre »), ce qui invalide l'ancien, mais rien ne le fait automatiquement : la fréquence de renouvellement est à décider avec l'association.
+# 7\. Récapitulatif — Déclencheurs et récompenses
 
 ```scss
-Action utilisateur           Points    Booster   Badge possible
-──────────────────────────────────────────────────────────────
-Don validé (QR Code centre)  +100      ✓         Premier Pas, Donneur Confirmé...
-Événement (QR Code event)    +50       ✓         —
-Quiz complété (1ère fois)    +30       ✗         Quiz Master
-Défi du mois complété        Variable  ✗         Défi du mois
-Parrainage validé (parrain)  +75       ✗         Ambassadeur
-Parrainage validé (filleul)  +50       ✗         Filleul
-Doublon carte commune        +10       ✗         —
-Doublon carte rare           +25       ✗         —
+Action utilisateur           Points          Carte            Badges possibles
+─────────────────────────────────────────────────────────────────────────────────────────────
+Don validé (QR Code centre)  —               Carte du mois    Premier Pas, Donneur Confirmé, Fidèle au Don,
+                                                              Compagnon de route, Belle collection, Année complète,
+                                                              Esprit d'équipe
+Événement (QR Code event)    —               Carte Événement  Toujours partant
+Quiz complété (1ère fois)    selon le quiz   —                Grain de curiosité, Quiz Master, Incollable
+Défi du mois remporté        —               —                Objectif atteint
+Inscription avec un code     —               —                Bien accueilli
+Parrainage validé (parrain)  +75             Carte Parrain    Ambassadeur, Bien entouré
+Parrainage validé (filleul)  —               Carte Filleul    —
 ```
 
-# 9\. Ce qui est géré dans le code (hors backoffice)
+# 8\. Ce qui est géré dans le code (hors backoffice)
 
 ```bash
-→ Algorithme de tirage des cartes dans un booster
-→ Conversion automatique des doublons en points
+→ Attribution des cartes (carte du mois au don, carte Événement, cartes Parrain / Filleul)
 → Vérification automatique des conditions de badges
 → Mise à jour de la progression du défi du mois
-→ Règle quota dons (6 dons/an homme, 4 dons/an femme, délai 8 semaines)
+→ Délai minimum entre deux dons validés : 56 jours (homme) / 84 jours (femme), vérifié au scan
+  du QR Code centre (sinon 422 avec la date du prochain don possible). Pas de plafond annuel.
 → Génération du code de parrainage à l'inscription
-→ Séries de quiz initiales (seeders)
-→ Probabilités de tirage (commun/rare)
-→ Questionnaire d'éligibilité (fichier JSON, aucune persistance BDD)
+→ Calcul des niveaux à partir des points cumulés
+→ Correction des quiz et calcul des points proportionnels
+→ Notifications planifiées (quiz du jour, rappels, fin d'inéligibilité, défi, carte du mois...)
+→ Questionnaire d'éligibilité de l'appli : arbre de décision local
+  (bloodshare-mobile/constants/eligibilite.ts), aucune réponse envoyée ni stockée (anonymat)
 ```
 
-# 10\. Ce qui est géré dans le backoffice
+Les questions d'éligibilité existent aussi en base (`questions_eligibilite`), éditables dans le backoffice et exposées par `GET /eligibilite`, mais l'application ne les lit pas encore : c'est l'arbre local qui fait foi.
+
+# 9\. Ce qui est géré dans le backoffice
 
 ```java
-→ Valeur des points par action (super_admin)
-→ Création/modification du défi du mois (admin)
-→ Création/modification des quiz (admin)
+→ Création/modification/activation du défi du mois (admin)
+→ Création/modification des quiz, dont les points de chaque quiz (admin)
 → Création/modification des badges (admin)
-→ Création/modification des cartes (admin)
-→ Consultation des parrainages (admin)
+→ Création/modification des cartes : titre, image, activation (admin)
+→ Création/modification des événements et de leur QR Code (admin)
+→ Régénération et téléchargement du QR Code centre (admin)
+→ Consultation et suppression des parrainages (admin)
+→ Récapitulatif des points par action, en lecture seule (super_admin)
+→ Questions d'éligibilité (super_admin)
 ```
+
+Les valeurs fixes (75 pts du parrain, paliers de niveaux, délais d'éligibilité) sont dans le code, pas dans le backoffice.

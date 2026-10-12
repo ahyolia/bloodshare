@@ -40,7 +40,6 @@ class DefiController extends Controller
             'objectif_chiffre' => $defi->objectif_chiffre,
             'progression_actuelle' => $progression,
             'ma_progression' => $maProgression,
-            'points_attribues' => $defi->points_attribues,
             'statut' => $defi->statut,
             'date_fin' => $defi->date_fin,
         ]);

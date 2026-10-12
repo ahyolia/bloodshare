@@ -46,7 +46,8 @@ export function NiveauModal({ visible, onClose, profil }: NiveauModalProps) {
           <View style={styles.infoCard}>
             <Text style={styles.infoTitre}>Comment gagner des points ?</Text>
             <Text style={styles.infoItem}>• Faire les quiz</Text>
-            <Text style={styles.infoItem}>• Participer au défi du mois</Text>
+            {/* 📖 Pas de « défi du mois » ici : y participer, c'est donner, et un don ne
+                rapporte jamais de points (règle éthique ADSB-NC). */}
             <Text style={styles.infoItem}>• Parrainer un ami</Text>
           </View>
 

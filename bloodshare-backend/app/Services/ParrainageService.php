@@ -40,13 +40,10 @@ class ParrainageService
         //    avant son commit annoncerait un parrainage validé que l'échec du scan annulerait.
         DB::afterCommit(fn () => $parrain->notify(new PremierDonFilleulNotification()));
 
-        PointsHistorique::create([
-            'user_id'   => $user->id,
-            'points'    => 50,
-            'source'    => 'parrainage',
-            'source_id' => $parrainage->id,
-        ]);
-        $user->increment('points_cumules', 50);
+        // 📖 Pas de points pour le filleul : ils récompensaient son propre premier don, or un
+        //    don ne rapporte jamais de points (règle éthique ADSB-NC, CONTRIBUTING.md). Il
+        //    garde la carte Filleul. Le parrain, lui, est récompensé d'avoir sensibilisé
+        //    quelqu'un d'autre, pas d'avoir donné : ses 75 points restent.
 
         $this->attribuerCarte($parrain, 'parrain');
         $this->attribuerCarte($user, 'filleul');
