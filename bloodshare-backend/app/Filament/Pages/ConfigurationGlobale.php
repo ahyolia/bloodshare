@@ -19,13 +19,12 @@ class ConfigurationGlobale extends Page
 
     public function getPointsParAction(): array
     {
+        // 📖 Seules sources de points réelles (voir docs/doc_gamification.md § 1). Le filleul
+        //    et le défi du mois n'en rapportent plus : leurs bénéficiaires sont des donneurs,
+        //    et un don ne rapporte jamais de points (règle éthique ADSB-NC).
         return [
-            ['action' => 'Quiz complété (1ère fois)', 'points' => '30'],
-            ['action' => 'Défi du mois complété', 'points' => 'Variable'],
+            ['action' => 'Quiz complété (1ère fois)', 'points' => 'Défini sur chaque quiz, proportionnel au score'],
             ['action' => 'Parrainage validé (parrain)', 'points' => '75'],
-            ['action' => 'Parrainage validé (filleul)', 'points' => '50'],
-            ['action' => 'Doublon carte commune', 'points' => '— (retiré)'],
-            ['action' => 'Doublon carte rare', 'points' => '— (retiré)'],
         ];
     }
 }
