@@ -54,7 +54,7 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', env('LOG_STACK', 'single')),
+            'channels' => explode(',', env('LOG_STACK', 'daily')),
             'ignore_exceptions' => false,
         ],
 
@@ -73,9 +73,10 @@ return [
         //    Ce canal dédié a son propre niveau, indépendant de LOG_LEVEL, pour que les emails
         //    restent toujours visibles sans avoir à baisser la verbosité de toute l'appli.
         'mail' => [
-            'driver' => 'single',
+            'driver' => 'daily',
             'path' => storage_path('logs/mail.log'),
             'level' => env('MAIL_LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 180),
             'replace_placeholders' => true,
         ],
 
@@ -83,7 +84,9 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => env('LOG_DAILY_DAYS', 14),
+            // 📖 Journaux limités à 6 mois (politique de confidentialité, docs/juridique) :
+            //    un fichier par jour, les plus anciens sont effacés automatiquement.
+            'days' => env('LOG_DAILY_DAYS', 180),
             'replace_placeholders' => true,
         ],
 
