@@ -78,7 +78,7 @@ jobs:
         run: php artisan test
 
   mobile:
-    name: Mobile (Jest)
+    name: Mobile (typecheck, lint, Jest)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -95,6 +95,14 @@ jobs:
 
       - name: Installer les dépendances
         run: npm ci
+
+      # 📖 Avant les tests : une erreur de type ou de lint est plus rapide à repérer
+      #    qu'un test rouge, et ne coûte que quelques secondes.
+      - name: Vérifier les types (TypeScript)
+        run: npm run typecheck
+
+      - name: Lint (ESLint)
+        run: npm run lint
 
       - name: Lancer les tests
         run: npm test -- --ci
