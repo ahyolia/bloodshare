@@ -1,0 +1,100 @@
+# 📖 Lance les deux suites de tests (backend PHPUnit + mobile Jest) sur chaque PR vers
+#    dev / main et à chaque push sur ces branches : c'est la garantie automatique du
+#    « build toujours vert » de la Definition of Done (CONTRIBUTING.md).
+name: Tests
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+
+# Un nouveau push sur la même branche annule le run précédent, devenu inutile.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (PHPUnit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bloodshare-backend
+
+    # 📖 Postgres et non SQLite : le code utilise des fonctionnalités propres à Postgres
+    #    (INSERT ... ON CONFLICT dans DefiService, contraintes uniques nommées).
+    #    phpunit.xml force déjà DB_DATABASE=bloodshare_testing.
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: bloodshare
+          POSTGRES_PASSWORD: bloodshare123
+          POSTGRES_DB: bloodshare_testing
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bloodshare"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Les variables d'environnement réelles priment sur le .env copié depuis .env.example.
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USERNAME: bloodshare
+      DB_PASSWORD: bloodshare123
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Mêmes extensions que le Dockerfile du backend.
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_pgsql, intl, zip, gd, bcmath
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ hashFiles('bloodshare-backend/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Installer les dépendances
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Préparer l'environnement
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Lancer les tests
+        run: php artisan test
+
+  mobile:
+    name: Mobile (Jest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bloodshare-mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: bloodshare-mobile/package-lock.json
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Lancer les tests
+        run: npm test -- --ci
