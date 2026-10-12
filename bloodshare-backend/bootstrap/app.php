@@ -39,6 +39,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // sans ça, Laravel ignore X-Forwarded-Proto et génère des URLs d'assets
         // en http:// sur une page servie en https:// (mixed content bloqué).
         $middleware->trustProxies(at: '*');
+
+        // 📖 Le middleware `auth` redirige un visiteur non connecté vers la route nommée
+        //    `login`, que Laravel ne déclare pas ici (la connexion est celle de Filament) :
+        //    ouvrir /admin/qrcode-centre/download sans session donnait une 500
+        //    « Route [login] not defined ». Les appels API (JSON) gardent leur 401.
+        $middleware->redirectGuestsTo(fn () => route('filament.admin.auth.login'));
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -11,24 +11,19 @@ class QrCodeCentreTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_ne_sert_pas_le_qr_code_a_un_visiteur_non_connecte(): void
+    public function test_redirige_un_visiteur_non_connecte_vers_la_connexion_du_bo(): void
     {
         QrCode::create(['type' => 'centre', 'token' => 'centre-1', 'actif' => true]);
 
-        $reponse = $this->get('/admin/qrcode-centre/download');
-
-        // 📖 Le QR code n'est jamais servi, mais la réponse est aujourd'hui une erreur 500
-        //    (« Route [login] not defined ») et non une redirection vers la connexion du BO :
-        //    le middleware `auth` cherche une route nommée `login` que Filament ne déclare pas.
-        $this->assertNotSame(200, $reponse->getStatusCode());
-        $this->assertNotSame('image/png', $reponse->headers->get('Content-Type'));
+        $this->get('/admin/qrcode-centre/download')
+            ->assertRedirect(route('filament.admin.auth.login'));
     }
 
     public function test_telecharge_le_qr_code_centre_actif_en_png(): void
     {
-        // 📖 simple-qrcode génère les PNG via imagick, absent de l'image Docker (seul gd est
-        //    installé) : le téléchargement renvoie une 500. Ce test se réactivera tout seul
-        //    dès que l'extension sera ajoutée au Dockerfile.
+        // 📖 simple-qrcode génère les PNG via imagick, installé dans l'image Docker. Garde-fou
+        //    pour un environnement qui ne l'aurait pas (ex. un PHP local) : test sauté plutôt
+        //    qu'en échec.
         if (! extension_loaded('imagick')) {
             $this->markTestSkipped('Extension imagick absente : téléchargement PNG impossible.');
         }
