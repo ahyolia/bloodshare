@@ -65,31 +65,46 @@ Parrainage validé si filleul, contribution au défi, synchronisation des badges
 *   Carte Événement avec son nombre d'exemplaires, cartes Parrain / Filleul
 # 3\. Badges
 ## Principe
-Les badges récompensent des jalons importants. Ils sont attribués automatiquement par le système quand la condition est remplie.
-## Badges suggérés (V1)
+Les badges récompensent des jalons importants. Ils sont attribués automatiquement par le système quand la condition est remplie, une seule fois chacun, et ne rapportent pas de points.
+## Badges en place (V1)
+Créés par `BadgeSeeder` (et les migrations `seed_cartes_et_quiz_badges` / `seed_defis_badges` pour les environnements sans seeder). Un badge a une condition de l'un de deux types : `nb_dons` (seuil de dons validés, `condition_valeur`) ou `action_specifique` (identifiant technique, `action_specifique`).
 
-| Badge | Condition | Type condition |
-| ---| ---| --- |
-| Premier Pas | 1er don effectué | action\_specifique |
-| Donneur Confirmé | 3 dons effectués | nb\_dons: 3 |
-| Fidèle au Don | 5 dons effectués | nb\_dons: 5 |
-| Collectionneur | 6 cartes obtenues | action\_specifique |
-| Ambassadeur | 1 parrainage validé | action\_specifique |
-| Quiz Master | 5 quiz complétés | action\_specifique |
-| Défi du mois | 1er défi du mois complété | action\_specifique |
+| Thème | Badge | Condition | Type condition |
+| ---| ---| ---| --- |
+| Don | Premier Pas | 1er don validé | action\_specifique : `premier_don` |
+| Don | Donneur Confirmé | 3 dons validés | nb\_dons : 3 |
+| Don | Fidèle au Don | 5 dons validés | nb\_dons : 5 |
+| Don | Compagnon de route | 10 dons validés | nb\_dons : 10 |
+| Quiz | Grain de curiosité | 1er quiz complété | action\_specifique : `premier_quiz` |
+| Quiz | Quiz Master | 5 quiz complétés | action\_specifique : `cinq_quiz` |
+| Quiz | Incollable | Tous les quiz actifs complétés | action\_specifique : `toutes_categories_quiz` |
+| Parrainage | Ambassadeur | 1er parrainage validé (parrain) | action\_specifique : `premier_parrainage` |
+| Parrainage | Bien entouré | 3 parrainages validés (parrain) | action\_specifique : `trois_parrainages` |
+| Parrainage | Bien accueilli | Inscription avec un code de parrainage (filleul) | action\_specifique : `inscrit_avec_code` |
+| Cartes | Belle collection | 6 cartes du mois différentes | action\_specifique : `six_cartes_mois` |
+| Cartes | Année complète | Les 12 cartes du mois | action\_specifique : `douze_cartes_mois` |
+| Cartes | Toujours partant | 3 cartes Événement (3 événements) | action\_specifique : `trois_cartes_evenement` |
+| Défi | Esprit d'équipe | Avoir contribué à un défi (au moins 1 don compté) | action\_specifique : `defi_contribue` |
+| Défi | Objectif atteint | Avoir contribué à un défi dont l'objectif a été atteint | action\_specifique : `defi_remporte` |
+
+Les quiz comptés sont uniquement ceux encore **actifs** : un quiz complété puis désactivé ne compte plus. Un badge désactivé dans le BO n'est plus attribué. Le BO permet de créer d'autres badges, en choisissant le type de condition et, pour `action_specifique`, une action dans la liste ci-dessus.
 
 ## Attribution automatique
+`BadgeService::synchroniser()` recalcule l'état réel de l'utilisateur (dons validés, quiz complétés, parrainages, cartes, défis) et attribue **tout** badge éligible pas encore obtenu, quelle que soit l'action qui l'a rendu éligible.
 
 ```bash
-Après chaque action (don, scan, quiz, défi...)
+Scan validé (don ou événement) / quiz soumis / inscription avec un code /
+parrainage validé (côté parrain) / consultation de GET /badges
         ↓
-Laravel vérifie toutes les conditions de badges
+BadgeService::synchroniser() vérifie toutes les conditions
         ↓
 Si condition remplie et badge pas encore obtenu
         ↓
-Entrée créée dans user_badges
-Notification envoyée à l'utilisateur
+Entrée créée dans user_badges (contrainte unique : jamais en double)
+Notification « badge débloqué » envoyée après validation de l'action
 ```
+
+L'appel lors de la consultation de `GET /badges` sert de **rattrapage** : un don saisi autrement qu'au scan (BO, import) ou une condition remplie avant l'ajout d'un badge donne quand même le badge à la prochaine ouverture de l'écran.
 
 ## Affichage
 *   Section **Badges** dans l'onglet Profil
@@ -185,6 +200,7 @@ Parrain partage son code de parrainage
 Filleul s'inscrit avec le code
         ↓
 Entrée créée dans parrainages (statut: en_attente)
+Filleul reçoit le badge "Bien accueilli" (dès l'inscription, sans attendre de don)
         ↓
 Filleul effectue son 1er don
         ↓
@@ -206,18 +222,19 @@ Les deux reçoivent une notification
 
 ## Limites connues (à traiter dans de futures US)
 *   **Notification** : le flux ci-dessus prévoit que les deux parties soient prévenues ; ce n'est pas encore implémenté (le parrain ne voit ses points qu'en rouvrant l'application). Prévu : notifications push (US à créer ; non testables dans Expo Go, il faut un build de développement).
-*   **Risque d'abus (faux comptes filleuls)** : le QR Code du centre est un jeton **fixe**, sans preuve de présence physique, et l'inscription n'exige pas de vérification d'email. Quelqu'un disposant d'une photo du QR Code pourrait créer de faux comptes filleuls avec son propre code et cumuler +75 pts par faux compte. Non corrigé à ce stade ; le remède le plus efficace (QR Code du centre renouvelé régulièrement) change l'organisation au centre, à décider avec l'association.
-*   **Badge « Filleul »** : la spec en prévoit un pour le filleul ; il n'existe pas parmi les badges actuels (le filleul reçoit la carte Filleul). À traiter avec l'US badges.
-# 7\. Récapitulatif — Déclencheurs et récompenses
+*   **Risque d'abus (faux comptes filleuls)** : le QR Code du centre est un jeton **fixe**, sans preuve de présence physique, et l'inscription n'exige pas de vérification d'email. Quelqu'un disposant d'une photo du QR Code pourrait créer de faux comptes filleuls avec son propre code et cumuler +75 pts par faux compte. Non corrigé à ce stade ; le remède le plus efficace (QR Code du centre renouvelé régulièrement) change l'organisation au centre, à décider avec l'association.# 7\. Récapitulatif — Déclencheurs et récompenses
 
 ```scss
-Action utilisateur           Points          Carte            Badge possible
-─────────────────────────────────────────────────────────────────────────────
-Don validé (QR Code centre)  —               Carte du mois    Premier Pas, Donneur Confirmé...
-Événement (QR Code event)    —               Carte Événement  Toujours partant (3 cartes)
-Quiz complété (1ère fois)    selon le quiz   —                Quiz Master
-Défi du mois complété        —               —                Objectif atteint
-Parrainage validé (parrain)  +75             Carte Parrain    Ambassadeur
+Action utilisateur           Points          Carte            Badges possibles
+─────────────────────────────────────────────────────────────────────────────────────────────
+Don validé (QR Code centre)  —               Carte du mois    Premier Pas, Donneur Confirmé, Fidèle au Don,
+                                                              Compagnon de route, Belle collection, Année complète,
+                                                              Esprit d'équipe
+Événement (QR Code event)    —               Carte Événement  Toujours partant
+Quiz complété (1ère fois)    selon le quiz   —                Grain de curiosité, Quiz Master, Incollable
+Défi du mois remporté        —               —                Objectif atteint
+Inscription avec un code     —               —                Bien accueilli
+Parrainage validé (parrain)  +75             Carte Parrain    Ambassadeur, Bien entouré
 Parrainage validé (filleul)  —               Carte Filleul    —
 ```
 
@@ -227,7 +244,8 @@ Parrainage validé (filleul)  —               Carte Filleul    —
 → Attribution des cartes (carte du mois au don, carte Événement, cartes Parrain / Filleul)
 → Vérification automatique des conditions de badges
 → Mise à jour de la progression du défi du mois
-→ Règle quota dons (6 dons/an homme, 4 dons/an femme, délai 8 semaines)
+→ Délai minimum entre deux dons validés : 56 jours (homme) / 84 jours (femme), vérifié au scan
+  du QR Code centre (sinon 422 avec la date du prochain don possible). Pas de plafond annuel.
 → Génération du code de parrainage à l'inscription
 → Séries de quiz initiales (seeders)
 → Questionnaire d'éligibilité (fichier JSON, aucune persistance BDD)
