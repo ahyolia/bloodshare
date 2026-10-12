@@ -84,6 +84,8 @@ class User extends Authenticatable implements FilamentUser, HasName
     //    `statut='supprime'`, un compte ne doit plus être utilisable si cette règle venait à
     //    changer un jour. Appelé depuis l'API (DELETE /me) et le BO (action "Supprimer le
     //    compte") : les deux chemins de suppression doivent produire le même état.
+    //    `sexe` + dates de don sont des données de santé (voir le dossier juridique) : sans
+    //    effacer le sexe, l'historique conservé resterait rattaché à une donnée de santé.
     public function anonymiser(): void
     {
         $this->update([
@@ -93,11 +95,19 @@ class User extends Authenticatable implements FilamentUser, HasName
             'password' => Hash::make(Str::random(40)),
             'avatar_id' => null,
             'code_parrainage' => null,
+            'sexe' => null,
+            'statut_donneur' => null,
+            'derniere_connexion' => null,
+            'motif_suspension' => null,
         ]);
 
         // 📖 Un compte supprimé ne doit plus recevoir de notification : sans ça, l'appareil
         //    reste abonné et continuerait de recevoir les push de l'ancien compte.
         $this->pushSubscriptions()->delete();
+
+        // 📖 L'historique des notifications reprend des éléments personnels (dons, défis,
+        //    quiz) : il n'a plus d'utilité une fois le compte supprimé.
+        $this->notifications()->delete();
     }
 
     // Relations
