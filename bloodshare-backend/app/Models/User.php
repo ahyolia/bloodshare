@@ -44,6 +44,8 @@ class User extends Authenticatable implements FilamentUser, HasName
         'derniere_connexion' => 'datetime',
         'password' => 'hashed',
         'doit_changer_mdp' => 'boolean',
+        'cgu_acceptees_at' => 'datetime',
+        'consentement_sante_at' => 'datetime',
     ];
 
 

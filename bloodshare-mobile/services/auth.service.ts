@@ -75,6 +75,11 @@ export type RegisterPayload = {
   statut_donneur: string | null;
   avatar_id: number | null;
   code_parrainage?: string;
+  // Consentements, tous obligatoires : l'API refuse l'inscription (422) s'il en manque un.
+  cgu_acceptees: boolean;
+  confidentialite_acceptee: boolean;
+  consentement_sante: boolean;
+  majeur: boolean;
 };
 
 export const register = async (payload: RegisterPayload): Promise<AuthResponse> => {
