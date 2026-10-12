@@ -14,7 +14,6 @@ class Defi extends Model
         'periode',
         'objectif_chiffre',
         'date_fin',
-        'points_attribues',
         'statut',
     ];
 

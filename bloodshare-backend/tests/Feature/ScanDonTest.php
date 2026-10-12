@@ -179,7 +179,6 @@ class ScanDonTest extends TestCase
             'type' => 'communautaire',
             'periode' => 'mensuel',
             'objectif_chiffre' => 1,
-            'points_attribues' => 30,
             'statut' => 'actif',
         ]);
 

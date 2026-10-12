@@ -80,11 +80,10 @@ class DefiServiceTest extends TestCase
     }
 
     // 📖 Règle éthique ADSB-NC : un don ne rapporte jamais de points. Les contributeurs d'un
-    //    défi sont ceux qui ont donné : même si l'ancienne colonne points_attribues est
-    //    renseignée, aucun point ne doit être distribué.
+    //    défi sont ceux qui ont donné : aucun point ne doit leur être distribué.
     public function test_ne_distribue_aucun_point_aux_contributeurs(): void
     {
-        $this->creerDefi(['objectif_chiffre' => 1, 'points_attribues' => 30]);
+        $this->creerDefi(['objectif_chiffre' => 1]);
         $user = $this->donneurAvecDon();
 
         app(DefiService::class)->enregistrerContribution($user);
@@ -133,7 +132,6 @@ class DefiServiceTest extends TestCase
             'type' => 'communautaire',
             'periode' => 'mensuel',
             'objectif_chiffre' => 10,
-            'points_attribues' => 20,
             'statut' => 'actif',
         ], $attributs));
     }
