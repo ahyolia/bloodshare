@@ -5,11 +5,16 @@ FROM php:8.3-cli
 #    bignum — et le error handler de Laravel transforme ce simple avertissement en
 #    exception fatale (500) à chaque envoi. bcmath est le plus simple des deux à
 #    installer ici (pas de paquet apt supplémentaire, contrairement à GMP).
+# 📖 imagick : simple-qrcode (via bacon-qr-code 2.x) ne sait produire un PNG qu'avec
+#    imagick, il n'a pas de rendu GD. Sans lui, le bouton « Télécharger » du QR Code
+#    centre (BO) répondait une 500 « You need to install the imagick extension ».
 RUN apt-get update --fix-missing && apt-get install -y \
     git curl zip unzip libpq-dev libicu-dev libzip-dev \
-    libpng-dev libjpeg-dev libfreetype6-dev \
+    libpng-dev libjpeg-dev libfreetype6-dev libmagickwand-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_pgsql intl zip gd bcmath
+    && docker-php-ext-install pdo pdo_pgsql intl zip gd bcmath \
+    && pecl install imagick \
+    && docker-php-ext-enable imagick
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

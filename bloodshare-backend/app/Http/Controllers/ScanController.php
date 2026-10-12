@@ -32,18 +32,21 @@ class ScanController extends Controller
         $user = $request->user();
 
         return DB::transaction(function () use ($user, $qrCode) {
-            $scan = QrCodeScan::create([
-                'user_id'    => $user->id,
-                'qr_code_id' => $qrCode->id,
-                'scanned_at' => now(),
-            ]);
-
             return match ($qrCode->type) {
-                'centre'    => $this->handleDon($user, $scan),
-                'evenement' => $this->handleEvenement($user, $scan, $qrCode),
+                'centre'    => $this->handleDon($user, $this->enregistrerScan($user, $qrCode)),
+                'evenement' => $this->handleEvenement($user, $qrCode),
                 default     => response()->json(['message' => 'Type de QR Code non supporté.'], 422),
             };
         });
+    }
+
+    private function enregistrerScan($user, QrCode $qrCode): QrCodeScan
+    {
+        return QrCodeScan::create([
+            'user_id'    => $user->id,
+            'qr_code_id' => $qrCode->id,
+            'scanned_at' => now(),
+        ]);
     }
 
     private function handleDon($user, QrCodeScan $scan): JsonResponse
@@ -137,7 +140,7 @@ class ScanController extends Controller
         ]);
     }
 
-    private function handleEvenement($user, QrCodeScan $scan, QrCode $qrCode): JsonResponse
+    private function handleEvenement($user, QrCode $qrCode): JsonResponse
     {
         $evenement = $qrCode->evenement;
 
@@ -154,6 +157,27 @@ class ScanController extends Controller
                 ], 422);
             }
         }
+
+        // 📖 Une participation par événement : sans ce contrôle, rescanner le même QR
+        //    rapportait une carte à chaque fois (et le badge « Toujours partant », 3 cartes
+        //    événement, s'obtenait avec un seul événement). Le verrou sur la ligne user
+        //    sérialise deux scans simultanés du même utilisateur (double-tap, retry réseau),
+        //    qui passeraient sinon tous les deux le contrôle avant que l'un ait écrit.
+        //    Le scan n'est enregistré qu'APRÈS les contrôles : un scan refusé (événement
+        //    en brouillon, par ex.) ne doit pas bloquer la participation une fois publié.
+        $user->newQuery()->whereKey($user->id)->lockForUpdate()->first();
+
+        $dejaParticipe = QrCodeScan::where('user_id', $user->id)
+            ->where('qr_code_id', $qrCode->id)
+            ->exists();
+
+        if ($dejaParticipe) {
+            return response()->json([
+                'message' => 'Votre participation à cet événement est déjà validée.',
+            ], 422);
+        }
+
+        $this->enregistrerScan($user, $qrCode);
 
         // Carte générique événement (la première active trouvée)
         $carte = Carte::where('categorie', 'evenement')

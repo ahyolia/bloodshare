@@ -6,6 +6,7 @@ use App\Models\Badge;
 use App\Models\Carte;
 use App\Models\Evenement;
 use App\Models\QrCode;
+use App\Models\QrCodeScan;
 use App\Models\User;
 use App\Models\UserCarte;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -62,6 +63,44 @@ class ScanEvenementTest extends TestCase
             ->assertJsonPath('carte_obtenue.quantite', 2);
 
         $this->assertSame(1, UserCarte::where('user_id', $this->user->id)->where('carte_id', $carte->id)->count());
+    }
+
+    public function test_refuse_un_second_scan_du_meme_evenement(): void
+    {
+        $carte = $this->creerCarteEvenement();
+        $qr = $this->creerQrEvenement($this->creerEvenement());
+
+        $this->scanner($qr)->assertOk();
+        $this->scanner($qr)
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Votre participation à cet événement est déjà validée.');
+
+        $this->assertSame(1, UserCarte::where('user_id', $this->user->id)->where('carte_id', $carte->id)->sole()->quantite);
+        $this->assertSame(1, QrCodeScan::where('user_id', $this->user->id)->count());
+    }
+
+    public function test_un_autre_participant_peut_scanner_le_meme_evenement(): void
+    {
+        $this->creerCarteEvenement();
+        $qr = $this->creerQrEvenement($this->creerEvenement());
+        $this->scanner($qr)->assertOk();
+
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->scanner($qr)->assertOk();
+    }
+
+    public function test_un_scan_refuse_ne_bloque_pas_la_participation_une_fois_l_evenement_publie(): void
+    {
+        $this->creerCarteEvenement();
+        $evenement = $this->creerEvenement(['statut' => 'brouillon']);
+        $qr = $this->creerQrEvenement($evenement);
+
+        $this->scanner($qr)->assertUnprocessable();
+        $this->assertSame(0, QrCodeScan::where('user_id', $this->user->id)->count());
+
+        $evenement->update(['statut' => 'publie']);
+        $this->scanner($qr)->assertOk();
     }
 
     public function test_refuse_un_evenement_annule(): void
