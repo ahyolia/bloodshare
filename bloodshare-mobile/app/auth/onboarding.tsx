@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Theme } from '../../constants/colors';
 import { setOnboardingVu } from '../../utils/preferences';
 
@@ -36,6 +36,20 @@ export default function Onboarding() {
   const router = useRouter();
   const [index, setIndex] = useState(0);
   const ecran = ECRANS[index];
+
+  // 📖 Les 3 écrans ne sont qu'un état local : il n'y a rien dans la pile de
+  //    navigation. Sans ce code, le bouton Retour physique d'Android fermerait
+  //    l'app dès l'écran 2 ou 3 au lieu de revenir à l'écran précédent.
+  //    `return true` = « je m'en occupe », `return false` = comportement normal
+  //    (sur le 1er écran, quitter l'app est bien ce qu'on attend).
+  useEffect(() => {
+    const abonnement = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (index === 0) return false;
+      setIndex(index - 1);
+      return true;
+    });
+    return () => abonnement.remove();
+  }, [index]);
 
   // 📖 `replace` et non `push` : une fois l'onboarding quitté, le bouton Retour
   //    du téléphone ne doit pas y ramener.
