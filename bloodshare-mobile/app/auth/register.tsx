@@ -12,6 +12,7 @@ const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 const ETAPE_PAR_CHAMP: Record<string, number> = {
   pseudo: 1, email: 1, password: 1,
   sexe: 2, code_parrainage: 2,
+  cgu_acceptees: 2, confidentialite_acceptee: 2, consentement_sante: 2, majeur: 2,
   statut_donneur: 3,
   avatar_id: 4,
 };
@@ -30,6 +31,8 @@ export default function RegisterScreen() {
   const [codeParrainage, setCodeParrainage] = useState('');
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [cguAccepted, setCguAccepted] = useState(false);
+  const [santeAccepted, setSanteAccepted] = useState(false);
+  const [majeur, setMajeur] = useState(false);
   const [statutDonneur, setStatutDonneur] = useState<'jamais_donne' | 'quelques_dons' | 'donneur_regulier' | null>(null);
   const [avatarId, setAvatarId] = useState<number | null>(null);
 
@@ -53,7 +56,8 @@ export default function RegisterScreen() {
     }
     if (step === 2) {
       if (!sexe) return setLocalError('Veuillez renseigner votre sexe biologique.');
-      if (!privacyAccepted || !cguAccepted) return setLocalError('Vous devez accepter les conditions pour continuer.');
+      if (!privacyAccepted || !cguAccepted || !santeAccepted) return setLocalError('Vous devez accepter les conditions pour continuer.');
+      if (!majeur) return setLocalError("L'application est réservée aux personnes majeures.");
     }
     if (step === 3) {
       if (!statutDonneur) return setLocalError('Veuillez sélectionner votre expérience de don.');
@@ -88,6 +92,10 @@ export default function RegisterScreen() {
       statut_donneur: statutDonneur,
       avatar_id: avatarId,
       code_parrainage: codeParrainage.trim() || undefined,
+      cgu_acceptees: cguAccepted,
+      confidentialite_acceptee: privacyAccepted,
+      consentement_sante: santeAccepted,
+      majeur,
     });
 
     await saveToken(token);
@@ -214,6 +222,18 @@ export default function RegisterScreen() {
                 <Text style={styles.checkboxIcon}>{cguAccepted ? '☑' : '☐'}</Text>
                 <Text style={styles.checkboxText}>J&apos;accepte les <Text style={styles.linkTextUnderline} onPress={ouvrirDocument('cgu')} accessibilityRole="link">Conditions générales d&apos;utilisation</Text> (CGU).</Text>
               </Pressable>
+              {/* 📖 Sexe + dates de don = données de santé : consentement explicite et distinct
+                  des CGU (voir docs/Dossier juridique). */}
+              <Pressable style={styles.checkboxRow} onPress={() => setSanteAccepted(!santeAccepted)} accessibilityRole="checkbox" accessibilityState={{ checked: santeAccepted }}>
+                <Text style={styles.checkboxIcon}>{santeAccepted ? '☑' : '☐'}</Text>
+                <Text style={styles.checkboxText}>J&apos;accepte que l&apos;ADSB-NC enregistre mon sexe et les dates de mes dons de sang, qui sont des données de santé, pour calculer mes points et me prévenir quand je peux de nouveau donner. Je pourrai retirer mon accord à tout moment en supprimant mon compte.</Text>
+              </Pressable>
+              {renderFieldError('consentement_sante')}
+              <Pressable style={styles.checkboxRow} onPress={() => setMajeur(!majeur)} accessibilityRole="checkbox" accessibilityState={{ checked: majeur }}>
+                <Text style={styles.checkboxIcon}>{majeur ? '☑' : '☐'}</Text>
+                <Text style={styles.checkboxText}>Je certifie avoir au moins 18 ans.</Text>
+              </Pressable>
+              {renderFieldError('majeur')}
             </View>
 
             <Pressable style={styles.primaryBtn} onPress={nextStep}>
@@ -310,7 +330,7 @@ const styles = StyleSheet.create({
   checkboxContainer: { marginTop: 24, gap: 12 },
   checkboxRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   checkboxIcon: { fontSize: 20, color: '#333' },
-  checkboxText: { fontSize: 14, color: '#555' },
+  checkboxText: { flex: 1, fontSize: 14, color: '#555' },
   radioContainer: { gap: 16, marginTop: 16, marginBottom: 32 },
   radioRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   radioIcon: { fontSize: 24, color: '#333' },

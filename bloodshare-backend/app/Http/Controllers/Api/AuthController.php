@@ -53,8 +53,18 @@ class AuthController extends Controller
             // Un code inconnu était ignoré en silence (inscription réussie, aucun parrainage
             // créé) : l'utilisateur croyait son code pris en compte. On refuse désormais.
             'code_parrainage' => 'nullable|string|exists:users,code_parrainage',
+            // 📖 Consentements (voir docs/Dossier juridique) : vérifiés ici et pas seulement
+            //    côté mobile, sinon un appel direct à l'API créerait un compte sans eux.
+            'cgu_acceptees' => 'accepted',
+            'confidentialite_acceptee' => 'accepted',
+            'consentement_sante' => 'accepted',
+            'majeur' => 'accepted',
         ], [
             'code_parrainage.exists' => "Ce code de parrainage n'existe pas. Vérifiez-le ou laissez le champ vide.",
+            'cgu_acceptees.accepted' => "Vous devez accepter les conditions générales d'utilisation.",
+            'confidentialite_acceptee.accepted' => 'Vous devez accepter la politique de confidentialité.',
+            'consentement_sante.accepted' => "Ce consentement est nécessaire pour suivre vos dons et vous prévenir quand vous pouvez redonner.",
+            'majeur.accepted' => "L'application est réservée aux personnes majeures.",
         ]);
 
         $codeParrainage = strtoupper(Str::random(8));
@@ -71,6 +81,14 @@ class AuthController extends Controller
             'avatar_id' => $validated['avatar_id'] ?? null,
             'code_parrainage' => $codeParrainage,
         ]);
+
+        // 📖 forceFill : ces champs ne doivent jamais être modifiables par une mise à jour de
+        //    profil (PUT /me), donc ils restent hors de $fillable.
+        $user->forceFill([
+            'cgu_version' => config('juridique.cgu_version'),
+            'cgu_acceptees_at' => now(),
+            'consentement_sante_at' => now(),
+        ])->save();
 
         if (!empty($validated['code_parrainage'])) {
             $parrain = User::where('code_parrainage', $validated['code_parrainage'])->first();
