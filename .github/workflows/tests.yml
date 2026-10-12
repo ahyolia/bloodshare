@@ -19,6 +19,8 @@ jobs:
   backend:
     name: Backend (PHPUnit)
     runs-on: ubuntu-latest
+    # Un run bloqué (service qui ne répond pas...) s'arrête au lieu de tourner 6 h.
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: bloodshare-backend
@@ -59,10 +61,16 @@ jobs:
           extensions: pdo_pgsql, intl, zip, gd, bcmath, imagick
           coverage: none
 
+      # 📖 Dossier demandé à Composer plutôt qu'écrit en dur : il varie selon la version
+      #    et la configuration (COMPOSER_HOME, XDG...).
+      - name: Dossier de cache Composer
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
       - name: Cache Composer
         uses: actions/cache@v4
         with:
-          path: ~/.composer/cache/files
+          path: ${{ steps.composer-cache.outputs.dir }}
           key: composer-${{ hashFiles('bloodshare-backend/composer.lock') }}
           restore-keys: composer-
 
@@ -80,6 +88,7 @@ jobs:
   mobile:
     name: Mobile (typecheck, lint, Jest)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: bloodshare-mobile
