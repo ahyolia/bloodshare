@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Defi;
 use App\Models\Don;
-use App\Models\PointsHistorique;
 use App\Models\User;
 use App\Models\UserDefi;
 use Illuminate\Support\Facades\DB;
@@ -69,7 +68,7 @@ class DefiService
         // 📖 UPDATE ... WHERE statut = 'actif' est atomique : si deux dons concurrents
         //    franchissent l'objectif au même instant, une seule des deux requêtes voit
         //    $lignesModifiees = 1 (l'autre trouve déjà statut != 'actif' et n'affecte aucune
-        //    ligne) — la distribution de points ne peut donc jamais avoir lieu deux fois.
+        //    ligne) — les contributeurs ne peuvent donc jamais être récompensés deux fois.
         $lignesModifiees = Defi::where('id', $defi->id)
             ->where('statut', 'actif')
             ->update(['statut' => 'termine']);
@@ -83,25 +82,13 @@ class DefiService
             ->with('user')
             ->get();
 
+        // 📖 Aucun point distribué : les contributeurs sont ceux qui ont donné, leur en
+        //    attribuer revenait à rémunérer le don en points — interdit par la règle éthique
+        //    ADSB-NC (CONTRIBUTING.md). La réussite se récompense par le badge « Objectif
+        //    atteint » (BadgeService, condition complete=true) et la notification.
         foreach ($contributeurs as $userDefi) {
-            if ($defi->points_attribues > 0) {
-                PointsHistorique::create([
-                    'user_id' => $userDefi->user_id,
-                    'points' => $defi->points_attribues,
-                    'source' => 'defi',
-                    'source_id' => $defi->id,
-                ]);
-
-                // 📖 increment() sur l'INSTANCE (pas sur une query builder statique) : seule
-                //    cette forme déclenche l'événement 'updated' du modèle User, dont dépend
-                //    la détection d'un nouveau palier (NotificationService::verifierNouveauNiveau).
-                $userDefi->user->increment('points_cumules', $defi->points_attribues);
-            }
-
             $userDefi->update(['complete' => true, 'completed_at' => now()]);
 
-            // 📖 Après l'attribution des points (pas avant) : si demain on veut inclure les
-            //    points gagnés dans le message, ils sont déjà crédités à ce moment-là.
             DB::afterCommit(fn () => $userDefi->user->notify(new \App\Notifications\DefiReussiNotification($defi)));
         }
     }

@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Carte;
+use App\Models\Defi;
 use App\Models\Don;
+use App\Models\Parrainage;
 use App\Models\QrCode;
 use App\Models\User;
 use App\Models\UserCarte;
@@ -159,6 +161,32 @@ class ScanDonTest extends TestCase
             ->assertJsonPath('carte_obtenue.deja_possedee', true);
 
         $this->assertSame(1, UserCarte::where('user_id', $user->id)->count());
+    }
+
+    // 📖 Garde-fou de la règle éthique ADSB-NC (CONTRIBUTING.md) : un don ne rapporte jamais
+    //    de points, même quand il valide un parrainage et fait atteindre l'objectif d'un défi.
+    public function test_un_don_ne_rapporte_jamais_de_points_au_donneur(): void
+    {
+        $user = $this->connecter('homme');
+        $this->creerCarteDuMois();
+        Parrainage::create([
+            'parrain_id' => User::factory()->create()->id,
+            'filleul_id' => $user->id,
+            'statut' => 'en_attente',
+        ]);
+        Defi::create([
+            'titre' => 'Défi',
+            'type' => 'communautaire',
+            'periode' => 'mensuel',
+            'objectif_chiffre' => 1,
+            'points_attribues' => 30,
+            'statut' => 'actif',
+        ]);
+
+        $this->scanner($this->creerQrCentre())->assertOk();
+
+        $this->assertSame(0, (int) $user->fresh()->points_cumules);
+        $this->assertDatabaseMissing('points_historique', ['user_id' => $user->id]);
     }
 
     private function connecter(string $sexe): User

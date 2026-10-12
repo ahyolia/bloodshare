@@ -10,17 +10,15 @@ Les points s'accumulent tout au long de l'utilisation de l'appli. Ils reflètent
 
 | Action | Points | Conditions |
 | ---| ---| --- |
-| Don effectué (QR Code centre) | 100 pts | 1 fois par don validé |
 | Présence à un événement (QR Code event) | 50 pts | 1 fois par événement |
 | Quiz complété | 30 pts | 1 fois par quiz (rejouable sans points) |
-| Défi du mois complété | Variable | Défini par l'admin |
 | Parrainage validé (parrain) | 75 pts | Par filleul qui fait son 1er don |
-| Parrainage validé (filleul) | 50 pts | À la validation du parrainage |
 | Doublon carte commune | 10 pts | Conversion automatique |
 | Doublon carte rare | 25 pts | Conversion automatique |
 
 ## Règles importantes
-*   Les points du **don** ne sont attribués qu'une fois le QR Code scanné et validé
+*   **Un don ne rapporte jamais de points** (règle éthique ADSB-NC) : ni le don lui-même, ni ce qu'il déclenche pour le donneur (validation de son parrainage en tant que filleul, objectif d'un défi atteint). Le don est récompensé par des cartes et des badges uniquement.
+*   Le **parrain** reste récompensé en points : il gagne pour avoir sensibilisé quelqu'un d'autre, pas pour son propre don
 *   Le **quiz** peut être rejoué mais les points ne sont donnés qu'à la première complétion — `points_attribues: true/false` dans `user_quiz`
 *   Le **parrainage** est validé automatiquement quand le filleul effectue son premier don
 *   Les **doublons** de cartes sont automatiquement convertis en points — jamais ajoutés en double dans la collection
@@ -167,15 +165,15 @@ Recrutement   → "30 nouveaux parrainages validés"
 "Ce mois-ci, atteignons 100 dons collectifs !"
 ├── Objectif : 100 dons
 ├── Progression : X / 100 (temps réel)
-├── Récompense : points bonus pour chaque participant
-│   + badge spécial si objectif atteint
+├── Récompense : badge « Objectif atteint » si objectif atteint
+│   (pas de points : les participants sont des donneurs)
 └── Visible sur l'écran Accueil
 ```
 
 ## Règles
 *   Un seul défi actif à la fois
 *   Participation **automatique** dès qu'un don est validé pendant la période du défi
-*   Si l'objectif est atteint → tous les participants reçoivent les points attribués + badge spécial
+*   Si l'objectif est atteint → tous les participants reçoivent le badge « Objectif atteint », **sans points** (un don ne rapporte jamais de points)
 *   Le défi est renouvelé chaque mois par l'admin depuis le backoffice
 *   La progression est mise à jour en temps réel dans `user_defis.progression`
 # 6\. Quiz
@@ -247,7 +245,7 @@ Filleul effectue son 1er don
 Parrainage validé automatiquement (statut: valide)
         ↓
 Parrain reçoit 75 pts + badge "Ambassadeur"
-Filleul reçoit 50 pts + badge "Filleul"
+Filleul reçoit la carte Filleul (pas de points : c'est son propre don)
 Les deux reçoivent une notification
 ```
 
@@ -269,12 +267,12 @@ Les deux reçoivent une notification
 ```scss
 Action utilisateur           Points    Booster   Badge possible
 ──────────────────────────────────────────────────────────────
-Don validé (QR Code centre)  +100      ✓         Premier Pas, Donneur Confirmé...
+Don validé (QR Code centre)  —         ✓         Premier Pas, Donneur Confirmé...
 Événement (QR Code event)    +50       ✓         —
 Quiz complété (1ère fois)    +30       ✗         Quiz Master
-Défi du mois complété        Variable  ✗         Défi du mois
+Défi du mois complété        —         ✗         Objectif atteint
 Parrainage validé (parrain)  +75       ✗         Ambassadeur
-Parrainage validé (filleul)  +50       ✗         Filleul
+Parrainage validé (filleul)  —         ✗         Filleul
 Doublon carte commune        +10       ✗         —
 Doublon carte rare           +25       ✗         —
 ```

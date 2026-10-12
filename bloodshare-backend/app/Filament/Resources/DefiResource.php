@@ -35,10 +35,6 @@ class DefiResource extends Resource
                     ->numeric(),
                 Forms\Components\DatePicker::make('date_fin')
                     ->label('Date de fin'),
-                Forms\Components\TextInput::make('points_attribues')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
                 Forms\Components\Select::make('statut')
                     ->label('Statut')
                     ->options([
@@ -81,9 +77,6 @@ class DefiResource extends Resource
                 Tables\Columns\TextColumn::make('date_fin')
                     ->label('Date de fin')
                     ->date('d/m/Y')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('points_attribues')
-                    ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('statut')
                     ->searchable(),

@@ -495,7 +495,6 @@ Alimente le bloc "Défi du mois" affiché sur l'écran d'accueil, avec sa progre
   "objectif_chiffre": 100,
   "progression_actuelle": 67,
   "ma_progression": 4,
-  "points_attribues": 50,
   "statut": "actif",
   "date_fin": "2026-06-30"
 }
@@ -505,9 +504,10 @@ Alimente le bloc "Défi du mois" affiché sur l'écran d'accueil, avec sa progre
 > utilisateurs confondus). `ma_progression` est propre à l'utilisateur connecté : le nombre de
 > ses dons qui ont compté pour CE défi (0 s'il n'a pas encore contribué).
 > `statut` vaut `actif` ou `termine` : quand `progression_actuelle` atteint `objectif_chiffre`,
-> le défi passe à `termine`, les points sont distribués une seule fois à chaque contributeur, et
-> cet endpoint continue de renvoyer ce défi (au lieu de basculer sur `null`) pour que l'app
-> puisse afficher le résultat.
+> le défi passe à `termine`, chaque contributeur est marqué comme ayant remporté le défi (badge
+> « Objectif atteint ») — **sans points** : un don ne rapporte jamais de points (règle éthique
+> ADSB-NC) —, et cet endpoint continue de renvoyer ce défi (au lieu de basculer sur `null`) pour
+> que l'app puisse afficher le résultat.
 > Retourne `null` s'il n'existe aucun défi actif ni récemment terminé.
 # 10\. Contenu
 ## `GET /actualites`
