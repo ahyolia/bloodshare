@@ -73,5 +73,6 @@ class NotifierFinIneligibiliteTest extends TestCase
         Artisan::call('notifications:fin-ineligibilite');
 
         $this->assertSame(0, $user->notifications()->count());
+        $this->assertStringContainsString('0 utilisateur(s) notifié(s)', Artisan::output());
     }
 }

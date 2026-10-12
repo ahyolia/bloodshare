@@ -22,10 +22,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // 📖 RGPD : un compte supprimé ne doit plus rien recevoir ni accumuler en base. Plusieurs
-        //    commandes planifiées partent des dons ou des quiz pour trouver qui notifier, et
-        //    retrouveraient donc aussi les comptes anonymisés : on bloque l'envoi ici, une seule
-        //    fois pour tous les canaux, plutôt que de répéter le filtre dans chaque commande.
+        // 📖 RGPD : un compte supprimé ne doit plus rien recevoir ni accumuler en base. Les
+        //    commandes planifiées excluent déjà ces comptes (scope User::nonSupprimes(), pour
+        //    que leur compteur « X notifié(s) » reste juste) ; ce blocage est le filet de
+        //    sécurité pour tous les canaux et pour toute commande future qui l'oublierait.
         //    Renvoyer `false` depuis un écouteur de NotificationSending annule l'envoi.
         Event::listen(NotificationSending::class, function (NotificationSending $event) {
             if ($event->notifiable instanceof User && $event->notifiable->statut === 'supprime') {

@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 // 📖 Le changement de mot de passe a son propre fichier (ChangerMotDePasseTest).
@@ -130,6 +131,19 @@ class ProfilTest extends TestCase
         $this->assertNull($user->statut_donneur);
         $this->assertNull($user->derniere_connexion);
         $this->assertNull($user->motif_suspension);
+    }
+
+    public function test_un_admin_supprime_perd_ses_roles_et_son_remember_token(): void
+    {
+        Role::create(['name' => 'admin']);
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $admin->anonymiser();
+
+        $admin->refresh();
+        $this->assertNull($admin->remember_token);
+        $this->assertSame(0, $admin->roles()->count());
     }
 
     public function test_la_suppression_efface_l_historique_des_notifications(): void

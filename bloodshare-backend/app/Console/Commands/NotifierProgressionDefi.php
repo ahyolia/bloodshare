@@ -25,6 +25,7 @@ class NotifierProgressionDefi extends Command
 
         $participants = UserDefi::where('defi_id', $defi->id)
             ->where('progression', '>', 0)
+            ->whereHas('user', fn ($q) => $q->nonSupprimes())
             ->with('user')
             ->get();
 

@@ -16,6 +16,7 @@ class NotifierAnniversaireDon extends Command
     public function handle(): int
     {
         $premiersDons = Don::where('statut', 'valide')
+            ->whereHas('user', fn ($q) => $q->nonSupprimes())
             ->selectRaw('user_id, min(date_don) as premiere_date')
             ->groupBy('user_id')
             ->with('user')

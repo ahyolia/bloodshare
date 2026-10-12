@@ -22,6 +22,7 @@ class NotifierQuizNonTermine extends Command
             //    commencé relancerait quand même l'utilisateur pour un quiz que
             //    QuizController::soumettre() refuse désormais (where('statut', 'actif')).
             ->whereHas('quiz', fn ($q) => $q->where('statut', 'actif'))
+            ->whereHas('user', fn ($q) => $q->nonSupprimes())
             ->with(['user', 'quiz'])
             ->get();
 
