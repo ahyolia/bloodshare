@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -86,28 +87,42 @@ class User extends Authenticatable implements FilamentUser, HasName
     //    compte") : les deux chemins de suppression doivent produire le même état.
     //    `sexe` + dates de don sont des données de santé (voir le dossier juridique) : sans
     //    effacer le sexe, l'historique conservé resterait rattaché à une donnée de santé.
+    //    Tout se fait dans une transaction : un compte ne doit jamais rester marqué
+    //    `supprime` en gardant une partie de ses données parce qu'une étape a échoué.
     public function anonymiser(): void
     {
-        $this->update([
-            'statut' => 'supprime',
-            'pseudo' => 'Utilisateur supprimé',
-            'email' => "supprime-{$this->id}@bloodshare.local",
-            'password' => Hash::make(Str::random(40)),
-            'avatar_id' => null,
-            'code_parrainage' => null,
-            'sexe' => null,
-            'statut_donneur' => null,
-            'derniere_connexion' => null,
-            'motif_suspension' => null,
-        ]);
+        DB::transaction(function () {
+            // 📖 forceFill : `remember_token` n'est pas dans $fillable.
+            $this->forceFill([
+                'statut' => 'supprime',
+                'pseudo' => 'Utilisateur supprimé',
+                'email' => "supprime-{$this->id}@bloodshare.local",
+                'password' => Hash::make(Str::random(40)),
+                'remember_token' => null,
+                'avatar_id' => null,
+                'code_parrainage' => null,
+                'sexe' => null,
+                'statut_donneur' => null,
+                'derniere_connexion' => null,
+                'motif_suspension' => null,
+            ])->save();
 
-        // 📖 Un compte supprimé ne doit plus recevoir de notification : sans ça, l'appareil
-        //    reste abonné et continuerait de recevoir les push de l'ancien compte.
-        $this->pushSubscriptions()->delete();
+            // 📖 Un compte admin supprimé depuis le BO ne doit garder aucun rôle.
+            $this->syncRoles([]);
 
-        // 📖 L'historique des notifications reprend des éléments personnels (dons, défis,
-        //    quiz) : il n'a plus d'utilité une fois le compte supprimé.
-        $this->notifications()->delete();
+            // 📖 Un compte supprimé ne doit plus recevoir de notification : sans ça, l'appareil
+            //    reste abonné et continuerait de recevoir les push de l'ancien compte.
+            $this->pushSubscriptions()->delete();
+
+            // 📖 L'historique des notifications reprend des éléments personnels (dons, défis,
+            //    quiz) : il n'a plus d'utilité une fois le compte supprimé.
+            $this->notifications()->delete();
+        });
+    }
+
+    public function scopeNonSupprimes($query)
+    {
+        return $query->where('statut', '!=', 'supprime');
     }
 
     // Relations

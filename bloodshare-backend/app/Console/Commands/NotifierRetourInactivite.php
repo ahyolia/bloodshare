@@ -19,7 +19,8 @@ class NotifierRetourInactivite extends Command
     {
         $notifies = 0;
 
-        User::whereDate('derniere_connexion', now()->subDays(30)->toDateString())
+        User::nonSupprimes()
+            ->whereDate('derniere_connexion', now()->subDays(30)->toDateString())
             ->each(function (User $user) use (&$notifies) {
                 $user->notify(new RetourInactiviteNotification());
                 $notifies++;

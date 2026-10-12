@@ -19,6 +19,7 @@ class NotifierFinIneligibilite extends Command
     public function handle(): int
     {
         $derniersDonsValides = Don::where('statut', 'valide')
+            ->whereHas('user', fn ($q) => $q->nonSupprimes())
             ->selectRaw('user_id, max(date_don) as derniere_date')
             ->groupBy('user_id')
             ->with('user')
