@@ -1,14 +1,16 @@
 import api from '../api';
-import { getProfil } from '../profil.service';
+import { getProfil, supprimerCompte, updateProfil } from '../profil.service';
 
 jest.mock('../../constants/config', () => ({ USE_MOCK_DATA: false }));
 
 jest.mock('../api', () => ({
   __esModule: true,
-  default: { post: jest.fn(), get: jest.fn() },
+  default: { post: jest.fn(), get: jest.fn(), put: jest.fn(), delete: jest.fn() },
 }));
 
 const apiGet = api.get as jest.Mock;
+const apiPut = api.put as jest.Mock;
+const apiDelete = api.delete as jest.Mock;
 
 // Réponse réelle de GET /me (ProfilController::formatUser) : elle contient `sexe`,
 // une donnée d'identité que CONTRIBUTING.md interdit de conserver.
@@ -92,5 +94,57 @@ describe('getProfil', () => {
       expect(profil.pseudo).toBe('BloodHero42');
       expect(profil.nb_parrainages_valides).toBe(0);
     });
+  });
+});
+
+describe('updateProfil', () => {
+  const payload = { pseudo: 'BloodHero42', avatar_id: 2, statut_donneur: 'quelques_dons' as const };
+
+  it('envoie les modifications à PUT /me', async () => {
+    apiPut.mockResolvedValue(reponseApi);
+
+    await updateProfil(payload);
+
+    expect(apiPut).toHaveBeenCalledWith('/me', payload);
+  });
+
+  it('renvoie le profil à jour, sans le sexe (contrainte anonymat)', async () => {
+    apiPut.mockResolvedValue(reponseApi);
+
+    const profil = await updateProfil(payload);
+
+    expect(profil.pseudo).toBe('BloodHero42');
+    expect(profil).not.toHaveProperty('sexe');
+  });
+
+  it('met le nombre de parrainages à 0, absent de la réponse de PUT /me', async () => {
+    apiPut.mockResolvedValue(reponseApi);
+
+    const profil = await updateProfil(payload);
+
+    expect(profil.nb_parrainages_valides).toBe(0);
+  });
+
+  it('propage une erreur 422 (pseudo déjà pris)', async () => {
+    const erreur = { response: { status: 422, data: { errors: { pseudo: ['déjà pris'] } } } };
+    apiPut.mockRejectedValue(erreur);
+
+    await expect(updateProfil({ ...payload, pseudo: 'Pris' })).rejects.toBe(erreur);
+  });
+});
+
+describe('supprimerCompte', () => {
+  it('appelle DELETE /me', async () => {
+    apiDelete.mockResolvedValue({});
+
+    await supprimerCompte();
+
+    expect(apiDelete).toHaveBeenCalledWith('/me');
+  });
+
+  it('propage l’erreur pour que l’écran ne déconnecte pas à tort', async () => {
+    apiDelete.mockRejectedValue(new Error('Network Error'));
+
+    await expect(supprimerCompte()).rejects.toThrow('Network Error');
   });
 });

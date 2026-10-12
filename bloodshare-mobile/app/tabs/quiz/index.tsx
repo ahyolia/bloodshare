@@ -166,7 +166,7 @@ export default function QuizScreen() {
             </View>
             <View style={styles.aVenirTexte}>
               <Text style={styles.aVenirTitre}>À venir</Text>
-              <Text style={styles.aVenirSousTitre}>D'autres quiz arrivent prochainement !</Text>
+              <Text style={styles.aVenirSousTitre}>D&apos;autres quiz arrivent prochainement !</Text>
             </View>
           </View>
         ) : (
@@ -298,7 +298,7 @@ export default function QuizScreen() {
 
           <View style={styles.separateur} />
 
-          <Text style={styles.historiqueLabel}>Envie d'en apprendre plus ?</Text>
+          <Text style={styles.historiqueLabel}>Envie d&apos;en apprendre plus ?</Text>
           <TouchableOpacity
             style={styles.fichesButton}
             onPress={() => router.push({ pathname: '/tabs/don', params: { section: 'fiches' } })}
