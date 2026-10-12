@@ -7,6 +7,7 @@ use App\Models\Don;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -110,6 +111,40 @@ class ProfilTest extends TestCase
         $this->assertSame("supprime-{$user->id}@bloodshare.local", $user->email);
         $this->assertNull($user->code_parrainage);
         $this->assertFalse(Hash::check('password', $user->password));
+    }
+
+    public function test_la_suppression_detache_les_donnees_de_sante_et_de_profil(): void
+    {
+        $user = User::factory()->create([
+            'sexe' => 'femme',
+            'statut_donneur' => 'donneur_regulier',
+            'derniere_connexion' => now(),
+            'motif_suspension' => 'Pseudo injurieux',
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->deleteJson('/api/me')->assertOk();
+
+        $user->refresh();
+        $this->assertNull($user->sexe);
+        $this->assertNull($user->statut_donneur);
+        $this->assertNull($user->derniere_connexion);
+        $this->assertNull($user->motif_suspension);
+    }
+
+    public function test_la_suppression_efface_l_historique_des_notifications(): void
+    {
+        $user = User::factory()->create();
+        $user->notifications()->create([
+            'id' => (string) Str::uuid(),
+            'type' => 'test',
+            'data' => ['message' => 'Tu peux de nouveau donner'],
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->deleteJson('/api/me')->assertOk();
+
+        $this->assertSame(0, $user->notifications()->count());
     }
 
     public function test_la_suppression_conserve_l_historique_des_dons(): void

@@ -61,4 +61,17 @@ class NotifierFinIneligibiliteTest extends TestCase
 
         Notification::assertNothingSentTo($user);
     }
+
+    // 📖 Sans Notification::fake() : le blocage des comptes supprimés passe par l'événement
+    //    NotificationSending, que le fake court-circuite.
+    public function test_ne_notifie_pas_un_compte_supprime(): void
+    {
+        $user = User::factory()->create(['sexe' => 'homme']);
+        Don::create(['user_id' => $user->id, 'date_don' => now()->subDays(56), 'statut' => 'valide']);
+        $user->anonymiser();
+
+        Artisan::call('notifications:fin-ineligibilite');
+
+        $this->assertSame(0, $user->notifications()->count());
+    }
 }
