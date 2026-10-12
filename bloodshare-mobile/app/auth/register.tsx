@@ -190,7 +190,7 @@ export default function RegisterScreen() {
               ))}
             </View>
             {renderFieldError('sexe')}
-            <Text style={styles.hintText}>Sert à calculer votre délai d'éligibilité entre deux dons. Confidentiel, jamais affiché.</Text>
+            <Text style={styles.hintText}>Sert à calculer votre délai d&apos;éligibilité entre deux dons. Confidentiel, jamais affiché.</Text>
 
             <Text style={styles.label}>Code de parrainage</Text>
             <TextInput style={styles.input} placeholder="Code de parrainage (optionnel)" value={codeParrainage} onChangeText={setCodeParrainage} autoCapitalize="characters" />
@@ -200,11 +200,11 @@ export default function RegisterScreen() {
             <View style={styles.checkboxContainer}>
               <Pressable style={styles.checkboxRow} onPress={() => setPrivacyAccepted(!privacyAccepted)} accessibilityRole="checkbox" accessibilityState={{ checked: privacyAccepted }}>
                 <Text style={styles.checkboxIcon}>{privacyAccepted ? '☑' : '☐'}</Text>
-                <Text style={styles.checkboxText}>J'accepte la <Text style={styles.linkTextUnderline}>Politiques de confidentialité</Text>.</Text>
+                <Text style={styles.checkboxText}>J&apos;accepte la <Text style={styles.linkTextUnderline}>Politiques de confidentialité</Text>.</Text>
               </Pressable>
               <Pressable style={styles.checkboxRow} onPress={() => setCguAccepted(!cguAccepted)} accessibilityRole="checkbox" accessibilityState={{ checked: cguAccepted }}>
                 <Text style={styles.checkboxIcon}>{cguAccepted ? '☑' : '☐'}</Text>
-                <Text style={styles.checkboxText}>J'accepte les <Text style={styles.linkTextUnderline}>Conditions générales d'utilisation</Text> (CGU).</Text>
+                <Text style={styles.checkboxText}>J&apos;accepte les <Text style={styles.linkTextUnderline}>Conditions générales d&apos;utilisation</Text> (CGU).</Text>
               </Pressable>
             </View>
 
