@@ -1,5 +1,4 @@
-import { useEffect, useRef } from "react";
-import { getOnboardingVu } from "../utils/preferences";
+import { useEffect } from "react";
 import { useFonts } from "expo-font";
 import {
   Stack,
@@ -10,8 +9,17 @@ import {
 } from "expo-router";
 import { getToken, getUser } from "../stores/auth.store";
 import { DialogueProvider } from "../components/DialogueProvider";
+import { getOnboardingVu } from "../utils/preferences";
 
+/** Durée minimale d'affichage du splash au lancement (critère du ticket FO-03). */
 const DUREE_MIN_SPLASH_MS = 1500;
+
+/**
+ * 📖 Instant d'ouverture de l'app. Mesuré au chargement du fichier, qui n'a lieu
+ *    qu'une fois, et non pendant le rendu : un composant React doit rester pur
+ *    (règle react-hooks/purity), et `Date.now()` change à chaque appel.
+ */
+const DEBUT_LANCEMENT = Date.now();
 
 export default function RootLayout() {
   const router = useRouter();
@@ -43,11 +51,6 @@ export default function RootLayout() {
   //    On teste le chemin et non `segments` : avec les routes typées, useSegments()
   //    ne prévoit pas de tableau vide, ce qui rendrait la condition fragile.
   const surSplash = usePathname() === "/";
-
-  // 📖 Instant d'ouverture de l'app. Un `useRef` ne change pas entre deux rendus :
-  //    on mesure donc bien le temps écoulé depuis le tout premier affichage,
-  //    chargement des polices compris.
-  const debutLancement = useRef(Date.now());
 
   useEffect(() => {
     // Attendre que la navigation soit prête
@@ -106,7 +109,7 @@ export default function RootLayout() {
         // 📖 Seul le départ du splash est retardé, pour qu'il reste visible au moins
         //    DUREE_MIN_SPLASH_MS. Toutes les autres redirections restent immédiates.
         if (surSplash) {
-          const restant = DUREE_MIN_SPLASH_MS - (Date.now() - debutLancement.current);
+          const restant = DUREE_MIN_SPLASH_MS - (Date.now() - DEBUT_LANCEMENT);
           if (restant > 0) {
             await new Promise((resolve) => setTimeout(resolve, restant));
           }
