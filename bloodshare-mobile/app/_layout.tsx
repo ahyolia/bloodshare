@@ -9,6 +9,7 @@ import {
 } from "expo-router";
 import { getToken, getUser } from "../stores/auth.store";
 import { DialogueProvider } from "../components/DialogueProvider";
+import { choisirDestination } from "../utils/destination";
 import { getOnboardingVu } from "../utils/preferences";
 
 /** Durée minimale d'affichage du splash au lancement (critère du ticket FO-03). */
@@ -58,36 +59,6 @@ export default function RootLayout() {
 
     let cancelled = false;
 
-    /**
-     * Décide où doit aller l'utilisateur, ou renvoie `null` s'il est déjà
-     * au bon endroit.
-     */
-    const choisirDestination = async (token: string | null) => {
-      if (!token) {
-        if (inAuthGroup) return null;
-
-        // 📖 Première ouverture sur cet appareil → onboarding, sinon connexion.
-        //    Si la lecture échoue, on fait comme si l'onboarding était déjà vu :
-        //    mieux vaut le manquer que rester bloqué sur le splash.
-        const onboardingVu = await getOnboardingVu().catch(() => true);
-        return onboardingVu ? "/auth/login" : "/auth/onboarding";
-      }
-
-      // 📖 Un mdp réinitialisé par un admin (voir UserResource) oblige l'utilisateur à
-      //    en choisir un nouveau avant d'accéder au reste de l'app, où qu'il navigue.
-      const user = await getUser().catch(() => null);
-      if (user?.doit_changer_mdp && !inChangerMdpGroup) {
-        return "/changer-mot-de-passe?force=1";
-      }
-
-      // 📖 `!inTabsGroup` et non `inAuthGroup` : au lancement on est sur `app/index.tsx`
-      // (ni `auth`, ni `tabs`). Avec `inAuthGroup`, l'utilisateur connecté restait
-      // bloqué sur l'écran de chargement.
-      if (!inTabsGroup) return "/tabs";
-
-      return null;
-    };
-
     // 📖 On relit le token à chaque changement de groupe de routes plutôt que de le garder
     // dans un state : sinon, après un login, ce composant garderait l'ancienne valeur (null)
     // et renverrait aussitôt l'utilisateur sur /auth/login.
@@ -103,8 +74,24 @@ export default function RootLayout() {
       .then(async (token) => {
         if (cancelled) return;
 
-        const destination = await choisirDestination(token);
-        if (cancelled || !destination) return;
+        // 📖 On ne lit que ce qui sert à la décision : l'onboarding pour un visiteur,
+        //    le profil pour un utilisateur connecté.
+        //    Si la lecture de l'onboarding échoue, on fait comme s'il était déjà vu :
+        //    mieux vaut le manquer que rester bloqué sur le splash.
+        const onboardingVu =
+          token || inAuthGroup ? true : await getOnboardingVu().catch(() => true);
+        const user = token ? await getUser().catch(() => null) : null;
+        if (cancelled) return;
+
+        const destination = choisirDestination({
+          token,
+          onboardingVu,
+          doitChangerMdp: user?.doit_changer_mdp ?? false,
+          inAuthGroup,
+          inTabsGroup,
+          inChangerMdpGroup,
+        });
+        if (!destination) return;
 
         // 📖 Seul le départ du splash est retardé, pour qu'il reste visible au moins
         //    DUREE_MIN_SPLASH_MS. Toutes les autres redirections restent immédiates.
