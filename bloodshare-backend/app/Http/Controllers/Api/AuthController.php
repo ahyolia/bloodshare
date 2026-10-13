@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\DocumentJuridique;
 use App\Models\Parrainage;
 use App\Models\User;
 use App\Notifications\FilleulInscritNotification;
@@ -85,7 +86,9 @@ class AuthController extends Controller
         // 📖 forceFill : ces champs ne doivent jamais être modifiables par une mise à jour de
         //    profil (PUT /me), donc ils restent hors de $fillable.
         $user->forceFill([
-            'cgu_version' => config('juridique.cgu_version'),
+            // 📖 Version lue dans le document du BO (documents_juridiques), celle que le
+            //    super_admin fait évoluer : c'est elle que l'utilisateur a sous les yeux.
+            'cgu_version' => DocumentJuridique::where('type', 'cgu')->value('version'),
             'cgu_acceptees_at' => now(),
             'consentement_sante_at' => now(),
         ])->save();
