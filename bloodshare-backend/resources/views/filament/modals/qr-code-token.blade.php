@@ -22,7 +22,7 @@
         </div>
 
         <p class="text-sm text-gray-500">Token du QR Code lié à cet événement :</p>
-        <p class="font-mono text-sm break-all bg-gray-100 dark:bg-gray-800 rounded p-2">{{ $token }}</p>
+        <p class="font-mono text-sm break-words bg-gray-100 dark:bg-gray-800 rounded p-2">{{ $token }}</p>
 
         <script>
             // 📖 Le SVG est déjà dans le DOM (rendu côté serveur) : pas besoin de

@@ -4,18 +4,22 @@
         {{-- Token info --}}
         <div class="w-full max-w-lg rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Token actif</p>
-            <p class="mt-1 break-all font-mono text-sm text-gray-800 dark:text-gray-100">
+            <p class="mt-1 break-words font-mono text-sm text-gray-950 dark:text-white">
                 {{ $qrCode?->token ?? '—' }}
             </p>
-            <p class="mt-2 text-xs text-gray-400">
+            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                 Généré le {{ $qrCode?->created_at?->format('d/m/Y à H:i') ?? '—' }}
             </p>
         </div>
 
         {{-- QR Code --}}
+        {{-- 📖 Uniquement des classes présentes dans le CSS précompilé de Filament (pas de
+             build Tailwind dans le projet) : une classe absente est ignorée sans erreur.
+             L'impression (bordure retirée, reste de la page masqué) est gérée par le
+             @media print en bas de page. --}}
         <div
             id="qr-code-container"
-            class="flex items-center justify-center rounded-2xl border-4 border-red-500 bg-white p-6 shadow-lg print:border-0 print:shadow-none"
+            class="flex items-center justify-center rounded-xl border-2 border-primary-600 bg-white p-6 shadow-lg"
         >
             {!! $qrSvg !!}
         </div>
@@ -31,13 +35,9 @@
         </div>
 
         {{-- Bouton imprimer --}}
-        <button
-            onclick="window.print()"
-            class="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 print:hidden"
-        >
-            <x-heroicon-o-printer class="h-4 w-4" />
+        <x-filament::button color="gray" icon="heroicon-o-printer" onclick="window.print()">
             Imprimer
-        </button>
+        </x-filament::button>
 
     </div>
 
