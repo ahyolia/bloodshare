@@ -21,7 +21,9 @@ export default function MotDePasseOublieScreen() {
         {'Écrivez à '}
         <Text
           style={styles.email}
-          onPress={() => Linking.openURL(`mailto:${EMAIL_CONTACT}`)}
+          // 📖 Échoue si aucune application mail n'est installée : on l'ignore, l'adresse
+          //    reste affichée et l'utilisateur peut la recopier.
+          onPress={() => Linking.openURL(`mailto:${EMAIL_CONTACT}`).catch(() => {})}
           accessibilityRole="link"
         >
           {EMAIL_CONTACT}

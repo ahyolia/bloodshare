@@ -272,7 +272,7 @@ export default function RegisterScreen() {
 
             <View style={styles.avatarGrid}>
               {BOGUS_AVATARS.map((id) => (
-                <Pressable key={id} style={[styles.avatarCircle, avatarId === id && styles.avatarCircleActive]} onPress={() => setAvatarId(id)}>
+                <Pressable key={id} style={[styles.avatarCircle, avatarId === id && styles.avatarCircleActive]} onPress={() => setAvatarId(avatarId === id ? null : id)}>
                   {/* Placeholder pour les silhouettes de la maquette */}
                   <Text style={styles.avatarText}>{id}</Text>
                 </Pressable>
