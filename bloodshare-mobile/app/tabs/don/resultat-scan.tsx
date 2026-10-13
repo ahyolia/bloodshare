@@ -52,8 +52,8 @@ export default function ResultatScanScreen() {
         <Text style={styles.cardCategorie}>{categorieLabel}</Text>
         {dejaPossedee && (
           <Text style={styles.dejaPossedeeNote}>
-            Vous possédez déjà cette carte : elle ne peut être obtenue qu&apos;une seule fois.
-            Aucun point n&apos;est attribué pour un don.
+            {"Vous possédez déjà cette carte : elle ne peut être obtenue qu'une seule fois. " +
+              "Aucun point n'est attribué pour un don."}
           </Text>
         )}
       </View>
@@ -78,7 +78,7 @@ export default function ResultatScanScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.outlineButton} onPress={() => router.replace('/tabs')}>
-        <Text style={styles.outlineButtonText}>Retour à l&apos;accueil</Text>
+        <Text style={styles.outlineButtonText}>{"Retour à l'accueil"}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

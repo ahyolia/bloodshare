@@ -127,7 +127,7 @@ export default function LoginScreen() {
         </Pressable>
 
         <Pressable onPress={() => router.push('/auth/register')} style={styles.linkContainerSecond}>
-          <Text style={styles.linkText}>Pas encore de compte ? S&apos;inscrire</Text>
+          <Text style={styles.linkText}>{"Pas encore de compte ? S'inscrire"}</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>

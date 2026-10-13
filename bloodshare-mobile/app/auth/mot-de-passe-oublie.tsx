@@ -15,9 +15,9 @@ export default function MotDePasseOublieScreen() {
     >
       <Text style={styles.title}>Mot de passe oublié</Text>
       <Text style={styles.subtitle}>
-        Contactez l&apos;association ADSB-NC (réseaux sociaux ou de vive voix) pour
-        demander une réinitialisation. Un membre de l&apos;équipe vous communiquera un
-        mot de passe temporaire, que vous pourrez changer dès votre prochaine connexion.
+        {"Contactez l'association ADSB-NC (réseaux sociaux ou de vive voix) pour " +
+          "demander une réinitialisation. Un membre de l'équipe vous communiquera un " +
+          'mot de passe temporaire, que vous pourrez changer dès votre prochaine connexion.'}
       </Text>
 
       <Pressable

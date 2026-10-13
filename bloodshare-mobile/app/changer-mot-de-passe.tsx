@@ -87,8 +87,8 @@ export default function ChangerMotDePasseScreen() {
         <Text style={styles.title}>Changer mon mot de passe</Text>
         {oblige && (
           <Text style={styles.subtitle}>
-            Votre mot de passe a été réinitialisé par l&apos;association. Choisissez-en
-            un nouveau pour continuer.
+            {"Votre mot de passe a été réinitialisé par l'association. Choisissez-en " +
+              'un nouveau pour continuer.'}
           </Text>
         )}
 

@@ -73,7 +73,7 @@ export default function NotificationsScreen() {
           onEndReached={chargerPlus}
           onEndReachedThreshold={0.4}
           ListEmptyComponent={
-            <Text style={styles.empty}>Vous n&apos;avez aucune notification pour l&apos;instant.</Text>
+            <Text style={styles.empty}>{"Vous n'avez aucune notification pour l'instant."}</Text>
           }
           ListFooterComponent={
             chargementSuite ? (

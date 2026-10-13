@@ -202,7 +202,7 @@ export default function RegisterScreen() {
               ))}
             </View>
             {renderFieldError('sexe')}
-            <Text style={styles.hintText}>Sert à calculer votre délai d&apos;éligibilité entre deux dons. Confidentiel, jamais affiché.</Text>
+            <Text style={styles.hintText}>{"Sert à calculer votre délai d'éligibilité entre deux dons. Confidentiel, jamais affiché."}</Text>
 
             <Text style={styles.label}>Code de parrainage</Text>
             <TextInput style={styles.input} placeholder="Code de parrainage (optionnel)" value={codeParrainage} onChangeText={setCodeParrainage} autoCapitalize="characters" />
