@@ -13,7 +13,7 @@ L'application Aïma est éditée par l'Association des Donneurs de Sang Bénévo
 
 ## Représentant légal et responsable de publication
 
-Représentant légal : Lilian MORER, président de l'ADSB-NC
+Représentant légal : Lilian MORER, président de l'ADSB-NC.
 
 Responsable de publication : [À COMPLÉTER : nom et fonction]
 

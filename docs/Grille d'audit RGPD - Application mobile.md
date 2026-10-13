@@ -51,7 +51,7 @@
 | Finalités explicites | ✅ | Compte, suivi des dons et rappels, gamification, parrainage, notifications, support, sécurité. Il n'y a pas de prise de rendez-vous dans l'app, contrairement à ce que prévoyait l'ancienne grille. |
 | Bases légales précisées | ✅ | Exécution des CGU (compte, gamification, parrainage), consentement explicite (données de santé), consentement (notifications), intérêt légitime (support, sécurité), obligation légale (demandes de droits). |
 | Droits des personnes expliqués | ✅ | Section « Vos droits » : liste des droits, adresse de contact, délai d'un mois, réclamation CNIL. |
-| Mentions légales | 🟡 | Rédigées. Restent : représentant légal, responsable de publication, hébergeur, propriété intellectuelle. |
+| Mentions légales | 🟡 | Rédigées. Représentant légal (Lilian MORER, président) et cadre du projet renseignés. Restent : responsable de publication, hébergeur, propriété intellectuelle. |
 
 ## 3. Collecte et minimisation
 
