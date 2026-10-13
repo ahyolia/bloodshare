@@ -216,11 +216,11 @@ export default function RegisterScreen() {
             <View style={styles.checkboxContainer}>
               <Pressable style={styles.checkboxRow} onPress={() => setPrivacyAccepted(!privacyAccepted)} accessibilityRole="checkbox" accessibilityState={{ checked: privacyAccepted }}>
                 <Text style={styles.checkboxIcon}>{privacyAccepted ? '☑' : '☐'}</Text>
-                <Text style={styles.checkboxText}>J&apos;accepte la <Text style={styles.linkTextUnderline} onPress={ouvrirDocument('confidentialite')} accessibilityRole="link">Politique de confidentialité</Text>.</Text>
+                <Text style={styles.checkboxText}>{"J'accepte la "}<Text style={styles.linkTextUnderline} onPress={ouvrirDocument('confidentialite')} accessibilityRole="link">Politique de confidentialité</Text>.</Text>
               </Pressable>
               <Pressable style={styles.checkboxRow} onPress={() => setCguAccepted(!cguAccepted)} accessibilityRole="checkbox" accessibilityState={{ checked: cguAccepted }}>
                 <Text style={styles.checkboxIcon}>{cguAccepted ? '☑' : '☐'}</Text>
-                <Text style={styles.checkboxText}>J&apos;accepte les <Text style={styles.linkTextUnderline} onPress={ouvrirDocument('cgu')} accessibilityRole="link">Conditions générales d&apos;utilisation</Text> (CGU).</Text>
+                <Text style={styles.checkboxText}>{"J'accepte les "}<Text style={styles.linkTextUnderline} onPress={ouvrirDocument('cgu')} accessibilityRole="link">{"Conditions générales d'utilisation"}</Text> (CGU).</Text>
               </Pressable>
               {/* 📖 Sexe + dates de don = données de santé : consentement explicite et distinct
                   des CGU (voir docs/Dossier juridique). */}
