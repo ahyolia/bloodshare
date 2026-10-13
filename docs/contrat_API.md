@@ -26,6 +26,7 @@ Ce document définit le format exact des requêtes et réponses entre l'applicat
 | Contenu | `GET /stock-sang` | ✅ Implémenté |
 | Contenu | `GET /evenements` | ✅ Implémenté |
 | Contenu | `GET /bannieres` | ✅ Implémenté |
+| Contenu | `GET /documents-juridiques/{type}` | ✅ Implémenté |
 | Gamification | `GET /quiz` | ✅ Implémenté |
 | Gamification | `GET /quiz/{id}` | ✅ Implémenté |
 | Gamification | `PUT /quiz/{id}/progression` | ✅ Implémenté |
@@ -583,6 +584,23 @@ Vérifie s'il y a une alerte pénurie à afficher en bandeau sur l'écran d'accu
 ```
 
 > Retourne `{ "active": false }` si aucune bannière active.
+
+## `GET /documents-juridiques/{type}`
+Public (pas de token) : lu depuis l'écran d'inscription comme depuis les paramètres du profil. `type` vaut `cgu`, `confidentialite` ou `mentions_legales`. Le texte est saisi dans le backoffice (*Administration > Documents juridiques*, modifiable par le super_admin uniquement). **Réponse 200 :**
+
+```json
+{
+  "type": "cgu",
+  "titre": "Conditions générales d'utilisation",
+  "contenu": "## Objet\n\nAïma est éditée par l'ADSB-NC.\n\n- Réservée aux personnes majeures",
+  "version": "1.0",
+  "mis_a_jour_le": "2026-10-14"
+}
+```
+
+> `contenu` utilise une syntaxe minimale : `## ` pour un titre, `- ` pour une puce, une ligne vide entre deux paragraphes (rendu côté mobile par `utils/documentTexte.ts`).
+> **404** si le type est inconnu ou si le document n'est pas encore rédigé (contenu vide) : l'app affiche alors « bientôt disponible ».
+
 # 11\. Parrainage
 ## `GET /parrainage/code`
 Récupère le code de parrainage personnel de l'utilisateur, à afficher/partager depuis l'écran Profil. _Authentifié._

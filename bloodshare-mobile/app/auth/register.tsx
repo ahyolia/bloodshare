@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   View, Text, TextInput, Pressable, StyleSheet, 
-  ActivityIndicator, ScrollView, SafeAreaView 
+  ActivityIndicator, ScrollView, SafeAreaView, GestureResponderEvent
 } from 'react-native';
 import { router } from 'expo-router';
 import { register } from '../../services/auth.service';
@@ -126,6 +126,14 @@ export default function RegisterScreen() {
     }
   };
 
+  // 📖 Le lien est dans le libellé de la case : stopPropagation évite que le clic
+  //    coche/décoche aussi la case (sur web, le clic remonte jusqu'au Pressable).
+  //    router.push et non replace : le retour ramène à l'inscription, saisie conservée.
+  const ouvrirDocument = (type: 'cgu' | 'confidentialite') => (event: GestureResponderEvent) => {
+    event.stopPropagation();
+    router.push(`/documents/${type}`);
+  };
+
   const renderFieldError = (field: string) => {
     return fieldErrors[field] ? <Text style={styles.errorText}>{fieldErrors[field][0]}</Text> : null;
   };
@@ -208,11 +216,11 @@ export default function RegisterScreen() {
             <View style={styles.checkboxContainer}>
               <Pressable style={styles.checkboxRow} onPress={() => setPrivacyAccepted(!privacyAccepted)} accessibilityRole="checkbox" accessibilityState={{ checked: privacyAccepted }}>
                 <Text style={styles.checkboxIcon}>{privacyAccepted ? '☑' : '☐'}</Text>
-                <Text style={styles.checkboxText}>J&apos;accepte la <Text style={styles.linkTextUnderline}>Politiques de confidentialité</Text>.</Text>
+                <Text style={styles.checkboxText}>{"J'accepte la "}<Text style={styles.linkTextUnderline} onPress={ouvrirDocument('confidentialite')} accessibilityRole="link">Politique de confidentialité</Text>.</Text>
               </Pressable>
               <Pressable style={styles.checkboxRow} onPress={() => setCguAccepted(!cguAccepted)} accessibilityRole="checkbox" accessibilityState={{ checked: cguAccepted }}>
                 <Text style={styles.checkboxIcon}>{cguAccepted ? '☑' : '☐'}</Text>
-                <Text style={styles.checkboxText}>J&apos;accepte les <Text style={styles.linkTextUnderline}>Conditions générales d&apos;utilisation</Text> (CGU).</Text>
+                <Text style={styles.checkboxText}>{"J'accepte les "}<Text style={styles.linkTextUnderline} onPress={ouvrirDocument('cgu')} accessibilityRole="link">{"Conditions générales d'utilisation"}</Text> (CGU).</Text>
               </Pressable>
               {/* 📖 Sexe + dates de don = données de santé : consentement explicite et distinct
                   des CGU (voir docs/Dossier juridique). */}

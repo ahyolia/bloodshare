@@ -9,6 +9,8 @@ export type ContexteNavigation = {
   inAuthGroup: boolean;
   inTabsGroup: boolean;
   inChangerMdpGroup: boolean;
+  /** Écrans publics (documents juridiques), ouverts connecté ou non. */
+  inPublicGroup: boolean;
 };
 
 export type Destination =
@@ -33,7 +35,12 @@ export const choisirDestination = ({
   inAuthGroup,
   inTabsGroup,
   inChangerMdpGroup,
+  inPublicGroup,
 }: ContexteNavigation): Destination | null => {
+  // 📖 Les CGU et la politique de confidentialité se lisent depuis l'inscription (pas
+  //    encore de token) comme depuis le profil : on n'y redirige jamais personne.
+  if (inPublicGroup) return null;
+
   if (!token) {
     if (inAuthGroup) return null;
 

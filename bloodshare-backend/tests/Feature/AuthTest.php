@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Badge;
+use App\Models\DocumentJuridique;
 use App\Models\User;
 use App\Notifications\FilleulInscritNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,12 +38,13 @@ class AuthTest extends TestCase
 
     public function test_enregistre_la_preuve_des_consentements(): void
     {
-        config(['juridique.cgu_version' => '1.2']);
+        // 📖 La version enregistrée est celle du document modifié dans le BO.
+        DocumentJuridique::where('type', 'cgu')->update(['version' => '2.0']);
 
         $this->postJson('/api/auth/register', $this->inscription())->assertCreated();
 
         $user = User::where('email', 'goutte@example.test')->first();
-        $this->assertSame('1.2', $user->cgu_version);
+        $this->assertSame('2.0', $user->cgu_version);
         $this->assertNotNull($user->cgu_acceptees_at);
         $this->assertNotNull($user->consentement_sante_at);
     }

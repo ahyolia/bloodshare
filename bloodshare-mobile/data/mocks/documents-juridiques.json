@@ -1,0 +1,23 @@
+{
+  "cgu": {
+    "type": "cgu",
+    "titre": "Conditions générales d'utilisation",
+    "contenu": "## Objet\n\nAïma est une application de sensibilisation au don du sang éditée par l'ADSB-NC.\n\n## Accès\n\n- Réservée aux personnes majeures\n- Gratuite",
+    "version": "1.0",
+    "mis_a_jour_le": "2026-10-14"
+  },
+  "confidentialite": {
+    "type": "confidentialite",
+    "titre": "Politique de confidentialité",
+    "contenu": "## Responsable du traitement\n\nAssociation des Donneurs de Sang Bénévoles de Nouvelle-Calédonie (ADSB-NC).",
+    "version": "1.0",
+    "mis_a_jour_le": "2026-10-14"
+  },
+  "mentions_legales": {
+    "type": "mentions_legales",
+    "titre": "Mentions légales",
+    "contenu": "## Éditeur\n\nAssociation des Donneurs de Sang Bénévoles de Nouvelle-Calédonie (ADSB-NC).",
+    "version": "1.0",
+    "mis_a_jour_le": "2026-10-14"
+  }
+}

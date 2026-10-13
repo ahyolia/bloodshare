@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Banniere;
 use App\Models\Contenu;
+use App\Models\DocumentJuridique;
 use App\Models\Evenement;
 use App\Models\QuestionEligibilite;
 use App\Models\StockSang;
@@ -59,6 +60,25 @@ class ContenuController extends Controller
                 ->orderBy('ordre')
                 ->get(['id', 'ordre', 'question', 'type_reponse', 'reponse_bloquante', 'message_refus'])
         );
+    }
+
+    public function documentJuridique(string $type)
+    {
+        $document = DocumentJuridique::where('type', $type)->first();
+
+        // 📖 Un document pas encore rédigé dans le BO est traité comme absent : l'app
+        //    affiche alors « bientôt disponible » plutôt qu'une page vide.
+        if (! $document || blank($document->contenu)) {
+            return response()->json(['message' => "Ce document n'est pas encore disponible."], 404);
+        }
+
+        return response()->json([
+            'type' => $document->type,
+            'titre' => $document->titre,
+            'contenu' => $document->contenu,
+            'version' => $document->version,
+            'mis_a_jour_le' => $document->updated_at->toDateString(),
+        ]);
     }
 
     public function bannieres()

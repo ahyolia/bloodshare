@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  Linking,
   ScrollView,
   StyleSheet,
   Switch,
@@ -24,9 +23,6 @@ import {
   setPenurieActivee,
 } from "../../../utils/preferences";
 import { useDialogue } from "../../../components/DialogueProvider";
-
-const URL_CONFIDENTIALITE = "https://aima.nc/privacy";
-const URL_CGU = "https://aima.nc/cgu";
 
 // 📖 expo-notifications ne fonctionne plus dans Expo Go (SDK 53+) et son simple
 //    import y jette une erreur. On le charge donc en `require()` paresseux, à
@@ -226,11 +222,15 @@ export default function ParametresScreen() {
         <View style={styles.card}>
           <LigneLien
             label="Politique de confidentialité"
-            onPress={() => Linking.openURL(URL_CONFIDENTIALITE)}
+            onPress={() => router.push("/documents/confidentialite")}
           />
           <LigneLien
             label="Conditions d'utilisation"
-            onPress={() => Linking.openURL(URL_CGU)}
+            onPress={() => router.push("/documents/cgu")}
+          />
+          <LigneLien
+            label="Mentions légales"
+            onPress={() => router.push("/documents/mentions_legales")}
           />
           <View style={[styles.ligne, styles.ligneDerniere]}>
             <Text style={styles.ligneLabel}>{"Version de l'app"}</Text>
