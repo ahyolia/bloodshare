@@ -124,13 +124,13 @@ export default function ScanScreen() {
               {"Pas d'inquiétude, vous pouvez autoriser la caméra à tout moment pour scanner votre QR Code."}
             </Text>
             <View style={styles.aideNavigateur}>
-              <Text style={styles.aideTitre}>Sur Safari (iPhone)</Text>
+              <Text style={styles.aideTitre}>Sur iPhone (Safari)</Text>
               <Text style={styles.aideTexte}>
                 {"Touchez l'icône à gauche de l'adresse (souvent « aA »), puis « Réglages du site web » › « Appareil photo » › « Autoriser »."}
               </Text>
-              <Text style={styles.aideTitre}>Sur Chrome</Text>
+              <Text style={styles.aideTitre}>Sur Android ou ordinateur (Chrome, Edge, Firefox…)</Text>
               <Text style={styles.aideTexte}>
-                {"Touchez l'icône à gauche de l'adresse, puis « Autorisations » › « Appareil photo » › « Autoriser »."}
+                {"Touchez l'icône à gauche de l'adresse (cadenas ou réglages), ouvrez les autorisations du site, puis autorisez l'appareil photo."}
               </Text>
             </View>
             <Text style={styles.permissionText}>Rechargez ensuite la page pour lancer le scan.</Text>
