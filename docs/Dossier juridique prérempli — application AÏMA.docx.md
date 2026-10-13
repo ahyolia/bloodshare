@@ -1,4 +1,4 @@
-**Dossier juridique prérempli — application AÏMA**
+**Dossier juridique prérempli — application Aïma**
 
 > **Légende**
 > - Les champs **\[À COMPLÉTER — …\]** attendent une information que seule l'association peut fournir. Le « … » indique qui doit la fournir.
@@ -11,7 +11,7 @@ Les statuts mis à jour le 20 mars 2018 donnent comme dénomination « Associati
 
 **Identité de l'organisme**
 
-* **Nom de l'application :** AÏMA
+* **Nom de l'application :** Aïma
 
 * **Nom juridique :** Association des Donneurs de Sang Bénévoles de Nouvelle-Calédonie
 
@@ -41,17 +41,17 @@ Les statuts mis à jour le 20 mars 2018 donnent comme dénomination « Associati
 
 * **Durée de l'association :** Illimitée
 
-L'objet statutaire est de réunir toutes les personnes intéressées par la promotion du don du sang. Le Centre hospitalier territorial présente également l'ADSBNC comme l'association des donneurs de sang bénévoles de Nouvelle-Calédonie.
+L'objet statutaire est de réunir toutes les personnes intéressées par la promotion du don du sang. Le Centre hospitalier territorial présente également l'ADSB-NC comme l'association des donneurs de sang bénévoles de Nouvelle-Calédonie.
 
 **Points à vérifier**
 
 Les statuts de 2018 indiquent encore comme siège social la F.O.L., BP 300, 98845 Nouméa Cedex, alors que l'avis RIDET communiqué en 2025 mentionne BP 2440 et l'établissement au 51 rue du Pasteur Marcel Ariège. Cette différence doit être vérifiée dans le dernier procès-verbal d'assemblée générale et auprès du greffe des associations ; si le siège statutaire a changé, les statuts et la déclaration administrative doivent être mis à jour.
 
-Les statuts signés en 2018 mentionnent Gérard JOYALUT comme président à cette date. Des informations publiques de 2025 présentent Lilian MORER comme président ; son mandat actuel doit être confirmé au moyen du dernier procès-verbal d'élection du bureau avant de l'inscrire définitivement comme représentant légal ou directeur de publication.
+Les statuts signés en 2018 mentionnent Gérard JOYALUT comme président à cette date. **Confirmé par l'équipe en octobre 2026 : Lilian MORER est le président et le représentant légal actuel de l'ADSB-NC.** Le dernier procès-verbal d'élection du bureau reste à joindre aux documents internes.
 
 **Responsables et contacts**
 
-* **Représentant légal actuel :** Lilian MORER, président \[À VALIDER — dernier PV d'élection du bureau\]
+* **Représentant légal actuel :** Lilian MORER, président (confirmé en 2026)
 
 * **Responsable de publication de l'application :** \[À COMPLÉTER — bureau ADSB-NC ; en général le président ou une personne mandatée\]
 
@@ -73,7 +73,7 @@ Le téléphone, l'adresse électronique et le site ci-dessus sont publiés par l
 
 **Éditeur**
 
-L'application AÏMA est éditée par l'**Association des Donneurs de Sang Bénévoles de Nouvelle-Calédonie (ADSBNC)**, association régie par la loi du 1er juillet 1901 et le décret du 16 août 1901\.
+L'application Aïma est éditée par l'**Association des Donneurs de Sang Bénévoles de Nouvelle-Calédonie (ADSB-NC)**, association régie par la loi du 1er juillet 1901 et le décret du 16 août 1901\.
 
 * **Numéro RID :** 0 171 835
 
@@ -91,13 +91,13 @@ L'application AÏMA est éditée par l'**Association des Donneurs de Sang Béné
 
 * **Site :** [https\://www\.adsbnc.org](https://www.adsbnc.org/)
 
-* **Représentant légal :** Lilian MORER, président \[À VALIDER\]
+* **Représentant légal :** Lilian MORER, président
 
 * **Responsable de publication :** \[À COMPLÉTER — bureau ADSB-NC\]
 
 **Conception et développement**
 
-L'application a été conçue et développée par Camélia Amin Handoyo, Geneviève Mekenese, Hugo Galy et Emmy Vergé \[À VALIDER — cadre : projet de formation / école à préciser\].
+L'application a été conçue et développée par Camélia Amin Handoyo, Geneviève Mekenese, Hugo Galy et Emmy Vergé, dans le cadre de leur 3e année de BUT Métiers du Multimédia et de l'Internet (MMI) à l'IUT de l'Université de la Nouvelle-Calédonie, en 2026.
 
 **Hébergement**
 
@@ -154,7 +154,7 @@ L'application est conçue pour fonctionner sous **pseudonyme** :
 | :---- | :---- | :---- |
 | Pseudo | Oui | Identifier l'utilisateur dans l'application (classements, parrainage) |
 | Adresse électronique | Oui | Identifiant de connexion |
-| Mot de passe | Oui | Sécuriser le compte (enregistré uniquement sous forme chiffrée irréversible, « haché ») |
+| Mot de passe | Oui | Sécuriser le compte (enregistré uniquement sous forme hachée : un hachage, contrairement à un chiffrement, ne peut pas être inversé) |
 | Sexe biologique (homme / femme) | Oui | Calculer le délai légal entre deux dons de sang (8 semaines pour un homme, 12 pour une femme) et envoyer le rappel au bon moment |
 | Profil de donneur (donneur régulier / quelques dons / jamais donné) | Non | Afficher le profil ; statistiques de l'association (part de donneurs réguliers). Donnée liée à la santé, couverte par le consentement explicite |
 | Avatar | Non | Personnaliser le profil |
@@ -164,6 +164,8 @@ L'application est conçue pour fonctionner sous **pseudonyme** :
 | Date de dernière connexion | Automatique | Administration et sécurité du compte |
 | Abonnement aux notifications (adresse technique fournie par le navigateur) | Si l'utilisateur accepte les notifications | Envoyer les rappels et les actualités |
 | Accès à l'appareil photo | Sur autorisation | Scanner les QR codes, aucune photo n'est enregistrée |
+| Preuve du consentement (date et version des CGU acceptées, date du consentement santé) | Automatique | Prouver l'accord de l'utilisateur en cas de contrôle |
+| Sur l'appareil : jeton de connexion et aperçu du profil (pseudo, avatar, points, code de parrainage, profil de donneur) | Automatique | Rester connecté et afficher le profil sans attendre le serveur ; effacés à la déconnexion |
 
 **Traitements**
 
@@ -225,7 +227,7 @@ Les utilisateurs peuvent, selon les conditions applicables, demander l'accès à
 
 **Information à la création du compte**
 
-Les informations marquées d'un astérisque sont nécessaires pour créer et gérer votre compte sur **AÏMA**. Elles sont traitées par l'Association des Donneurs de Sang Bénévoles de Nouvelle-Calédonie, numéro RIDET 0 171 835.001, afin de **faire fonctionner votre compte, le système de jeu et les rappels de don**, sur la base de **l'exécution des conditions générales d'utilisation**. Elles sont conservées **pendant toute la durée de vie de votre compte** et sont accessibles **aux seuls administrateurs habilités de l'ADSB-NC et à son hébergeur**. Pour exercer vos droits ou obtenir plus d'informations : **[aima.dondusang@outlook.fr](mailto:aima.dondusang@outlook.fr) et la Politique de confidentialité**.
+Les informations marquées d'un astérisque sont nécessaires pour créer et gérer votre compte sur **Aïma**. Elles sont traitées par l'Association des Donneurs de Sang Bénévoles de Nouvelle-Calédonie, numéro RIDET 0 171 835.001, afin de **faire fonctionner votre compte, le système de jeu et les rappels de don**, sur la base de **l'exécution des conditions générales d'utilisation**. Elles sont conservées **pendant toute la durée de vie de votre compte** et sont accessibles **aux seuls administrateurs habilités de l'ADSB-NC et à son hébergeur**. Pour exercer vos droits ou obtenir plus d'informations : **[aima.dondusang@outlook.fr](mailto:aima.dondusang@outlook.fr) et la Politique de confidentialité**.
 
 Case distincte pour les CGU :
 
@@ -350,8 +352,8 @@ Cette action supprimera définitivement votre compte : **votre pseudo, votre adr
 
 | \# | Élément | Statut | Qui |
 | :---- | :---- | :---- | :---- |
-| 1 | Nom définitif et description des fonctions de l'application | ✅ AÏMA, voir « Objet de l'application » | — |
-| 2 | Dernier procès-verbal confirmant le président et les membres du bureau | ⏳ | ADSB-NC |
+| 1 | Nom définitif et description des fonctions de l'application | ✅ Aïma, voir « Objet de l'application » | — |
+| 2 | Dernier procès-verbal confirmant le président et les membres du bureau | ✅ président confirmé : Lilian MORER (PV à joindre aux documents internes) | ADSB-NC |
 | 3 | Confirmation du siège social et de l'adresse postale à utiliser | ⏳ | ADSB-NC |
 | 4 | Nom du responsable de publication | ⏳ | ADSB-NC |
 | 5 | Adresse électronique dédiée aux données personnelles | ✅ aima.dondusang@outlook.fr (identifiants à remettre au bureau) | — |
@@ -361,16 +363,16 @@ Cette action supprimera définitivement votre compte : **votre pseudo, votre adr
 | 9 | Confirmation de la collecte ou non de données de santé | ✅ oui : sexe + dates de don, sous consentement explicite (AIPD et question HDS à traiter) | Audit RGPD |
 | 10 | Durées de conservation choisies pour chaque traitement | ✅ voir le tableau « Traitements » | — |
 | 11 | Âge minimal des utilisateurs | ✅ 18 ans | — |
-| 12 | Procédure et URL de suppression du compte | ✅ dans l'application (correction technique à faire) | Équipe technique |
-| 13 | Version finale des CGU | ⏳ à rédiger à partir de la section « Conditions d'utilisation » | Équipe + ADSB-NC |
+| 12 | Procédure et URL de suppression du compte | ✅ dans l'application (Profil > Paramètres > Supprimer mon compte) | — |
+| 13 | Version finale des CGU | 🟡 version 1.0 rédigée (`docs/juridique/cgu.md`), à valider | ADSB-NC |
 | 14 | Déclarations App Store et Google Play | ➖ non applicable en V1 (PWA) | — |
 | 15 | Accord sur la propriété intellectuelle | ⏳ | ADSB-NC + équipe |
 
 **Formulation courte validable**
 
-L'application **AÏMA** est éditée par l'Association des Donneurs de Sang Bénévoles de Nouvelle-Calédonie (ADSBNC), association loi 1901, numéro RID 0 171 835 et numéro RIDET 0 171 835.001, située 51 rue du Pasteur Marcel Ariège, Centre-Ville, Nouméa, Nouvelle-Calédonie. Adresse postale : BP 2440, Nouméa. Téléphone : 81 52 94\. Email : [adsbnc.98800@gmail.com](mailto:adsbnc.98800@gmail.com). Contact pour l'application et les données personnelles : [aima.dondusang@outlook.fr](mailto:aima.dondusang@outlook.fr). Représentant légal et responsable de publication : **\[À CONFIRMER\]**. Hébergeur : **\[À COMPLÉTER\]**.
+L'application **Aïma** est éditée par l'Association des Donneurs de Sang Bénévoles de Nouvelle-Calédonie (ADSB-NC), association loi 1901, numéro RID 0 171 835 et numéro RIDET 0 171 835.001, située 51 rue du Pasteur Marcel Ariège, Centre-Ville, Nouméa, Nouvelle-Calédonie. Adresse postale : BP 2440, Nouméa. Téléphone : 81 52 94\. Email : [adsbnc.98800@gmail.com](mailto:adsbnc.98800@gmail.com). Contact pour l'application et les données personnelles : [aima.dondusang@outlook.fr](mailto:aima.dondusang@outlook.fr). Représentant légal : Lilian MORER, président. Responsable de publication : **\[À COMPLÉTER\]**. Hébergeur : **\[À COMPLÉTER\]**.
 
-Cette formulation ne doit être publiée qu'après confirmation du représentant légal, du responsable de publication et de la concordance entre le siège déclaré, les statuts et l'avis RIDET.
+Cette formulation ne doit être publiée qu'après confirmation du responsable de publication et de la concordance entre le siège déclaré, les statuts et l'avis RIDET.
 
 **Références**
 

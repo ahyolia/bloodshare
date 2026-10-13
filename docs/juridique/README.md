@@ -12,8 +12,8 @@ dossier juridique (`docs/Dossier juridique prérempli — application AÏMA.docx
 ## Avant publication
 
 1. Faire relire et valider les textes par le bureau de l'ADSB-NC.
-2. Remplacer chaque `[À COMPLÉTER : …]` (représentant légal, responsable de
-   publication, hébergeur, propriété intellectuelle, cadre du projet).
+2. Remplacer chaque `[À COMPLÉTER : …]` (responsable de publication,
+   hébergeur, propriété intellectuelle).
 3. Copier le contenu de chaque fichier dans *Administration > Documents
    juridiques* (backoffice, super_admin), **sans** le titre : il est déjà
    affiché par l'app.

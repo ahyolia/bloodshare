@@ -9,12 +9,16 @@ import {
   Text,
   TextInput,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { login } from '../../services/auth.service';
 import { saveToken, saveUser } from '../../stores/auth.store';
 
 export default function LoginScreen() {
+  // 📖 `session=expiree` : posé par services/api.ts quand un appel renvoie 401 avec un
+  //    token (expiré au bout de 90 jours, ou révoqué).
+  const { session } = useLocalSearchParams<{ session?: string }>();
+
   // États pour les champs de formulaire
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,7 +44,9 @@ export default function LoginScreen() {
 
       router.replace('/tabs');
     } catch (error: any) {
-      console.error('Erreur de connexion:', error);
+      // 📖 Jamais l'objet d'erreur entier : il contient la requête envoyée, donc l'email
+      //    et le mot de passe en clair (audit RGPD). Le statut suffit pour déboguer.
+      if (__DEV__) console.warn('[auth] connexion échouée :', error.response?.status ?? error.message);
 
       if (error.response) {
         if (error.response.status === 401) {
@@ -98,7 +104,11 @@ export default function LoginScreen() {
         />
 
         {/* Affichage conditionnel du message d'erreur */}
-        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+        {errorMessage ? (
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        ) : session === 'expiree' ? (
+          <Text style={styles.errorText}>Votre session a expiré. Reconnectez-vous.</Text>
+        ) : null}
 
         <Pressable
           style={({ pressed }) => [
@@ -125,7 +135,7 @@ export default function LoginScreen() {
         </Pressable>
 
         <Pressable onPress={() => router.push('/auth/register')} style={styles.linkContainerSecond}>
-          <Text style={styles.linkText}>Pas encore de compte ? S&apos;inscrire</Text>
+          <Text style={styles.linkText}>{"Pas encore de compte ? S'inscrire"}</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>

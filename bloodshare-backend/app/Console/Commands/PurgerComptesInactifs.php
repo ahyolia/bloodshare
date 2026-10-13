@@ -20,6 +20,9 @@ class PurgerComptesInactifs extends Command
     //    depuis son inscription (derniere_connexion vide) compte à partir de sa création.
     //    Les comptes du backoffice (avec un rôle) sont exclus : un admin peu actif ne doit
     //    pas perdre son accès sans qu'un super_admin l'ait décidé.
+    //    V2 : prévenir la personne quelques semaines avant (« votre compte sera supprimé
+    //    le … »), quand l'association aura une adresse d'envoi d'emails ; une notification
+    //    push ne toucherait que ceux qui ont encore l'appli.
     public function handle(): int
     {
         $limite = now()->subYears(self::ANNEES_INACTIVITE);

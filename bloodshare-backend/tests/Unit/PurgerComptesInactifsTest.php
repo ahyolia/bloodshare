@@ -28,6 +28,17 @@ class PurgerComptesInactifsTest extends TestCase
         $this->assertStringContainsString('1 compte(s) inactif(s) supprimé(s)', Artisan::output());
     }
 
+    public function test_l_ancien_token_d_un_compte_purge_est_refuse(): void
+    {
+        $user = User::factory()->create(['derniere_connexion' => now()->subYears(4)]);
+        $token = $user->createToken('mobile')->plainTextToken;
+
+        Artisan::call('donnees:purger-comptes-inactifs');
+
+        $this->assertSame(0, $user->tokens()->count());
+        $this->withToken($token)->getJson('/api/me')->assertUnauthorized();
+    }
+
     public function test_garde_un_compte_actif_depuis_moins_de_3_ans(): void
     {
         $user = User::factory()->create(['derniere_connexion' => now()->subYears(3)->addDay()]);

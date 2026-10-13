@@ -13,13 +13,13 @@ L'application Aïma est éditée par l'Association des Donneurs de Sang Bénévo
 
 ## Représentant légal et responsable de publication
 
-Représentant légal : [À COMPLÉTER : nom et fonction, d'après le dernier procès-verbal d'élection du bureau]
+Représentant légal : Lilian MORER, président de l'ADSB-NC.
 
 Responsable de publication : [À COMPLÉTER : nom et fonction]
 
 ## Conception et développement
 
-L'application a été conçue et développée par Camélia Amin Handoyo, Geneviève Mekenese, Hugo Galy et Emmy Vergé, dans le cadre de [À COMPLÉTER : formation ou école].
+L'application a été conçue et développée par Camélia Amin Handoyo, Geneviève Mekenese, Hugo Galy et Emmy Vergé, dans le cadre de leur 3e année de BUT Métiers du Multimédia et de l'Internet (MMI) à l'IUT de l'Université de la Nouvelle-Calédonie, en 2026.
 
 ## Hébergement
 

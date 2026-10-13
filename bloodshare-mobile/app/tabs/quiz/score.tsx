@@ -125,7 +125,7 @@ export default function QuizScoreScreen() {
           </Text>
         )}
 
-        <Text style={styles.envieText}>Envie d&apos;en apprendre plus ?</Text>
+        <Text style={styles.envieText}>{"Envie d'en apprendre plus ?"}</Text>
 
         <TouchableOpacity
           style={styles.fichesButton}

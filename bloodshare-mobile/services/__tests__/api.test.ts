@@ -1,8 +1,13 @@
 import { AxiosError, AxiosHeaders, InternalAxiosRequestConfig } from 'axios';
+import { router } from 'expo-router';
 import api from '../api';
 import { getToken, removeToken } from '../../stores/auth.store';
 
 jest.mock('../../constants/api', () => ({ API_URL: 'https://api.example.test' }));
+
+jest.mock('expo-router', () => ({ router: { replace: jest.fn() } }));
+
+const mockReplace = router.replace as jest.Mock;
 
 jest.mock('../../stores/auth.store', () => ({
   getToken: jest.fn(),
@@ -67,6 +72,37 @@ describe('client api', () => {
 
     await expect(api.get('/me')).rejects.toMatchObject({ response: { status: 401 } });
     expect(mockRemoveToken).toHaveBeenCalled();
+  });
+
+  // 📖 Session expirée (token de plus de 90 jours, ou révoqué) : sans redirection,
+  //    l'utilisateur restait sur des écrans en erreur jusqu'au rechargement de l'app.
+  it('renvoie vers la connexion sur un 401 avec token, une seule fois', async () => {
+    mockGetToken.mockResolvedValue('token-expire');
+    adaptateur.mockImplementation(repondre(401));
+
+    await Promise.allSettled([api.get('/me'), api.get('/dons'), api.get('/badges')]);
+
+    expect(mockReplace).toHaveBeenCalledTimes(1);
+    expect(mockReplace).toHaveBeenCalledWith('/auth/login?session=expiree');
+  });
+
+  it('redirige de nouveau après une reconnexion', async () => {
+    mockGetToken.mockResolvedValue('token');
+    adaptateur.mockImplementation(repondre(401));
+    await api.get('/me').catch(() => {});
+
+    // Reconnexion : une requête repart avec un token, puis la session expire encore.
+    await api.get('/me').catch(() => {});
+
+    expect(mockReplace).toHaveBeenCalledTimes(2);
+  });
+
+  it('ne redirige pas sur un 401 sans token (mauvais mot de passe au login)', async () => {
+    mockGetToken.mockResolvedValue(null);
+    adaptateur.mockImplementation(repondre(401));
+
+    await expect(api.post('/auth/login', {})).rejects.toMatchObject({ response: { status: 401 } });
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it('garde la session sur une autre erreur (ex. 422)', async () => {

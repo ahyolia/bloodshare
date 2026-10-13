@@ -157,7 +157,9 @@ class UserResource extends Resource
                                 'jamais_donne'     => '🆕 Jamais donné',
                                 default            => '—'
                             }),
-                        TextEntry::make('sexe')->label('Sexe'),
+                        // 📖 Pas de sexe ici : donnée de santé (avec les dates de don) dont les
+                        //    admins n'ont pas besoin (audit RGPD). Seul le calcul du délai entre
+                        //    deux dons l'utilise.
                         TextEntry::make('points_cumules')->label('Points cumulés'),
                         TextEntry::make('niveau')
                             ->label('Niveau')

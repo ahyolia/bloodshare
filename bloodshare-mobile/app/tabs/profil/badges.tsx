@@ -229,7 +229,7 @@ function DetailBadge({ badge }: { badge: Badge }) {
 
       <View style={styles.detailSeparateur} />
 
-      <Text style={styles.detailSectionTitre}>🎯 Comment l&apos;obtenir ?</Text>
+      <Text style={styles.detailSectionTitre}>{"🎯 Comment l'obtenir ?"}</Text>
       <Text style={styles.detailCondition}>{info.condition}</Text>
 
       <Text style={styles.detailDescription}>{info.description}</Text>

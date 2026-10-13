@@ -376,7 +376,7 @@ export default function AccueilScreen() {
             <Text style={styles.actuVideEmoji}>📰</Text>
             <Text style={styles.actuVideTitre}>Aucune actualité pour le moment</Text>
             <Text style={styles.actuVideTexte}>
-              Revenez bientôt pour les dernières nouvelles de l&apos;association ADSB-NC.
+              {"Revenez bientôt pour les dernières nouvelles de l'association ADSB-NC."}
             </Text>
           </View>
         ) : (

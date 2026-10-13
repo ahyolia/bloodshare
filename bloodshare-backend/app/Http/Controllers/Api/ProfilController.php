@@ -61,11 +61,7 @@ class ProfilController extends Controller
 
     public function destroy(Request $request)
     {
-        $user = $request->user();
-
-        $user->tokens()->delete();
-
-        $user->anonymiser();
+        $request->user()->anonymiser();
 
         return response()->json([
             'message' => 'Compte supprimé avec succès.',

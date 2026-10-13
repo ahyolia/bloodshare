@@ -239,6 +239,21 @@ class AuthTest extends TestCase
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
+    public function test_un_token_de_plus_de_90_jours_est_refuse(): void
+    {
+        $user = User::factory()->create();
+        $ancien = $user->createToken('mobile');
+        $ancien->accessToken->forceFill(['created_at' => now()->subDays(91)])->save();
+        $recent = $user->createToken('mobile')->plainTextToken;
+
+        $this->withToken($ancien->plainTextToken)->getJson('/api/me')->assertUnauthorized();
+
+        // 📖 Le garde d'authentification garde l'utilisateur en mémoire entre deux appels
+        //    d'un même test : on le réinitialise pour que le second token soit vraiment relu.
+        $this->app['auth']->forgetGuards();
+        $this->withToken($recent)->getJson('/api/me')->assertOk();
+    }
+
     public function test_la_deconnexion_exige_d_etre_connecte(): void
     {
         $this->postJson('/api/auth/logout')->assertUnauthorized();
