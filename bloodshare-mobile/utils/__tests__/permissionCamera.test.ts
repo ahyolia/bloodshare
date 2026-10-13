@@ -1,4 +1,4 @@
-import { etatPermissionCamera } from '../permissionCamera';
+import { estAppInstallee, etatPermissionCamera } from '../permissionCamera';
 
 const permission = (granted: boolean, canAskAgain: boolean, status: 'granted' | 'denied' | 'undetermined') =>
   ({ granted, canAskAgain, status }) as Parameters<typeof etatPermissionCamera>[0];
@@ -32,5 +32,28 @@ describe('etatPermissionCamera', () => {
     it("affiche l'aide navigateur après un refus, malgré canAskAgain = true", () => {
       expect(etatPermissionCamera(permission(false, true, 'denied'), true)).toBe('refuse');
     });
+  });
+});
+
+describe('estAppInstallee', () => {
+  const fenetre = (standaloneMedia: boolean, standaloneIos?: boolean) => ({
+    matchMedia: (requete: string) => ({ matches: standaloneMedia && requete === '(display-mode: standalone)' }),
+    navigator: { standalone: standaloneIos },
+  });
+
+  it("détecte l'app installée sur Android ou ordinateur (display-mode standalone)", () => {
+    expect(estAppInstallee(fenetre(true))).toBe(true);
+  });
+
+  it("détecte l'app installée sur iPhone (navigator.standalone)", () => {
+    expect(estAppInstallee(fenetre(false, true))).toBe(true);
+  });
+
+  it('renvoie faux dans un onglet de navigateur', () => {
+    expect(estAppInstallee(fenetre(false, false))).toBe(false);
+  });
+
+  it('renvoie faux sans fenêtre (natif)', () => {
+    expect(estAppInstallee(undefined)).toBe(false);
   });
 });

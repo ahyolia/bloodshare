@@ -16,3 +16,18 @@ export const etatPermissionCamera = (permission: Permission, surWeb: boolean): E
   if (surWeb) return permission.status === 'denied' ? 'refuse' : 'demander';
   return permission.canAskAgain ? 'demander' : 'refuse';
 };
+
+type FenetreWeb = {
+  matchMedia?: (requete: string) => { matches: boolean };
+  // `standalone` n'existe que dans Safari iOS : absent du type Navigator du DOM.
+  navigator?: object;
+};
+
+// 📖 PWA ajoutée à l'écran d'accueil : plus de barre d'adresse ni de bouton recharger,
+//    les consignes « icône à gauche de l'adresse » deviennent impossibles à suivre.
+//    display-mode standalone couvre Android/ordinateur ; navigator.standalone, iOS.
+export const estAppInstallee = (fenetre?: FenetreWeb): boolean =>
+  Boolean(
+    fenetre?.matchMedia?.('(display-mode: standalone)').matches ||
+      (fenetre?.navigator as { standalone?: boolean } | undefined)?.standalone
+  );
