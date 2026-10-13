@@ -21,7 +21,7 @@
 | 4 | ✅ Retirer le sexe de la fiche utilisateur du BO | Les admins n'en ont pas besoin, et il s'agit d'une donnée de santé | Faible |
 | 5 | Choisir l'hébergeur : certification HDS, pays des serveurs, contrat de sous-traitance, chiffrement du disque et sauvegardes | Bloque les mentions légales, la politique et plusieurs critères ci-dessous | Fort |
 | 6 | Configurer la production : HTTPS, `LOG_STACK=daily`, `LOG_DAILY_DAYS=180`, service `scheduler`, mots de passe différents de `.env.example` | Sans ça, les durées de conservation annoncées ne s'appliquent pas | Moyen |
-| 7 | Réaliser l'analyse d'impact (AIPD) du suivi des dons | Obligatoire pour un traitement de données de santé | Moyen |
+| 7 | 🟡 Faire valider l'analyse d'impact (AIPD) du suivi des dons, rédigée dans `docs/AIPD - Suivi des dons.md` | Recommandée pour un traitement de données de santé | Hors code |
 | 8 | Faire valider les textes par l'ADSB-NC et désigner un référent RGPD au bureau | Responsable du traitement | Hors code |
 
 **À prévoir en V2**
@@ -41,7 +41,7 @@
 | DPO ou personne référente | 🟡 | DPO non obligatoire (petite échelle, pas l'activité principale de l'association). **Action** : désigner un référent RGPD au bureau. |
 | Coordonnées de l'hébergeur | ❌ | Hébergeur pas encore choisi. Champs `[À COMPLÉTER]` dans les mentions légales et la politique. |
 | Registre des activités de traitement | 🟡 | Le tableau « Traitements » du dossier juridique sert de base. **Action** : le reprendre dans un registre tenu par l'association. |
-| Analyse d'impact (AIPD) | ❌ | Nécessaire : le suivi des dons traite des données de santé. **Action** : à réaliser (plan d'action n°7). |
+| Analyse d'impact (AIPD) | 🟡 | Rédigée : `docs/AIPD - Suivi des dons.md`. Aucun risque de gravité importante. Le risque le plus vraisemblable est le partage du QR code fixe du centre (gravité négligeable). **Action** : faire valider par l'ADSB-NC, et mettre en place la régénération régulière du QR code. |
 
 ## 2. Information et transparence
 
@@ -106,7 +106,7 @@
 | Accès limité | ✅ | Seuls les admins du BO y ont accès, et le sexe ne leur est plus affiché. |
 | Chiffrement au repos | ❌ | Aucun chiffrement des colonnes. Les dates de don servent dans des calculs SQL et ne peuvent pas être chiffrées colonne par colonne. **Action** : chiffrement du disque et des sauvegardes chez l'hébergeur. Le chiffrement de la colonne `sexe` (cast `encrypted`) est possible, à décider. |
 | Hébergement certifié HDS | 🔍 | À vérifier avant de choisir l'hébergeur : l'obligation s'applique-t-elle à une app de sensibilisation, et en Nouvelle-Calédonie ? |
-| Analyse d'impact | ❌ | Voir la section 1. |
+| Analyse d'impact | 🟡 | Rédigée, à valider. Voir la section 1. |
 
 ## 8. Sous-traitance
 
