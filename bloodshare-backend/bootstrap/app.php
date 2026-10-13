@@ -24,6 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
         //    "demain" avec now(), qui suit APP_TIMEZONE (Pacific/Noumea, voir .env). Les
         //    deux doivent être dans le même fuseau, donc aucun ->timezone() à poser ici :
         //    le scheduler utilise déjà APP_TIMEZONE par défaut.
+        // 📖 Les tokens expirés (config/sanctum.php) sont refusés mais restent en base :
+        //    on les supprime une fois par jour.
+        $schedule->command('sanctum:prune-expired --hours=24')->dailyAt('03:20');
+
         $schedule->command('notifications:quiz-du-jour')->dailyAt('08:00');
         $schedule->command('notifications:veille-evenement')->dailyAt('08:10');
         $schedule->command('notifications:fin-ineligibilite')->dailyAt('09:00');

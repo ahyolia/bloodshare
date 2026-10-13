@@ -40,7 +40,9 @@ export default function LoginScreen() {
 
       router.replace('/tabs');
     } catch (error: any) {
-      console.error('Erreur de connexion:', error);
+      // 📖 Jamais l'objet d'erreur entier : il contient la requête envoyée, donc l'email
+      //    et le mot de passe en clair (audit RGPD). Le statut suffit pour déboguer.
+      if (__DEV__) console.warn('[auth] connexion échouée :', error.response?.status ?? error.message);
 
       if (error.response) {
         if (error.response.status === 401) {

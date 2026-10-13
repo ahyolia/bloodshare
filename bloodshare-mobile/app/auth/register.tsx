@@ -59,9 +59,9 @@ export default function RegisterScreen() {
       if (!privacyAccepted || !cguAccepted || !santeAccepted) return setLocalError('Vous devez accepter les conditions pour continuer.');
       if (!majeur) return setLocalError("L'application est réservée aux personnes majeures.");
     }
-    if (step === 3) {
-      if (!statutDonneur) return setLocalError('Veuillez sélectionner votre expérience de don.');
-    }
+    // 📖 Étapes 3 (profil de donneur) et 4 (avatar) facultatives : l'API accepte ces
+    //    champs vides et la politique de confidentialité les annonce comme facultatifs
+    //    (audit RGPD, minimisation).
     setStep(step + 1);
   };
 
@@ -74,12 +74,6 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     setLocalError('');
     setFieldErrors({});
-
-    if (!avatarId) {
-      setLocalError('Veuillez choisir un avatar.');
-      return;
-    }
-
     setIsLoading(true);
 
     try {
@@ -103,7 +97,9 @@ export default function RegisterScreen() {
     router.replace('/tabs');
 
     } catch (error: any) {
-      console.error("Erreur d'inscription:", error);
+      // 📖 Jamais l'objet d'erreur entier : il contient la requête envoyée, donc l'email
+      //    et le mot de passe en clair (audit RGPD). Le statut suffit pour déboguer.
+      if (__DEV__) console.warn('[auth] inscription échouée :', error.response?.status ?? error.message);
 
       if (error.response?.status === 422) {
         const errors = error.response.data?.errors ?? {};
@@ -226,7 +222,7 @@ export default function RegisterScreen() {
                   des CGU (voir docs/Dossier juridique). */}
               <Pressable style={styles.checkboxRow} onPress={() => setSanteAccepted(!santeAccepted)} accessibilityRole="checkbox" accessibilityState={{ checked: santeAccepted }}>
                 <Text style={styles.checkboxIcon}>{santeAccepted ? '☑' : '☐'}</Text>
-                <Text style={styles.checkboxText}>J&apos;accepte que l&apos;ADSB-NC enregistre mon sexe et les dates de mes dons de sang, qui sont des données de santé, pour calculer mes points et me prévenir quand je peux de nouveau donner. Je pourrai retirer mon accord à tout moment en supprimant mon compte.</Text>
+                <Text style={styles.checkboxText}>J&apos;accepte que l&apos;ADSB-NC enregistre mon sexe, les dates de mes dons de sang et, si je le renseigne, mon profil de donneur, qui sont des données de santé, pour calculer mes points et me prévenir quand je peux de nouveau donner. Je pourrai retirer mon accord à tout moment en supprimant mon compte.</Text>
               </Pressable>
               {renderFieldError('consentement_sante')}
               <Pressable style={styles.checkboxRow} onPress={() => setMajeur(!majeur)} accessibilityRole="checkbox" accessibilityState={{ checked: majeur }}>
@@ -246,6 +242,7 @@ export default function RegisterScreen() {
         {step === 3 && (
           <View style={styles.stepContent}>
             <Text style={styles.titleCenter}>Avez-vous déjà donné votre sang ?</Text>
+            <Text style={styles.hintCenter}>Facultatif : vous pourrez le renseigner plus tard dans votre profil.</Text>
 
             <View style={styles.radioContainer}>
               {[
@@ -253,7 +250,7 @@ export default function RegisterScreen() {
                 { id: 'quelques_dons', label: "J'ai déjà donné une ou deux fois." },
                 { id: 'jamais_donne', label: "Non, jamais." }
               ].map((statut) => (
-                <Pressable key={statut.id} style={styles.radioRow} onPress={() => setStatutDonneur(statut.id as any)} accessibilityRole="radio" accessibilityState={{ checked: statutDonneur === statut.id }}>
+                <Pressable key={statut.id} style={styles.radioRow} onPress={() => setStatutDonneur(statutDonneur === statut.id ? null : statut.id as any)} accessibilityRole="radio" accessibilityState={{ checked: statutDonneur === statut.id }}>
                   <Text style={styles.radioIcon}>{statutDonneur === statut.id ? '◉' : '○'}</Text>
                   <Text style={styles.radioText}>{statut.label}</Text>
                 </Pressable>
@@ -262,7 +259,7 @@ export default function RegisterScreen() {
             {renderFieldError('statut_donneur')}
 
             <Pressable style={styles.primaryBtn} onPress={nextStep}>
-              <Text style={styles.primaryBtnText}>Continuer</Text>
+              <Text style={styles.primaryBtnText}>{statutDonneur ? 'Continuer' : 'Passer cette étape'}</Text>
             </Pressable>
           </View>
         )}
@@ -271,6 +268,7 @@ export default function RegisterScreen() {
         {step === 4 && (
           <View style={styles.stepContent}>
             <Text style={styles.titleCenter}>Choisissez votre avatar ^-^</Text>
+            <Text style={styles.hintCenter}>Facultatif : vous pourrez le choisir plus tard dans votre profil.</Text>
 
             <View style={styles.avatarGrid}>
               {BOGUS_AVATARS.map((id) => (
@@ -313,6 +311,7 @@ const styles = StyleSheet.create({
   titleCenter: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 32, textAlign: 'center' },
   label: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginTop: 16, color: '#333' },
   hintText: { fontSize: 12, color: '#888', marginTop: 4, marginBottom: 8 },
+  hintCenter: { fontSize: 13, color: '#888', textAlign: 'center', marginTop: -20, marginBottom: 16 },
   errorText: { color: '#FF3B30', fontSize: 12, marginTop: 4 },
   globalError: { backgroundColor: '#FFEBEE', color: '#D32F2F', padding: 12, borderRadius: 8, marginBottom: 16, textAlign: 'center', fontWeight: '500' },
 
