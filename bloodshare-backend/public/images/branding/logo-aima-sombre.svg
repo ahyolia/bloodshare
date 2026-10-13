@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 118 36" role="img" aria-label="Aïma">
+  <!-- Logo provisoire, variante thème sombre : à remplacer par le logo officiel (même nom de fichier). -->
+  <path d="M13 3C13 3 2 15.5 2 22.5a11 11 0 0 0 22 0C24 15.5 13 3 13 3Z" fill="#F07A5E"/>
+  <text x="32" y="28" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="26" font-weight="700" fill="#FFFDF7">Aïma</text>
+</svg>
