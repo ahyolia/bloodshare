@@ -222,7 +222,7 @@ export default function RegisterScreen() {
                   des CGU (voir docs/Dossier juridique). */}
               <Pressable style={styles.checkboxRow} onPress={() => setSanteAccepted(!santeAccepted)} accessibilityRole="checkbox" accessibilityState={{ checked: santeAccepted }}>
                 <Text style={styles.checkboxIcon}>{santeAccepted ? '☑' : '☐'}</Text>
-                <Text style={styles.checkboxText}>J&apos;accepte que l&apos;ADSB-NC enregistre mon sexe, les dates de mes dons de sang et, si je le renseigne, mon profil de donneur, qui sont des données de santé, pour calculer mes points et me prévenir quand je peux de nouveau donner. Je pourrai retirer mon accord à tout moment en supprimant mon compte.</Text>
+                <Text style={styles.checkboxText}>J&apos;accepte que l&apos;ADSB-NC enregistre mon sexe, les dates de mes dons de sang et, si je le renseigne, mon profil de donneur, qui sont des données de santé, pour suivre mes dons et me prévenir quand je peux de nouveau donner. Je pourrai retirer mon accord à tout moment en supprimant mon compte.</Text>
               </Pressable>
               {renderFieldError('consentement_sante')}
               <Pressable style={styles.checkboxRow} onPress={() => setMajeur(!majeur)} accessibilityRole="checkbox" accessibilityState={{ checked: majeur }}>
