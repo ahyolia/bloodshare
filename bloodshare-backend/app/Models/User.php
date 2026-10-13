@@ -112,6 +112,10 @@ class User extends Authenticatable implements FilamentUser, HasName
             // 📖 Un compte admin supprimé depuis le BO ne doit garder aucun rôle.
             $this->syncRoles([]);
 
+            // 📖 Révocation ici et pas chez les appelants : la purge des comptes inactifs
+            //    l'oubliait, et un ancien token gardait l'accès à un compte « supprimé ».
+            $this->tokens()->delete();
+
             // 📖 Un compte supprimé ne doit plus recevoir de notification : sans ça, l'appareil
             //    reste abonné et continuerait de recevoir les push de l'ancien compte.
             $this->pushSubscriptions()->delete();
