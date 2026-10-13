@@ -14,10 +14,11 @@ Pour toute question sur vos données ou pour exercer vos droits : aima.dondusang
 
 - votre pseudo, qui vous identifie dans l'application ;
 - votre adresse email, qui sert d'identifiant de connexion ;
-- votre mot de passe, enregistré uniquement sous une forme chiffrée irréversible ;
+- votre mot de passe, enregistré uniquement sous forme hachée : personne ne peut le retrouver, pas même l'association ;
 - votre sexe biologique, qui sert uniquement à calculer le délai légal entre deux dons de sang (8 semaines pour un homme, 12 semaines pour une femme) ;
 - votre profil de donneur (donneur régulier, quelques dons, jamais donné), facultatif : il s'affiche sur votre profil et permet à l'association de connaître la part de donneurs réguliers parmi les utilisateurs ;
-- votre avatar, facultatif.
+- votre avatar, facultatif ;
+- la preuve de votre accord : la date à laquelle vous avez accepté les conditions générales d'utilisation et leur version, ainsi que la date de votre consentement au traitement de vos données de santé.
 
 Lorsque vous utilisez l'application :
 
@@ -64,7 +65,13 @@ Lorsque vous supprimez votre compte, votre historique de jeu (dates de don, poin
 
 ## Ce qui est enregistré sur votre appareil
 
-L'application enregistre sur votre appareil votre jeton de connexion, pour que vous restiez connecté, et vos préférences d'affichage et de notifications. Le jeton de connexion expire au bout de 90 jours : vous devez alors vous reconnecter. Elle n'utilise aucun cookie publicitaire ni traceur.
+L'application enregistre sur votre appareil :
+
+- votre jeton de connexion, pour que vous restiez connecté. Il expire au bout de 90 jours : vous devez alors vous reconnecter ;
+- un aperçu de votre profil (pseudo, avatar, points, code de parrainage et, si vous l'avez renseigné, votre profil de donneur), pour l'afficher sans attendre le serveur. Votre email et votre sexe n'y figurent pas ;
+- vos préférences d'affichage et de notifications.
+
+Le jeton et l'aperçu du profil sont effacés lorsque vous vous déconnectez ou supprimez votre compte. Vos préférences restent sur l'appareil : elles ne contiennent aucune donnée personnelle. L'application n'utilise aucun cookie publicitaire ni traceur.
 
 ## Vos droits
 

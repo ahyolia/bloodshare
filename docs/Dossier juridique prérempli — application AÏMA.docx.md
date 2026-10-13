@@ -154,7 +154,7 @@ L'application est conçue pour fonctionner sous **pseudonyme** :
 | :---- | :---- | :---- |
 | Pseudo | Oui | Identifier l'utilisateur dans l'application (classements, parrainage) |
 | Adresse électronique | Oui | Identifiant de connexion |
-| Mot de passe | Oui | Sécuriser le compte (enregistré uniquement sous forme chiffrée irréversible, « haché ») |
+| Mot de passe | Oui | Sécuriser le compte (enregistré uniquement sous forme hachée : un hachage, contrairement à un chiffrement, ne peut pas être inversé) |
 | Sexe biologique (homme / femme) | Oui | Calculer le délai légal entre deux dons de sang (8 semaines pour un homme, 12 pour une femme) et envoyer le rappel au bon moment |
 | Profil de donneur (donneur régulier / quelques dons / jamais donné) | Non | Afficher le profil ; statistiques de l'association (part de donneurs réguliers). Donnée liée à la santé, couverte par le consentement explicite |
 | Avatar | Non | Personnaliser le profil |
@@ -164,6 +164,8 @@ L'application est conçue pour fonctionner sous **pseudonyme** :
 | Date de dernière connexion | Automatique | Administration et sécurité du compte |
 | Abonnement aux notifications (adresse technique fournie par le navigateur) | Si l'utilisateur accepte les notifications | Envoyer les rappels et les actualités |
 | Accès à l'appareil photo | Sur autorisation | Scanner les QR codes, aucune photo n'est enregistrée |
+| Preuve du consentement (date et version des CGU acceptées, date du consentement santé) | Automatique | Prouver l'accord de l'utilisateur en cas de contrôle |
+| Sur l'appareil : jeton de connexion et aperçu du profil (pseudo, avatar, points, code de parrainage, profil de donneur) | Automatique | Rester connecté et afficher le profil sans attendre le serveur ; effacés à la déconnexion |
 
 **Traitements**
 
