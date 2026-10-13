@@ -44,7 +44,7 @@ class BrandingBackofficeTest extends TestCase
     {
         // 📖 Le logo officiel remplacera ces fichiers sous le même nom : s'il en manque un,
         //    le BO afficherait une image cassée sans qu'aucune autre vérification ne le voie.
-        foreach (['logo-aima.svg', 'logo-aima-sombre.svg', 'favicon-aima.svg', 'favicon-aima.png'] as $fichier) {
+        foreach (['logo-aima.svg', 'logo-aima-sombre.svg', 'favicon-aima.png'] as $fichier) {
             $this->assertFileExists(public_path("images/branding/{$fichier}"));
         }
     }

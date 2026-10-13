@@ -41,14 +41,14 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             // 📖 Identité Aïma : nom dans l'onglet et la barre latérale, logo (variante
-            //    claire pour le thème sombre) et favicon. Les fichiers de public/images/branding
-            //    sont provisoires : le logo officiel les remplacera sous le même nom.
+            //    crème pour le thème sombre) et favicon, tirés des exports officiels du branding.
             ->brandName('Aïma')
             ->brandLogo(asset('images/branding/logo-aima.svg'))
             ->darkModeBrandLogo(asset('images/branding/logo-aima-sombre.svg'))
             ->brandLogoHeight('2.25rem')
-            // PNG et non SVG : Safari n'affiche pas les favicons SVG.
-            ->favicon(asset('images/branding/favicon-aima.png'))
+            // PNG et non SVG : Safari n'affiche pas les favicons SVG. Le ?v= force les
+            // navigateurs à recharger l'icône (incrémenter à chaque changement du fichier).
+            ->favicon(asset('images/branding/favicon-aima.png').'?v=3')
             // 📖 Corail = couleur de marque de l'app (bloodshare-mobile/constants/palette.ts).
             //    C'est l'accent (liens, cases cochées, focus) ; les boutons pleins et l'élément actif
             //    du menu suivent le design system (aubergine / beige), voir filament/theme-aima.
