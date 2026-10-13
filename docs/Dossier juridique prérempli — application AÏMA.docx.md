@@ -158,7 +158,7 @@ L'application est conçue pour fonctionner sous **pseudonyme** :
 | Sexe biologique (homme / femme) | Oui | Calculer le délai légal entre deux dons de sang (8 semaines pour un homme, 12 pour une femme) et envoyer le rappel au bon moment |
 | Profil de donneur (donneur régulier / quelques dons / jamais donné) | Non | Afficher le profil ; statistiques de l'association (part de donneurs réguliers). Donnée liée à la santé, couverte par le consentement explicite |
 | Avatar | Non | Personnaliser le profil |
-| Dates des dons validés et des QR codes scannés | Automatique | Attribuer les points et calculer la date du prochain don possible |
+| Dates des dons validés et des QR codes scannés | Automatique | Suivre les dons et la participation aux événements, calculer la date du prochain don possible (ni un don ni un événement ne rapportent de points) |
 | Points, niveau, badges, cartes, défis, résultats aux quiz | Automatique | Faire fonctionner le système de jeu |
 | Lien de parrainage (parrain / filleul) | Automatique | Récompenser le parrainage |
 | Date de dernière connexion | Automatique | Administration et sécurité du compte |
@@ -187,7 +187,7 @@ L'application ne collecte aucune donnée médicale directe. En revanche, l'histo
 - l'accès à ces données dans le backoffice est limité aux administrateurs habilités, et le sexe n'y est pas affiché ;
 - une **analyse d'impact (AIPD)** est réalisée pour ce traitement (voir « Documents internes »).
 
-> **Point de vigilance — consentement libre :** un consentement n'est valable que s'il est libre. Ici, la case est obligatoire pour s'inscrire, ce qui se justifie parce que le suivi des dons est au cœur du service : sans dates de don, l'application ne peut ni attribuer les points de don ni envoyer le rappel. Pour la V2, on pourrait rendre la case facultative : l'application fonctionnerait alors sans suivi des dons pour les personnes qui refusent.
+> **Point de vigilance — consentement libre :** un consentement n'est valable que s'il est libre. Ici, la case est obligatoire pour s'inscrire, ce qui se justifie parce que le suivi des dons est au cœur du service : sans dates de don, l'application ne peut ni afficher l'historique des dons ni envoyer le rappel. Pour la V2, on pourrait rendre la case facultative : l'application fonctionnerait alors sans suivi des dons pour les personnes qui refusent.
 
 > **Point de vigilance — hébergement :** en France, les données de santé recueillies dans le cadre d'activités de prévention ou de soins doivent être confiées à un hébergeur certifié HDS (Hébergeur de Données de Santé). Il faut vérifier si cette obligation s'applique à une application de sensibilisation, et si elle s'applique en Nouvelle-Calédonie, **avant de choisir l'hébergeur**. \[À COMPLÉTER — audit RGPD\]
 
@@ -237,7 +237,7 @@ Case distincte pour la politique de confidentialité :
 
 Case distincte pour les données de santé (obligatoire) :
 
-☐ J'accepte que l'ADSB-NC enregistre mon sexe, les dates de mes dons de sang et, si je le renseigne, mon profil de donneur, qui sont des données de santé, pour calculer mes points et me prévenir quand je peux de nouveau donner. Je pourrai retirer mon accord à tout moment en supprimant mon compte.
+☐ J'accepte que l'ADSB-NC enregistre mon sexe, les dates de mes dons de sang et, si je le renseigne, mon profil de donneur, qui sont des données de santé, pour suivre mes dons et me prévenir quand je peux de nouveau donner. Je pourrai retirer mon accord à tout moment en supprimant mon compte.
 
 Case distincte pour l'âge (obligatoire) :
 

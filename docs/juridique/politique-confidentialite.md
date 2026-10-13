@@ -33,7 +33,7 @@ L'appareil photo n'est utilisé que pour scanner les QR codes, avec votre autori
 
 Votre sexe, associé aux dates de vos dons, révèle que vous avez donné votre sang, quand, et à partir de quand vous pouvez de nouveau donner. Votre profil de donneur, si vous le renseignez, révèle aussi si vous donnez votre sang. Nous considérons ces informations comme des données de santé.
 
-Nous ne les traitons qu'avec votre consentement explicite, recueilli par une case distincte lors de l'inscription. Le sexe et les dates de don servent uniquement à calculer vos points et à vous prévenir quand vous pouvez de nouveau donner. Ces informations ne sont accessibles qu'aux administrateurs habilités de l'ADSB-NC, et votre sexe ne leur est pas affiché.
+Nous ne les traitons qu'avec votre consentement explicite, recueilli par une case distincte lors de l'inscription. Le sexe et les dates de don servent uniquement à suivre vos dons et à vous prévenir quand vous pouvez de nouveau donner. Conformément aux règles éthiques du don du sang, un don ne rapporte jamais de points. Ces informations ne sont accessibles qu'aux administrateurs habilités de l'ADSB-NC, et votre sexe ne leur est pas affiché.
 
 Vous pouvez retirer votre consentement à tout moment en supprimant votre compte : votre sexe et votre profil de donneur sont alors effacés, et vos dates de don ne sont plus rattachées à votre identité.
 
