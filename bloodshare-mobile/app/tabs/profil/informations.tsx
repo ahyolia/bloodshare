@@ -91,7 +91,7 @@ export default function InformationsScreen() {
 
       router.back();
     } catch {
-      await informer("Erreur", "L'enregistrement a échoué. Réessayez.");
+      await informer("Erreur", "L'enregistrement a échoué. Réessaie.");
     } finally {
       setSaving(false);
     }
@@ -117,7 +117,7 @@ export default function InformationsScreen() {
 
         {!loading && error && (
           <Text style={styles.errorText}>
-            Impossible de charger vos informations.
+            Impossible de charger tes informations.
           </Text>
         )}
 
@@ -160,7 +160,7 @@ export default function InformationsScreen() {
               style={styles.input}
               value={pseudo}
               onChangeText={setPseudo}
-              placeholder="Votre pseudo"
+              placeholder="Ton pseudo"
               placeholderTextColor={Colors.grisMoyen}
               maxLength={50}
             />

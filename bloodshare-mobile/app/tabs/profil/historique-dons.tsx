@@ -58,7 +58,7 @@ export default function HistoriqueDonsScreen() {
       {loading && <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />}
 
       {!loading && error && (
-        <Text style={styles.errorText}>Impossible de charger vos dons.</Text>
+        <Text style={styles.errorText}>Impossible de charger tes dons.</Text>
       )}
 
       {!loading && !error && data && (
@@ -120,9 +120,9 @@ function EmptyDons({ onScan }: { onScan: () => void }) {
   return (
     <View style={styles.empty}>
       <Text style={styles.emptyEmoji}>🩸</Text>
-      <Text style={styles.emptyTitre}>{"Vous n'avez pas encore donné"}</Text>
+      <Text style={styles.emptyTitre}>{"Tu n'as pas encore donné"}</Text>
       <Text style={styles.emptyTexte}>
-        {"Scannez un QR Code au centre de don ou lors d'un événement."}
+        {"Scanne un QR Code au centre de don ou lors d'un événement."}
       </Text>
       <TouchableOpacity style={styles.emptyBouton} onPress={onScan} accessibilityRole="button">
         <Text style={styles.emptyBoutonTexte}>Aller au don</Text>

@@ -61,7 +61,7 @@ class ScanController extends Controller
 
         if ($dernierDon && $dernierDon->date_don->addDays($delaiJours)->isFuture()) {
             return response()->json([
-                'message'               => 'Vous n\'êtes pas encore éligible pour donner.',
+                'message'               => 'Tu n\'es pas encore éligible pour donner.',
                 'prochaine_eligibilite' => $dernierDon->date_don->addDays($delaiJours)->toDateString(),
             ], 422);
         }
@@ -75,7 +75,7 @@ class ScanController extends Controller
 
         if (! $carte) {
             return response()->json([
-                'message' => 'La carte du mois n\'est pas encore disponible. Contactez un administrateur.',
+                'message' => 'La carte du mois n\'est pas encore disponible. Contacte un administrateur.',
             ], 503);
         }
 
@@ -173,7 +173,7 @@ class ScanController extends Controller
 
         if ($dejaParticipe) {
             return response()->json([
-                'message' => 'Votre participation à cet événement est déjà validée.',
+                'message' => 'Ta participation à cet événement est déjà validée.',
             ], 422);
         }
 

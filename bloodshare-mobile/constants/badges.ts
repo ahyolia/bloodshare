@@ -16,19 +16,19 @@ export const BADGES_INFO: Record<string, BadgeInfo> = {
   'Premier Pas': {
     emoji: '🩸',
     categorie: 'dons',
-    description: "Votre premier pas dans l'aventure du don de sang.",
-    condition: 'Valider votre 1er don',
+    description: "Ton premier pas dans l'aventure du don de sang.",
+    condition: 'Valider ton 1er don',
   },
   'Donneur Confirmé': {
     emoji: '💪',
     categorie: 'dons',
-    description: 'Vous avez prouvé votre engagement envers le don.',
+    description: 'Tu as prouvé ton engagement envers le don.',
     condition: 'Valider 3 dons',
   },
   'Fidèle au Don': {
     emoji: '❤️',
     categorie: 'dons',
-    description: 'Votre fidélité sauve des vies.',
+    description: 'Ta fidélité sauve des vies.',
     condition: 'Valider 5 dons',
   },
   'Compagnon de route': {
@@ -40,7 +40,7 @@ export const BADGES_INFO: Record<string, BadgeInfo> = {
   'Belle collection': {
     emoji: '🗓️',
     categorie: 'cartes',
-    description: 'Votre collection de cartes prend forme !',
+    description: 'Ta collection de cartes prend forme !',
     condition: 'Obtenir 6 cartes Mois du don',
   },
   'Année complète': {
@@ -52,55 +52,55 @@ export const BADGES_INFO: Record<string, BadgeInfo> = {
   'Toujours partant': {
     emoji: '🎪',
     categorie: 'cartes',
-    description: 'Les événements de collecte vous connaissent bien !',
+    description: 'Les événements de collecte te connaissent bien !',
     condition: 'Obtenir 3 cartes Événement',
   },
   'Grain de curiosité': {
     emoji: '💡',
     categorie: 'quiz',
     description: "La curiosité est le début de l'engagement.",
-    condition: 'Terminer votre 1er quiz',
+    condition: 'Terminer ton 1er quiz',
   },
   'Quiz Master': {
     emoji: '🎓',
     categorie: 'quiz',
-    description: 'Vous maîtrisez les bases du don de sang.',
+    description: 'Tu maîtrises les bases du don de sang.',
     condition: 'Terminer 5 quiz',
   },
   Incollable: {
     emoji: '🏆',
     categorie: 'quiz',
-    description: 'Vous avez tout appris sur le don de sang. Impressionnant !',
+    description: 'Tu as tout appris sur le don de sang. Impressionnant !',
     condition: 'Compléter tous les quiz de toutes les catégories',
   },
   Ambassadeur: {
     emoji: '🤝',
     categorie: 'parrainage',
-    description: "Grâce à vous, un nouveau donneur a rejoint l'aventure.",
+    description: "Grâce à toi, un nouveau donneur a rejoint l'aventure.",
     condition: 'Valider 1 parrainage',
   },
   'Bien entouré': {
     emoji: '👥',
     categorie: 'parrainage',
-    description: 'Votre réseau de donneurs s\'agrandit !',
+    description: 'Ton réseau de donneurs s\'agrandit !',
     condition: 'Valider 3 parrainages',
   },
   'Bien accueilli': {
     emoji: '🎉',
     categorie: 'parrainage',
-    description: 'Quelqu\'un a cru en vous avant même votre premier don.',
+    description: 'Quelqu\'un a cru en toi avant même ton premier don.',
     condition: 'S\'inscrire avec un code de parrainage',
   },
   "Esprit d'équipe": {
     emoji: '🌊',
     categorie: 'defis',
-    description: 'Ensemble on va plus loin. Votre don compte pour tous.',
+    description: 'Ensemble on va plus loin. Ton don compte pour tous.',
     condition: 'Contribuer à un défi du mois',
   },
   'Objectif atteint': {
     emoji: '🎯',
     categorie: 'defis',
-    description: 'Le défi collectif a réussi grâce à vous et à tous les donneurs.',
+    description: 'Le défi collectif a réussi grâce à toi et à tous les donneurs.',
     condition: 'Participer à un défi collectif remporté',
   },
 };

@@ -60,7 +60,7 @@ export default function QuizScoreScreen() {
       ? { texte: 'Parfait ! 🎉', couleur: Colors.petrole[500] }
       : scoreNum >= totalNum / 2
         ? { texte: 'Bravo !', couleur: Colors.aubergine }
-        : { texte: 'Continuez vos efforts !', couleur: Colors.grisMoyen };
+        : { texte: 'Continue tes efforts !', couleur: Colors.grisMoyen };
 
   return (
     <View style={styles.screen}>
@@ -120,7 +120,7 @@ export default function QuizScoreScreen() {
 
         {!estPremiere && (
           <Text style={styles.rejoueText}>
-            Vous avez déjà complété ce quiz. Les points ont été attribués lors de votre première
+            Tu as déjà complété ce quiz. Les points ont été attribués lors de ta première
             tentative.
           </Text>
         )}

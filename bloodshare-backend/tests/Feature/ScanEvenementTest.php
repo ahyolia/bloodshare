@@ -73,7 +73,7 @@ class ScanEvenementTest extends TestCase
         $this->scanner($qr)->assertOk();
         $this->scanner($qr)
             ->assertUnprocessable()
-            ->assertJsonPath('message', 'Votre participation à cet événement est déjà validée.');
+            ->assertJsonPath('message', 'Ta participation à cet événement est déjà validée.');
 
         $this->assertSame(1, UserCarte::where('user_id', $this->user->id)->where('carte_id', $carte->id)->sole()->quantite);
         $this->assertSame(1, QrCodeScan::where('user_id', $this->user->id)->count());

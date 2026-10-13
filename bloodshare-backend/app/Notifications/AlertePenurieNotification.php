@@ -25,7 +25,7 @@ class AlertePenurieNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('Alerte pénurie 🩸')
-            ->body("Le stock de {$this->stockSang->groupe_sanguin} est au niveau critique. Votre don peut faire la différence.");
+            ->body("Le stock de {$this->stockSang->groupe_sanguin} est au niveau critique. Ton don peut faire la différence.");
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

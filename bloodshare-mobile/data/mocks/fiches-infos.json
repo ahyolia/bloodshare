@@ -14,7 +14,7 @@
           },
           {
             "titre": "Peser plus de 50 kg",
-            "description": "Ce seuil garantit que le prélèvement reste sans risque pour votre organisme."
+            "description": "Ce seuil garantit que le prélèvement reste sans risque pour ton organisme."
           },
           {
             "titre": "Être en bonne santé",
@@ -34,7 +34,7 @@
     "id": 2,
     "titre": "Délais entre deux dons",
     "categorie": "eligibilite",
-    "contenu": "Entre deux dons de sang total, votre organisme a besoin de temps pour reconstituer ses réserves. La fréquence maximale dépend de votre sexe.",
+    "contenu": "Entre deux dons de sang total, ton organisme a besoin de temps pour reconstituer ses réserves. La fréquence maximale dépend de ton sexe.",
     "sections": [
       {
         "titre": "Fréquence maximale par an",
@@ -53,24 +53,24 @@
     "a_eviter": [
       "Donner moins de 8 semaines après un précédent don de sang total"
     ],
-    "le_saviez_vous": "Le délai de 8 semaines correspond au temps nécessaire à votre organisme pour reconstituer intégralement ses réserves de fer et de globules rouges."
+    "le_saviez_vous": "Le délai de 8 semaines correspond au temps nécessaire à ton organisme pour reconstituer intégralement ses réserves de fer et de globules rouges."
   },
   {
     "id": 3,
     "titre": "Comment se déroule un don ?",
     "categorie": "processus_don",
-    "contenu": "Le don se déroule en 4 étapes simples, encadrées par l'équipe médicale du Centre du Don du Sang, du début à la fin de votre visite.",
+    "contenu": "Le don se déroule en 4 étapes simples, encadrées par l'équipe médicale du Centre du Don du Sang, du début à la fin de ta visite.",
     "sections": [
       {
         "titre": "Les 4 étapes du don",
         "items": [
           {
             "titre": "Accueil et vérification d'identité",
-            "description": "Une pièce d'identité vous est demandée à votre arrivée."
+            "description": "Une pièce d'identité t'est demandée à ton arrivée."
           },
           {
             "titre": "Entretien médical confidentiel",
-            "description": "Un questionnaire et un échange avec un médecin permettent de vérifier votre éligibilité du jour."
+            "description": "Un questionnaire et un échange avec un médecin permettent de vérifier ton éligibilité du jour."
           },
           {
             "titre": "Prélèvement",
@@ -89,7 +89,7 @@
     "id": 4,
     "titre": "Combien de temps dure le prélèvement ?",
     "categorie": "processus_don",
-    "contenu": "Entre l'accueil et la collation, prévoyez un peu de temps devant vous — le prélèvement en lui-même reste rapide.",
+    "contenu": "Entre l'accueil et la collation, prévois un peu de temps devant toi — le prélèvement en lui-même reste rapide.",
     "sections": [
       {
         "titre": "Le déroulé minute par minute",
@@ -120,15 +120,15 @@
         "titre": "La veille du don",
         "items": [
           {
-            "titre": "Mangez normalement",
-            "description": "Prenez un repas équilibré avant de venir. Évitez les repas trop gras (fritures, charcuterie, fromages) dans les heures précédant le don — ils peuvent perturber certaines analyses réalisées sur votre sang."
+            "titre": "Mange normalement",
+            "description": "Prends un repas équilibré avant de venir. Évite les repas trop gras (fritures, charcuterie, fromages) dans les heures précédant le don — ils peuvent perturber certaines analyses réalisées sur ton sang."
           },
           {
-            "titre": "Hydratez-vous bien",
-            "description": "Buvez suffisamment d'eau dans les 24 heures précédant le don. Une bonne hydratation facilite le prélèvement et réduit le risque de malaise."
+            "titre": "Hydrate-toi bien",
+            "description": "Bois suffisamment d'eau dans les 24 heures précédant le don. Une bonne hydratation facilite le prélèvement et réduit le risque de malaise."
           },
           {
-            "titre": "Dormez suffisamment",
+            "titre": "Dors suffisamment",
             "description": "Une bonne nuit de sommeil est recommandée avant de donner. La fatigue peut favoriser les réactions post-don comme les vertiges."
           }
         ]
@@ -146,20 +146,20 @@
   },
   {
     "id": 6,
-    "titre": "Après votre don",
+    "titre": "Après ton don",
     "categorie": "apres_don",
-    "contenu": "Quelques précautions simples permettent de récupérer dans les meilleures conditions après votre prélèvement.",
+    "contenu": "Quelques précautions simples permettent de récupérer dans les meilleures conditions après ton prélèvement.",
     "sections": [
       {
         "titre": "Les bons réflexes",
         "items": [
           {
-            "titre": "Reposez-vous quelques minutes",
-            "description": "Restez assis sur place le temps de la collation avant de repartir."
+            "titre": "Repose-toi quelques minutes",
+            "description": "Reste sur place le temps de la collation avant de repartir."
           },
           {
-            "titre": "Hydratez-vous bien",
-            "description": "Continuez à boire régulièrement dans les heures qui suivent le don."
+            "titre": "Hydrate-toi bien",
+            "description": "Continue à boire régulièrement dans les heures qui suivent le don."
           }
         ]
       }
@@ -208,11 +208,11 @@
           },
           {
             "titre": "Notifications de l'application",
-            "description": "Activez-les pour être informé en priorité des besoins urgents."
+            "description": "Active-les pour connaître en priorité les besoins urgents."
           }
         ]
       }
     ],
-    "le_saviez_vous": "Un appel à dons urgent concerne souvent un groupe sanguin précis en tension — pensez à vérifier votre compatibilité avant de vous déplacer."
+    "le_saviez_vous": "Un appel à dons urgent concerne souvent un groupe sanguin précis en tension — pense à vérifier ta compatibilité avant de te déplacer."
   }
 ]

@@ -293,7 +293,7 @@ export default function QuizScreen() {
 
           <View style={styles.separateur} />
 
-          <Text style={styles.historiqueLabel}>Vous avez complété</Text>
+          <Text style={styles.historiqueLabel}>Tu as complété</Text>
           <Text style={styles.historiqueTotal}>{totalCompletes} Quiz au total !</Text>
 
           <View style={styles.separateur} />

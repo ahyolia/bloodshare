@@ -28,7 +28,7 @@ const INFO_PAR_DEFAUT: BadgeInfo = {
   emoji: '🏅',
   categorie: 'dons',
   description: 'Un nouveau badge à découvrir.',
-  condition: 'Continuez à utiliser Aïma pour le débloquer.',
+  condition: 'Continue à utiliser Aïma pour le débloquer.',
 };
 
 const infoDe = (nom: string): BadgeInfo => BADGES_INFO[nom] ?? INFO_PAR_DEFAUT;
@@ -86,7 +86,7 @@ export default function BadgesScreen() {
       {loading && <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />}
 
       {!loading && error && (
-        <Text style={styles.errorText}>Impossible de charger vos badges.</Text>
+        <Text style={styles.errorText}>Impossible de charger tes badges.</Text>
       )}
 
       {!loading && !error && (
@@ -248,7 +248,7 @@ function DetailBadge({ badge }: { badge: Badge }) {
       ) : (
         <View style={styles.detailEncouragement}>
           <Text style={styles.detailEncouragementTexte}>
-            💡 Continuez à donner et à participer pour débloquer ce badge !
+            💡 Continue à donner et à participer pour débloquer ce badge !
           </Text>
         </View>
       )}

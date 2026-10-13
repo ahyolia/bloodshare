@@ -27,7 +27,7 @@ export function NiveauModal({ visible, onClose, profil }: NiveauModalProps) {
             <Ionicons name="star" size={13} color={Theme.accent.signatureTexte} />
           </View>
 
-          <Text style={styles.niveauLabel}>Vous êtes au niveau</Text>
+          <Text style={styles.niveauLabel}>Tu es au niveau</Text>
           <Text style={styles.niveauNumero}>{niveau.niveau}</Text>
           <Text style={styles.niveauNom}>{niveau.label}</Text>
 

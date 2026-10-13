@@ -62,7 +62,7 @@ export default function PointsScreen() {
       {loading && <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />}
 
       {!loading && error && (
-        <Text style={styles.errorText}>Impossible de charger vos points.</Text>
+        <Text style={styles.errorText}>Impossible de charger tes points.</Text>
       )}
 
       {!loading && !error && profil && historique && (
@@ -75,7 +75,7 @@ export default function PointsScreen() {
           renderItem={({ item }) => <GainRow gain={item} />}
           ListEmptyComponent={
             <Text style={styles.empty}>
-              Complétez des quiz ou parrainez un ami pour gagner vos premiers points !
+              Complète des quiz ou parraine un proche pour gagner tes premiers points !
             </Text>
           }
         />
