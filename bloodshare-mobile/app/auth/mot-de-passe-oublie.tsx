@@ -1,12 +1,15 @@
-import { ScrollView, StyleSheet, Text, Pressable } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../../constants/colors';
 
-// 📖 Pas d'envoi de mail en V1 (l'association n'a pas encore de mail dédié,
-//    voir CLAUDE.md) : cet écran n'appelle plus l'API, il explique juste la
-//    procédure manuelle. Le reset lui-même se fait côté admin dans le
-//    backoffice (action "Réinitialiser le mot de passe" sur la fiche
-//    utilisateur), qui transmet un mot de passe temporaire à l'utilisateur.
+const EMAIL_CONTACT = 'aima.dondusang@outlook.fr';
+
+// 📖 Pas d'envoi de mail automatique en V1 : cet écran n'appelle pas l'API, il explique
+//    la procédure manuelle. L'utilisateur écrit depuis l'adresse de son compte (même
+//    procédure que dans les CGU), ce qui permet à l'admin de vérifier que la demande
+//    vient bien du titulaire du compte. Le reset se fait dans le backoffice (action
+//    "Réinitialiser le mot de passe" sur la fiche utilisateur), et l'admin répond avec
+//    un mot de passe temporaire.
 export default function MotDePasseOublieScreen() {
   return (
     <ScrollView
@@ -15,9 +18,17 @@ export default function MotDePasseOublieScreen() {
     >
       <Text style={styles.title}>Mot de passe oublié</Text>
       <Text style={styles.subtitle}>
-        {"Contactez l'association ADSB-NC (réseaux sociaux ou de vive voix) pour " +
-          "demander une réinitialisation. Un membre de l'équipe vous communiquera un " +
-          'mot de passe temporaire, que vous pourrez changer dès votre prochaine connexion.'}
+        {'Écrivez à '}
+        <Text
+          style={styles.email}
+          onPress={() => Linking.openURL(`mailto:${EMAIL_CONTACT}`)}
+          accessibilityRole="link"
+        >
+          {EMAIL_CONTACT}
+        </Text>
+        {" depuis l'adresse email de votre compte pour demander une réinitialisation. " +
+          "Un membre de l'équipe vous communiquera un mot de passe temporaire, que vous " +
+          'devrez changer à votre prochaine connexion.'}
       </Text>
 
       <Pressable
@@ -52,6 +63,11 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 8,
     marginBottom: 28,
+  },
+  email: {
+    color: Colors.aubergine,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   button: {
     height: 56,
