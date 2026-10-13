@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   AppState,
   Linking,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -18,6 +19,7 @@ import { Colors } from '../../../constants/colors';
 import { TAB_BAR_STYLE } from '../_layout';
 import { ResultatScan, soumettreScan } from '../../../services/scan.service';
 import { formaterDateLongue } from '../../../utils/dates';
+import { estAppInstallee, etatPermissionCamera } from '../../../utils/permissionCamera';
 
 export default function ScanScreen() {
   const router = useRouter();
@@ -71,9 +73,15 @@ export default function ScanScreen() {
     return <View style={styles.screen} />;
   }
 
+  // 📖 Sur web, canAskAgain est toujours vrai : etatPermissionCamera s'appuie sur le statut
+  //    « denied » à la place (cf. utils/permissionCamera.ts).
+  const surWeb = Platform.OS === 'web';
+  const etat = etatPermissionCamera(permission, surWeb);
+  const appInstallee = surWeb && estAppInstallee(typeof window !== 'undefined' ? window : undefined);
+
   // 📖 Cas 2 : la permission n'a jamais été accordée ET l'utilisateur peut encore la redemander (canAskAgain)
   // → Pourquoi : on distingue "jamais demandé" de "refusé définitivement" pour proposer la bonne action (popup vs réglages téléphone)
-  if (!permission.granted && permission.canAskAgain) {
+  if (etat === 'demander') {
     return (
       <View style={styles.permissionScreen}>
         <TouchableOpacity
@@ -97,7 +105,7 @@ export default function ScanScreen() {
 
   // 📖 Cas 3 : la permission a été refusée ET l'utilisateur ne peut plus la redemander via la popup
   // → Pourquoi : iOS/Android n'affichent la popup qu'une seule fois ; après un refus, seul un passage par les Réglages du téléphone permet de changer d'avis
-  if (!permission.granted) {
+  if (etat === 'refuse') {
     return (
       <View style={styles.permissionScreen}>
         <TouchableOpacity
@@ -109,12 +117,54 @@ export default function ScanScreen() {
           <Ionicons name="arrow-back" size={24} color={Colors.aubergine} />
         </TouchableOpacity>
         <Ionicons name="camera-outline" size={56} color={Colors.aubergine} />
-        <Text style={styles.permissionText}>
-          Accès à la caméra refusé. Active-le dans les paramètres de ton téléphone.
-        </Text>
-        <TouchableOpacity style={styles.outlineButton} onPress={() => Linking.openSettings()}>
-          <Text style={styles.outlineButtonText}>Ouvrir les paramètres</Text>
-        </TouchableOpacity>
+        {surWeb ? (
+          // 📖 Un navigateur ne peut pas ouvrir ses propres réglages (Linking.openSettings
+          //    n'y fait rien) : on explique plutôt où réactiver la caméra.
+          <>
+            <Text style={styles.permissionText}>
+              {"Pas d'inquiétude, tu peux autoriser la caméra à tout moment pour scanner ton QR Code."}
+            </Text>
+            {appInstallee ? (
+              // 📖 App installée : pas de barre d'adresse, on passe par les réglages du téléphone.
+              <View style={styles.aideNavigateur}>
+                <Text style={styles.aideTitre}>Sur iPhone</Text>
+                <Text style={styles.aideTexte}>
+                  {"Ouvre les Réglages du téléphone › « Apps » › « Safari » › « Appareil photo » › « Autoriser »."}
+                </Text>
+                <Text style={styles.aideTitre}>Sur Android</Text>
+                <Text style={styles.aideTexte}>
+                  {"Ouvre les Paramètres du téléphone › « Applications » › « Aïma » (ou ton navigateur) › « Autorisations » › « Appareil photo » › « Autoriser »."}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.aideNavigateur}>
+                <Text style={styles.aideTitre}>Sur iPhone (Safari)</Text>
+                <Text style={styles.aideTexte}>
+                  {"Touche l'icône à gauche de l'adresse (souvent « aA »), puis « Réglages du site web » › « Appareil photo » › « Autoriser »."}
+                </Text>
+                <Text style={styles.aideTitre}>Sur Android ou ordinateur (Chrome, Edge, Firefox…)</Text>
+                <Text style={styles.aideTexte}>
+                  {"Touche l'icône à gauche de l'adresse (cadenas ou réglages), ouvre les autorisations du site, puis autorise l'appareil photo."}
+                </Text>
+              </View>
+            )}
+            <Text style={styles.permissionText}>{"Reviens ensuite ici et touche « Réessayer »."}</Text>
+            {/* 📖 Recharger la page relance la demande d'accès à la caméra. Indispensable en
+                app installée, qui n'a pas de bouton « recharger » du navigateur. */}
+            <TouchableOpacity style={styles.outlineButton} onPress={() => window.location.reload()}>
+              <Text style={styles.outlineButtonText}>Réessayer</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <Text style={styles.permissionText}>
+              Accès à la caméra refusé. Active-le dans les paramètres de ton téléphone.
+            </Text>
+            <TouchableOpacity style={styles.outlineButton} onPress={() => Linking.openSettings()}>
+              <Text style={styles.outlineButtonText}>Ouvrir les paramètres</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     );
   }
@@ -262,6 +312,24 @@ const styles = StyleSheet.create({
     color: Colors.blanc,
     fontWeight: '700',
     fontSize: 14,
+  },
+  aideNavigateur: {
+    alignSelf: 'stretch',
+    backgroundColor: Colors.blanc,
+    borderRadius: 16,
+    padding: 16,
+    gap: 4,
+  },
+  aideTitre: {
+    color: Colors.aubergine,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  aideTexte: {
+    color: Colors.aubergine,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 8,
   },
   outlineButton: {
     borderWidth: 1.5,
