@@ -16,7 +16,7 @@ Pour toute question sur vos données ou pour exercer vos droits : aima.dondusang
 - votre adresse email, qui sert d'identifiant de connexion ;
 - votre mot de passe, enregistré uniquement sous une forme chiffrée irréversible ;
 - votre sexe biologique, qui sert uniquement à calculer le délai légal entre deux dons de sang (8 semaines pour un homme, 12 semaines pour une femme) ;
-- votre profil de donneur (donneur régulier, quelques dons, jamais donné), facultatif ;
+- votre profil de donneur (donneur régulier, quelques dons, jamais donné), facultatif : il s'affiche sur votre profil et permet à l'association de connaître la part de donneurs réguliers parmi les utilisateurs ;
 - votre avatar, facultatif.
 
 Lorsque vous utilisez l'application :
@@ -31,11 +31,11 @@ L'appareil photo n'est utilisé que pour scanner les QR codes, avec votre autori
 
 ## Vos données de santé
 
-Votre sexe, associé aux dates de vos dons, révèle que vous avez donné votre sang, quand, et à partir de quand vous pouvez de nouveau donner. Nous considérons ces informations comme des données de santé.
+Votre sexe, associé aux dates de vos dons, révèle que vous avez donné votre sang, quand, et à partir de quand vous pouvez de nouveau donner. Votre profil de donneur, si vous le renseignez, révèle aussi si vous donnez votre sang. Nous considérons ces informations comme des données de santé.
 
-Nous ne les traitons qu'avec votre consentement explicite, recueilli par une case distincte lors de l'inscription. Elles servent uniquement à calculer vos points de don et à vous prévenir quand vous pouvez de nouveau donner. Elles ne sont accessibles qu'aux administrateurs habilités de l'ADSB-NC.
+Nous ne les traitons qu'avec votre consentement explicite, recueilli par une case distincte lors de l'inscription. Le sexe et les dates de don servent uniquement à calculer vos points et à vous prévenir quand vous pouvez de nouveau donner. Ces informations ne sont accessibles qu'aux administrateurs habilités de l'ADSB-NC, et votre sexe ne leur est pas affiché.
 
-Vous pouvez retirer votre consentement à tout moment en supprimant votre compte : votre sexe est alors effacé et vos dates de don ne sont plus rattachées à votre identité.
+Vous pouvez retirer votre consentement à tout moment en supprimant votre compte : votre sexe et votre profil de donneur sont alors effacés, et vos dates de don ne sont plus rattachées à votre identité.
 
 ## Pourquoi nous utilisons vos données
 
@@ -64,7 +64,7 @@ Lorsque vous supprimez votre compte, votre historique de jeu (dates de don, poin
 
 ## Ce qui est enregistré sur votre appareil
 
-L'application enregistre sur votre appareil votre jeton de connexion, pour que vous restiez connecté, et vos préférences d'affichage et de notifications. Elle n'utilise aucun cookie publicitaire ni traceur.
+L'application enregistre sur votre appareil votre jeton de connexion, pour que vous restiez connecté, et vos préférences d'affichage et de notifications. Le jeton de connexion expire au bout de 90 jours : vous devez alors vous reconnecter. Elle n'utilise aucun cookie publicitaire ni traceur.
 
 ## Vos droits
 

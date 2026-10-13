@@ -156,7 +156,7 @@ L'application est conçue pour fonctionner sous **pseudonyme** :
 | Adresse électronique | Oui | Identifiant de connexion |
 | Mot de passe | Oui | Sécuriser le compte (enregistré uniquement sous forme chiffrée irréversible, « haché ») |
 | Sexe biologique (homme / femme) | Oui | Calculer le délai légal entre deux dons de sang (8 semaines pour un homme, 12 pour une femme) et envoyer le rappel au bon moment |
-| Profil de donneur (donneur régulier / quelques dons / jamais donné) | Non | Adapter les contenus et les défis |
+| Profil de donneur (donneur régulier / quelques dons / jamais donné) | Non | Afficher le profil ; statistiques de l'association (part de donneurs réguliers). Donnée liée à la santé, couverte par le consentement explicite |
 | Avatar | Non | Personnaliser le profil |
 | Dates des dons validés et des QR codes scannés | Automatique | Attribuer les points et calculer la date du prochain don possible |
 | Points, niveau, badges, cartes, défis, résultats aux quiz | Automatique | Faire fonctionner le système de jeu |
@@ -169,22 +169,22 @@ L'application est conçue pour fonctionner sous **pseudonyme** :
 
 | Traitement | Données prévues | Finalité | Base légale envisagée | Conservation | Destinataires |
 | :---- | :---- | :---- | :---- | :---- | :---- |
-| Création et gestion du compte | Pseudo, email, mot de passe haché, profil de donneur, avatar | Créer et administrer le compte | Exécution des CGU | Durée de vie du compte ; suppression ou anonymisation après **3 ans sans connexion** | ADSB-NC (administrateurs habilités), hébergeur |
-| Suivi des dons (**données de santé**) | Sexe, dates des dons validés | Calculer la date du prochain don possible et envoyer le rappel | **Consentement explicite** (case dédiée à l'inscription) |
+| Création et gestion du compte | Pseudo, email, mot de passe haché, avatar | Créer et administrer le compte | Exécution des CGU | Durée de vie du compte ; suppression ou anonymisation après **3 ans sans connexion** | ADSB-NC (administrateurs habilités), hébergeur |
+| Suivi des dons (**données de santé**) | Sexe, dates des dons validés, profil de donneur (facultatif) | Calculer la date du prochain don possible et envoyer le rappel ; afficher le profil et mesurer la part de donneurs réguliers | **Consentement explicite** (case dédiée à l'inscription) | Durée de vie du compte ; effacés ou détachés de l'identité à la suppression | ADSB-NC (administrateurs habilités, sexe non affiché dans le BO), hébergeur |
 | Jeu | Dates de scans, points, badges, cartes, défis, quiz | Motiver les donneurs | Exécution des CGU | Durée de vie du compte, puis conservation sous forme anonymisée à des fins statistiques | ADSB-NC, hébergeur |
 | Parrainage | Lien entre le compte du parrain et celui du filleul | Récompenser le parrainage | Exécution des CGU | Durée de vie des comptes concernés | ADSB-NC, hébergeur |
 | Notifications et rappels | Abonnement technique du navigateur, historique des notifications | Envoyer les rappels (fin du délai entre deux dons, nouvelles cartes, quiz) | Consentement (autorisation donnée dans le navigateur, retirable à tout moment) | Jusqu'au retrait de l'autorisation ou à la suppression du compte ; historique : **1 an** | ADSB-NC, services d'envoi des navigateurs |
 | Support | Email, contenu des échanges | Répondre aux demandes (dont la réinitialisation du mot de passe) | Intérêt légitime | **1 an** après le dernier échange | Personnes habilitées de l'ADSB-NC |
-| Sécurité | Jetons de connexion, journaux techniques du serveur | Sécuriser les comptes et diagnostiquer les incidents | Intérêt légitime | Jetons : supprimés à la déconnexion ou à la suppression du compte ; journaux : **6 mois** | ADSB-NC, hébergeur, mainteneur |
+| Sécurité | Jetons de connexion, journaux techniques du serveur | Sécuriser les comptes et diagnostiquer les incidents | Intérêt légitime | Jetons : expirent après **90 jours**, supprimés à la déconnexion ou à la suppression du compte ; journaux : **6 mois** | ADSB-NC, hébergeur, mainteneur |
 | Gestion des droits | Email, demande, échanges | Répondre aux demandes de droits | Obligation légale | Durée de traitement de la demande + **1 an** pour preuve | Personnes habilitées de l'ADSB-NC |
 
 **Données de santé**
 
-L'application ne collecte aucune donnée médicale directe. En revanche, l'historique des dates de don, associé au sexe, révèle qu'une personne a donné son sang, quand, et à partir de quand elle peut de nouveau donner. **L'ADSB-NC considère ces informations comme des données de santé.** En conséquence :
+L'application ne collecte aucune donnée médicale directe. En revanche, l'historique des dates de don, associé au sexe, révèle qu'une personne a donné son sang, quand, et à partir de quand elle peut de nouveau donner. Le profil de donneur (« donneur régulier »…) révèle aussi si une personne donne son sang. **L'ADSB-NC considère ces informations comme des données de santé.** En conséquence :
 - leur traitement repose sur le **consentement explicite** de l'utilisateur, recueilli par une case dédiée à l'inscription ;
 - l'application est réservée aux personnes **majeures** ;
 - l'utilisateur peut retirer son consentement à tout moment en supprimant son compte. Le sexe et les dates de don sont alors détachés de toute identité ;
-- l'accès à ces données dans le backoffice est limité aux administrateurs habilités ;
+- l'accès à ces données dans le backoffice est limité aux administrateurs habilités, et le sexe n'y est pas affiché ;
 - une **analyse d'impact (AIPD)** est réalisée pour ce traitement (voir « Documents internes »).
 
 > **Point de vigilance — consentement libre :** un consentement n'est valable que s'il est libre. Ici, la case est obligatoire pour s'inscrire, ce qui se justifie parce que le suivi des dons est au cœur du service : sans dates de don, l'application ne peut ni attribuer les points de don ni envoyer le rappel. Pour la V2, on pourrait rendre la case facultative : l'application fonctionnerait alors sans suivi des dons pour les personnes qui refusent.
@@ -237,7 +237,7 @@ Case distincte pour la politique de confidentialité :
 
 Case distincte pour les données de santé (obligatoire) :
 
-☐ J'accepte que l'ADSB-NC enregistre mon sexe et les dates de mes dons de sang, qui sont des données de santé, pour calculer mes points et me prévenir quand je peux de nouveau donner. Je pourrai retirer mon accord à tout moment en supprimant mon compte.
+☐ J'accepte que l'ADSB-NC enregistre mon sexe, les dates de mes dons de sang et, si je le renseigne, mon profil de donneur, qui sont des données de santé, pour calculer mes points et me prévenir quand je peux de nouveau donner. Je pourrai retirer mon accord à tout moment en supprimant mon compte.
 
 Case distincte pour l'âge (obligatoire) :
 
@@ -296,7 +296,7 @@ Cette action supprimera définitivement votre compte : **votre pseudo, votre adr
 
 * **Données conservées après suppression et justification :** dates de dons et de scans, points, badges, cartes, défis, résultats aux quiz, liens de parrainage, rattachés à un compte anonymisé (« Utilisateur supprimé »), pour les statistiques de l'association sur la mobilisation des donneurs
 
-> **Correction technique à prévoir avant publication de ce texte :** aujourd'hui, la suppression efface bien le pseudo, l'email, le mot de passe, l'avatar, le code de parrainage et les abonnements aux notifications. En revanche, elle **conserve le sexe, le profil de donneur, la date de dernière connexion et l'historique des notifications**. Pour que la phrase « sans aucun lien avec votre identité » soit exacte, il faut effacer ces champs aussi au moment de la suppression.
+> **Correction technique faite (PR #104 et #106) :** la suppression efface aussi le sexe, le profil de donneur, la date de dernière connexion, le motif de suspension, les rôles et l'historique des notifications, dans une transaction. Les comptes supprimés avant le correctif ont été rattrapés par une migration.
 
 **Sécurité**
 
@@ -357,7 +357,7 @@ Cette action supprimera définitivement votre compte : **votre pseudo, votre adr
 | 5 | Adresse électronique dédiée aux données personnelles | ✅ aima.dondusang@outlook.fr (identifiants à remettre au bureau) | — |
 | 6 | Nom, adresse et pays de l'hébergeur | ⏳ | Équipe technique |
 | 7 | Liste complète des prestataires et SDK | ✅ sauf l'hébergeur | Équipe technique |
-| 8 | Liste exacte des données demandées à l'inscription | ✅ pseudo, email, mot de passe, sexe, profil de donneur (facultatif) | — |
+| 8 | Liste exacte des données demandées à l'inscription | ✅ pseudo, email, mot de passe, sexe ; profil de donneur et avatar facultatifs (l'inscription permet de passer ces étapes) | — |
 | 9 | Confirmation de la collecte ou non de données de santé | ✅ oui : sexe + dates de don, sous consentement explicite (AIPD et question HDS à traiter) | Audit RGPD |
 | 10 | Durées de conservation choisies pour chaque traitement | ✅ voir le tableau « Traitements » | — |
 | 11 | Âge minimal des utilisateurs | ✅ 18 ans | — |
