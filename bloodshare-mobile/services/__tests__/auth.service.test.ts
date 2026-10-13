@@ -71,6 +71,10 @@ describe('register', () => {
     sexe: 'femme' as const,
     statut_donneur: 'quelques_dons',
     avatar_id: 3,
+    cgu_acceptees: true,
+    confidentialite_acceptee: true,
+    consentement_sante: true,
+    majeur: true,
   };
 
   it('appelle POST /auth/register avec le formulaire complet', async () => {

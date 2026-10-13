@@ -35,6 +35,38 @@ class AuthTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'goutte@example.test', 'sexe' => 'femme']);
     }
 
+    public function test_enregistre_la_preuve_des_consentements(): void
+    {
+        config(['juridique.cgu_version' => '1.2']);
+
+        $this->postJson('/api/auth/register', $this->inscription())->assertCreated();
+
+        $user = User::where('email', 'goutte@example.test')->first();
+        $this->assertSame('1.2', $user->cgu_version);
+        $this->assertNotNull($user->cgu_acceptees_at);
+        $this->assertNotNull($user->consentement_sante_at);
+    }
+
+    #[DataProvider('consentementsObligatoires')]
+    public function test_refuse_une_inscription_sans_consentement(string $champ, mixed $valeur): void
+    {
+        $this->postJson('/api/auth/register', $this->inscription([$champ => $valeur]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors($champ);
+
+        $this->assertDatabaseCount('users', 0);
+    }
+
+    public static function consentementsObligatoires(): array
+    {
+        return [
+            'CGU refusées' => ['cgu_acceptees', false],
+            'confidentialité absente' => ['confidentialite_acceptee', null],
+            'données de santé refusées' => ['consentement_sante', false],
+            'majorité non certifiée' => ['majeur', false],
+        ];
+    }
+
     public function test_ne_stocke_pas_le_mot_de_passe_en_clair(): void
     {
         $this->postJson('/api/auth/register', $this->inscription())->assertCreated();
@@ -223,6 +255,10 @@ class AuthTest extends TestCase
             'password' => 'MotDePasse1',
             'password_confirmation' => 'MotDePasse1',
             'sexe' => 'femme',
+            'cgu_acceptees' => true,
+            'confidentialite_acceptee' => true,
+            'consentement_sante' => true,
+            'majeur' => true,
         ], $surcharges);
     }
 }

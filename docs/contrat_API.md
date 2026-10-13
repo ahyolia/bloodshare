@@ -74,10 +74,18 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
   "sexe": "homme",
   "statut_donneur": "quelques_dons",
   "avatar_id": 3,
-  "code_parrainage": "ABCD1234"
+  "code_parrainage": "ABCD1234",
+  "cgu_acceptees": true,
+  "confidentialite_acceptee": true,
+  "consentement_sante": true,
+  "majeur": true
 }
 ```
 
+> `cgu_acceptees`, `confidentialite_acceptee`, `consentement_sante` (traitement du sexe et des
+> dates de don, qui sont des données de santé) et `majeur` (18 ans minimum) sont **obligatoires
+> et doivent valoir `true`** ; sinon 422 sur le champ concerné et aucun compte n'est créé. Le
+> serveur enregistre la version des CGU acceptée et la date des consentements.
 > `statut_donneur`, `avatar_id` et `code_parrainage` sont optionnels. `sexe` est requis
 > (`homme` ou `femme`) : il est stocké côté serveur car la fréquence maximale de don en dépend,
 > mais il n'est jamais renvoyé dans la réponse et ne doit pas être conservé sur le téléphone.
