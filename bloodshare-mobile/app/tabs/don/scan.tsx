@@ -93,7 +93,7 @@ export default function ScanScreen() {
         </TouchableOpacity>
         <Ionicons name="camera-outline" size={56} color={Colors.aubergine} />
         <Text style={styles.permissionText}>
-          {"Aïma a besoin d'accéder à votre caméra pour scanner le QR Code après votre don."}
+          {"Aïma a besoin d'accéder à ta caméra pour scanner le QR Code après ton don."}
         </Text>
         <TouchableOpacity style={styles.primaryButton} onPress={requestPermission}>
           <Text style={styles.primaryButtonText}>Autoriser la caméra</Text>
@@ -121,24 +121,24 @@ export default function ScanScreen() {
           //    n'y fait rien) : on explique plutôt où réactiver la caméra.
           <>
             <Text style={styles.permissionText}>
-              {"Pas d'inquiétude, vous pouvez autoriser la caméra à tout moment pour scanner votre QR Code."}
+              {"Pas d'inquiétude, tu peux autoriser la caméra à tout moment pour scanner ton QR Code."}
             </Text>
             <View style={styles.aideNavigateur}>
               <Text style={styles.aideTitre}>Sur iPhone (Safari)</Text>
               <Text style={styles.aideTexte}>
-                {"Touchez l'icône à gauche de l'adresse (souvent « aA »), puis « Réglages du site web » › « Appareil photo » › « Autoriser »."}
+                {"Touche l'icône à gauche de l'adresse (souvent « aA »), puis « Réglages du site web » › « Appareil photo » › « Autoriser »."}
               </Text>
               <Text style={styles.aideTitre}>Sur Android ou ordinateur (Chrome, Edge, Firefox…)</Text>
               <Text style={styles.aideTexte}>
-                {"Touchez l'icône à gauche de l'adresse (cadenas ou réglages), ouvrez les autorisations du site, puis autorisez l'appareil photo."}
+                {"Touche l'icône à gauche de l'adresse (cadenas ou réglages), ouvre les autorisations du site, puis autorise l'appareil photo."}
               </Text>
             </View>
-            <Text style={styles.permissionText}>Rechargez ensuite la page pour lancer le scan.</Text>
+            <Text style={styles.permissionText}>Recharge ensuite la page pour lancer le scan.</Text>
           </>
         ) : (
           <>
             <Text style={styles.permissionText}>
-              Accès à la caméra refusé. Activez-le dans les paramètres de votre téléphone.
+              Accès à la caméra refusé. Active-le dans les paramètres de ton téléphone.
             </Text>
             <TouchableOpacity style={styles.outlineButton} onPress={() => Linking.openSettings()}>
               <Text style={styles.outlineButtonText}>Ouvrir les paramètres</Text>
@@ -198,7 +198,7 @@ export default function ScanScreen() {
   const handleError = async (error: any) => {
     const status = error.response?.status;
     let titre = 'Erreur';
-    let message = 'Une erreur est survenue. Vérifiez votre connexion et réessayez.';
+    let message = 'Une erreur est survenue. Vérifie ta connexion et réessaie.';
 
     if (status === 422) {
       // 📖 Deux refus partagent le 422 : un don trop rapproché (le backend joint
@@ -206,7 +206,7 @@ export default function ScanScreen() {
       const { prochaine_eligibilite, message: messageServeur } = error.response.data ?? {};
       if (prochaine_eligibilite) {
         titre = 'Don non validé';
-        message = `Vous n'êtes pas encore éligible.\nProchain don possible le ${formaterDateLongue(prochaine_eligibilite)}`;
+        message = `Tu n'es pas encore éligible.\nProchain don possible le ${formaterDateLongue(prochaine_eligibilite)}`;
       } else {
         titre = 'Scan non validé';
         message = messageServeur ?? "Ce QR Code n'a pas pu être validé.";
@@ -216,10 +216,10 @@ export default function ScanScreen() {
       message = 'Ce QR Code est invalide ou expiré.';
     } else if (status === 401) {
       titre = 'Session expirée';
-      message = 'Vous devez être connecté pour valider un scan. Reconnectez-vous puis réessayez.';
+      message = 'Ta session a expiré. Reconnecte-toi pour valider un scan, puis réessaie.';
     } else if (status === 503) {
       titre = 'Service temporairement indisponible';
-      message = "La carte à débloquer n'est pas encore configurée. Réessayez plus tard.";
+      message = "La carte à débloquer n'est pas encore configurée. Réessaie plus tard.";
     }
 
     await informer(titre, message);
@@ -245,7 +245,7 @@ export default function ScanScreen() {
 
         <View style={styles.centerArea} pointerEvents="none">
           <View style={styles.scanFrame} />
-          <Text style={styles.scanHint}>Placez le QR Code dans le cadre</Text>
+          <Text style={styles.scanHint}>Place le QR Code dans le cadre</Text>
         </View>
       </View>
 
