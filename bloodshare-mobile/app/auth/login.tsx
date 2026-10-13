@@ -30,7 +30,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     setErrorMessage('');
     if (!email || !password) {
-      setErrorMessage('Veuillez remplir tous les champs.');
+      setErrorMessage('Remplis tous les champs.');
       return;
     }
 
@@ -55,7 +55,7 @@ export default function LoginScreen() {
           setErrorMessage('Une erreur est survenue côté serveur.');
         }
       } else if (error.request) {
-        setErrorMessage('Impossible de joindre le serveur. Vérifiez votre connexion.');
+        setErrorMessage('Impossible de joindre le serveur. Vérifie ta connexion.');
       } else {
         setErrorMessage("Une erreur inattendue s'est produite.");
       }
@@ -107,7 +107,7 @@ export default function LoginScreen() {
         {errorMessage ? (
           <Text style={styles.errorText}>{errorMessage}</Text>
         ) : session === 'expiree' ? (
-          <Text style={styles.errorText}>Votre session a expiré. Reconnectez-vous.</Text>
+          <Text style={styles.errorText}>Ta session a expiré. Reconnecte-toi.</Text>
         ) : null}
 
         <Pressable

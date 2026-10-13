@@ -39,7 +39,7 @@ export default function ProfilScreen() {
   const handleLogout = async () => {
     const ok = await confirmer(
       "Se déconnecter",
-      "Voulez-vous vraiment vous déconnecter ?",
+      "Veux-tu vraiment te déconnecter ?",
       "Se déconnecter",
     );
     if (!ok) return;
@@ -93,7 +93,7 @@ export default function ProfilScreen() {
 
         {error && rienAAfficher && (
           <Text style={styles.errorText}>
-            Impossible de charger votre profil.
+            Impossible de charger ton profil.
           </Text>
         )}
 

@@ -38,7 +38,7 @@ describe('soumettreScan', () => {
   //    « pas encore éligible », « QR Code invalide »... : le service ne doit pas avaler l'erreur.
   it.each([
     [404, 'QR Code invalide ou expiré.'],
-    [422, 'Vous n’êtes pas encore éligible pour donner.'],
+    [422, 'Tu n’es pas encore éligible pour donner.'],
     [503, 'La carte du mois n’est pas encore disponible.'],
   ])('propage une réponse %i pour que l’écran affiche le bon message', async (status, message) => {
     const erreur = { response: { status, data: { message } } };

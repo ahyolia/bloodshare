@@ -68,14 +68,14 @@ export default function ParrainageScreen() {
       {loading && <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />}
 
       {!loading && error && (
-        <Text style={styles.errorText}>Impossible de charger votre parrainage.</Text>
+        <Text style={styles.errorText}>Impossible de charger ton parrainage.</Text>
       )}
 
       {!loading && !error && profil && (
         <View style={styles.content}>
           {/* CARTE CODE */}
           <View style={styles.carteCode}>
-            <Text style={styles.codeLabel}>Votre code de parrainage</Text>
+            <Text style={styles.codeLabel}>Ton code de parrainage</Text>
             <Text style={styles.code}>{profil.code_parrainage}</Text>
 
             <TouchableOpacity
@@ -100,7 +100,7 @@ export default function ParrainageScreen() {
           {/* NOTE ANONYMAT */}
           <View style={styles.noteAnonymat}>
             <Text style={styles.noteAnonymatTexte}>
-              {"🔒 Par respect de la vie privée, l'identité de vos filleuls n'est pas affichée."}
+              {"🔒 Par respect de la vie privée, l'identité de tes filleuls n'est pas affichée."}
             </Text>
           </View>
         </View>

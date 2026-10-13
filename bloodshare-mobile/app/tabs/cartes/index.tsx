@@ -84,7 +84,7 @@ export default function CartesScreen() {
         )}
 
         {!loading && error && (
-          <Text style={styles.errorText}>Impossible de charger votre collection.</Text>
+          <Text style={styles.errorText}>Impossible de charger ta collection.</Text>
         )}
 
         {!loading && !error && cartes && (

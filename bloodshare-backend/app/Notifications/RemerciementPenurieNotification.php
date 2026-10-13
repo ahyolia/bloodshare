@@ -24,8 +24,8 @@ class RemerciementPenurieNotification extends Notification
     public function toWebPush($notifiable, $notification): WebPushMessage
     {
         return (new WebPushMessage())
-            ->title('Merci à vous 🙏')
-            ->body("Grâce à vous, le stock de {$this->stockSang->groupe_sanguin} n'est plus en pénurie.");
+            ->title('Merci à toi 🙏')
+            ->body("Grâce à toi, le stock de {$this->stockSang->groupe_sanguin} n'est plus en pénurie.");
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

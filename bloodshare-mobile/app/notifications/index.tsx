@@ -58,7 +58,7 @@ export default function NotificationsScreen() {
       {loading && <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />}
 
       {!loading && error && (
-        <Text style={styles.errorText}>Impossible de charger vos notifications.</Text>
+        <Text style={styles.errorText}>Impossible de charger tes notifications.</Text>
       )}
 
       {!loading && !error && notifications && (
@@ -73,7 +73,7 @@ export default function NotificationsScreen() {
           onEndReached={chargerPlus}
           onEndReachedThreshold={0.4}
           ListEmptyComponent={
-            <Text style={styles.empty}>{"Vous n'avez aucune notification pour l'instant."}</Text>
+            <Text style={styles.empty}>{"Tu n'as aucune notification pour l'instant."}</Text>
           }
           ListFooterComponent={
             chargementSuite ? (

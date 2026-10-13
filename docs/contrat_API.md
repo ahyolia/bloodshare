@@ -116,9 +116,9 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
 
 ```json
 {
-  "message": "Ce code de parrainage n'existe pas. Vérifiez-le ou laissez le champ vide.",
+  "message": "Ce code de parrainage n'existe pas. Vérifie-le ou laisse le champ vide.",
   "errors": {
-    "code_parrainage": ["Ce code de parrainage n'existe pas. Vérifiez-le ou laissez le champ vide."]
+    "code_parrainage": ["Ce code de parrainage n'existe pas. Vérifie-le ou laisse le champ vide."]
   }
 }
 ```
@@ -293,7 +293,7 @@ _Authentifié._ Endpoint central — appelé après le scan d'un QR Code (centre
 
 ```json
 {
-  "message": "Vous n'êtes pas encore éligible pour donner.",
+  "message": "Tu n'es pas encore éligible pour donner.",
   "prochaine_eligibilite": "2026-07-15"
 }
 ```

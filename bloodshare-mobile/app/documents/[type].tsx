@@ -94,7 +94,7 @@ export default function DocumentJuridiqueScreen() {
           <Text style={styles.vide}>
             {etat.statut === 'absent'
               ? 'Ce document sera bientôt disponible.'
-              : 'Impossible de charger ce document. Vérifiez votre connexion et réessayez.'}
+              : 'Impossible de charger ce document. Vérifie ta connexion et réessaie.'}
           </Text>
         </View>
       )}

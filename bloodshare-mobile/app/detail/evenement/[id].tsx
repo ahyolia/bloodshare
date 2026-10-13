@@ -90,9 +90,9 @@ export default function EvenementDetailScreen() {
         {/* Valider ma présence */}
         <View style={styles.presenceCard}>
           <Text style={styles.presenceEmoji}>🩸</Text>
-          <Text style={styles.presenceTitre}>Vous êtes présent ?</Text>
+          <Text style={styles.presenceTitre}>Tu es sur place ?</Text>
           <Text style={styles.presenceText}>
-            Scannez le QR Code affiché sur place pour valider votre présence et obtenir votre
+            Scanne le QR Code affiché sur place pour valider ta présence et obtenir ta
             carte événement.
           </Text>
           <TouchableOpacity

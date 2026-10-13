@@ -34,7 +34,7 @@ export default function ChangerMotDePasseScreen() {
     setErrorMessage("");
 
     if (!motDePasseActuel || !motDePasse || !confirmation) {
-      setErrorMessage("Veuillez remplir tous les champs.");
+      setErrorMessage("Remplis tous les champs.");
       return;
     }
     if (motDePasse !== confirmation) {
@@ -51,7 +51,7 @@ export default function ChangerMotDePasseScreen() {
       const cache = await getUser();
       await saveUser({ ...(cache ?? {}), doit_changer_mdp: false });
 
-      await informer("Mot de passe modifié", "Votre mot de passe a bien été mis à jour.");
+      await informer("Mot de passe modifié", "Ton mot de passe a bien été mis à jour.");
       router.replace("/tabs");
     } catch (error: any) {
       if (error.response?.status === 422) {
@@ -59,7 +59,7 @@ export default function ChangerMotDePasseScreen() {
           error.response.data?.message || "Mot de passe actuel incorrect ou nouveau mot de passe invalide."
         );
       } else if (error.request) {
-        setErrorMessage("Impossible de joindre le serveur. Vérifiez votre connexion.");
+        setErrorMessage("Impossible de joindre le serveur. Vérifie ta connexion.");
       } else {
         setErrorMessage("Une erreur inattendue s'est produite.");
       }
@@ -87,7 +87,7 @@ export default function ChangerMotDePasseScreen() {
         <Text style={styles.title}>Changer mon mot de passe</Text>
         {oblige && (
           <Text style={styles.subtitle}>
-            {"Votre mot de passe a été réinitialisé par l'association. Choisissez-en " +
+            {"Ton mot de passe a été réinitialisé par l'association. Choisis-en " +
               'un nouveau pour continuer.'}
           </Text>
         )}

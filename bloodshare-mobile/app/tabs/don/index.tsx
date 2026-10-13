@@ -116,7 +116,7 @@ export default function DonScreen() {
           </View>
 
           <Text style={styles.qrText}>
-            Scannez le QR Code affiché au centre ou à un événement.
+            Scanne le QR Code affiché au centre ou à un événement.
           </Text>
 
           <TouchableOpacity
@@ -132,7 +132,7 @@ export default function DonScreen() {
         <View style={styles.donationBlock}>
           <Text style={styles.sectionTitle}>Faire un don</Text>
           <Text style={styles.sectionSubtitle}>
-            Réservez votre créneau horaire sur le site du Centre du Don du Sang.
+            Réserve ton créneau horaire sur le site du Centre du Don du Sang.
           </Text>
 
           <TouchableOpacity
@@ -141,7 +141,7 @@ export default function DonScreen() {
             activeOpacity={0.9}
           >
             <Ionicons name="calendar" size={16} color={Colors.aubergine} />
-            <Text style={styles.outlineButtonText}>Prenez un rendez-vous</Text>
+            <Text style={styles.outlineButtonText}>Prends un rendez-vous</Text>
           </TouchableOpacity>
         </View>
 
@@ -153,7 +153,7 @@ export default function DonScreen() {
         >
           <Text style={styles.sectionTitle}>Fiches pratiques</Text>
           <Text style={styles.fichesSubtitle}>
-            {"Pour plus d'informations, retrouvez des articles sur le site du "}
+            {"Pour plus d'informations, retrouve des articles sur le site du "}
             <Text style={styles.fichesLink} onPress={() => Linking.openURL(RESERVATION_URL)}>
               Centre du Don du Sang.
             </Text>
@@ -164,7 +164,7 @@ export default function DonScreen() {
 
         {!fichesLoading && fichesError && (
           <Text style={styles.errorText}>
-            Impossible de charger les fiches. Réessayez plus tard.
+            Impossible de charger les fiches. Réessaie plus tard.
           </Text>
         )}
 

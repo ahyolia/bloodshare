@@ -19,8 +19,8 @@ class RetourInactiviteNotification extends Notification
     public function toWebPush($notifiable, $notification): WebPushMessage
     {
         return (new WebPushMessage())
-            ->title('On ne vous a pas vu récemment 👋')
-            ->body('Aïma vous attend — revenez quand vous le souhaitez.');
+            ->title('Ça fait un moment ! 👋')
+            ->body('Aïma t\'attend — reviens quand tu veux.');
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

@@ -33,10 +33,10 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
           <Ionicons name="checkmark" size={30} color={Colors.aubergine} />
         </View>
 
-        <Text style={styles.titre}>Vous semblez éligible !</Text>
+        <Text style={styles.titre}>Tu sembles éligible !</Text>
         <Text style={styles.texte}>
-          {"D'après vos réponses, rien ne semble vous empêcher de donner votre sang. Seul le " +
-            'personnel du CHT peut confirmer votre éligibilité le jour du don.'}
+          {"D'après tes réponses, rien ne semble t'empêcher de donner ton sang. Seul le " +
+            'personnel du CHT peut confirmer ton éligibilité le jour du don.'}
         </Text>
 
         <TouchableOpacity
@@ -72,7 +72,7 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
 
         {dateFormatee && (
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Vous pourriez donner à partir du :</Text>
+            <Text style={styles.cardLabel}>Tu pourrais donner à partir du :</Text>
             <Text style={styles.cardDate}>{dateFormatee}</Text>
           </View>
         )}
@@ -107,7 +107,7 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
       <Text style={styles.titreSecondaire}>Don contre-indiqué</Text>
       <Text style={styles.texte}>{resultat.motif}</Text>
       <Text style={styles.texteEncourageant}>
-        {"Vous pouvez toujours soutenir l'association ADSB-NC en sensibilisant votre entourage ou en " +
+        {"Tu peux toujours soutenir l'association ADSB-NC en sensibilisant ton entourage ou en " +
           'devenant bénévole.'}
       </Text>
 

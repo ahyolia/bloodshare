@@ -61,10 +61,10 @@ class AuthController extends Controller
             'consentement_sante' => 'accepted',
             'majeur' => 'accepted',
         ], [
-            'code_parrainage.exists' => "Ce code de parrainage n'existe pas. Vérifiez-le ou laissez le champ vide.",
-            'cgu_acceptees.accepted' => "Vous devez accepter les conditions générales d'utilisation.",
-            'confidentialite_acceptee.accepted' => 'Vous devez accepter la politique de confidentialité.',
-            'consentement_sante.accepted' => "Ce consentement est nécessaire pour suivre vos dons et vous prévenir quand vous pouvez redonner.",
+            'code_parrainage.exists' => "Ce code de parrainage n'existe pas. Vérifie-le ou laisse le champ vide.",
+            'cgu_acceptees.accepted' => "Tu dois accepter les conditions générales d'utilisation.",
+            'confidentialite_acceptee.accepted' => 'Tu dois accepter la politique de confidentialité.',
+            'consentement_sante.accepted' => "Ce consentement est nécessaire pour suivre tes dons et te prévenir quand tu peux redonner.",
             'majeur.accepted' => "L'application est réservée aux personnes majeures.",
         ]);
 

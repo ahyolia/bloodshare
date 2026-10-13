@@ -283,7 +283,7 @@ export default function QuizDeroulementScreen() {
       setSubmitting(false);
       await informer(
         "Erreur",
-        "Impossible de soumettre le quiz. Vérifiez votre connexion.",
+        "Impossible de soumettre le quiz. Vérifie ta connexion.",
       );
     }
   };
@@ -455,10 +455,9 @@ export default function QuizDeroulementScreen() {
               <Text style={styles.modalIcon}>🩸</Text>
             </View>
 
-            <Text style={styles.modalTitre}>Abandonner le quiz ?</Text>
+            <Text style={styles.modalTitre}>Quitter le quiz ?</Text>
             <Text style={styles.modalTexte}>
-              Ta progression sur ce quiz sera perdue. Tu pourras le recommencer
-              plus tard.
+              {"Pas d'inquiétude, ta progression est sauvegardée. Tu pourras reprendre ce quiz plus tard depuis « Quiz en cours »."}
             </Text>
 
             <TouchableOpacity
@@ -476,7 +475,7 @@ export default function QuizDeroulementScreen() {
               onPress={confirmerAbandon}
               activeOpacity={0.7}
             >
-              <Text style={styles.modalBoutonSecondaireTexte}>Abandonner</Text>
+              <Text style={styles.modalBoutonSecondaireTexte}>Quitter</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -12,18 +12,18 @@ import { setOnboardingVu } from '../../utils/preferences';
  */
 const ECRANS = [
   {
-    titre: 'Sauvez des vies en donnant votre sang',
+    titre: 'Sauve des vies en donnant ton sang',
     texte: 'Un simple geste, un impact immense pour la Nouvelle-Calédonie.',
   },
   {
-    titre: 'Gagnez des cartes et des badges',
+    titre: 'Gagne des cartes et des badges',
     texte:
-      'Répondez à des quiz, parrainez vos proches, et recevez une carte-souvenir à chaque don.',
+      'Réponds à des quiz, parraine tes proches, et reçois une carte-souvenir à chaque don.',
   },
   {
-    titre: 'Restez informés',
+    titre: 'Reste au courant',
     texte:
-      'Niveau des réserves par groupe sanguin, appels au don et collectes près de chez vous.',
+      'Niveau des réserves par groupe sanguin, appels au don et collectes près de chez toi.',
   },
 ] as const;
 

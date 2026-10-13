@@ -132,7 +132,7 @@ class DemoSeeder extends Seeder
             Evenement::create([
                 'admin_id' => $admin?->id,
                 'titre' => $evenement['titre'],
-                'description' => 'Venez donner votre sang et sauver des vies lors de cette collecte organisée par le CHT.',
+                'description' => 'Viens donner ton sang et sauver des vies lors de cette collecte organisée par le CHT.',
                 'lieu' => $evenement['lieu'],
                 'date_heure' => now()->addDays(($i + 1) * 4)->setTime(8, 30),
                 'horaire_fin' => now()->addDays(($i + 1) * 4)->setTime(15, 0),
@@ -192,7 +192,7 @@ class DemoSeeder extends Seeder
             $quiz = Quiz::create([
                 'admin_id' => $admin?->id,
                 'titre' => $quizData['titre'],
-                'description' => 'Testez vos connaissances sur le don de sang.',
+                'description' => 'Teste tes connaissances sur le don de sang.',
                 'categorie' => $quizData['categorie'],
                 'aleatoire' => false,
                 'points_attribues' => 20,
@@ -301,7 +301,7 @@ class DemoSeeder extends Seeder
         $bannieres = [
             ['titre' => 'Stock critique', 'message' => 'Le stock de sang O- est critique, merci de donner rapidement.', 'type' => 'urgence'],
             ['titre' => 'Collecte ce week-end', 'message' => 'Une collecte mobile aura lieu ce week-end à Nouméa.', 'type' => 'info'],
-            ['titre' => 'Nouvelle fonctionnalité', 'message' => 'Scannez le QR code du centre pour gagner des points.', 'type' => 'alerte'],
+            ['titre' => 'Nouvelle fonctionnalité', 'message' => 'Scanne le QR code du centre pour gagner des points.', 'type' => 'alerte'],
         ];
 
         foreach ($bannieres as $banniere) {

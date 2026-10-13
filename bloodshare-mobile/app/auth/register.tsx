@@ -55,8 +55,8 @@ export default function RegisterScreen() {
       if (password !== passwordConfirmation) return setLocalError('Les mots de passe ne correspondent pas.');
     }
     if (step === 2) {
-      if (!sexe) return setLocalError('Veuillez renseigner votre sexe biologique.');
-      if (!privacyAccepted || !cguAccepted || !santeAccepted) return setLocalError('Vous devez accepter les conditions pour continuer.');
+      if (!sexe) return setLocalError('Renseigne ton sexe biologique.');
+      if (!privacyAccepted || !cguAccepted || !santeAccepted) return setLocalError('Tu dois accepter les conditions pour continuer.');
       if (!majeur) return setLocalError("L'application est réservée aux personnes majeures.");
     }
     // 📖 Étapes 3 (profil de donneur) et 4 (avatar) facultatives : l'API accepte ces
@@ -113,7 +113,7 @@ export default function RegisterScreen() {
 
         setLocalError(error.response.data?.message ?? 'Certaines informations sont incorrectes.');
       } else if (error.request) {
-        setLocalError('Impossible de joindre le serveur. Vérifiez votre connexion.');
+        setLocalError('Impossible de joindre le serveur. Vérifie ta connexion.');
       } else {
         setLocalError(error.response?.data?.message ?? "Une erreur inattendue s'est produite.");
       }
@@ -158,14 +158,14 @@ export default function RegisterScreen() {
         {/* --- ÉTAPE 1 : IDENTIFIANTS --- */}
         {step === 1 && (
           <View style={styles.stepContent}>
-            <Text style={styles.title}>Vos identifiants</Text>
+            <Text style={styles.title}>Tes identifiants</Text>
             
             <Text style={styles.label}>Pseudo</Text>
-            <TextInput style={styles.input} placeholder="Votre pseudo" value={pseudo} onChangeText={setPseudo} autoCapitalize="none" />
+            <TextInput style={styles.input} placeholder="Ton pseudo" value={pseudo} onChangeText={setPseudo} autoCapitalize="none" />
             {renderFieldError('pseudo')}
 
             <Text style={styles.label}>Email</Text>
-            <TextInput style={styles.input} placeholder="vous@exemple.com" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+            <TextInput style={styles.input} placeholder="toi@exemple.com" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
             {renderFieldError('email')}
 
             <Text style={styles.label}>Mot de passe</Text>
@@ -181,7 +181,7 @@ export default function RegisterScreen() {
             </Pressable>
 
             <Pressable onPress={() => router.replace('/auth/login')} style={styles.linkContainer}>
-              <Text style={styles.linkText}>Vous avez un compte ? <Text style={styles.linkTextBold}>Connectez-vous</Text></Text>
+              <Text style={styles.linkText}>Tu as un compte ? <Text style={styles.linkTextBold}>Connecte-toi</Text></Text>
             </Pressable>
           </View>
         )}
@@ -189,7 +189,7 @@ export default function RegisterScreen() {
         {/* --- ÉTAPE 2 : INFORMATIONS --- */}
         {step === 2 && (
           <View style={styles.stepContent}>
-            <Text style={styles.title}>Vos informations</Text>
+            <Text style={styles.title}>Tes informations</Text>
 
             <Text style={styles.label}>Sexe biologique</Text>
             <View style={styles.row}>
@@ -202,7 +202,7 @@ export default function RegisterScreen() {
               ))}
             </View>
             {renderFieldError('sexe')}
-            <Text style={styles.hintText}>{"Sert à calculer votre délai d'éligibilité entre deux dons. Confidentiel, jamais affiché."}</Text>
+            <Text style={styles.hintText}>{"Sert à calculer ton délai d'éligibilité entre deux dons. Confidentiel, jamais affiché."}</Text>
 
             <Text style={styles.label}>Code de parrainage</Text>
             <TextInput style={styles.input} placeholder="Code de parrainage (optionnel)" value={codeParrainage} onChangeText={setCodeParrainage} autoCapitalize="characters" />
@@ -241,8 +241,8 @@ export default function RegisterScreen() {
         {/* --- ÉTAPE 3 : DONNEUR --- */}
         {step === 3 && (
           <View style={styles.stepContent}>
-            <Text style={styles.titleCenter}>Avez-vous déjà donné votre sang ?</Text>
-            <Text style={styles.hintCenter}>Facultatif : vous pourrez le renseigner plus tard dans votre profil.</Text>
+            <Text style={styles.titleCenter}>As-tu déjà donné ton sang ?</Text>
+            <Text style={styles.hintCenter}>Facultatif : tu pourras le renseigner plus tard dans ton profil.</Text>
 
             <View style={styles.radioContainer}>
               {[
@@ -267,8 +267,8 @@ export default function RegisterScreen() {
         {/* --- ÉTAPE 4 : AVATAR --- */}
         {step === 4 && (
           <View style={styles.stepContent}>
-            <Text style={styles.titleCenter}>Choisissez votre avatar ^-^</Text>
-            <Text style={styles.hintCenter}>Facultatif : vous pourrez le choisir plus tard dans votre profil.</Text>
+            <Text style={styles.titleCenter}>Choisis ton avatar ^-^</Text>
+            <Text style={styles.hintCenter}>Facultatif : tu pourras le choisir plus tard dans ton profil.</Text>
 
             <View style={styles.avatarGrid}>
               {BOGUS_AVATARS.map((id) => (

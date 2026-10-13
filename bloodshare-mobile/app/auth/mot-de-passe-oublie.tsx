@@ -18,7 +18,7 @@ export default function MotDePasseOublieScreen() {
     >
       <Text style={styles.title}>Mot de passe oublié</Text>
       <Text style={styles.subtitle}>
-        {'Écrivez à '}
+        {'Écris à '}
         <Text
           style={styles.email}
           // 📖 Échoue si aucune application mail n'est installée : on l'ignore, l'adresse
@@ -28,9 +28,9 @@ export default function MotDePasseOublieScreen() {
         >
           {EMAIL_CONTACT}
         </Text>
-        {" depuis l'adresse email de votre compte pour demander une réinitialisation. " +
-          "Un membre de l'équipe vous communiquera un mot de passe temporaire, que vous " +
-          'devrez changer à votre prochaine connexion.'}
+        {" depuis l'adresse email de ton compte pour demander une réinitialisation. " +
+          "Un membre de l'équipe te communiquera un mot de passe temporaire, que tu " +
+          'devras changer à ta prochaine connexion.'}
       </Text>
 
       <Pressable

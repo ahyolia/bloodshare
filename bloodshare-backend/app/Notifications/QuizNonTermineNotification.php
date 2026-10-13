@@ -25,7 +25,7 @@ class QuizNonTermineNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('Quiz en attente 🧠')
-            ->body("Vous n'avez pas terminé le quiz « {$this->quiz->titre} ».");
+            ->body("Tu n'as pas terminé le quiz « {$this->quiz->titre} ».");
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

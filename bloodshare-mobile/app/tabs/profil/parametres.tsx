@@ -84,7 +84,7 @@ export default function ParametresScreen() {
       if (!accorde) {
         await informer(
           "Permission refusée",
-          "Activez les notifications pour Aïma dans les réglages de votre téléphone.",
+          "Active les notifications pour Aïma dans les réglages de ton téléphone.",
         );
         setNotifs(false);
         await setNotificationsActivees(false);
@@ -102,7 +102,7 @@ export default function ParametresScreen() {
       if (!abonne) {
         await informer(
           "Permission refusée",
-          "Activez les notifications pour Aïma dans les réglages de votre navigateur.",
+          "Active les notifications pour Aïma dans les réglages de ton navigateur.",
         );
         setNotifs(false);
         await setNotificationsActivees(false);
@@ -134,14 +134,14 @@ export default function ParametresScreen() {
   const supprimer = async () => {
     const etape1 = await confirmer(
       "Supprimer mon compte",
-      "Cette action est irréversible. Toutes vos données seront supprimées.",
+      "Cette action est irréversible. Toutes tes données seront supprimées.",
       "Continuer",
     );
     if (!etape1) return;
 
     const etape2 = await confirmer(
       "Dernière confirmation",
-      "Voulez-vous vraiment tout supprimer ?",
+      "Veux-tu vraiment tout supprimer ?",
       "Supprimer définitivement",
     );
     if (!etape2) return;
@@ -149,7 +149,7 @@ export default function ParametresScreen() {
     try {
       await supprimerCompte();
     } catch {
-      await informer("Erreur", "La suppression a échoué. Réessayez.");
+      await informer("Erreur", "La suppression a échoué. Réessaie.");
       return;
     }
 
@@ -163,7 +163,7 @@ export default function ParametresScreen() {
     }
     await informer(
       "Compte supprimé",
-      "Votre compte et vos données ont bien été supprimés.",
+      "Ton compte et tes données ont bien été supprimés.",
     );
     router.replace("/auth/login");
   };
