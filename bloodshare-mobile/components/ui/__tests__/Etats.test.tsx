@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, Animated } from 'react-native';
 import { Chargement } from '../Chargement';
 import { EtatErreur } from '../EtatErreur';
 import { EtatVide } from '../EtatVide';
@@ -48,7 +48,7 @@ describe('Chargement', () => {
 
   it('ne lance pas d’animation si « Réduire les animations » est activé', async () => {
     jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
-    const loop = jest.spyOn(require('react-native').Animated, 'loop');
+    const loop = jest.spyOn(Animated, 'loop');
 
     await render(<Chargement />);
 
