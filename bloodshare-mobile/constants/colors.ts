@@ -34,7 +34,7 @@ export const Theme = {
     primairePresse: Palette.aubergine[500],
     primaireTexte: Palette.neutre.blanc,
     secondaireBordure: Palette.aubergine[500],
-    secondaireTexte: Palette.aubergine[900],
+    secondaireTexte: Palette.aubergine[500],
     discreteTexte: Palette.aubergine[500],
     destructive: Palette.brique[700],
     destructiveTexte: Palette.brique[700],
