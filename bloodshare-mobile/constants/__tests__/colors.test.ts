@@ -43,6 +43,7 @@ describe('contrastes du thème (WCAG AA)', () => {
     ['contour au focus', Theme.formulaire.focus, Theme.fond.surface],
     ['contour du bouton secondaire', Theme.action.secondaireBordure, Theme.fond.surface],
     ['jauge « critique »', Theme.etat.critique.jauge, Theme.fond.surface],
+    ['icône d’information', Theme.info.icone, Theme.info.fond],
   ])('contour — %s ≥ 3:1', (_nom, contour, fond) => {
     expect(contraste(contour, fond)).toBeGreaterThanOrEqual(CONTOUR);
   });
