@@ -54,6 +54,12 @@ export const Theme = {
     focus: Palette.petrole[700],
   },
 
+  /** Icônes d'information (Figma : info/icone, info/icone-fond). */
+  info: {
+    icone: Palette.petrole[700], // sur `fond` : 5,6:1
+    fond: Palette.petrole[100],
+  },
+
   /** Couleur signature. Aplats et grandes surfaces uniquement. */
   accent: {
     signatureAplat: Palette.lime[500],
