@@ -27,14 +27,18 @@ export default function RootLayout() {
   const segments = useSegments();
   const navigationState = useRootNavigationState();
 
-  // 📖 Sur le web exporté, Netlify écarte les fichiers rangés sous `node_modules` :
-  //    la police d'@expo/vector-icons n'était jamais servie (icônes en carrés vides).
-  //    On charge donc une copie placée dans `assets/fonts/`, sous le même nom de
-  //    famille (`ionicons`) : le composant <Ionicons> la voit déjà chargée et ne va
-  //    plus chercher la sienne. ⚠️ À recopier depuis node_modules si
-  //    @expo/vector-icons change de version (montée de SDK Expo).
+  // 📖 Toutes les polices sont des COPIES placées dans `assets/fonts/` : Netlify
+  //    écarte les fichiers rangés sous `node_modules`, donc une police chargée
+  //    depuis un paquet n'arriverait jamais sur la PWA (carrés ou police système).
+  //    ⚠️ Ionicons : à recopier depuis node_modules si @expo/vector-icons change
+  //    de version (montée de SDK Expo), voir assets/fonts/__tests__.
+  // 📖 Une famille par graisse (NunitoSans-Regular / -Bold) : sur Android,
+  //    `fontWeight` ne sait pas choisir un autre fichier de police.
   const [policesChargees, erreurPolices] = useFonts({
     ionicons: require("../assets/fonts/Ionicons.ttf"),
+    "NunitoSans-Regular": require("../assets/fonts/NunitoSans-Regular.ttf"),
+    "NunitoSans-Bold": require("../assets/fonts/NunitoSans-Bold.ttf"),
+    "Pacifico-Regular": require("../assets/fonts/Pacifico-Regular.ttf"),
   });
 
   const inAuthGroup = segments[0] === "auth";
