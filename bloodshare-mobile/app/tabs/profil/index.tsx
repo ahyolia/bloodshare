@@ -37,11 +37,12 @@ export default function ProfilScreen() {
   );
 
   const handleLogout = async () => {
-    const ok = await confirmer(
-      "Se déconnecter",
-      "Veux-tu vraiment te déconnecter ?",
-      "Se déconnecter",
-    );
+    const ok = await confirmer({
+      titre: "Se déconnecter",
+      message: "Veux-tu vraiment te déconnecter ?",
+      libelleRester: "Non, je reste",
+      libelleAction: "Me déconnecter",
+    });
     if (!ok) return;
 
     try {
