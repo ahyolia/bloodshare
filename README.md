@@ -64,9 +64,10 @@ dépendances (`composer install`), génération de `APP_KEY`, attente de la base
 seeders (cartes, badges, avatars, QR Code du centre, 15 questions d'éligibilité, rôles, super
 admin). Les seeders sont idempotents : relancer `docker compose up` ne duplique rien.
 
-**Backoffice** : http://localhost:8000/admin avec `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`
-(définis dans `bloodshare-backend/.env`, par défaut `admin@bloodshare.local` / `Admin-local-1234`).
-Compte de test pour l'app mobile : `test@example.com` / `password`.
+**Backoffice** : http://localhost:8000/admin avec le compte **super admin** `SEED_ADMIN_EMAIL` /
+`SEED_ADMIN_PASSWORD` (définis dans `bloodshare-backend/.env`, par défaut
+`super.admin@bloodshare.local` / `Admin-local-1234`).
+Compte de test pour l'app mobile : `test@example.com` / `password` (aucun accès au backoffice).
 
 > Cette base est **locale et indépendante** de celle des autres développeur·se·s : ce que vous
 > saisissez dans votre backoffice n'apparaît pas dans leur application, et inversement.
