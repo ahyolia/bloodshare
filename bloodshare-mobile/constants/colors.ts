@@ -30,15 +30,28 @@ export const Theme = {
 
   /** Actions. */
   action: {
-    primaire: Palette.corail[700],
-    primairePresse: Palette.corail[500],
-    primaireTexte: Palette.neutre[0],
-    secondaireBordure: Palette.corail[700],
-    secondaireTexte: Palette.corail[700],
+    primaire: Palette.aubergine[900],
+    primairePresse: Palette.aubergine[500],
+    primaireTexte: Palette.neutre.blanc,
+    secondaireBordure: Palette.aubergine[500],
+    secondaireTexte: Palette.aubergine[900],
     discreteTexte: Palette.aubergine[500],
-    destructiveTexte: Palette.brique[500],
+    destructive: Palette.brique[700],
+    destructiveTexte: Palette.brique[700],
     desactiveFond: Palette.neutre[100],
     desactiveTexte: Palette.aubergine[300],
+  },
+
+  /** Couleurs de marque. */
+  marque: {
+    principal: Palette.corail[700], // sur `doux` : 5,4:1
+    doux: Palette.corail[100],
+  },
+
+  /** Champs de formulaire. */
+  formulaire: {
+    bordure: Palette.aubergine[300], // 4:1 sur la surface (≥ 3:1 exigé pour un contour)
+    focus: Palette.petrole[700],
   },
 
   /** Couleur signature. Aplats et grandes surfaces uniquement. */
@@ -68,7 +81,7 @@ export const Theme = {
   },
 
   feedback: {
-    erreurTexte: Palette.brique[500],
+    erreurTexte: Palette.brique[700],
     erreurSurface: Palette.brique[100],
     succesTexte: Palette.petrole[700],
     succesSurface: Palette.mousse[100],

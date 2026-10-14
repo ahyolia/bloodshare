@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     width: 11,
     height: 11,
     borderRadius: 5.5,
-    backgroundColor: Theme.action.primaire,
+    backgroundColor: Theme.marque.principal,
     borderWidth: 2,
     borderColor: Theme.fond.page,
   },
@@ -263,12 +263,12 @@ const styles = StyleSheet.create({
   avatar: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Theme.fond.pastilleCorail,
+    backgroundColor: Theme.marque.doux,
     borderWidth: 2,
-    borderColor: Theme.action.primaire,
+    borderColor: Theme.marque.principal,
   },
   avatarInitiale: {
-    color: Theme.action.primaire,
+    color: Theme.marque.principal,
     fontWeight: '700',
   },
 });
