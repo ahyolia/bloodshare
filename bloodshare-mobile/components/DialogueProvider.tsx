@@ -1,46 +1,52 @@
-import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { Colors } from "../constants/colors";
+import { createContext, ReactNode, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { Modal, StyleSheet, Text, View } from 'react-native';
+import { Theme } from '../constants/colors';
+import { Espace, Ombre, Rayon } from '../constants/spacing';
+import { Typo } from '../constants/typography';
+import { Bouton } from './ui/Bouton';
 
-type Options = {
+/**
+ * Modales de l'app (Figma : Retours & états › ConfirmModal).
+ *
+ * 📖 Règle du Figma : le choix qui garde la personne en sécurité est le bouton
+ *    PRIMAIRE (« Garder mon compte »), l'action qui fait sortir ou perdre quelque
+ *    chose est en DISCRET. Un appui réflexe tombe ainsi sur le choix sûr.
+ * 📖 `confirmer` renvoie `true` si la personne choisit l'ACTION.
+ */
+type OptionsConfirmation = {
   titre: string;
   message: string;
-  libelleOk: string;
-  libelleAnnuler?: string;
-  destructif?: boolean;
+  /** Le choix sûr, en bouton primaire (ex. « Garder mon compte »). */
+  libelleRester: string;
+  /** L'action qui fait sortir ou perdre quelque chose, en bouton discret. */
+  libelleAction: string;
+};
+
+type Ouverte = {
+  titre: string;
+  message: string;
+  libelleAction: string;
+  libelleRester?: string;
 };
 
 type DialogueApi = {
-  confirmer: (
-    titre: string,
-    message: string,
-    libelleOk: string,
-    destructif?: boolean,
-  ) => Promise<boolean>;
+  confirmer: (options: OptionsConfirmation) => Promise<boolean>;
   informer: (titre: string, message: string) => Promise<void>;
 };
 
 const DialogueContext = createContext<DialogueApi | null>(null);
 
 export function DialogueProvider({ children }: { children: ReactNode }) {
-  const [options, setOptions] = useState<Options | null>(null);
+  const [ouverte, setOuverte] = useState<Ouverte | null>(null);
   // 📖 On garde de côté la fonction qui « répond » à la promesse en attente :
-  //    elle sera appelée quand l'utilisateur cliquera sur un bouton.
+  //    elle sera appelée quand la personne choisira un bouton.
   const resolveRef = useRef<((resultat: boolean) => void) | null>(null);
 
   const ouvrir = useCallback(
-    (o: Options) =>
+    (o: Ouverte) =>
       new Promise<boolean>((resolve) => {
         resolveRef.current = resolve;
-        setOptions(o);
+        setOuverte(o);
       }),
     [],
   );
@@ -48,68 +54,47 @@ export function DialogueProvider({ children }: { children: ReactNode }) {
   const fermer = (resultat: boolean) => {
     resolveRef.current?.(resultat);
     resolveRef.current = null;
-    setOptions(null);
+    setOuverte(null);
   };
 
   const api = useMemo<DialogueApi>(
     () => ({
-      confirmer: (titre, message, libelleOk, destructif = true) =>
-        ouvrir({
-          titre,
-          message,
-          libelleOk,
-          libelleAnnuler: "Annuler",
-          destructif,
-        }),
+      confirmer: (options) => ouvrir(options),
       informer: async (titre, message) => {
-        await ouvrir({ titre, message, libelleOk: "OK" });
+        await ouvrir({ titre, message, libelleAction: 'OK' });
       },
     }),
     [ouvrir],
   );
+
+  const estConfirmation = ouverte?.libelleRester !== undefined;
 
   return (
     <DialogueContext.Provider value={api}>
       {children}
 
       <Modal
-        visible={options !== null}
+        visible={ouverte !== null}
         transparent
         animationType="fade"
-        onRequestClose={() => fermer(false)} // bouton retour Android
+        // 📖 Bouton retour Android, et touche Échap sur web : on choisit le côté sûr.
+        onRequestClose={() => fermer(false)}
       >
         <View style={styles.fond}>
           <View style={styles.carte} accessibilityViewIsModal>
-            <Text style={styles.titre} accessibilityRole="header">
-              {options?.titre}
+            <Text style={[Typo.titre3, styles.titre]} accessibilityRole="header">
+              {ouverte?.titre}
             </Text>
-            <Text style={styles.message}>{options?.message}</Text>
+            <Text style={[Typo.corps, styles.message]}>{ouverte?.message}</Text>
 
-            <View style={styles.boutons}>
-              {options?.libelleAnnuler && (
-                <Pressable
-                  style={[styles.bouton, styles.boutonSecondaire]}
-                  onPress={() => fermer(false)}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.texteSecondaire}>
-                    {options.libelleAnnuler}
-                  </Text>
-                </Pressable>
-              )}
-              <Pressable
-                style={[
-                  styles.bouton,
-                  options?.destructif
-                    ? styles.boutonDestructif
-                    : styles.boutonPrincipal,
-                ]}
-                onPress={() => fermer(true)}
-                accessibilityRole="button"
-              >
-                <Text style={styles.textePrincipal}>{options?.libelleOk}</Text>
-              </Pressable>
-            </View>
+            {estConfirmation ? (
+              <>
+                <Bouton libelle={ouverte!.libelleRester!} onPress={() => fermer(false)} />
+                <Bouton libelle={ouverte!.libelleAction} variante="discret" onPress={() => fermer(true)} />
+              </>
+            ) : (
+              <Bouton libelle={ouverte?.libelleAction ?? 'OK'} onPress={() => fermer(true)} />
+            )}
           </View>
         </View>
       </Modal>
@@ -119,70 +104,27 @@ export function DialogueProvider({ children }: { children: ReactNode }) {
 
 export function useDialogue() {
   const ctx = useContext(DialogueContext);
-  if (!ctx)
-    throw new Error(
-      "useDialogue doit être utilisé à l’intérieur de DialogueProvider",
-    );
+  if (!ctx) throw new Error('useDialogue doit être utilisé à l’intérieur de DialogueProvider');
   return ctx;
 }
 
 const styles = StyleSheet.create({
   fond: {
     flex: 1,
-    backgroundColor: "rgba(62, 36, 48, 0.45)", // aubergine translucide, pas de noir
-    justifyContent: "center",
-    padding: 24,
+    backgroundColor: 'rgba(62, 36, 48, 0.45)', // aubergine translucide, pas de noir
+    justifyContent: 'center',
+    padding: Espace[6],
   },
   carte: {
-    backgroundColor: Colors.blanc,
-    borderRadius: 20,
-    padding: 24,
+    ...Ombre.modale,
+    backgroundColor: Theme.fond.surface,
+    borderRadius: Rayon.lg,
+    padding: Espace[6],
+    gap: Espace[4],
+    width: '100%',
     maxWidth: 400,
-    width: "100%",
-    alignSelf: "center",
+    alignSelf: 'center',
   },
-  titre: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.aubergine,
-  },
-  message: {
-    fontSize: 16,
-    color: Colors.aubergine,
-    marginTop: 8,
-    lineHeight: 22,
-  },
-  boutons: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 24,
-  },
-  bouton: {
-    flex: 1,
-    minHeight: 48, // cible tactile WCAG
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 12,
-  },
-  boutonSecondaire: {
-    borderWidth: 1.5,
-    borderColor: Colors.aubergine,
-  },
-  boutonPrincipal: {
-    backgroundColor: Colors.petrole[500],
-  },
-  boutonDestructif: {
-    backgroundColor: Colors.corail[600],
-  },
-  texteSecondaire: {
-    color: Colors.aubergine,
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  textePrincipal: {
-    color: Colors.blanc,
-    fontWeight: "700",
-    fontSize: 15,
-  },
+  titre: { color: Theme.texte.principal },
+  message: { color: Theme.texte.secondaire },
 });

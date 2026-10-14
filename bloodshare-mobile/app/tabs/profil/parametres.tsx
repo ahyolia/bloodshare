@@ -126,24 +126,24 @@ export default function ParametresScreen() {
     await setPenurieActivee(valeur);
   };
 
-  // 📖 Double confirmation : la suppression est irréversible. Un premier Alert
-  //    explique, un second force un choix "destructive" volontaire.
   // 📖 Double confirmation : la suppression est irréversible. Une première modale
   //    explique, une seconde force un choix volontaire. Avec `await`, les deux
   //    étapes se lisent de haut en bas au lieu d'être imbriquées dans des onPress.
   const supprimer = async () => {
-    const etape1 = await confirmer(
-      "Supprimer mon compte",
-      "Cette action est irréversible. Toutes tes données seront supprimées.",
-      "Continuer",
-    );
+    const etape1 = await confirmer({
+      titre: "Supprimer mon compte",
+      message: "Cette action est irréversible. Toutes tes données seront supprimées.",
+      libelleRester: "Garder mon compte",
+      libelleAction: "Continuer",
+    });
     if (!etape1) return;
 
-    const etape2 = await confirmer(
-      "Dernière confirmation",
-      "Veux-tu vraiment tout supprimer ?",
-      "Supprimer définitivement",
-    );
+    const etape2 = await confirmer({
+      titre: "Dernière confirmation",
+      message: "Veux-tu vraiment tout supprimer ?",
+      libelleRester: "Garder mon compte",
+      libelleAction: "Supprimer définitivement",
+    });
     if (!etape2) return;
 
     try {
