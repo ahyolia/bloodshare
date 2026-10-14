@@ -59,5 +59,6 @@ export const Palette = {
   brique: {
     100: '#FBE3DE',
     500: '#D8452C',
+    700: '#B5381F',
   },
 } as const;
