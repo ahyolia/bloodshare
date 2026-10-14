@@ -11,8 +11,6 @@ import { Typo } from '../../constants/typography';
  *
  * 📖 Le chevron annonce visuellement « ouvre un autre écran » ; pour un lecteur
  *    d'écran, c'est le rôle `button` + le libellé complet (titre + sous-titre).
- * ⚠️ Taille de la pastille (36 px) et son arrondi (Rayon.md) estimés depuis la
- *    capture du Figma, à confirmer avec le panneau Inspect.
  */
 type Props = {
   titre: string;
@@ -22,7 +20,7 @@ type Props = {
   style?: StyleProp<ViewStyle>;
 };
 
-const PASTILLE = 36;
+const PASTILLE = 40;
 
 export function ElementListe({ titre, sousTitre, icone, onPress, style }: Props) {
   return (
