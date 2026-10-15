@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { Theme } from '../../constants/colors';
 import { Espace, Rayon } from '../../constants/spacing';
 import { Typo } from '../../constants/typography';
@@ -11,60 +11,88 @@ import { Typo } from '../../constants/typography';
  * 📖 Règles du Figma : libellé TOUJOURS visible (un placeholder disparaît dès
  *    qu'on tape) ; erreur = contour + icône + texte, jamais la couleur seule.
  * 📖 Anonymat : ce composant ne doit jamais servir à demander un nom, une date
- *    de naissance, un sexe ou un groupe sanguin (règle du Figma et du projet).
+ *    de naissance ou un groupe sanguin (règle du Figma et du projet).
+ * 📖 `motDePasse` : saisie masquée par défaut + bouton œil pour l'afficher.
  */
-type Props = Omit<TextInputProps, 'style' | 'placeholderTextColor'> & {
+type Props = Omit<TextInputProps, 'style' | 'placeholderTextColor' | 'secureTextEntry'> & {
   libelle: string;
   aide?: string;
   /** Message d'erreur : sa présence met le champ en état d'erreur. */
   erreur?: string;
+  motDePasse?: boolean;
 };
 
 const BORDURE_REPOS = 1.5;
 const BORDURE_ACTIVE = 2;
+const CIBLE_MIN = 48;
 
-export function Champ({ libelle, aide, erreur, onFocus, onBlur, ...props }: Props) {
+export function Champ({ libelle, aide, erreur, motDePasse = false, onFocus, onBlur, ...props }: Props) {
   const [focus, setFocus] = useState(false);
+  const [visible, setVisible] = useState(false);
 
-  const bordure = erreur ? BORDURE_ACTIVE : focus ? BORDURE_ACTIVE : BORDURE_REPOS;
+  const bordure = erreur || focus ? BORDURE_ACTIVE : BORDURE_REPOS;
   const couleurBordure = erreur
     ? Theme.feedback.erreurTexte
     : focus
       ? Theme.formulaire.focus
       : Theme.formulaire.bordure;
+  // 📖 Un contour plus épais pousse le contenu vers l'intérieur : on retire la
+  //    différence de la marge pour que le texte ne « tremble » pas au focus.
+  const compensation = bordure - BORDURE_REPOS;
 
   return (
     <View style={styles.conteneur}>
       <Text style={[Typo.corpsFort, styles.libelle]}>{libelle}</Text>
 
-      <TextInput
-        {...props}
-        // 📖 Le libellé visible au-dessus n'est pas relié au champ pour un lecteur
-        //    d'écran : on le lui donne explicitement, avec l'aide ou l'erreur en indice.
-        accessibilityLabel={libelle}
-        accessibilityHint={erreur ?? aide}
-        aria-invalid={!!erreur}
-        placeholderTextColor={Theme.texte.secondaire}
-        onFocus={(e) => {
-          setFocus(true);
-          onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          setFocus(false);
-          onBlur?.(e);
-        }}
+      <View
         style={[
-          Typo.corps,
-          styles.champ,
+          styles.cadre,
           {
             borderWidth: bordure,
             borderColor: couleurBordure,
-            // 📖 Un contour plus épais pousse le texte vers l'intérieur : on retire
-            //    la différence de la marge pour que le texte ne « tremble » pas au focus.
-            paddingHorizontal: Espace[4] - (bordure - BORDURE_REPOS),
+            paddingLeft: Espace[4] - compensation,
+            // 📖 Avec l'œil, c'est le bouton (48 px) qui fait la marge droite.
+            paddingRight: motDePasse ? 0 : Espace[4] - compensation,
           },
         ]}
-      />
+      >
+        <TextInput
+          {...props}
+          // 📖 Le libellé visible au-dessus n'est pas relié au champ pour un lecteur
+          //    d'écran : on le lui donne explicitement, avec l'aide ou l'erreur en indice.
+          accessibilityLabel={libelle}
+          accessibilityHint={erreur ?? aide}
+          aria-invalid={!!erreur}
+          secureTextEntry={motDePasse && !visible}
+          autoCapitalize={motDePasse ? 'none' : props.autoCapitalize}
+          autoCorrect={motDePasse ? false : props.autoCorrect}
+          placeholderTextColor={Theme.texte.secondaire}
+          onFocus={(e) => {
+            setFocus(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocus(false);
+            onBlur?.(e);
+          }}
+          style={[Typo.corps, styles.saisie]}
+        />
+
+        {motDePasse && (
+          <Pressable
+            onPress={() => setVisible((v) => !v)}
+            style={styles.oeil}
+            accessibilityRole="button"
+            accessibilityLabel={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+          >
+            <Ionicons
+              name={visible ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color={Theme.texte.secondaire}
+            />
+          </Pressable>
+        )}
+      </View>
 
       {erreur ? (
         // 📖 Annoncé dès son apparition (TalkBack, web) : sans ça, une personne
@@ -83,16 +111,27 @@ export function Champ({ libelle, aide, erreur, onFocus, onBlur, ...props }: Prop
 const styles = StyleSheet.create({
   conteneur: { gap: Espace[2], alignSelf: 'stretch' },
   libelle: { color: Theme.texte.principal },
-  champ: {
-    minHeight: 48,
+  cadre: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: CIBLE_MIN,
     borderRadius: Rayon.md,
-    paddingVertical: Espace[3],
     backgroundColor: Theme.fond.surface,
+  },
+  saisie: {
+    flex: 1,
+    paddingVertical: Espace[3],
     color: Theme.texte.principal,
-    // 📖 Sur web, le navigateur ajoute son propre contour de focus par-dessus le
-    //    nôtre. On le retire : notre contour pétrole de 2 px joue ce rôle, donc le
-    //    focus reste visible. Sans effet en natif, où ce contour n'existe pas.
+    // 📖 Sur web, le navigateur ajoute son propre contour de focus. On le retire :
+    //    notre contour pétrole de 2 px (sur le cadre) joue ce rôle, donc le focus
+    //    reste visible. Sans effet en natif.
     outlineWidth: 0,
+  },
+  oeil: {
+    width: CIBLE_MIN,
+    height: CIBLE_MIN,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   aide: { color: Theme.texte.secondaire },
   erreur: { flexDirection: 'row', alignItems: 'flex-start', gap: Espace[2] },
