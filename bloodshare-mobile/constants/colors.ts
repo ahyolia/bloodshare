@@ -68,6 +68,7 @@ export const Theme = {
     rose: Palette.corail[100],
     lime: Palette.lime[500],
     corail: Palette.corail[500],
+    corailFonce: Palette.corail[700],
     petrole: Palette.petrole[500],
     aubergine: Palette.aubergine[900],
   },
