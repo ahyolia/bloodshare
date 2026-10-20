@@ -37,8 +37,17 @@ describe('getPointsHistorique', () => {
 
     expect(gains).toEqual([
       { id: 0, source: 'quiz', points: 30, date: '2026-09-20T22:52:54Z' },
-      { id: 1, source: 'defi', points: 50, date: '2026-09-20T22:23:17Z' },
     ]);
+  });
+
+  // 📖 Un défi ne rapporte plus de points : une ancienne ligne « defi » renvoyée par un
+  //    serveur pas encore migré ne doit pas atteindre l'écran (ni le faire planter).
+  it('écarte les sources de points inconnues de l’app, comme un ancien « defi »', async () => {
+    apiGet.mockResolvedValue(reponseApi);
+
+    const gains = await getPointsHistorique();
+
+    expect(gains.map((g) => g.source)).toEqual(['quiz']);
   });
 
   it('renvoie un tableau vide quand il n’y a aucun gain', async () => {
