@@ -1,4 +1,4 @@
-import { decouperDocument } from '../documentTexte';
+import { decouperDocument, decouperGras } from '../documentTexte';
 
 describe('decouperDocument', () => {
   it('reconnaît les titres, les paragraphes et les listes', () => {
@@ -42,5 +42,31 @@ describe('decouperDocument', () => {
 
   it('renvoie une liste vide pour un texte vide', () => {
     expect(decouperDocument('  \n ')).toEqual([]);
+  });
+});
+
+describe('decouperGras', () => {
+  it('isole les passages en gras', () => {
+    expect(decouperGras('Un don ne rapporte **jamais** de points.')).toEqual([
+      { texte: 'Un don ne rapporte ', gras: false },
+      { texte: 'jamais', gras: true },
+      { texte: ' de points.', gras: false },
+    ]);
+  });
+
+  it('gère un gras en début et en fin de texte', () => {
+    expect(decouperGras('**18 ans** minimum, **gratuit**')).toEqual([
+      { texte: '18 ans', gras: true },
+      { texte: ' minimum, ', gras: false },
+      { texte: 'gratuit', gras: true },
+    ]);
+  });
+
+  it('laisse en texte normal des étoiles sans fermante', () => {
+    expect(decouperGras('Attention **pas fermé')).toEqual([{ texte: 'Attention **pas fermé', gras: false }]);
+  });
+
+  it('renvoie le texte tel quel sans gras', () => {
+    expect(decouperGras('Texte simple')).toEqual([{ texte: 'Texte simple', gras: false }]);
   });
 });

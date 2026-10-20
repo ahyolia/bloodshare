@@ -2,7 +2,7 @@
 
 Les présentes conditions générales d'utilisation (CGU) encadrent l'utilisation de l'application Aïma, éditée par l'Association des Donneurs de Sang Bénévoles de Nouvelle-Calédonie (ADSB-NC). Les informations sur l'éditeur figurent dans les Mentions légales.
 
-En créant un compte, vous acceptez ces CGU.
+**En créant un compte, vous acceptez ces CGU.**
 
 ## Le service
 
@@ -15,23 +15,23 @@ Aïma a pour but d'informer et de sensibiliser au don du sang en Nouvelle-Caléd
 - parrainer de nouveaux donneurs ;
 - recevoir des rappels, notamment lorsqu'il est de nouveau possible de donner.
 
-L'application est gratuite. Elle nécessite un compte.
+L'application est **gratuite**. Elle nécessite un compte.
 
 ## Âge minimum
 
-L'application est réservée aux personnes de 18 ans et plus, âge minimum pour donner son sang. En créant un compte, vous certifiez avoir au moins 18 ans. L'ADSB-NC supprime tout compte dont elle apprend qu'il appartient à une personne mineure.
+L'application est réservée aux personnes de **18 ans et plus**, âge minimum pour donner son sang. En créant un compte, vous certifiez avoir **au moins 18 ans**. L'ADSB-NC supprime tout compte dont elle apprend qu'il appartient à une personne mineure.
 
 ## Votre compte
 
-- Un seul compte par personne.
-- Vous vous engagez à fournir des informations exactes, en particulier votre sexe biologique, qui sert à calculer le délai entre deux dons.
-- Votre mot de passe est personnel : ne le communiquez à personne.
-- En cas d'oubli de votre mot de passe, écrivez à aima.dondusang@outlook.fr depuis l'adresse email de votre compte. Un administrateur vous communiquera un mot de passe temporaire, que vous devrez changer à votre prochaine connexion.
-- Vous pouvez supprimer votre compte à tout moment dans Profil > Paramètres > Supprimer mon compte.
+- **Un seul compte par personne.**
+- Vous vous engagez à fournir des informations exactes, en particulier votre **sexe biologique**, qui sert à calculer le délai entre deux dons.
+- Votre mot de passe est **personnel** : ne le communiquez à personne.
+- En cas d'oubli de votre mot de passe, écrivez à **aima.dondusang@outlook.fr** depuis **l'adresse email de votre compte**. Un administrateur vous communiquera un mot de passe temporaire, que vous devrez changer à votre prochaine connexion.
+- Vous pouvez supprimer votre compte à tout moment dans **Profil > Paramètres > Supprimer mon compte**.
 
 ## Règles d'utilisation
 
-Il est interdit :
+Il est **interdit** :
 
 - de choisir un pseudo injurieux, discriminatoire, ou qui usurpe l'identité d'une autre personne ;
 - de créer plusieurs comptes, ou d'utiliser des moyens automatisés pour obtenir des points ;
@@ -41,15 +41,15 @@ Il est interdit :
 
 ## Suspension et suppression d'un compte
 
-En cas de manquement à ces CGU, l'ADSB-NC peut suspendre ou supprimer un compte. Le motif de la suspension est communiqué à l'utilisateur sur simple demande à aima.dondusang@outlook.fr.
+En cas de manquement à ces CGU, l'ADSB-NC peut **suspendre ou supprimer** un compte. Le motif de la suspension est communiqué à l'utilisateur sur simple demande à aima.dondusang@outlook.fr.
 
 ## Information médicale
 
-Les contenus de l'application et le questionnaire d'éligibilité sont donnés à titre indicatif. Ils ne remplacent pas l'entretien médical préalable au don, réalisé par le personnel du Centre de don du sang, qui reste seul juge de votre aptitude à donner.
+Les contenus de l'application et le questionnaire d'éligibilité sont donnés **à titre indicatif**. Ils **ne remplacent pas l'entretien médical** préalable au don, réalisé par le personnel du Centre de don du sang, qui reste seul juge de votre aptitude à donner.
 
 ## Points, badges et cartes
 
-Les points, niveaux, badges et cartes virtuelles n'ont aucune valeur monétaire. Ils ne peuvent être ni échangés, ni vendus, ni convertis. Conformément aux règles éthiques du don du sang, un don ne rapporte jamais de points.
+Les points, niveaux, badges et cartes virtuelles n'ont **aucune valeur monétaire**. Ils ne peuvent être ni échangés, ni vendus, ni convertis. Conformément aux règles éthiques du don du sang, **un don ne rapporte jamais de points**.
 
 ## Disponibilité et responsabilité
 
@@ -69,7 +69,7 @@ L'ADSB-NC peut modifier ces CGU. Vous serez informé de toute nouvelle version d
 
 ## Droit applicable et litiges
 
-Ces CGU sont soumises au droit applicable en Nouvelle-Calédonie. En cas de litige, les parties recherchent d'abord une solution amiable, en écrivant à aima.dondusang@outlook.fr. À défaut, les tribunaux de Nouméa sont compétents.
+Ces CGU sont soumises au droit applicable en Nouvelle-Calédonie. En cas de litige, les parties recherchent d'abord une solution amiable, en écrivant à aima.dondusang@outlook.fr. À défaut, les **tribunaux de Nouméa** sont compétents.
 
 ## Contact
 

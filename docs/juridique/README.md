@@ -22,7 +22,8 @@ dossier juridique (`docs/Dossier juridique prérempli — application AÏMA.docx
 
 Les fichiers utilisent la syntaxe lue par l'app (`utils/documentTexte.ts`) :
 `## ` pour un titre de section, `- ` pour une puce, une ligne vide entre deux
-paragraphes. Rien d'autre n'est interprété (pas de gras ni de liens).
+paragraphes, `**texte**` pour mettre en gras un élément important (durée,
+interdiction, adresse de contact…). Rien d'autre n'est interprété (pas de liens).
 
 ## Engagements à tenir côté code
 
