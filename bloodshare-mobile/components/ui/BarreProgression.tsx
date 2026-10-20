@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Theme } from '../../constants/colors';
 import { Espace, Rayon } from '../../constants/spacing';
 import { Typo } from '../../constants/typography';
@@ -18,9 +18,11 @@ type Props = {
   /** Texte à droite (ex. « 4 cartes sur 12 »). Par défaut : le pourcentage. */
   detail?: string;
   variante?: 'standard' | 'surLime';
+  /** Ajustements de mise en page (marges, espacement intérieur du bloc lime…). */
+  style?: StyleProp<ViewStyle>;
 };
 
-export function BarreProgression({ titre, valeur, max, detail, variante = 'standard' }: Props) {
+export function BarreProgression({ titre, valeur, max, detail, variante = 'standard', style }: Props) {
   // 📖 Bornée entre 0 et 1 : un objectif dépassé (310 dons sur 300) ne doit pas
   //    faire déborder la barre, et un max à 0 ne doit pas diviser par zéro.
   const ratio = max > 0 ? Math.min(Math.max(valeur / max, 0), 1) : 0;
@@ -29,7 +31,7 @@ export function BarreProgression({ titre, valeur, max, detail, variante = 'stand
 
   return (
     <View
-      style={[styles.conteneur, surLime && styles.surLime]}
+      style={[styles.conteneur, surLime && styles.surLime, style]}
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={titre}

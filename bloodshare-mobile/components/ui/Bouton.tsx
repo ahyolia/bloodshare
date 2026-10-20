@@ -14,7 +14,7 @@ import { Typo } from '../../constants/typography';
  * 📖 « Désactivé » n'est pas une variante mais un ÉTAT (`desactive`) : n'importe
  *    quel bouton peut l'être, par exemple tant qu'un formulaire est incomplet.
  */
-export type VarianteBouton = 'primaire' | 'secondaire' | 'discret' | 'destructif';
+export type VarianteBouton = 'primaire' | 'secondaire' | 'discret' | 'destructif' | 'validation' | 'sortie';
 
 type Props = {
   libelle: string;
@@ -42,6 +42,17 @@ const COULEURS: Record<VarianteBouton, { fond?: string; fondPresse?: string; tex
   },
   discret: { texte: Theme.action.discreteTexte },
   destructif: { fond: Theme.action.destructive, texte: Theme.action.primaireTexte },
+  // 📖 `validation` enregistre une saisie ; `sortie` quitte (déconnexion).
+  validation: {
+    fond: Theme.action.validation,
+    fondPresse: Theme.action.validationPresse,
+    texte: Theme.action.primaireTexte,
+  },
+  sortie: {
+    fond: Theme.action.sortie,
+    fondPresse: Theme.action.sortiePresse,
+    texte: Theme.action.primaireTexte,
+  },
 };
 
 export function Bouton({
