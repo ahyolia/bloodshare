@@ -12,7 +12,7 @@
 
 ## 0. Pourquoi une AIPD
 
-Le traitement porte sur des **données de santé** (article 9 du RGPD) : le sexe associé aux dates de don, et le profil de donneur, révèlent qu'une personne donne son sang, quand, et à partir de quand elle peut de nouveau donner.
+Le traitement porte sur des **données de santé** (article 9 du RGPD) : le sexe associé aux dates de don révèle qu'une personne donne son sang, quand, et à partir de quand elle peut de nouveau donner.
 
 Le traitement est de petite échelle et ce n'est pas l'activité principale de l'association. L'AIPD n'est donc peut-être pas strictement obligatoire. Elle est réalisée **par précaution**, parce que des données de santé sont en jeu, et parce qu'elle sert de référence pour les choix d'hébergement à venir.
 
@@ -34,7 +34,6 @@ Le traitement est de petite échelle et ce n'est pas l'activité principale de l
 | --- | --- | --- | --- |
 | Sexe (homme / femme) | Saisi à l'inscription | Oui | Calcul du délai entre deux dons |
 | Dates des dons validés | Scan du QR code remis au centre de don | Automatique | Historique des dons, date du prochain don possible, rappel |
-| Profil de donneur (régulier / quelques dons / jamais) | Saisi à l'inscription ou dans le profil | Non | Affichage sur le profil, statistiques de l'association |
 | Preuve du consentement (dates, version des CGU) | Automatique | Oui | Preuve en cas de contrôle |
 
 Ces données sont rattachées à un compte **pseudonyme** : pseudo et adresse email. L'application ne collecte ni nom, ni prénom, ni date de naissance, ni téléphone, ni adresse, ni groupe sanguin. Les réponses au questionnaire d'éligibilité restent sur l'appareil.
@@ -51,7 +50,7 @@ Ces données sont rattachées à un compte **pseudonyme** : pseudo et adresse em
    - par l'utilisateur, à tout moment (*Profil > Paramètres > Supprimer mon compte*) ;
    - automatiquement après **3 ans sans connexion**.
 
-   Dans les deux cas, le sexe et le profil de donneur sont effacés, les tokens sont révoqués, et les dates de don restent uniquement rattachées à un compte anonymisé, pour les statistiques de l'association.
+   Dans les deux cas, le sexe est effacé, les tokens sont révoqués, et les dates de don restent uniquement rattachées à un compte anonymisé, pour les statistiques de l'association.
 
 ### 1.4 Supports
 
@@ -70,7 +69,7 @@ Ces données sont rattachées à un compte **pseudonyme** : pseudo et adresse em
 | --- | --- | --- |
 | Finalité déterminée et légitime | ✅ | Une seule finalité, décrite dans la politique de confidentialité. Aucune réutilisation commerciale ni transmission à des tiers |
 | Base légale | ✅ | Consentement explicite, distinct des CGU, avec date enregistrée. Point de vigilance : la case est obligatoire pour s'inscrire, justifiée parce que le suivi des dons est le cœur du service. En V2, on pourrait la rendre facultative |
-| Minimisation | ✅ | Seulement le sexe (indispensable au calcul du délai) et les dates. Profil de donneur facultatif. Pas de groupe sanguin, pas d'identité civile |
+| Minimisation | ✅ | Seulement le sexe (indispensable au calcul du délai) et les dates. Pas de profil de donneur (retiré en octobre 2026, il ne servait qu'à l'affichage). Pas de groupe sanguin, pas d'identité civile |
 | Exactitude | 🟡 | Les dates viennent d'un scan de QR code, pas d'une saisie libre. Le sexe est déclaratif. Il n'est pas modifiable dans l'application : correction par email |
 | Durée de conservation | ✅ | Vie du compte, puis suppression automatique après 3 ans d'inactivité. Historique anonymisé ensuite |
 | Information | ✅ | Section « Vos données de santé » de la politique de confidentialité, accessible avant l'inscription |

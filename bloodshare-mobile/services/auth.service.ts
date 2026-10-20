@@ -8,8 +8,8 @@ import api from './api';
 export type Utilisateur = {
   id: number;
   pseudo: string;
+  avatar_id: number | null;
   avatar_url: string | null;
-  statut_donneur: string | null;
   points_cumules: number;
   code_parrainage: string;
   doit_changer_mdp: boolean;
@@ -26,8 +26,9 @@ export type AuthResponse = {
 const filtrerUtilisateur = (user: Utilisateur): Utilisateur => ({
   id: user.id,
   pseudo: user.pseudo,
+  // Absent des réponses d'avant l'ajout côté backend : null plutôt qu'undefined.
+  avatar_id: user.avatar_id ?? null,
   avatar_url: user.avatar_url,
-  statut_donneur: user.statut_donneur,
   points_cumules: user.points_cumules,
   code_parrainage: user.code_parrainage,
   doit_changer_mdp: user.doit_changer_mdp,
@@ -72,7 +73,6 @@ export type RegisterPayload = {
   password: string;
   password_confirmation: string;
   sexe: 'homme' | 'femme';
-  statut_donneur: string | null;
   avatar_id: number | null;
   code_parrainage?: string;
   // Consentements, tous obligatoires : l'API refuse l'inscription (422) s'il en manque un.

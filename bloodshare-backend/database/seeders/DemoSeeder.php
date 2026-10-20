@@ -50,7 +50,6 @@ class DemoSeeder extends Seeder
         }
 
         $avatarIds = Avatar::pluck('id');
-        $statuts = ['donneur_regulier', 'quelques_dons', 'jamais_donne'];
         $sexes = ['homme', 'femme'];
 
         $users = collect();
@@ -62,7 +61,6 @@ class DemoSeeder extends Seeder
                     'pseudo' => "Donneur Demo {$i}",
                     'password' => 'password',
                     'sexe' => $sexes[array_rand($sexes)],
-                    'statut_donneur' => $statuts[array_rand($statuts)],
                     'statut' => 'actif',
                     'points_cumules' => rand(0, 500),
                     'derniere_connexion' => now()->subDays(rand(0, 30)),

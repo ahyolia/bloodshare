@@ -22,5 +22,12 @@ export const saveUser = async (user: object) => {
 
 export const getUser = async () => {
   const raw = await secureStorage.getItem(USER_KEY);
-  return raw ? JSON.parse(raw) : null;
+  if (!raw) return null;
+
+  // 📖 Le profil de donneur n'est plus collecté (donnée de santé). Les anciennes
+  //    versions l'ont rangé ici : on l'écarte à la lecture, et comme chaque
+  //    sauvegarde repart de getUser(), il disparaît du stockage au prochain saveUser.
+  const user = JSON.parse(raw);
+  delete user.statut_donneur;
+  return user;
 };

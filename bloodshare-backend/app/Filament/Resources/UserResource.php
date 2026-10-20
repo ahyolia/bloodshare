@@ -41,15 +41,6 @@ class UserResource extends Resource
                     ->label('Pseudo')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('statut_donneur')
-                    ->label('Statut donneur')
-                    ->formatStateUsing(fn ($state) => match($state) {
-                        'donneur_regulier' => 'Donneur régulier',
-                        'quelques_dons'    => 'Quelques dons',
-                        'jamais_donne'     => 'Jamais donné',
-                        default            => '—'
-                    }),
-
                 Tables\Columns\TextColumn::make('points_cumules')
                     ->label('Points')
                     ->sortable(),
@@ -93,12 +84,6 @@ class UserResource extends Resource
                         'actif' => 'Actif',
                         'suspendu' => 'Suspendu',
                         'supprime' => 'Supprimé',
-                    ]),
-                Tables\Filters\SelectFilter::make('statut_donneur')
-                    ->options([
-                        'donneur_regulier' => 'Donneur régulier',
-                        'quelques_dons'    => 'Quelques dons',
-                        'jamais_donne'     => 'Jamais donné',
                     ]),
             ])
             ->actions([
@@ -149,14 +134,6 @@ class UserResource extends Resource
                 InfolistSection::make('Informations')
                     ->schema([
                         TextEntry::make('pseudo')->label('Pseudo'),
-                        TextEntry::make('statut_donneur')
-                            ->label('Statut donneur')
-                            ->formatStateUsing(fn ($state) => match($state) {
-                                'donneur_regulier' => '🩸 Donneur régulier',
-                                'quelques_dons'    => '💧 Quelques dons',
-                                'jamais_donne'     => '🆕 Jamais donné',
-                                default            => '—'
-                            }),
                         // 📖 Pas de sexe ici : donnée de santé (avec les dates de don) dont les
                         //    admins n'ont pas besoin (audit RGPD). Seul le calcul du délai entre
                         //    deux dons l'utilise.

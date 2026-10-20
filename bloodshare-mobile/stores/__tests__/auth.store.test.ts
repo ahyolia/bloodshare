@@ -45,6 +45,12 @@ describe('utilisateur', () => {
     await expect(getUser()).resolves.toEqual({ pseudo: 'Goutte', points_cumules: 120 });
   });
 
+  it('écarte le profil de donneur gardé par une ancienne version (donnée de santé)', async () => {
+    await saveUser({ pseudo: 'Goutte', statut_donneur: 'donneur_regulier' });
+
+    await expect(getUser()).resolves.toEqual({ pseudo: 'Goutte' });
+  });
+
   it('renvoie null quand aucun utilisateur n’est enregistré', async () => {
     await expect(getUser()).resolves.toBeNull();
   });

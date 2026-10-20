@@ -21,7 +21,6 @@ const profil = {
   id: 1,
   pseudo: 'Goutte',
   avatar_url: null,
-  statut_donneur: 'quelques_dons',
   points_cumules: 150,
   niveau: { niveau: 2, label: 'Informé' },
   code_parrainage: 'ABCD1234',

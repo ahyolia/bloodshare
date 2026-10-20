@@ -9,7 +9,9 @@ class AvatarSeeder extends Seeder
 {
     public function run(): void
     {
-        for ($i = 1; $i <= 5; $i++) {
+        // Un enregistrement par avatar emoji du catalogue mobile
+        // (AVATARS dans services/profil.service.ts) : les ids doivent correspondre.
+        for ($i = 1; $i <= 8; $i++) {
             Avatar::updateOrCreate(
                 ['nom' => "Avatar {$i}"],
                 [

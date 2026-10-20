@@ -25,7 +25,6 @@ class User extends Authenticatable implements FilamentUser, HasName
         'email',
         'password',
         'sexe',
-        'statut_donneur',
         'statut',
         'motif_suspension',
         'points_cumules',
@@ -104,7 +103,6 @@ class User extends Authenticatable implements FilamentUser, HasName
                 'avatar_id' => null,
                 'code_parrainage' => null,
                 'sexe' => null,
-                'statut_donneur' => null,
                 'derniere_connexion' => null,
                 'motif_suspension' => null,
             ])->save();

@@ -3,8 +3,10 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Theme } from '../constants/colors';
+import { compter } from '../utils/pluriel';
 import type { Profil } from '../services/profil.service';
 import { NiveauModal } from './layout/NiveauModal';
+import { Avatar } from './ui/Avatar';
 
 /* -------------------------------------------------------------------------
  * En-tête des écrans d'index d'onglets.
@@ -22,7 +24,13 @@ import { NiveauModal } from './layout/NiveauModal';
 type ProprietesCommunes = {
   /** 1re lettre du pseudo, pour l'avatar. */
   initiale: string;
-  points: number;
+  /** Avatar emoji choisi ; absent ou inconnu → l'initiale est affichée. */
+  avatarId?: number | null;
+  /**
+   * Points de la pastille. Absent → pas de pastille : l'écran Profil affiche
+   * déjà points et niveau dans son contenu, les répéter dans l'en-tête ferait doublon.
+   */
+  points?: number;
   /**
    * Profil complet, dont la modale de progression a besoin (niveau, seuil du
    * palier suivant). Distinct de `points`, qui reste la valeur *affichée* : sur
@@ -62,7 +70,7 @@ const CLOCHE = 40;
 const PASTILLE_HAUTEUR = 34;
 
 export function EnTete(props: EnTeteProps) {
-  const { initiale, points, profil, notificationsNonLues, onPressNotifications } = props;
+  const { initiale, avatarId, points, profil, notificationsNonLues, onPressNotifications } = props;
 
   // 📖 L'état de la modale vit ici et non dans chaque écran : les cinq écrans
   //    d'onglets auraient sinon à déclarer le même useState et à rendre la même
@@ -74,7 +82,7 @@ export function EnTete(props: EnTeteProps) {
     <View style={styles.enTete}>
       {props.variante === 'accueil' ? (
         <View style={styles.gauche}>
-          <Avatar initiale={initiale} taille={AVATAR_ACCUEIL} />
+          <BoutonAvatar initiale={initiale} avatarId={avatarId} taille={AVATAR_ACCUEIL} />
           <View style={styles.salutation}>
             <Text style={styles.salut}>Salut,</Text>
             <Text style={styles.pseudo} numberOfLines={1} ellipsizeMode="tail">
@@ -96,7 +104,9 @@ export function EnTete(props: EnTeteProps) {
           notificationsNonLues={notificationsNonLues}
           onPressNotifications={onPressNotifications}
         />
-        {props.variante === 'page' && <Avatar initiale={initiale} taille={AVATAR_PAGE} />}
+        {props.variante === 'page' && (
+          <BoutonAvatar initiale={initiale} avatarId={avatarId} taille={AVATAR_PAGE} />
+        )}
       </View>
 
       {profil && (
@@ -126,54 +136,78 @@ function BlocActions({
 }) {
   return (
     <>
-      <Pressable
-        style={styles.pastille}
-        onPress={onPressPoints}
-        disabled={pointsInertes}
-        hitSlop={hitSlopPour(PASTILLE_HAUTEUR)}
-        accessibilityRole="button"
-        accessibilityLabel={`${points} points, voir ma progression`}
-      >
-        <Text style={styles.pastilleTexte}>{points}</Text>
-        <Ionicons name="star" size={13} color={Theme.accent.signatureTexte} />
-      </Pressable>
+      {points !== undefined && (
+        <Pressable
+          style={styles.pastille}
+          onPress={onPressPoints}
+          disabled={pointsInertes}
+          hitSlop={hitSlopPour(PASTILLE_HAUTEUR)}
+          accessibilityRole="button"
+          accessibilityLabel={`${compter(points, 'point')}, voir ma progression`}
+        >
+          <Text style={styles.pastilleTexte}>{points}</Text>
+          <Ionicons name="star" size={13} color={Theme.accent.signatureTexte} />
+        </Pressable>
+      )}
 
-      <Pressable
-        style={styles.cloche}
-        onPress={onPressNotifications}
-        hitSlop={hitSlopPour(CLOCHE)}
-        accessibilityRole="button"
-        // 📖 Le compte non lu passe par le libellé : le point coloré ne porte
-        //    aucune information à lui seul (WCAG 1.4.1, « pas la couleur seule »).
-        accessibilityLabel={
-          notificationsNonLues > 0
-            ? `Notifications, ${notificationsNonLues} non lues`
-            : 'Notifications'
-        }
-      >
-        <Ionicons name="notifications-outline" size={19} color={Theme.texte.principal} />
-        {notificationsNonLues > 0 && (
-          <View style={styles.pointNotification} pointerEvents="none" />
-        )}
-      </Pressable>
+      <BoutonNotifications
+        notificationsNonLues={notificationsNonLues}
+        onPressNotifications={onPressNotifications}
+      />
     </>
   );
 }
 
-function Avatar({ initiale, taille }: { initiale: string; taille: number }) {
+/**
+ * Cloche des notifications, avec son point « non lu ». Exportée seule pour
+ * l'écran Profil, qui remplace l'en-tête par sa bannière mais garde la cloche.
+ */
+export function BoutonNotifications({
+  notificationsNonLues,
+  onPressNotifications,
+}: Pick<ProprietesCommunes, 'notificationsNonLues' | 'onPressNotifications'>) {
+  return (
+    <Pressable
+      style={styles.cloche}
+      onPress={onPressNotifications}
+      hitSlop={hitSlopPour(CLOCHE)}
+      accessibilityRole="button"
+      // 📖 Le compte non lu passe par le libellé : le point coloré ne porte
+      //    aucune information à lui seul (WCAG 1.4.1, « pas la couleur seule »).
+      accessibilityLabel={
+        notificationsNonLues > 0
+          ? `Notifications, ${notificationsNonLues} non lues`
+          : 'Notifications'
+      }
+    >
+      <Ionicons name="notifications-outline" size={19} color={Theme.texte.principal} />
+      {notificationsNonLues > 0 && (
+        <View style={styles.pointNotification} pointerEvents="none" />
+      )}
+    </Pressable>
+  );
+}
+
+function BoutonAvatar({
+  initiale,
+  avatarId,
+  taille,
+}: {
+  initiale: string;
+  avatarId?: number | null;
+  taille: number;
+}) {
   const router = useRouter();
 
   return (
     <Pressable
-      style={[styles.avatar, { width: taille, height: taille, borderRadius: taille / 2 }]}
       onPress={() => router.push('/tabs/profil')}
       hitSlop={hitSlopPour(taille)}
       accessibilityRole="button"
       accessibilityLabel="Mon profil"
     >
-      <Text style={[styles.avatarInitiale, { fontSize: Math.round(taille * 0.4) }]}>
-        {initiale}
-      </Text>
+      {/* 📖 `pseudo={initiale}` : l'initiale d'une initiale est elle-même. */}
+      <Avatar avatarId={avatarId} pseudo={initiale} taille={taille} style={styles.avatar} />
     </Pressable>
   );
 }
@@ -261,14 +295,7 @@ const styles = StyleSheet.create({
   },
 
   avatar: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Theme.marque.doux,
     borderWidth: 2,
     borderColor: Theme.marque.principal,
-  },
-  avatarInitiale: {
-    color: Theme.marque.principal,
-    fontWeight: '700',
   },
 });

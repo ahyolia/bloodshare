@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { EnTete } from '../../../components/EnTete';
 import { Colors } from '../../../constants/colors';
+import { compter } from '../../../utils/pluriel';
 import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues';
 import { useProfil } from '../../../hooks/useProfil';
 import { FicheInfo, getFichesInfos } from '../../../services/fichesInfos.service';
@@ -85,6 +86,7 @@ export default function DonScreen() {
           variante="page"
           titre="Don"
           initiale={initialePseudo(profil?.pseudo)}
+          avatarId={profil?.avatar_id}
           points={profil?.points_cumules ?? 0}
           profil={profil}
           notificationsNonLues={notificationsNonLues}
@@ -188,8 +190,7 @@ export default function DonScreen() {
                   <View style={styles.categorieTextContainer}>
                     <Text style={styles.categorieTitle}>{categorie.label}</Text>
                     <Text style={styles.categorieSubtitle}>
-                      {items.length} fiche{items.length > 1 ? 's' : ''} pratique
-                      {items.length > 1 ? 's' : ''}
+                      {compter(items.length, 'fiche pratique')}
                     </Text>
                   </View>
                   <Ionicons

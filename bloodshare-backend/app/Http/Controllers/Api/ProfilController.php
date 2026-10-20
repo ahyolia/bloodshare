@@ -73,8 +73,8 @@ class ProfilController extends Controller
         return [
             'id' => $user->id,
             'pseudo' => $user->pseudo,
+            'avatar_id' => $user->avatar_id,
             'avatar_url' => null,
-            'statut_donneur' => $user->statut_donneur,
             'sexe' => $user->sexe,
             'points_cumules' => $user->points_cumules,
             'niveau' => NiveauService::calculerNiveau($user->points_cumules ?? 0),

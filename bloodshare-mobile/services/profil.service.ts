@@ -10,14 +10,8 @@ export type NiveauInfo = {
   progression: number;
 };
 
-// 📖 Trois valeurs seulement, alignées sur l'enum du backend. On type l'union
-//    plutôt qu'un `string` libre : le compilateur refuse alors toute faute de
-//    frappe ('donneur_reguler') et les `switch` de traduction sont exhaustifs.
-export type StatutDonneur = 'donneur_regulier' | 'quelques_dons' | 'jamais_donne';
-
 export type Profil = {
   pseudo: string;
-  statut_donneur: StatutDonneur | null;
   avatar_id: number | null;
   avatar_url: string | null;
   points_cumules: number;
@@ -27,30 +21,39 @@ export type Profil = {
 };
 
 // 📖 Payload envoyé par l'écran "Informations personnelles". Volontairement
-//    restreint aux 3 champs modifiables : on n'expose jamais points/niveau à
+//    restreint aux 2 champs modifiables : on n'expose jamais points/niveau à
 //    l'écriture côté client.
 export type MajProfilPayload = {
   pseudo: string;
   avatar_id: number | null;
-  statut_donneur: StatutDonneur;
 };
 
-// 📖 Catalogue local des 5 avatars proposés. Pas d'appel réseau : ce sont des
-//    assets figés de l'app. `image_url: null` → l'UI retombe sur l'initiale du
-//    pseudo (même logique que l'AppHeader).
-export const AVATARS: { id: number; image_url: string | null }[] = [
-  { id: 1, image_url: null },
-  { id: 2, image_url: null },
-  { id: 3, image_url: null },
-  { id: 4, image_url: null },
-  { id: 5, image_url: null },
+// 📖 Catalogue local des avatars : des emojis « nature et objets », neutres (ni
+//    visage, ni genre) pour respecter l'anonymat. Pas d'appel réseau : l'API ne
+//    transmet que `avatar_id`, l'app en déduit l'emoji. Chaque id doit exister
+//    dans la table `avatars` (AvatarSeeder), sinon PUT /me refuse le choix.
+//    `nom` sert de libellé aux lecteurs d'écran.
+export type Avatar = { id: number; emoji: string; nom: string };
+
+export const AVATARS: Avatar[] = [
+  { id: 1, emoji: '🌸', nom: 'Fleur de cerisier' },
+  { id: 2, emoji: '🌻', nom: 'Tournesol' },
+  { id: 3, emoji: '🍀', nom: 'Trèfle' },
+  { id: 4, emoji: '🌈', nom: 'Arc-en-ciel' },
+  { id: 5, emoji: '⭐', nom: 'Étoile' },
+  { id: 6, emoji: '🌙', nom: 'Lune' },
+  { id: 7, emoji: '🔥', nom: 'Flamme' },
+  { id: 8, emoji: '💧', nom: 'Goutte' },
 ];
+
+/** Avatar correspondant à un `avatar_id`, ou `undefined` (aucun, ou id inconnu de l'app). */
+export const avatarParId = (id: number | null | undefined): Avatar | undefined =>
+  AVATARS.find((a) => a.id === id);
 
 // Liste blanche explicite : GET /me renvoie aussi `sexe`, une donnée d'identité que
 // CONTRIBUTING.md interdit de conserver. Tout champ non repris ici n'atteint pas les écrans.
 const filtrerProfil = (profil: Profil): Profil => ({
   pseudo: profil.pseudo,
-  statut_donneur: profil.statut_donneur,
   avatar_id: profil.avatar_id,
   avatar_url: profil.avatar_url,
   points_cumules: profil.points_cumules,
@@ -86,7 +89,7 @@ export const getProfil = async (): Promise<Profil> => {
   return filtrerProfil({ ...response.data, nb_parrainages_valides: nbParrainagesValides });
 };
 
-// 📖 PUT /me : met à jour pseudo + avatar + statut, puis renvoie le profil frais
+// 📖 PUT /me : met à jour pseudo + avatar, puis renvoie le profil frais
 //    (déjà refiltré) pour que l'appelant le range dans le SecureStore.
 export const updateProfil = async (payload: MajProfilPayload): Promise<Profil> => {
   if (USE_MOCK_DATA) {
