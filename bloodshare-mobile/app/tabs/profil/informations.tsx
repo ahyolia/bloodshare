@@ -1,25 +1,24 @@
-import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import Animated from "react-native-reanimated";
 import { useRouter } from "expo-router";
-import { Colors } from "../../../constants/colors";
-import {
-  AVATARS,
-  getProfil,
-  StatutDonneur,
-  updateProfil,
-} from "../../../services/profil.service";
+import { Avatar } from "../../../components/ui/Avatar";
+import { Bouton } from "../../../components/ui/Bouton";
+import { Champ } from "../../../components/ui/Champ";
+import { Chargement } from "../../../components/ui/Chargement";
+import { EnTeteSousPage } from "../../../components/ui/EnTeteSousPage";
+import { EtatErreur } from "../../../components/ui/EtatErreur";
+import { entreeSousPage } from "../../../constants/animations";
+import { Theme } from "../../../constants/colors";
+import { Espace, Ombre, Rayon } from "../../../constants/spacing";
+import { Typo } from "../../../constants/typography";
+import { AVATARS, avatarParId, getProfil, updateProfil } from "../../../services/profil.service";
 import { saveUser, getUser } from "../../../stores/auth.store";
-import { OPTIONS_STATUT_DONNEUR, initialePseudo } from "../../../utils/profil";
 import { useDialogue } from "../../../components/DialogueProvider";
+import { CONTENU_MARGE_BASSE } from "../_layout";
+
+const APERCU = 112;
+const AVATAR_CHOIX = 56;
 
 export default function InformationsScreen() {
   const router = useRouter();
@@ -33,7 +32,7 @@ export default function InformationsScreen() {
   //    propre valeur, impossible à lire de façon fiable au moment du submit.
   const [pseudo, setPseudo] = useState("");
   const [avatarId, setAvatarId] = useState<number | null>(null);
-  const [statut, setStatut] = useState<StatutDonneur>("jamais_donne");
+  const [erreurPseudo, setErreurPseudo] = useState<string | undefined>();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,7 +42,7 @@ export default function InformationsScreen() {
   //    modifie un profil existant, il ne le recrée pas. Un formulaire vide
   //    l'obligerait à ressaisir son pseudo pour changer juste l'avatar, et un
   //    envoi accidentel écraserait ses données par du vide.
-  useEffect(() => {
+  const charger = useCallback(() => {
     let cancelled = false;
 
     getProfil()
@@ -51,7 +50,6 @@ export default function InformationsScreen() {
         if (cancelled) return;
         setPseudo(p.pseudo);
         setAvatarId(p.avatar_id);
-        if (p.statut_donneur) setStatut(p.statut_donneur);
       })
       .catch(() => {
         if (!cancelled) setError(true);
@@ -65,137 +63,137 @@ export default function InformationsScreen() {
     };
   }, []);
 
+  useEffect(() => charger(), [charger]);
+
+  // 📖 Remise à zéro ici et pas dans `charger` : appelée depuis l'effet, elle
+  //    déclencherait un rendu en cascade (règle react-hooks du lint).
+  const reessayer = () => {
+    setLoading(true);
+    setError(false);
+    charger();
+  };
+
   const enregistrer = async () => {
     if (pseudo.trim().length === 0) {
-      await informer("Pseudo requis", "Merci de saisir un pseudo.");
+      setErreurPseudo("Choisis un pseudo pour continuer.");
       return;
     }
 
+    setErreurPseudo(undefined);
     setSaving(true);
     try {
       const frais = await updateProfil({
         pseudo: pseudo.trim(),
         avatar_id: avatarId,
-        statut_donneur: statut,
       });
 
-      // 📖 On répercute dans le SecureStore pour que l'écranr
-      // Profil affichent la nouvelle valeur sans attendre un rechargement.
+      // 📖 On répercute dans le SecureStore pour que l'écran
+      // Profil affiche la nouvelle valeur sans attendre un rechargement.
       const cache = await getUser();
       await saveUser({
         ...(cache ?? {}),
         pseudo: frais.pseudo,
+        avatar_id: frais.avatar_id,
         avatar_url: frais.avatar_url,
-        statut_donneur: frais.statut_donneur,
       });
 
       router.back();
-    } catch {
-      await informer("Erreur", "L'enregistrement a échoué. Réessaie.");
+    } catch (e: unknown) {
+      // 📖 Pseudo déjà pris (422) : le message de l'API s'affiche sous le champ,
+      //    là où la personne regarde, plutôt que dans une alerte générique.
+      const messagePseudo = (e as { response?: { data?: { errors?: { pseudo?: string[] } } } })
+        .response?.data?.errors?.pseudo?.[0];
+      if (messagePseudo) {
+        setErreurPseudo(messagePseudo);
+      } else {
+        await informer("Erreur", "L'enregistrement a échoué. Réessaie.");
+      }
     } finally {
       setSaving(false);
     }
   };
+
+  const avatarChoisi = avatarParId(avatarId);
 
   return (
     <View style={styles.screen}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityRole="button"
-        >
-          <Text style={styles.retour}>← Retour</Text>
-        </TouchableOpacity>
-        <Text style={styles.titre}>Informations personnelles</Text>
+        <EnTeteSousPage titre="Mes informations" />
 
-        {loading && (
-          <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />
-        )}
-
-        {!loading && error && (
-          <Text style={styles.errorText}>
-            Impossible de charger tes informations.
-          </Text>
-        )}
+        {loading && <Chargement message="On récupère tes informations…" />}
+        {!loading && error && <EtatErreur onReessayer={reessayer} />}
 
         {!loading && !error && (
           <>
+            {/* APERÇU — l'avatar choisi, tel qu'il apparaît sur le Profil */}
+            <Animated.View entering={entreeSousPage} style={styles.apercu}>
+              {/* 📖 Exception à « surélevé = interactif » : l'ombre reprend celle du
+                  grand avatar du Profil, pour un aperçu fidèle. Posée sur une vue à
+                  part : Avatar découpe son cercle (overflow: hidden). */}
+              <View style={styles.apercuOmbre}>
+                <Avatar avatarId={avatarId} pseudo={pseudo} taille={APERCU} style={styles.apercuAvatar} />
+              </View>
+            </Animated.View>
+            <Text style={[Typo.legende, styles.apercuLegende]}>
+              {avatarChoisi ? avatarChoisi.nom : "Aucun avatar choisi"}
+            </Text>
+
             {/* AVATAR */}
-            <Text style={styles.label}>Avatar</Text>
-            <View style={styles.avatarRow}>
-              {AVATARS.map((a) => {
-                const actif = a.id === avatarId;
-                return (
-                  <TouchableOpacity
-                    key={a.id}
-                    onPress={() => setAvatarId(a.id)}
-                    style={[
-                      styles.avatar,
-                      actif ? styles.avatarActif : styles.avatarInactif,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: actif }}
-                  >
-                    {a.image_url ? (
-                      <Image
-                        source={{ uri: a.image_url }}
-                        style={styles.avatarImage}
-                      />
-                    ) : (
-                      <Text style={styles.avatarInitiale}>
-                        {initialePseudo(pseudo)}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <Animated.View entering={entreeSousPage}>
+              <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+                Choisis ton avatar
+              </Text>
+              <View style={styles.choix}>
+                {AVATARS.map((a) => {
+                  const actif = a.id === avatarId;
+                  return (
+                    <Pressable
+                      key={a.id}
+                      onPress={() => setAvatarId(a.id)}
+                      style={[styles.option, actif ? styles.optionActive : styles.optionInactive]}
+                      accessibilityRole="button"
+                      accessibilityLabel={a.nom}
+                      accessibilityState={{ selected: actif }}
+                    >
+                      <Avatar avatarId={a.id} taille={AVATAR_CHOIX} style={styles.optionFond} />
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </Animated.View>
 
             {/* PSEUDO */}
-            <Text style={styles.label}>Pseudo</Text>
-            <TextInput
-              style={styles.input}
-              value={pseudo}
-              onChangeText={setPseudo}
-              placeholder="Ton pseudo"
-              placeholderTextColor={Colors.grisMoyen}
-              maxLength={50}
-            />
+            <Animated.View entering={entreeSousPage} style={styles.champ}>
+              <Champ
+                libelle="Pseudo"
+                aide="C'est le nom qui s'affiche dans l'app. 50 caractères maximum."
+                erreur={erreurPseudo}
+                value={pseudo}
+                onChangeText={(texte) => {
+                  setPseudo(texte);
+                  if (erreurPseudo) setErreurPseudo(undefined);
+                }}
+                placeholder="Ton pseudo"
+                maxLength={50}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </Animated.View>
 
-            {/* STATUT DONNEUR */}
-            <Text style={styles.label}>Statut donneur</Text>
-            {OPTIONS_STATUT_DONNEUR.map((opt) => {
-              const actif = opt.valeur === statut;
-              return (
-                <TouchableOpacity
-                  key={opt.valeur}
-                  style={[styles.radio, actif && styles.radioActif]}
-                  onPress={() => setStatut(opt.valeur)}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: actif }}
-                >
-                  <Text style={styles.radioPuce}>{actif ? "◉" : "○"}</Text>
-                  <Text style={styles.radioLabel}>{opt.libelle}</Text>
-                </TouchableOpacity>
-              );
-            })}
-
-            {/* ENREGISTRER */}
-            <TouchableOpacity
-              style={[styles.bouton, saving && styles.boutonDesactive]}
-              onPress={enregistrer}
-              disabled={saving}
-              accessibilityRole="button"
-            >
-              {saving ? (
-                <ActivityIndicator color={Colors.blanc} />
-              ) : (
-                <Text style={styles.boutonTexte}>Enregistrer</Text>
-              )}
-            </TouchableOpacity>
+            <Animated.View entering={entreeSousPage}>
+              <Bouton
+                variante="validation"
+                libelle="Enregistrer"
+                icone="checkmark"
+                onPress={enregistrer}
+                chargement={saving}
+                style={styles.enregistrer}
+              />
+            </Animated.View>
           </>
         )}
       </ScrollView>
@@ -206,116 +204,68 @@ export default function InformationsScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
+    backgroundColor: Theme.fond.page,
   },
   content: {
     paddingHorizontal: 18,
     paddingTop: 54,
-    paddingBottom: 60,
+    paddingBottom: CONTENU_MARGE_BASSE,
   },
-  retour: {
-    fontSize: 15,
-    color: Colors.petrole[500],
-    fontWeight: "600",
-  },
-  titre: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: Colors.aubergine,
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  loader: {
-    marginTop: 40,
-  },
-  errorText: {
-    color: Colors.grisMoyen,
-    textAlign: "center",
-    marginTop: 40,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: Colors.grisMoyen,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: 24,
-    marginBottom: 10,
-  },
-  avatarRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.petrole[500],
+  apercu: {
     alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
+    paddingVertical: Espace[4],
   },
-  avatarActif: {
+  apercuOmbre: {
+    borderRadius: APERCU / 2,
+    ...Ombre.flottante,
+  },
+  apercuAvatar: {
+    borderWidth: 4,
+    borderColor: Theme.fond.surface,
+    backgroundColor: Theme.fond.surface,
+  },
+  apercuLegende: {
+    color: Theme.texte.secondaire,
+    textAlign: "center",
+    marginTop: Espace[2],
+  },
+  sectionTitre: {
+    color: Theme.texte.principal,
+    marginTop: Espace[6],
+    marginBottom: Espace[3],
+  },
+  // 📖 Grille de 4 par ligne (8 avatars) : en une seule ligne, les cercles
+  //    passeraient sous la cible tactile de 48 px sur un petit écran.
+  choix: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: Espace[3],
+    padding: Espace[4],
+    borderRadius: Rayon.lg,
+    backgroundColor: Theme.fond.surface,
+    borderWidth: 1,
+    borderColor: Theme.fond.bordure,
+  },
+  option: {
+    borderRadius: Rayon.plein,
     borderWidth: 3,
-    borderColor: Colors.corail[600],
+  },
+  // 📖 Sélection = contour aubergine ET agrandissement, pas la couleur seule.
+  optionActive: {
+    borderColor: Theme.texte.principal,
     transform: [{ scale: 1.08 }],
   },
-  avatarInactif: {
-    borderWidth: 3,
+  optionInactive: {
     borderColor: "transparent",
   },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
+  optionFond: {
+    backgroundColor: Theme.fond.surfaceEnfoncee,
   },
-  avatarInitiale: {
-    color: Colors.blanc,
-    fontSize: 22,
-    fontWeight: "700",
+  champ: {
+    marginTop: Espace[6],
   },
-  input: {
-    backgroundColor: Colors.fondNeutre,
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-    color: Colors.aubergine,
-  },
-  radio: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.fondNeutre,
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 8,
-  },
-  radioActif: {
-    borderColor: Colors.corail[600],
-    backgroundColor: Colors.fondRose,
-  },
-  radioPuce: {
-    fontSize: 16,
-    color: Colors.corail[600],
-    marginRight: 10,
-  },
-  radioLabel: {
-    fontSize: 14,
-    color: Colors.aubergine,
-    flex: 1,
-  },
-  bouton: {
-    backgroundColor: Colors.aubergine,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 28,
-  },
-  boutonDesactive: {
-    opacity: 0.6,
-  },
-  boutonTexte: {
-    color: Colors.blanc,
-    fontWeight: "700",
-    fontSize: 16,
+  enregistrer: {
+    marginTop: Espace[8],
   },
 });

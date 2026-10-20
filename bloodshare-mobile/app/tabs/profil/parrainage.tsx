@@ -1,15 +1,19 @@
-import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Share,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { Colors } from '../../../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useEffect, useState } from 'react';
+import { ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { Bouton } from '../../../components/ui/Bouton';
+import { Chargement } from '../../../components/ui/Chargement';
+import { EnTeteSousPage } from '../../../components/ui/EnTeteSousPage';
+import { EtatErreur } from '../../../components/ui/EtatErreur';
+import { entreeSousPage } from '../../../constants/animations';
+import { Theme } from '../../../constants/colors';
+import { accorder } from '../../../utils/pluriel';
+import { TEINTES_PASTILLE } from '../../../constants/teintes';
+import { Espace, Rayon } from '../../../constants/spacing';
+import { Police, Typo } from '../../../constants/typography';
 import { getProfil, Profil } from '../../../services/profil.service';
+import { CONTENU_MARGE_BASSE } from '../_layout';
 
 // 📖 Share.share() ouvre la feuille de partage NATIVE du système (iOS / Android) :
 //    l'utilisateur choisit lui-même l'app de destination (SMS, WhatsApp, mail…).
@@ -17,12 +21,11 @@ import { getProfil, Profil } from '../../../services/profil.service';
 //    résout avec { action } : 'sharedAction' si l'utilisateur a partagé,
 //    'dismissedAction' s'il a annulé (iOS uniquement).
 export default function ParrainageScreen() {
-  const router = useRouter();
   const [profil, setProfil] = useState<Profil | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const charger = useCallback(() => {
     let cancelled = false;
 
     getProfil()
@@ -41,6 +44,16 @@ export default function ParrainageScreen() {
     };
   }, []);
 
+  useEffect(() => charger(), [charger]);
+
+  // 📖 Remise à zéro ici et pas dans `charger` : appelée depuis l'effet, elle
+  //    déclencherait un rendu en cascade (règle react-hooks du lint).
+  const reessayer = () => {
+    setLoading(true);
+    setError(false);
+    charger();
+  };
+
   const partager = async () => {
     if (!profil) return;
     try {
@@ -55,56 +68,77 @@ export default function ParrainageScreen() {
     }
   };
 
+  const filleuls = profil?.nb_parrainages_valides ?? 0;
+
   return (
     <View style={styles.screen}>
-      <TouchableOpacity
-        onPress={() => router.back()}
-        style={styles.header}
-        accessibilityRole="button"
-      >
-        <Text style={styles.retour}>← Parrainage</Text>
-      </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <EnTeteSousPage titre="Parrainage" />
 
-      {loading && <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />}
+        {loading && <Chargement message="On récupère ton code…" />}
+        {!loading && error && <EtatErreur onReessayer={reessayer} />}
 
-      {!loading && error && (
-        <Text style={styles.errorText}>Impossible de charger ton parrainage.</Text>
-      )}
+        {!loading && !error && profil && (
+          <>
+            <Animated.View entering={entreeSousPage}>
+              <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+                Invite tes potes à rejoindre Aïma
+              </Text>
+            </Animated.View>
 
-      {!loading && !error && profil && (
-        <View style={styles.content}>
-          {/* CARTE CODE */}
-          <View style={styles.carteCode}>
-            <Text style={styles.codeLabel}>Ton code de parrainage</Text>
-            <Text style={styles.code}>{profil.code_parrainage}</Text>
+            {/* CODE — le bloc vedette de l'écran : aubergine, code en lime */}
+            <Animated.View entering={entreeSousPage} style={styles.code}>
+              <Text style={[Typo.legendeForte, styles.codeLibelle]}>Ton code de parrainage</Text>
+              <Text
+                style={styles.codeTexte}
+                selectable
+                // 📖 Épelé caractère par caractère : lu d'un bloc, « XYZ98765 » est inaudible.
+                accessibilityLabel={`Code ${profil.code_parrainage.split('').join(' ')}`}
+              >
+                {profil.code_parrainage}
+              </Text>
+              <Bouton
+                libelle="Partager mon code"
+                icone="share-social-outline"
+                variante="secondaire"
+                onPress={partager}
+                style={styles.partager}
+              />
+            </Animated.View>
 
-            <TouchableOpacity
-              style={styles.boutonPartage}
-              onPress={partager}
-              accessibilityRole="button"
-            >
-              <Text style={styles.boutonPartageTexte}>Partager mon code 📤</Text>
-            </TouchableOpacity>
-          </View>
+            {/* 📖 Le mode d'emploi en petite note sous le code : il éclaire sans
+                alourdir le haut de page. */}
+            <Animated.View entering={entreeSousPage} style={styles.consigne}>
+              <Ionicons name="information-circle-outline" size={18} color={Theme.texte.secondaire} />
+              <Text style={[Typo.legende, styles.consigneTexte]}>
+                {"Ils saisissent ton code à l'inscription. Le parrainage est validé à leur premier don."}
+              </Text>
+            </Animated.View>
 
-          <View style={styles.separateur} />
+            {/* 📖 Un seul chiffre : une ligne compacte suffit, une carte entière
+                prenait beaucoup de place pour peu d'information. À plat : elle informe. */}
+            <Animated.View entering={entreeSousPage} style={styles.filleuls}>
+              <View style={styles.filleulsPastille}>
+                <Ionicons name="people-outline" size={20} color={TEINTES_PASTILLE.orange.icone} />
+              </View>
+              <Text style={[Typo.corps, styles.filleulsTexte]}>
+                <Text style={Typo.corpsFort}>{filleuls}</Text>
+                {` ${accorder(filleuls, 'parrainage validé')}`}
+              </Text>
+            </Animated.View>
 
-          {/* STATS */}
-          <View style={styles.carteStats}>
-            <View style={styles.stat}>
-              <Text style={styles.statNombre}>{profil.nb_parrainages_valides}</Text>
-              <Text style={styles.statLabel}>Parrainage(s) validé(s)</Text>
-            </View>
-          </View>
-
-          {/* NOTE ANONYMAT */}
-          <View style={styles.noteAnonymat}>
-            <Text style={styles.noteAnonymatTexte}>
-              {"🔒 Par respect de la vie privée, l'identité de tes filleuls n'est pas affichée."}
-            </Text>
-          </View>
-        </View>
-      )}
+            {/* ANONYMAT */}
+            <Animated.View entering={entreeSousPage} style={styles.note}>
+              <View style={styles.notePastille}>
+                <Ionicons name="lock-closed-outline" size={18} color={Theme.info.icone} />
+              </View>
+              <Text style={[Typo.legende, styles.noteTexte]}>
+                Par respect de la vie privée, l’identité de tes filleuls n’est jamais affichée.
+              </Text>
+            </Animated.View>
+          </>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -112,94 +146,93 @@ export default function ParrainageScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
-    paddingTop: 54,
-  },
-  header: {
-    paddingHorizontal: 18,
-  },
-  retour: {
-    fontSize: 15,
-    color: Colors.petrole[500],
-    fontWeight: '600',
-  },
-  loader: {
-    marginTop: 40,
-  },
-  errorText: {
-    color: Colors.grisMoyen,
-    textAlign: 'center',
-    marginTop: 40,
+    backgroundColor: Theme.fond.page,
   },
   content: {
-    padding: 18,
+    paddingHorizontal: 18,
+    paddingTop: 54,
+    paddingBottom: CONTENU_MARGE_BASSE,
   },
-  carteCode: {
-    backgroundColor: Colors.blanc,
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
+  sectionTitre: {
+    color: Theme.texte.principal,
+    marginBottom: Espace[3],
   },
-  codeLabel: {
-    fontSize: 14,
-    color: Colors.grisMoyen,
-    textAlign: 'center',
+  // 📖 Même petite note que « Un don ne rapporte jamais de points » (Points et niveau).
+  consigne: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Espace[2],
+    marginTop: Espace[3],
+    paddingHorizontal: Espace[1],
+  },
+  consigneTexte: {
+    flex: 1,
+    color: Theme.texte.secondaire,
   },
   code: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    letterSpacing: 6,
-    textAlign: 'center',
-    marginVertical: 16,
-  },
-  boutonPartage: {
-    backgroundColor: Colors.corail[600],
-    borderRadius: 12,
-    padding: 14,
     alignItems: 'center',
+    gap: Espace[3],
+    padding: Espace[6],
+    borderRadius: Rayon.lg,
+    backgroundColor: Theme.texte.principal, // aubergine
+  },
+  codeLibelle: {
+    color: Theme.texte.surAccent,
+  },
+  codeTexte: {
+    fontFamily: Police.corpsGras,
+    fontSize: 34,
+    lineHeight: 44,
+    letterSpacing: 6,
+    // 📖 Lime sur aubergine : 8,98:1, largement au-dessus du 4,5:1 exigé.
+    color: Theme.accent.signatureAplat,
+  },
+  partager: {
     alignSelf: 'stretch',
   },
-  boutonPartageTexte: {
-    color: Colors.blanc,
-    fontWeight: '700',
-  },
-  separateur: {
-    height: 1,
-    backgroundColor: Colors.fondGris,
-    marginVertical: 20,
-  },
-  carteStats: {
-    backgroundColor: Colors.blanc,
-    borderRadius: 16,
-    padding: 24,
+  filleuls: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  stat: {
     alignItems: 'center',
+    gap: Espace[3],
+    marginTop: Espace[6],
+    paddingVertical: Espace[3],
+    paddingHorizontal: Espace[4],
+    borderRadius: Rayon.lg,
+    borderWidth: 1,
+    borderColor: Theme.fond.bordure,
+    backgroundColor: Theme.fond.surface,
   },
-  statNombre: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: Colors.corail[600],
+  filleulsPastille: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: TEINTES_PASTILLE.orange.fond,
   },
-  statLabel: {
-    fontSize: 12,
-    color: Colors.grisMoyen,
-    textAlign: 'center',
-    marginTop: 4,
+  filleulsTexte: {
+    flex: 1,
+    color: Theme.texte.principal,
   },
-  noteAnonymat: {
-    backgroundColor: Colors.fondNeutre,
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 16,
+  note: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Espace[3],
+    marginTop: Espace[6],
+    padding: Espace[4],
+    borderRadius: Rayon.lg,
+    backgroundColor: Theme.info.fond,
   },
-  noteAnonymatTexte: {
-    fontSize: 12,
-    color: Colors.grisMoyen,
-    textAlign: 'center',
-    fontStyle: 'italic',
+  notePastille: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Theme.fond.surface,
+  },
+  noteTexte: {
+    flex: 1,
+    color: Theme.texte.principal,
   },
 });
