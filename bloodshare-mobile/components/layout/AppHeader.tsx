@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/colors';
+import { compter } from '../../utils/pluriel';
 import { useProfil } from '../../hooks/useProfil';
 import { NiveauModal } from './NiveauModal';
 
@@ -52,7 +53,7 @@ export function AppHeader({
             onPress={() => setModalVisible(true)}
             disabled={!profil}
             accessibilityRole="button"
-            accessibilityLabel={`${points} points, voir ma progression`}
+            accessibilityLabel={`${compter(points, 'point')}, voir ma progression`}
           >
             <Text style={styles.pointsBadgeText}>{points} ★</Text>
           </TouchableOpacity>

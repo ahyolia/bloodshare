@@ -3,6 +3,7 @@ import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../../constants/colors';
+import { compter } from '../../../utils/pluriel';
 import { TAB_BAR_STYLE } from '../_layout';
 
 export default function QuizScoreScreen() {
@@ -90,7 +91,7 @@ export default function QuizScoreScreen() {
         <View style={styles.separateur} />
 
         <Text style={styles.recapLabel}>
-          {scoreNum} bonne{scoreNum > 1 ? 's' : ''} réponse{scoreNum > 1 ? 's' : ''} sur {totalNum}
+          {compter(scoreNum, 'bonne réponse')} sur {totalNum}
         </Text>
 
         {/* 📖 Une pastille par question, colorée selon la correction réelle renvoyée par le

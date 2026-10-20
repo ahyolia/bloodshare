@@ -3,6 +3,7 @@ import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } fr
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../../../constants/colors';
+import { compter } from '../../../utils/pluriel';
 import { Cartes, getCartes, getCartesCache } from '../../../services/cartes.service';
 import { getNomMois } from '../../../utils/mois';
 
@@ -43,7 +44,7 @@ export default function MoisScreen() {
 
         <Text style={styles.title}>{annee}</Text>
 
-        <Text style={styles.headerCompteur}>{cartesObtenues} cartes obtenues</Text>
+        <Text style={styles.headerCompteur}>{compter(cartesObtenues, 'carte obtenue')}</Text>
       </View>
 
       {loading && <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />}

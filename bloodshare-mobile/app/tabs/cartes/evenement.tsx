@@ -3,6 +3,7 @@ import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } fr
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../../../constants/colors';
+import { accorder } from '../../../utils/pluriel';
 import { Cartes, getCartes, getCartesCache } from '../../../services/cartes.service';
 
 export default function EvenementCategorieScreen() {
@@ -44,7 +45,7 @@ export default function EvenementCategorieScreen() {
 
         {categorie && (
           <Text style={styles.headerCompteur}>
-            {cartesObtenues}/{categorie.cartes.length} cartes obtenues
+            {cartesObtenues}/{categorie.cartes.length} {accorder(categorie.cartes.length, 'carte obtenue')}
           </Text>
         )}
       </View>
