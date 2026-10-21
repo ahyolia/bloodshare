@@ -71,12 +71,30 @@ class QrCodeCentreTest extends TestCase
             ->get('/admin/qr-code-centre')
             ->assertOk()
             ->assertSee('/qrcode-centre/affichage/', false)
-            // 📖 Chaque bouton dans la section qu'il concerne, pas en haut de page.
+            // 📖 Mode secours et régénération en haut, le reste dans sa section.
             ->assertSeeInOrder([
-                'Régénérer le QR Code',
-                "Lien de l'écran du centre", "Ouvrir l'affichage",
-                'QR de secours (imprimé)', 'Imprimer', 'Télécharger (PNG)', 'Télécharger (PDF)', 'Activer le mode secours',
+                'Activer le mode secours', 'Régénérer le QR Code',
+                'Écran du centre', "Ouvrir l'affichage",
+                'QR de secours (imprimé)', 'Imprimer', 'Télécharger',
             ], false);
+    }
+
+    public function test_un_seul_bouton_de_mode_secours_est_affiche(): void
+    {
+        // 📖 Vérifié sur le rendu, pas seulement sur visible() : rendus dans la vue, les deux
+        //    boutons s'affichaient en même temps malgré leur condition.
+        $qr = QrCode::create(['type' => 'centre', 'token' => 'centre-1', 'actif' => true]);
+        $this->actingAs($this->admin());
+
+        $this->get('/admin/qr-code-centre')
+            ->assertSee('Activer le mode secours')
+            ->assertDontSee('Désactiver le mode secours');
+
+        $qr->update(['secours_jusqu_a' => now()->endOfDay()]);
+
+        $this->get('/admin/qr-code-centre')
+            ->assertSee('Désactiver le mode secours')
+            ->assertDontSee('Activer le mode secours');
     }
 
     public function test_le_jeton_affiche_valide_un_don(): void

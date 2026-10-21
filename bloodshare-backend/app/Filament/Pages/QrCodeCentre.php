@@ -39,11 +39,39 @@ class QrCodeCentre extends Page
         return url(URL::signedRoute('qrcode.centre.affichage', ['qrCode' => $this->qrCode], absolute: false));
     }
 
-    // 📖 Seule action de la page entière en haut ; les autres sont affichées dans la section
-    //    qu'elles concernent (vue qr-code-centre.blade.php).
+    // 📖 En haut : les actions qui changent l'état du QR (mode secours, régénération). Les
+    //    autres sont dans la section qu'elles concernent (vue qr-code-centre.blade.php).
+    //    Activer / Désactiver restent ici : une action rendue directement dans la vue
+    //    ignore visible(), et les deux boutons s'affichaient en même temps.
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('activerSecours')
+                ->label('Activer le mode secours')
+                ->icon('heroicon-o-lifebuoy')
+                ->color('warning')
+                ->visible(fn () => ! $this->qrCode->secoursActif())
+                ->requiresConfirmation()
+                ->modalHeading('Activer le QR de secours ?')
+                ->modalDescription("Le QR Code imprimé sera accepté jusqu'à ce soir 23h59. Pendant ce temps, une photo de ce QR permet de valider un don sans être au centre : à n'utiliser que si l'écran est en panne.")
+                ->modalSubmitActionLabel('Activer')
+                ->action(function () {
+                    $this->qrCode->update(['secours_jusqu_a' => now()->endOfDay()]);
+
+                    Notification::make()->title("QR de secours actif jusqu'à ce soir 23h59")->warning()->send();
+                }),
+
+            Action::make('desactiverSecours')
+                ->label('Désactiver le mode secours')
+                ->icon('heroicon-o-lifebuoy')
+                ->color('success')
+                ->visible(fn () => $this->qrCode->secoursActif())
+                ->action(function () {
+                    $this->qrCode->update(['secours_jusqu_a' => null]);
+
+                    Notification::make()->title('QR de secours désactivé')->success()->send();
+                }),
+
             Action::make('regenerer')
                 ->label('Régénérer le QR Code')
                 ->icon('heroicon-o-arrow-path')
@@ -95,53 +123,18 @@ class QrCodeCentre extends Page
             ->openUrlInNewTab();
     }
 
+    // 📖 PNG et PDF regroupés dans un menu « Télécharger » (vue), pour alléger la section.
     public function telechargerSecoursPngAction(): Action
     {
         return Action::make('telechargerSecoursPng')
-            ->label('Télécharger (PNG)')
-            ->icon('heroicon-o-arrow-down-tray')
-            ->color('gray')
+            ->label('PNG')
             ->url(fn () => route('qrcode.telecharger', ['qrCode' => $this->qrCode, 'format' => 'png']));
     }
 
     public function telechargerSecoursPdfAction(): Action
     {
         return Action::make('telechargerSecoursPdf')
-            ->label('Télécharger (PDF)')
-            ->icon('heroicon-o-arrow-down-tray')
-            ->color('gray')
+            ->label('PDF')
             ->url(fn () => route('qrcode.telecharger', ['qrCode' => $this->qrCode, 'format' => 'pdf']));
-    }
-
-    public function activerSecoursAction(): Action
-    {
-        return Action::make('activerSecours')
-            ->label('Activer le mode secours')
-            ->icon('heroicon-o-lifebuoy')
-            ->color('warning')
-            ->visible(fn () => ! $this->qrCode->secoursActif())
-            ->requiresConfirmation()
-            ->modalHeading('Activer le QR de secours ?')
-            ->modalDescription("Le QR Code imprimé sera accepté jusqu'à ce soir 23h59. Pendant ce temps, une photo de ce QR permet de valider un don sans être au centre : à n'utiliser que si l'écran est en panne.")
-            ->modalSubmitActionLabel('Activer')
-            ->action(function () {
-                $this->qrCode->update(['secours_jusqu_a' => now()->endOfDay()]);
-
-                Notification::make()->title("QR de secours actif jusqu'à ce soir 23h59")->warning()->send();
-            });
-    }
-
-    public function desactiverSecoursAction(): Action
-    {
-        return Action::make('desactiverSecours')
-            ->label('Désactiver le mode secours')
-            ->icon('heroicon-o-lifebuoy')
-            ->color('success')
-            ->visible(fn () => $this->qrCode->secoursActif())
-            ->action(function () {
-                $this->qrCode->update(['secours_jusqu_a' => null]);
-
-                Notification::make()->title('QR de secours désactivé')->success()->send();
-            });
     }
 }
