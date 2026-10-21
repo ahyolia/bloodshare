@@ -1,0 +1,7 @@
+# Fuites connues et acceptées, une empreinte gitleaks par ligne (commit:fichier:règle:ligne).
+# Chaque ligne doit être justifiée : une nouvelle fuite n'a rien à faire ici, elle se corrige.
+
+# bloodshare_backup.sql (03/06/2026) : email et hash bcrypt d'un compte de test. Retiré du
+# dépôt (US-29), le compte n'existe plus ni en local ni en prod. L'historique public n'est
+# pas réécrit (décision d'équipe) : le fichier reste dans ce commit.
+7034500f28a1cb3be9364ead74bf4ddc3bba974f:bloodshare_backup.sql:hash-bcrypt:1799
