@@ -187,7 +187,10 @@ class QuizController extends Controller
         $totalQuestions = $quiz->questions->count();
         $bonnesReponses = 0;
 
-        foreach ($validated['reponses'] as $reponseSoumise) {
+        // 📖 keyBy : une question n'est comptée qu'une fois. Sans ça, renvoyer 100 fois la
+        //    même bonne réponse donnait un score de 100/4 et 1 000 points pour un quiz qui
+        //    en vaut 40 (audit cybersécurité).
+        foreach (collect($validated['reponses'])->keyBy('question_id') as $reponseSoumise) {
             $question = $quiz->questions->firstWhere('id', $reponseSoumise['question_id']);
 
             if (! $question) {

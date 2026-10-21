@@ -163,6 +163,20 @@ class QuizTest extends TestCase
         ]])->assertJsonPath('score', 0);
     }
 
+    public function test_une_question_renvoyee_plusieurs_fois_ne_compte_qu_une_fois(): void
+    {
+        // 📖 Audit cybersécurité : chaque copie d'une même bonne réponse comptait un point de
+        //    score, et les points dépassaient le maximum du quiz.
+        $q = $this->questions[0];
+        $copies = array_fill(0, 100, ['question_id' => $q['question']->id, 'reponse_ids' => [$q['bonne']->id]]);
+
+        $this->postJson("/api/quiz/{$this->quiz->id}/soumettre", ['reponses' => $copies])
+            ->assertOk()
+            ->assertJson(['score' => 1, 'points_gagnes' => 10]);
+
+        $this->assertSame(10, $this->user->fresh()->points_cumules);
+    }
+
     public function test_refuse_une_soumission_sans_reponses(): void
     {
         $this->postJson("/api/quiz/{$this->quiz->id}/soumettre", [])
