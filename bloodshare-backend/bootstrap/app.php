@@ -61,5 +61,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => route('filament.admin.auth.login'));
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // 📖 Une erreur SQL était journalisée avec ses valeurs (email, mot de passe haché) et
+        //    la ligne DETAIL de PostgreSQL (« Failing row contains (...) » : toute la ligne,
+        //    sexe compris, donnée de santé), gardées 180 jours. Trouvé par gitleaks dans le
+        //    laravel.log local (audit cybersécurité). On ne garde que la requête avec ses « ? »
+        //    et le message d'erreur, qui suffisent pour déboguer. Ne s'applique qu'au rapport
+        //    et à l'affichage : un `catch (QueryException)` dans le code voit l'original.
+        $exceptions->map(function (\Illuminate\Database\QueryException $e) {
+            $message = preg_replace('/\s*DETAIL:.*$/s', '', (string) $e->getPrevious()?->getMessage());
+
+            return new \Illuminate\Database\QueryException(
+                $e->getConnectionName(),
+                $e->getSql(),
+                [],
+                new \PDOException($message),
+            );
+        });
     })->create();
