@@ -240,6 +240,8 @@ Supprime définitivement le compte et toutes les données personnelles associée
 # 3\. Scan QR Code
 ## `POST /scan`
 _Authentifié._ Endpoint central — appelé après le scan d'un QR Code (centre ou événement). Le token est celui encodé brut dans le QR Code (pas une URL).
+
+> 🔒 **QR centre tournant** : l'écran du centre (lien signé `/qrcode-centre/affichage/{id}`, depuis la page « QR Code centre » du BO) affiche un jeton `C.{fenêtre}.{signature}` qui change toutes les 30 secondes, accepté pendant 60 secondes au plus. Le token brut du QR centre (celui des anciens QR imprimés) est refusé (404). Un QR de secours imprimable (`S.{signature}`, PNG/PDF depuis le BO) n'est accepté que pendant le mode secours, activé dans le BO jusqu'à 23h59 le jour même. Les QR d'événement gardent leur token fixe.
 > ⚠️ Le don du sang reste un acte volontaire et gratuit : **aucun point n'est attribué pour un don ou un événement**. L'action donne uniquement une carte-souvenir, attribuée directement (pas de tirage aléatoire, pas de booster).
 
 **Requête :**

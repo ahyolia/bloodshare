@@ -41,7 +41,7 @@
 | DPO ou personne référente | 🟡 | DPO non obligatoire (petite échelle, pas l'activité principale de l'association). **Action** : désigner un référent RGPD au bureau. |
 | Coordonnées de l'hébergeur | ❌ | Hébergeur pas encore choisi. Champs `[À COMPLÉTER]` dans les mentions légales et la politique. |
 | Registre des activités de traitement | 🟡 | Le tableau « Traitements » du dossier juridique sert de base. **Action** : le reprendre dans un registre tenu par l'association. |
-| Analyse d'impact (AIPD) | 🟡 | Rédigée : `docs/AIPD - Suivi des dons.md`. Aucun risque de gravité importante. Le risque le plus vraisemblable est le partage du QR code fixe du centre (gravité négligeable). **Action** : faire valider par l'ADSB-NC, et mettre en place la régénération régulière du QR code. |
+| Analyse d'impact (AIPD) | 🟡 | Rédigée : `docs/AIPD - Suivi des dons.md`. Aucun risque de gravité importante. Le risque le plus vraisemblable est le partage du QR code fixe du centre (gravité négligeable). **Action** : faire valider par l'ADSB-NC. Le QR code du centre est désormais tournant (US-29). |
 
 ## 2. Information et transparence
 

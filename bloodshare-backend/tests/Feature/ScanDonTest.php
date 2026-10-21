@@ -9,6 +9,7 @@ use App\Models\Parrainage;
 use App\Models\QrCode;
 use App\Models\User;
 use App\Models\UserCarte;
+use App\Services\QrCentreTournant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
@@ -63,6 +64,104 @@ class ScanDonTest extends TestCase
 
         $this->assertNotFalse($verrou, 'Le scan doit verrouiller la ligne utilisateur.');
         $this->assertLessThan($lectureDons, $verrou);
+    }
+
+    // ── QR centre tournant ──────────────────────────────────────
+
+    public function test_refuse_le_token_brut_du_qr_centre(): void
+    {
+        // 📖 Ce que contenaient les anciens QR imprimés : il ne doit plus valider de don.
+        $user = $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $qr = $this->creerQrCentre();
+
+        $this->postJson('/api/scan', ['token' => $qr->token])->assertNotFound();
+
+        $this->assertDatabaseMissing('dons', ['user_id' => $user->id]);
+    }
+
+    public function test_accepte_le_jeton_de_la_fenetre_precedente(): void
+    {
+        $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $jeton = app(QrCentreTournant::class)->jetonCourant($this->creerQrCentre());
+
+        $this->travel(QrCentreTournant::PERIODE_SECONDES)->seconds();
+
+        $this->postJson('/api/scan', ['token' => $jeton])->assertOk();
+    }
+
+    public function test_refuse_un_jeton_expire(): void
+    {
+        $user = $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $jeton = app(QrCentreTournant::class)->jetonCourant($this->creerQrCentre());
+
+        $this->travel(2 * QrCentreTournant::PERIODE_SECONDES)->seconds();
+
+        $this->postJson('/api/scan', ['token' => $jeton])->assertNotFound();
+        $this->assertDatabaseMissing('dons', ['user_id' => $user->id]);
+    }
+
+    public function test_refuse_un_jeton_a_la_signature_falsifiee(): void
+    {
+        $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $jeton = app(QrCentreTournant::class)->jetonCourant($this->creerQrCentre());
+
+        [$prefixe, $fenetre] = explode('.', $jeton);
+
+        $this->postJson('/api/scan', ['token' => "{$prefixe}.{$fenetre}." . str_repeat('0', 20)])
+            ->assertNotFound();
+    }
+
+    public function test_refuse_le_jeton_d_un_qr_centre_regenere(): void
+    {
+        $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $ancien = $this->creerQrCentre();
+        $jeton = app(QrCentreTournant::class)->jetonCourant($ancien);
+
+        $ancien->update(['actif' => false]);
+        $this->creerQrCentre();
+
+        $this->postJson('/api/scan', ['token' => $jeton])->assertNotFound();
+    }
+
+    public function test_refuse_le_qr_de_secours_hors_mode_secours(): void
+    {
+        $user = $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $qr = $this->creerQrCentre();
+
+        $this->postJson('/api/scan', ['token' => app(QrCentreTournant::class)->jetonSecours($qr)])
+            ->assertNotFound();
+        $this->assertDatabaseMissing('dons', ['user_id' => $user->id]);
+    }
+
+    public function test_accepte_le_qr_de_secours_pendant_le_mode_secours(): void
+    {
+        $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $qr = $this->creerQrCentre();
+        $qr->update(['secours_jusqu_a' => now()->endOfDay()]);
+
+        $this->postJson('/api/scan', ['token' => app(QrCentreTournant::class)->jetonSecours($qr)])
+            ->assertOk()
+            ->assertJsonPath('type', 'don');
+    }
+
+    public function test_le_mode_secours_s_arrete_a_la_fin_de_la_journee(): void
+    {
+        $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $qr = $this->creerQrCentre();
+        $qr->update(['secours_jusqu_a' => now()->endOfDay()]);
+
+        $this->travelTo(now()->addDay()->startOfDay());
+
+        $this->postJson('/api/scan', ['token' => app(QrCentreTournant::class)->jetonSecours($qr)])
+            ->assertNotFound();
     }
 
     public function test_refuse_un_qr_code_inconnu(): void
@@ -246,6 +345,6 @@ class ScanDonTest extends TestCase
 
     private function scanner(QrCode $qr)
     {
-        return $this->postJson('/api/scan', ['token' => $qr->token]);
+        return $this->postJson('/api/scan', ['token' => app(QrCentreTournant::class)->jetonCourant($qr)]);
     }
 }

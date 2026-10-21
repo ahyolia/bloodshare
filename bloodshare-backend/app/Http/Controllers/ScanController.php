@@ -10,6 +10,7 @@ use App\Models\UserCarte;
 use App\Services\BadgeService;
 use App\Services\DefiService;
 use App\Services\ParrainageService;
+use App\Services\QrCentreTournant;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,9 +22,13 @@ class ScanController extends Controller
     {
         $request->validate(['token' => 'required|string']);
 
-        $qrCode = QrCode::where('token', $request->token)
-            ->where('actif', true)
-            ->first();
+        // 📖 Le QR centre n'est plus accepté que sous sa forme tournante : son token brut est
+        //    celui des anciens QR imprimés ou téléchargés, qui ne doivent plus valider de don.
+        $qrCode = app(QrCentreTournant::class)->verifier($request->token)
+            ?? QrCode::where('token', $request->token)
+                ->where('type', 'evenement')
+                ->where('actif', true)
+                ->first();
 
         if (! $qrCode) {
             return response()->json(['message' => 'QR Code invalide ou expiré.'], 404);

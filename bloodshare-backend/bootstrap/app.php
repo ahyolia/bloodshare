@@ -50,7 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // 📖 Le middleware `auth` redirige un visiteur non connecté vers la route nommée
         //    `login`, que Laravel ne déclare pas ici (la connexion est celle de Filament) :
-        //    ouvrir /admin/qrcode-centre/download sans session donnait une 500
+        //    une route web protégée par `auth` ouverte sans session donnait une 500
         //    « Route [login] not defined ». Les appels API (JSON) gardent leur 401.
         $middleware->redirectGuestsTo(fn () => route('filament.admin.auth.login'));
     })

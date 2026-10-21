@@ -137,7 +137,7 @@ class EvenementResource extends Resource
                     ->color('gray')
                     ->modalHeading('QR Code de l\'événement')
                     ->modalContent(fn (Evenement $record) => view('filament.modals.qr-code-token', [
-                        'token' => $record->qrCode?->token,
+                        'qrCode' => $record->qrCode,
                     ]))
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Fermer'),
