@@ -15,6 +15,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -26,6 +27,16 @@ class UserResource extends Resource
     protected static ?string $navigationGroup = 'Utilisateurs';
     protected static ?string $navigationLabel = 'Utilisateurs';
     protected static ?string $modelLabel = 'utilisateur';
+
+    // 📖 Donneurs uniquement : les comptes du BO se gèrent dans « Admins », réservé au
+    //    super_admin. Sans ce filtre, un admin pouvait suspendre ou supprimer le super_admin
+    //    depuis sa fiche utilisateur (audit cybersécurité). Le filtre s'applique aussi à
+    //    l'URL directe /admin/users/{id} (404).
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->whereDoesntHave('roles', fn ($q) => $q->whereIn('name', ['admin', 'super_admin']));
+    }
     protected static ?string $pluralModelLabel = 'Utilisateurs';
 
     public static function table(Table $table): Table

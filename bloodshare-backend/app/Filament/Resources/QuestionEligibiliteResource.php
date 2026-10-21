@@ -117,6 +117,23 @@ class QuestionEligibiliteResource extends Resource
         return auth()->user()->hasRole('super_admin');
     }
 
+    // 📖 Même règle pour créer et supprimer : un admin pouvait ajouter une question médicale
+    //    ou les supprimer en masse, alors qu'il ne doit que les activer/désactiver.
+    public static function canCreate(): bool
+    {
+        return auth()->user()->hasRole('super_admin');
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->user()->hasRole('super_admin');
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return auth()->user()->hasRole('super_admin');
+    }
+
     public static function getPages(): array
     {
         return [

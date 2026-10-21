@@ -21,7 +21,8 @@ class ViewAdmin extends ViewRecord
                 ->label('Suspendre')
                 ->color('warning')
                 ->icon('heroicon-o-no-symbol')
-                ->visible(fn (): bool => $this->record->statut === 'actif')
+                // 📖 Jamais sur son propre compte : le super_admin se fermerait l'accès au BO.
+                ->visible(fn (): bool => $this->record->statut === 'actif' && ! $this->record->is(auth()->user()))
                 ->form([
                     Forms\Components\TextInput::make('motif')
                         ->label('Motif de suspension')
@@ -48,10 +49,14 @@ class ViewAdmin extends ViewRecord
                 ->label('Supprimer')
                 ->color('danger')
                 ->icon('heroicon-o-trash')
+                ->visible(fn (): bool => ! $this->record->is(auth()->user()))
                 ->requiresConfirmation()
                 ->modalDescription('Cette action est irréversible.')
                 ->action(function (): void {
-                    $this->record->delete();
+                    // 📖 Même suppression que pour un donneur (rôles retirés, tokens révoqués,
+                    //    données effacées) : delete() effaçait la ligne, à la différence de
+                    //    tous les autres chemins de suppression.
+                    $this->record->anonymiser();
                     $this->redirect(AdminResource::getUrl('index'));
                 }),
         ];
