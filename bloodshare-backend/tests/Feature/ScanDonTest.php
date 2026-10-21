@@ -10,6 +10,7 @@ use App\Models\QrCode;
 use App\Models\User;
 use App\Models\UserCarte;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -39,6 +40,29 @@ class ScanDonTest extends TestCase
             ->assertJsonPath('carte_obtenue.deja_possedee', false);
         $this->assertDatabaseHas('dons', ['user_id' => $user->id, 'statut' => 'valide']);
         $this->assertDatabaseHas('user_cartes', ['user_id' => $user->id, 'carte_id' => $carte->id]);
+    }
+
+    public function test_verrouille_la_ligne_utilisateur_avant_de_controler_l_eligibilite(): void
+    {
+        // 📖 Une vraie course entre deux requêtes ne se reproduit pas dans un seul process
+        //    PHPUnit : on vérifie que le verrou est pris, et avant la lecture des dons.
+        //    Sans lui, 8 scans simultanés créaient 5 dons (reproduit avec curl en parallèle).
+        $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $qr = $this->creerQrCentre();
+
+        $requetes = [];
+        DB::listen(function ($query) use (&$requetes) {
+            $requetes[] = $query->sql;
+        });
+
+        $this->scanner($qr)->assertOk();
+
+        $verrou = collect($requetes)->search(fn ($sql) => str_contains($sql, 'from "users"') && str_contains($sql, 'for update'));
+        $lectureDons = collect($requetes)->search(fn ($sql) => str_contains($sql, 'from "dons"'));
+
+        $this->assertNotFalse($verrou, 'Le scan doit verrouiller la ligne utilisateur.');
+        $this->assertLessThan($lectureDons, $verrou);
     }
 
     public function test_refuse_un_qr_code_inconnu(): void
