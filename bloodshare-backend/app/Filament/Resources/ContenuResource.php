@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\ChampImage;
 use App\Filament\Resources\ContenuResource\Pages;
 use App\Models\Contenu;
 use Filament\Forms;
@@ -73,10 +74,7 @@ class ContenuResource extends Resource
                     ->columnSpanFull()
                     ->visible(fn ($get) => $get('type') === 'fiche_info'),
 
-                Forms\Components\FileUpload::make('image_url')
-                    ->label('Image')
-                    ->image()
-                    ->directory('contenus')
+                ChampImage::make('image_url', 'contenus')
                     // 📖 image_url est exposé en URL absolue (accesseur, pour l'app mobile) ;
                     //    FileUpload attend le chemin relatif — sans ceci, l'image disparaît à
                     //    l'édition. Pas de ->formatStateUsing() ici : il écraserait l'hydratation

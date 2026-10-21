@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\ChampImage;
 use App\Filament\Resources\CarteResource\Pages;
 use App\Models\Carte;
 use Filament\Forms;
@@ -63,10 +64,7 @@ class CarteResource extends Resource
                     ->rows(4)
                     ->columnSpanFull(),
 
-                Forms\Components\FileUpload::make('image_url')
-                    ->label('Image')
-                    ->image()
-                    ->directory('cartes')
+                ChampImage::make('image_url', 'cartes')
                     // 📖 image_url est exposé en URL absolue (accesseur, pour l'app mobile) ;
                     //    FileUpload attend le chemin relatif — sans ceci, l'image disparaît à
                     //    l'édition. Pas de ->formatStateUsing() ici : il écraserait l'hydratation

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\ChampImage;
 use App\Filament\Resources\EvenementResource\Pages;
 use App\Models\Evenement;
 use Filament\Forms;
@@ -48,10 +49,7 @@ class EvenementResource extends Resource
                     ->required()
                     ->maxLength(255),
 
-                Forms\Components\FileUpload::make('image_url')
-                    ->label('Image')
-                    ->image()
-                    ->directory('evenements')
+                ChampImage::make('image_url', 'evenements')
                     // 📖 image_url est exposé en URL absolue (accesseur, pour l'app mobile) ;
                     //    FileUpload attend le chemin relatif — sans ceci, l'image disparaît à
                     //    l'édition. Pas de ->formatStateUsing() ici : il écraserait l'hydratation
