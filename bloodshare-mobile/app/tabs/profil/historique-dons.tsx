@@ -3,19 +3,18 @@ import { useCallback, useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import { CarteChiffre } from '../../../components/ui/CarteChiffre';
 import { Chargement } from '../../../components/ui/Chargement';
 import { EnTeteSousPage } from '../../../components/ui/EnTeteSousPage';
 import { EtatErreur } from '../../../components/ui/EtatErreur';
 import { EtatVide } from '../../../components/ui/EtatVide';
 import { entreeSousPage } from '../../../constants/animations';
 import { Theme } from '../../../constants/colors';
-import { accorder } from '../../../utils/pluriel';
+import { compter } from '../../../utils/pluriel';
 import { Espace, Rayon } from '../../../constants/spacing';
 import { TEINTES_PASTILLE } from '../../../constants/teintes';
 import { Typo } from '../../../constants/typography';
 import { Don, DonsReponse, getDons } from '../../../services/dons.service';
-import { formaterDateHeureCourte, formaterDateHeureLongue } from '../../../utils/dates';
+import { formaterDateHeureLongue } from '../../../utils/dates';
 import { CONTENU_MARGE_BASSE } from '../_layout';
 
 // 📖 FlatList vs ScrollView :
@@ -117,36 +116,31 @@ function EspaceListe() {
   return <View style={styles.espaceListe} />;
 }
 
-/** Trois chiffres clés : nombre de dons, date du dernier, cartes-souvenirs obtenues. */
+/**
+ * Le remerciement, mis en avant : fond aubergine et texte crème, comme le bloc de niveau
+ * de la page Points. Le pétrole pâle essayé avant manquait de lisibilité.
+ * 📖 Pas de blocs de chiffres ici : ils reprenaient ceux de la page Profil et
+ *    brouillaient la hiérarchie entre les deux pages.
+ * 📖 Contrastes sur l'aubergine : texte crème ≈ 13:1, goutte lime 8,98:1.
+ */
 function Resume({ dons, total }: { dons: Don[]; total: number }) {
-  // 📖 GET /dons renvoie les dons du plus récent au plus ancien.
-  const dernier = dons[0]?.date_don;
-  const cartes = dons.filter((d) => d.carte_obtenue).length;
+  // 📖 GET /dons renvoie les dons du plus récent au plus ancien : le premier est le dernier de la liste.
+  const premier = dons[dons.length - 1]?.date_don;
 
   return (
-    <View style={styles.resume}>
-      <CarteChiffre
-        icone="water-outline"
-        teinte="corail"
-        inclinaison="-3deg"
-        valeur={String(total)}
-        libelle={accorder(total, 'Don')}
-      />
-      <CarteChiffre
-        icone="calendar-outline"
-        teinte="petrole"
-        inclinaison="2deg"
-        valeur={dernier ? formaterDateHeureCourte(dernier) : '–'}
-        libelle="Dernier don"
-      />
-      <CarteChiffre
-        icone="albums-outline"
-        teinte="mousse"
-        inclinaison="-2deg"
-        valeur={String(cartes)}
-        libelle={accorder(cartes, 'Carte')}
-      />
-    </View>
+    <Animated.View entering={entreeSousPage} style={styles.merci}>
+      <Ionicons name="water" size={22} color={Theme.accent.signatureAplat} />
+      <View style={styles.merciTextes}>
+        <Text style={[Typo.corpsFort, styles.merciTitre]}>
+          {total > 1 ? `Merci pour tes ${compter(total, 'don')} ♡` : 'Merci pour ton don ❤️'}
+        </Text>
+        {premier && (
+          <Text style={[Typo.legende, styles.merciTexte]}>
+            {`Depuis le ${formaterDateHeureLongue(premier)}, chacun d'eux compte.`}
+          </Text>
+        )}
+      </View>
+    </Animated.View>
   );
 }
 
@@ -193,10 +187,23 @@ const styles = StyleSheet.create({
     paddingBottom: CONTENU_MARGE_BASSE,
     flexGrow: 1,
   },
-  resume: {
+  merci: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: Espace[3],
-    marginBottom: Espace[2],
+    padding: Espace[4],
+    borderRadius: Rayon.lg,
+    backgroundColor: Theme.texte.principal,
+  },
+  merciTextes: {
+    flex: 1,
+    gap: 2,
+  },
+  merciTitre: {
+    color: Theme.texte.surAccent,
+  },
+  merciTexte: {
+    color: Theme.texte.surAccent,
   },
   sectionTitre: {
     color: Theme.texte.principal,

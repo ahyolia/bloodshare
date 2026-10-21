@@ -88,7 +88,10 @@ function EspaceListe() {
 
 /**
  * 📖 Surélevé = interactif : une notification non lue se touche (elle passe en lue),
- *    elle flotte. Une fois lue, elle n'a plus d'action : à plat, texte adouci.
+ *    elle flotte. Une fois lue, elle n'a plus d'action : plus de carte du tout, posée
+ *    à plat sur la page, titre adouci. Adouci par la couleur (aubergine 500, 6:1 sur
+ *    le fond de page) et non par la transparence, qui ferait passer le texte sous les
+ *    4,5:1 exigés.
  */
 function LigneNotification({ notification, onPress }: { notification: NotificationItem; onPress: () => void }) {
   const nonLue = !notification.lue;
@@ -114,7 +117,7 @@ function LigneNotification({ notification, onPress }: { notification: Notificati
 
         <View style={styles.textes}>
           <View style={styles.titreLigne}>
-            <Text style={[nonLue ? Typo.corpsFort : Typo.corps, styles.titre]} numberOfLines={2}>
+            <Text style={[nonLue ? Typo.corpsFort : Typo.corps, styles.titre, !nonLue && styles.titreLu]} numberOfLines={2}>
               {notification.titre}
             </Text>
             <Text style={[Typo.legende, styles.date]}>{formatDate(notification.date)}</Text>
@@ -162,9 +165,9 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.fond.surface,
     ...Ombre.flottante,
   },
+  // Pas de fond ni de bordure : la notification lue n'est plus une carte.
   ligneLue: {
-    borderWidth: 1,
-    borderColor: Theme.fond.bordure,
+    paddingVertical: Espace[3],
   },
   presse: {
     opacity: 0.85,
@@ -194,6 +197,9 @@ const styles = StyleSheet.create({
   titre: {
     flex: 1,
     color: Theme.texte.principal,
+  },
+  titreLu: {
+    color: Theme.texte.secondaire,
   },
   date: {
     color: Theme.texte.secondaire,

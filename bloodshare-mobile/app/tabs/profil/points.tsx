@@ -79,10 +79,10 @@ export default function PointsScreen() {
 
         {!loading && !error && profil && historique && (
           <>
-            {/* NIVEAU — le bloc vedette (lime) de l'écran */}
+            {/* NIVEAU — le bloc vedette (bleu canard pâle, barre aubergine) de l'écran */}
             <Animated.View entering={entreeSousPage}>
               <BarreProgression
-                variante="surLime"
+                variante="surPetrole"
                 titre={`Niveau ${profil.niveau.niveau} — ${profil.niveau.label}`}
                 valeur={profil.niveau.progression}
                 max={100}
