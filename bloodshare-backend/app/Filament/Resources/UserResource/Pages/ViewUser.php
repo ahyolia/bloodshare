@@ -25,10 +25,7 @@ class ViewUser extends ViewRecord
                         ->required(),
                 ])
                 ->action(function (array $data): void {
-                    $this->record->update([
-                        'statut' => 'suspendu',
-                        'motif_suspension' => $data['motif'],
-                    ]);
+                    $this->record->suspendre($data['motif']);
                 }),
 
             Actions\Action::make('reactiver')

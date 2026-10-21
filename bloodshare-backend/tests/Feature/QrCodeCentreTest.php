@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\QrCode;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class QrCodeCentreTest extends TestCase
@@ -30,7 +31,7 @@ class QrCodeCentreTest extends TestCase
 
         QrCode::create(['type' => 'centre', 'token' => 'centre-1', 'actif' => true]);
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs($this->admin())
             ->get('/admin/qrcode-centre/download')
             ->assertOk()
             ->assertHeader('Content-Type', 'image/png')
@@ -41,8 +42,36 @@ class QrCodeCentreTest extends TestCase
     {
         QrCode::create(['type' => 'centre', 'token' => 'centre-1', 'actif' => false]);
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs($this->admin())
             ->get('/admin/qrcode-centre/download')
             ->assertNotFound();
+    }
+
+    public function test_refuse_une_session_sans_acces_au_backoffice(): void
+    {
+        QrCode::create(['type' => 'centre', 'token' => 'centre-1', 'actif' => true]);
+
+        $this->actingAs(User::factory()->create())
+            ->get('/admin/qrcode-centre/download')
+            ->assertForbidden();
+    }
+
+    public function test_refuse_un_admin_suspendu(): void
+    {
+        QrCode::create(['type' => 'centre', 'token' => 'centre-1', 'actif' => true]);
+
+        $this->actingAs($this->admin(['statut' => 'suspendu']))
+            ->get('/admin/qrcode-centre/download')
+            ->assertForbidden();
+    }
+
+    private function admin(array $attributs = []): User
+    {
+        Role::findOrCreate('admin');
+
+        $admin = User::factory()->create(['statut' => 'actif', ...$attributs]);
+        $admin->assignRole('admin');
+
+        return $admin;
     }
 }

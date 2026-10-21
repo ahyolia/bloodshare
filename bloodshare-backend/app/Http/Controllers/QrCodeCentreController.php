@@ -3,12 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\QrCode;
+use Filament\Facades\Filament;
 use SimpleSoftwareIO\QrCode\Facades\QrCode as QrCodeGenerator;
 
 class QrCodeCentreController extends Controller
 {
     public function download()
     {
+        // 📖 Route hors du panel Filament : le middleware `auth` seul laissait passer toute
+        //    session ouverte, y compris celle d'un admin suspendu depuis.
+        abort_unless(auth()->user()->canAccessPanel(Filament::getPanel('admin')), 403);
+
         $qrCode = QrCode::where('type', 'centre')->where('actif', true)->first();
 
         abort_if(! $qrCode, 404, 'Aucun QR Code centre actif.');

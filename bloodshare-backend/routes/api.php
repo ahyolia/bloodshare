@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Middleware\MetAJourDerniereActivite;
+use App\Http\Middleware\RefuseCompteBloque;
 use App\Models\DocumentJuridique;
 use App\Http\Controllers\Api\BadgeController;
 use App\Http\Controllers\Api\CarteController;
@@ -42,7 +43,7 @@ Route::prefix('auth')->group(function () {
 });
 
 // Profil (connecté obligatoire)
-Route::middleware(['auth:sanctum', MetAJourDerniereActivite::class])->group(function () {
+Route::middleware(['auth:sanctum', RefuseCompteBloque::class, MetAJourDerniereActivite::class])->group(function () {
     Route::get('/me', [ProfilController::class, 'show']);
     Route::put('/me', [ProfilController::class, 'update']);
     Route::delete('/me', [ProfilController::class, 'destroy']);

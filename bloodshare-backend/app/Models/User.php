@@ -126,6 +126,28 @@ class User extends Authenticatable implements FilamentUser, HasName
         });
     }
 
+    // 📖 Changer le statut ne suffisait pas : login() ne le vérifiait pas et les tokens déjà
+    //    émis restaient valables, un compte suspendu gardait donc tout son accès (audit
+    //    cybersécurité). Appelé depuis les deux fiches du BO (utilisateur et admin).
+    public function suspendre(string $motif): void
+    {
+        DB::transaction(function () use ($motif) {
+            $this->update([
+                'statut' => 'suspendu',
+                'motif_suspension' => $motif,
+            ]);
+
+            $this->tokens()->delete();
+        });
+    }
+
+    // 📖 Pas `statut !== 'actif'` : un modèle tout juste créé n'a pas encore la valeur par
+    //    défaut de la base (statut null tant qu'il n'est pas relu).
+    public function estBloque(): bool
+    {
+        return in_array($this->statut, ['suspendu', 'supprime'], true);
+    }
+
     public function scopeNonSupprimes($query)
     {
         return $query->where('statut', '!=', 'supprime');
@@ -190,7 +212,9 @@ class User extends Authenticatable implements FilamentUser, HasName
     //bloque l'accès au backoffice pour les utilisateurs normaux — seuls les admins et super admins peuvent se connecter.
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->hasRole('super_admin') || $this->hasRole('admin');
+        // 📖 Vérifié par Filament à chaque requête : un admin suspendu perd l'accès au BO même
+        //    avec une session déjà ouverte.
+        return ($this->hasRole('super_admin') || $this->hasRole('admin')) && ! $this->estBloque();
     }
 
     

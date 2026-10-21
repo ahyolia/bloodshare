@@ -149,6 +149,14 @@ class AuthController extends Controller
         //    ne peut retrouver ce compte par son ancien email — Auth::attempt aurait déjà
         //    échoué avant d'arriver ici. Retiré (revue @nevizsh sur la PR RGPD).
 
+        // 📖 Un compte suspendu, lui, garde son email : sans ce contrôle, il obtenait un
+        //    nouveau token à chaque connexion.
+        if ($user->statut === 'suspendu') {
+            return response()->json([
+                'message' => "Ton compte est suspendu. Contacte l'association pour en savoir plus.",
+            ], 403);
+        }
+
         $user->update(['derniere_connexion' => now()]);
 
         $token = $user->createToken('mobile')->plainTextToken;
