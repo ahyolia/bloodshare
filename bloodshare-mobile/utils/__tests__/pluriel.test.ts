@@ -1,7 +1,7 @@
 import { accorder, compter } from '../pluriel';
 
 describe('accorder', () => {
-  it('reste au singulier jusqu’à 1 inclus, comme en français', () => {
+  it("reste au singulier jusqu'à 1 inclus, comme en français", () => {
     expect(accorder(0, 'don')).toBe('don');
     expect(accorder(1, 'don')).toBe('don');
     expect(accorder(1.5, 'point')).toBe('point');
@@ -11,7 +11,7 @@ describe('accorder', () => {
     expect(accorder(2, 'Don')).toBe('Dons');
   });
 
-  it('accorde chaque mot d’une expression', () => {
+  it("accorde chaque mot d'une expression", () => {
     expect(accorder(3, 'parrainage validé')).toBe('parrainages validés');
   });
 

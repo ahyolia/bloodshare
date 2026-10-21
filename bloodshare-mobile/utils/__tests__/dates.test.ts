@@ -6,7 +6,7 @@ describe('formaterDateLongue', () => {
       expect(formaterDateLongue('2026-12-29')).toBe('29 décembre 2026');
     });
 
-    it('lit la date renvoyée par le contrat d’API', () => {
+    it("lit la date renvoyée par le contrat d'API", () => {
       expect(formaterDateLongue('2026-07-15')).toBe('15 juillet 2026');
     });
   });
@@ -50,7 +50,7 @@ describe('formaterDateLongue', () => {
 // 📖 Heures choisies à midi UTC : le jour reste le même quel que soit le fuseau
 //    de la machine qui lance les tests (de UTC−11 à UTC+11).
 describe('formaterDateHeureLongue', () => {
-  it('formate une date-heure de l’API', () => {
+  it("formate une date-heure de l'API", () => {
     expect(formaterDateHeureLongue('2026-05-10T12:00:00Z')).toBe('10 mai 2026');
   });
 
@@ -64,7 +64,7 @@ describe('formaterDateHeureLongue', () => {
 });
 
 describe('formaterDateHeureCourte', () => {
-  it('retire l’année', () => {
+  it("retire l'année", () => {
     expect(formaterDateHeureCourte('2026-08-03T12:00:00Z')).toBe('3 août');
   });
 

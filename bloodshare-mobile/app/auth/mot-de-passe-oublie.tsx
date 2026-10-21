@@ -27,7 +27,7 @@ const ETAPES = [
   },
   {
     titre: "L'équipe réinitialise ton mot de passe",
-    detail: 'Un membre de l’association s’en occupe à la main.',
+    detail: "Un membre de l'association s'en occupe à la main.",
   },
   {
     titre: 'Tu reçois un mot de passe temporaire',
@@ -72,13 +72,13 @@ export default function MotDePasseOublieScreen() {
             </View>
           </Groupe>
 
-          <Text style={[Typo.legende, styles.adresseLibelle]}>Adresse de l’équipe</Text>
+          <Text style={[Typo.legende, styles.adresseLibelle]}>{"Adresse de l'équipe"}</Text>
           <Text style={[Typo.corpsFort, styles.adresse]} selectable>
             {EMAIL_CONTACT}
           </Text>
 
           <Bouton
-            libelle="Écrire à l’équipe"
+            libelle="Écrire à l'équipe"
             icone="mail-outline"
             onPress={ecrire}
             accessibilityHint="Ouvre ton application mail avec l'adresse de l'équipe"

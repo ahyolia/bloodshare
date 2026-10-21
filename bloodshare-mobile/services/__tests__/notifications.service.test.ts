@@ -59,7 +59,7 @@ describe('getNotifications', () => {
     expect(items[0].corps).toBe('');
   });
 
-  it('indique la page suivante tant qu’il en reste', async () => {
+  it("indique la page suivante tant qu'il en reste", async () => {
     apiGet.mockResolvedValue(page(1, 3));
 
     await expect(getNotifications()).resolves.toMatchObject({ pageSuivante: 2 });

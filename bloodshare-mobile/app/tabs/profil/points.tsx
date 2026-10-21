@@ -109,7 +109,7 @@ export default function PointsScreen() {
               <View style={styles.note}>
                 <Ionicons name="heart-outline" size={18} color={Theme.texte.secondaire} />
                 <Text style={[Typo.legende, styles.noteTexte]}>
-                  Un don de sang ne rapporte jamais de points : c’est un geste gratuit.
+                  {"Un don de sang ne rapporte jamais de points : c'est un geste gratuit."}
                 </Text>
               </View>
             </Animated.View>

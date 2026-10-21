@@ -136,7 +136,7 @@ export default function BadgesScreen() {
             </Animated.View>
 
             {badgesFiltres.length === 0 ? (
-              <Text style={[Typo.corps, styles.aucun]}>Aucun badge dans cette catégorie pour l’instant.</Text>
+              <Text style={[Typo.corps, styles.aucun]}>{"Aucun badge dans cette catégorie pour l'instant."}</Text>
             ) : (
               // 📖 La clé change avec le filtre : la grille est recréée et rejoue son
               //    animation d'entrée, ce qui signale que la liste a changé.
@@ -188,7 +188,7 @@ function TuileBadge({ badge, onPress }: { badge: Badge; onPress: () => void }) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${badge.nom}, ${badge.obtenu ? 'badge obtenu' : 'badge à débloquer'}`}
-      accessibilityHint="Affiche comment l’obtenir"
+      accessibilityHint="Affiche comment l'obtenir"
       style={({ pressed }) => [styles.tuile, pressed && styles.tuilePresse]}
     >
       <View
@@ -246,7 +246,7 @@ function DetailBadge({ badge }: { badge: Badge }) {
       </View>
 
       <View style={styles.detailBloc}>
-        <Text style={[Typo.legendeForte, { color: Theme.texte.secondaire }]}>Comment l’obtenir ?</Text>
+        <Text style={[Typo.legendeForte, { color: Theme.texte.secondaire }]}>{"Comment l'obtenir ?"}</Text>
         <Text style={[Typo.corps, { color: Theme.texte.principal }]}>{info.condition}</Text>
         <Text style={[Typo.legende, styles.description]}>{info.description}</Text>
       </View>

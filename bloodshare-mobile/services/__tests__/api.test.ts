@@ -45,7 +45,7 @@ describe('client api', () => {
     expect((config.headers as AxiosHeaders).get('Authorization')).toBe('Bearer mon-token');
   });
 
-  it('n’ajoute aucun en-tête Authorization sans token', async () => {
+  it("n'ajoute aucun en-tête Authorization sans token", async () => {
     mockGetToken.mockResolvedValue(null);
     adaptateur.mockImplementation(repondre(200));
 
@@ -55,7 +55,7 @@ describe('client api', () => {
     expect((config.headers as AxiosHeaders).has('Authorization')).toBe(false);
   });
 
-  it('pointe vers l’URL de l’API et demande du JSON', async () => {
+  it("pointe vers l'URL de l'API et demande du JSON", async () => {
     mockGetToken.mockResolvedValue(null);
     adaptateur.mockImplementation(repondre(200));
 
@@ -66,7 +66,7 @@ describe('client api', () => {
     expect((config.headers as AxiosHeaders).get('Accept')).toBe('application/json');
   });
 
-  it('efface la session sur une réponse 401 et propage l’erreur', async () => {
+  it("efface la session sur une réponse 401 et propage l'erreur", async () => {
     mockGetToken.mockResolvedValue('token-expire');
     adaptateur.mockImplementation(repondre(401));
 

@@ -60,7 +60,7 @@ describe('getProfil', () => {
     expect(profil.niveau.niveau).toBe(3);
   });
 
-  it('écarte le sexe renvoyé par l’API (contrainte anonymat)', async () => {
+  it("écarte le sexe renvoyé par l'API (contrainte anonymat)", async () => {
     apiGet.mockResolvedValue(reponseApi);
 
     const profil = await getProfil();
@@ -145,7 +145,7 @@ describe('supprimerCompte', () => {
     expect(apiDelete).toHaveBeenCalledWith('/me');
   });
 
-  it('propage l’erreur pour que l’écran ne déconnecte pas à tort', async () => {
+  it("propage l'erreur pour que l'écran ne déconnecte pas à tort", async () => {
     apiDelete.mockRejectedValue(new Error('Network Error'));
 
     await expect(supprimerCompte()).rejects.toThrow('Network Error');

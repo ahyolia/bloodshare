@@ -35,7 +35,7 @@ describe('Badge', () => {
 });
 
 describe('BarreProgression', () => {
-  it('expose sa valeur aux lecteurs d’écran', async () => {
+  it("expose sa valeur aux lecteurs d'écran", async () => {
     await render(<BarreProgression titre="Collection 2026" valeur={4} max={12} detail="4 cartes sur 12" />);
 
     const barre = screen.getByRole('progressbar', { name: 'Collection 2026' });
@@ -48,7 +48,7 @@ describe('BarreProgression', () => {
     expect(screen.getByText('71 %')).toBeTruthy();
   });
 
-  it('ne déborde pas quand l’objectif est dépassé', async () => {
+  it("ne déborde pas quand l'objectif est dépassé", async () => {
     await render(<BarreProgression titre="Défi du mois" valeur={310} max={300} />);
 
     expect(screen.getByText('100 %')).toBeTruthy();

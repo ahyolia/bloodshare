@@ -52,7 +52,7 @@ describe('DialogueProvider — confirmer', () => {
     await waitFor(() => expect(onReponse).toHaveBeenCalledWith(false));
   });
 
-  it('renvoie true quand on choisit l’action', async () => {
+  it("renvoie true quand on choisit l'action", async () => {
     const onReponse = await ouvrirConfirmation();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Supprimer définitivement' }));

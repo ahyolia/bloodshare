@@ -75,14 +75,14 @@ describe('subscribe', () => {
     expect(mockApiPost).not.toHaveBeenCalled();
   });
 
-  it('renvoie false si l’utilisateur refuse la permission', async () => {
+  it("renvoie false si l'utilisateur refuse la permission", async () => {
     const { pushManager } = simulerNavigateur('denied');
 
     await expect(charger().subscribe()).resolves.toBe(false);
     expect(pushManager.subscribe).not.toHaveBeenCalled();
   });
 
-  it('abonne le navigateur et envoie l’abonnement au backend', async () => {
+  it("abonne le navigateur et envoie l'abonnement au backend", async () => {
     const { pushManager } = simulerNavigateur('granted');
 
     await expect(charger().subscribe()).resolves.toBe(true);
@@ -120,7 +120,7 @@ describe('unsubscribe', () => {
     });
   });
 
-  it('ne fait rien s’il n’y a aucun abonnement', async () => {
+  it("ne fait rien s'il n'y a aucun abonnement", async () => {
     simulerNavigateur('granted', null);
 
     await charger().unsubscribe();

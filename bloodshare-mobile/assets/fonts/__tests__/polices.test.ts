@@ -10,7 +10,7 @@ import path from 'path';
 const DOSSIER = path.join(__dirname, '..');
 const layout = readFileSync(path.join(__dirname, '..', '..', '..', 'app', '_layout.tsx'), 'utf8');
 
-describe('polices de l’app', () => {
+describe("polices de l'app", () => {
   it.each(['NunitoSans-Regular.ttf', 'NunitoSans-Bold.ttf', 'Pacifico-Regular.ttf'])(
     '%s est présente dans assets/fonts',
     (fichier) => {
@@ -22,7 +22,7 @@ describe('polices de l’app', () => {
     expect(existsSync(path.join(DOSSIER, licence))).toBe(true);
   });
 
-  it('aucune police n’est chargée depuis node_modules', () => {
+  it("aucune police n'est chargée depuis node_modules", () => {
     expect(layout).not.toMatch(/require\([^)]*node_modules/);
     expect(layout).not.toMatch(/@expo-google-fonts/);
   });

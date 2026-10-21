@@ -15,7 +15,7 @@ describe('typographie', () => {
     expect(layout).toContain(`"${famille}"`);
   });
 
-  it.each(Object.entries(Typo))('%s n’utilise pas fontWeight', (_nom, style) => {
+  it.each(Object.entries(Typo))("%s n'utilise pas fontWeight", (_nom, style) => {
     expect(style).not.toHaveProperty('fontWeight');
   });
 

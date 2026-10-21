@@ -133,7 +133,7 @@ export default function ParrainageScreen() {
                 <Ionicons name="lock-closed-outline" size={18} color={Theme.info.icone} />
               </View>
               <Text style={[Typo.legende, styles.noteTexte]}>
-                Par respect de la vie privée, l’identité de tes filleuls n’est jamais affichée.
+                {"Par respect de la vie privée, l'identité de tes filleuls n'est jamais affichée."}
               </Text>
             </Animated.View>
           </>

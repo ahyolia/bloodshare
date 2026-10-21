@@ -101,8 +101,8 @@ export default function HistoriqueDonsScreen() {
         ListEmptyComponent={
           !loading && !error && data ? (
             <EtatVide
-              titre="Ton premier don t’attend"
-              message="Scanne le QR code au centre de don ou lors d’une collecte : il apparaîtra ici."
+              titre="Ton premier don t'attend"
+              message="Scanne le QR code au centre de don ou lors d'une collecte : il apparaîtra ici."
               libelleAction="Aller au don"
               onAction={() => router.push('/tabs/don')}
             />

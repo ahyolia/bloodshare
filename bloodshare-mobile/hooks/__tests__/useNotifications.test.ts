@@ -35,7 +35,7 @@ describe('useNotifications', () => {
     expect(result.current.notifications).toEqual([notif('a')]);
   });
 
-  it('est en chargement tant que le serveur n’a pas répondu', async () => {
+  it("est en chargement tant que le serveur n'a pas répondu", async () => {
     mockGetNotifications.mockReturnValue(new Promise(() => {}));
 
     const { result } = await renderHook(() => useNotifications());

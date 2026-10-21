@@ -25,7 +25,7 @@ describe('EnTeteSousPage', () => {
     expect(screen.getByRole('header', { name: 'Mes badges' })).toBeTruthy();
   });
 
-  it('revient à l’écran précédent', async () => {
+  it("revient à l'écran précédent", async () => {
     await render(<EnTeteSousPage titre="Paramètres" />);
 
     await fireEvent.press(screen.getByRole('button', { name: 'Retour' }));

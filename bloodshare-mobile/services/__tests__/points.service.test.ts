@@ -42,7 +42,7 @@ describe('getPointsHistorique', () => {
 
   // 📖 Un défi ne rapporte plus de points : une ancienne ligne « defi » renvoyée par un
   //    serveur pas encore migré ne doit pas atteindre l'écran (ni le faire planter).
-  it('écarte les sources de points inconnues de l’app, comme un ancien « defi »', async () => {
+  it("écarte les sources de points inconnues de l'app, comme un ancien « defi »", async () => {
     apiGet.mockResolvedValue(reponseApi);
 
     const gains = await getPointsHistorique();
@@ -50,7 +50,7 @@ describe('getPointsHistorique', () => {
     expect(gains.map((g) => g.source)).toEqual(['quiz']);
   });
 
-  it('renvoie un tableau vide quand il n’y a aucun gain', async () => {
+  it("renvoie un tableau vide quand il n'y a aucun gain", async () => {
     apiGet.mockResolvedValue({ data: { points_cumules: 0, historique: [] } });
 
     expect(await getPointsHistorique()).toEqual([]);

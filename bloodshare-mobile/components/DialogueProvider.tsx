@@ -104,7 +104,7 @@ export function DialogueProvider({ children }: { children: ReactNode }) {
 
 export function useDialogue() {
   const ctx = useContext(DialogueContext);
-  if (!ctx) throw new Error('useDialogue doit être utilisé à l’intérieur de DialogueProvider');
+  if (!ctx) throw new Error("useDialogue doit être utilisé à l'intérieur de DialogueProvider");
   return ctx;
 }
 

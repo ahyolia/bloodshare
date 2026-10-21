@@ -36,7 +36,7 @@ describe('getCartes', () => {
     expect(apiGet).toHaveBeenCalledWith('/cartes');
   });
 
-  it('habille l’unique carte événement en une catégorie', async () => {
+  it("habille l'unique carte événement en une catégorie", async () => {
     const carte = { id: 20, titre: 'Événement', image_url: null, obtenue: true, quantite: 3 };
     apiGet.mockResolvedValue(reponseApi(carte));
 

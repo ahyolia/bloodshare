@@ -10,7 +10,7 @@ describe('Bouton', () => {
     expect(screen.getByRole('button', { name: 'Prendre rendez-vous' })).toBeTruthy();
   });
 
-  it('appelle onPress à l’appui', async () => {
+  it("appelle onPress à l'appui", async () => {
     const onPress = jest.fn();
     await render(<Bouton libelle="Valider" onPress={onPress} />);
 
@@ -19,7 +19,7 @@ describe('Bouton', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it('désactivé : ne réagit pas et l’annonce', async () => {
+  it("désactivé : ne réagit pas et l'annonce", async () => {
     const onPress = jest.fn();
     await render(<Bouton libelle="Valider" onPress={onPress} desactive />);
 
@@ -29,7 +29,7 @@ describe('Bouton', () => {
     expect(screen.getByRole('button')).toBeDisabled();
   });
 
-  it('en chargement : bloque le double appui et l’annonce comme occupé', async () => {
+  it("en chargement : bloque le double appui et l'annonce comme occupé", async () => {
     const onPress = jest.fn();
     await render(<Bouton libelle="Se connecter" onPress={onPress} chargement />);
 

@@ -17,7 +17,7 @@ describe('ElementListe', () => {
     ).toBeTruthy();
   });
 
-  it('appelle onPress à l’appui', async () => {
+  it("appelle onPress à l'appui", async () => {
     const onPress = jest.fn();
     await render(<ElementListe titre="Parrainage" icone="gift-outline" onPress={onPress} />);
 
@@ -27,7 +27,7 @@ describe('ElementListe', () => {
   });
 });
 describe('ElementListe — valeur', () => {
-  it('affiche la valeur et l’ajoute au libellé vocalisé', async () => {
+  it("affiche la valeur et l'ajoute au libellé vocalisé", async () => {
     await render(
       <ElementListe
         titre="Mes badges"
