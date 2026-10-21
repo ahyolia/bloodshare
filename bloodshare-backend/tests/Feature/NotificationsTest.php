@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class NotificationsTest extends TestCase
@@ -96,16 +97,60 @@ class NotificationsTest extends TestCase
     public function test_enregistre_un_abonnement_push(): void
     {
         $this->postJson('/api/notifications/subscription', [
-            'endpoint' => 'https://push.example.test/abc',
+            'endpoint' => 'https://fcm.googleapis.com/fcm/send/abc',
             'keys' => ['p256dh' => 'cle', 'auth' => 'secret'],
         ])->assertCreated();
 
         $this->assertSame(1, $this->user->pushSubscriptions()->count());
     }
 
+    #[DataProvider('endpointsRefuses')]
+    public function test_refuse_une_adresse_qui_n_est_pas_un_service_de_push(string $endpoint): void
+    {
+        // 📖 Audit cybersécurité (SSRF) : le serveur envoie une requête POST à cette adresse.
+        $this->postJson('/api/notifications/subscription', [
+            'endpoint' => $endpoint,
+            'keys' => ['p256dh' => 'cle', 'auth' => 'secret'],
+        ])->assertUnprocessable()->assertJsonValidationErrors('endpoint');
+
+        $this->assertSame(0, $this->user->pushSubscriptions()->count());
+    }
+
+    public static function endpointsRefuses(): array
+    {
+        return [
+            'serveur lui-même' => ['http://127.0.0.1:8000/up'],
+            'panel Dokploy' => ['http://dokploy:3000/api'],
+            'base de données' => ['http://db:5432'],
+            'métadonnées cloud' => ['http://169.254.169.254/latest/meta-data'],
+            'service connu en HTTP' => ['http://fcm.googleapis.com/fcm/send/abc'],
+            'faux sous-domaine' => ['https://fcm.googleapis.com.attaquant.test/x'],
+            'port forcé' => ['https://fcm.googleapis.com:8443/x'],
+            'identifiants dans l\'URL' => ['https://moi@fcm.googleapis.com/x'],
+            'pas une URL' => ['javascript:alert(1)'],
+        ];
+    }
+
+    public function test_accepte_les_services_de_push_des_navigateurs(): void
+    {
+        foreach ([
+            'https://fcm.googleapis.com/fcm/send/a',
+            'https://updates.push.services.mozilla.com/wpush/v2/b',
+            'https://web.push.apple.com/c',
+            'https://wns2-par02p.notify.windows.com/w/?token=d',
+        ] as $endpoint) {
+            $this->postJson('/api/notifications/subscription', [
+                'endpoint' => $endpoint,
+                'keys' => ['p256dh' => 'cle', 'auth' => 'secret'],
+            ])->assertCreated();
+        }
+
+        $this->assertSame(4, $this->user->pushSubscriptions()->count());
+    }
+
     public function test_refuse_un_abonnement_sans_cles(): void
     {
-        $this->postJson('/api/notifications/subscription', ['endpoint' => 'https://push.example.test/abc'])
+        $this->postJson('/api/notifications/subscription', ['endpoint' => 'https://fcm.googleapis.com/fcm/send/abc'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['keys', 'keys.p256dh', 'keys.auth']);
     }
@@ -113,11 +158,11 @@ class NotificationsTest extends TestCase
     public function test_retire_un_abonnement_push(): void
     {
         $this->postJson('/api/notifications/subscription', [
-            'endpoint' => 'https://push.example.test/abc',
+            'endpoint' => 'https://fcm.googleapis.com/fcm/send/abc',
             'keys' => ['p256dh' => 'cle', 'auth' => 'secret'],
         ]);
 
-        $this->deleteJson('/api/notifications/subscription', ['endpoint' => 'https://push.example.test/abc'])
+        $this->deleteJson('/api/notifications/subscription', ['endpoint' => 'https://fcm.googleapis.com/fcm/send/abc'])
             ->assertOk();
 
         $this->assertSame(0, $this->user->pushSubscriptions()->count());
