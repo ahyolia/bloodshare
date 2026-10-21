@@ -10,14 +10,15 @@
 
 ## Synthèse
 
-**18 failles trouvées et corrigées pendant l'US-29**, dont 6 hautes. Chacune a été reproduite
-avant d'être corrigée, et chaque correction est couverte par un test automatisé qui échoue sans
-elle. Les 304 tests backend passent à la fin de l'audit.
+**19 failles trouvées et corrigées pendant l'US-29**, dont 6 hautes. Chacune a été reproduite
+avant d'être corrigée, et chaque correction du code est couverte par un test automatisé qui
+échoue sans elle (la faille 19, corrigée dans la config de prod, a été vérifiée sur l'API). Les
+304 tests backend passent à la fin de l'audit.
 
 | Gravité | Nombre | Failles |
 | --- | --- | --- |
 | 🔴 Haute | 6 | Suspension sans effet · dump SQL public · XSS par image SVG · admin qui exclut le super_admin · SSRF par les notifications push · limite de connexion contournable |
-| 🟠 Moyenne | 7 | QR centre fixe · images sans limites · questions médicales modifiables · triche au quiz · sessions conservées après changement de mot de passe · données des comptes dans les journaux · double don |
+| 🟠 Moyenne | 8 | QR centre fixe · images sans limites · questions médicales modifiables · triche au quiz · sessions conservées après changement de mot de passe · données des comptes dans les journaux · double don · mot de passe public sur la base de prod |
 | 🟡 Faible | 5 | Configuration de production · erreur 500 au scan · textes sans longueur max · actions d'un admin sur son propre compte · API sans limite de requêtes |
 
 Des analyses automatiques tournent désormais sur chaque PR (dépendances, secrets, analyse
@@ -32,7 +33,8 @@ statique, droits du BO, routes de l'API) : voir [Analyses automatiques](#analyse
 | **Tests écrits avant la correction** avec de vrais fichiers malveillants (SVG avec script, PNG piégé, image géante) | 6 types de fichiers dangereux acceptés par le BO |
 | **Sonde des droits** : chaque page du BO appelée en admin et en super_admin, URL directes comprises | Admin capable de suspendre le super_admin, questions médicales modifiables |
 | **Outils** : gitleaks, npm audit, composer audit, Semgrep | Données de comptes dans les journaux, inventaire des dépendances vulnérables |
-| **Vérification des données réelles** (local et prod, en lecture seule) | Aucun abus passé, aucune image dangereuse stockée, prod correctement configurée |
+| **Vérification des données réelles** (local et prod, en lecture seule) | Aucun abus passé, aucune image dangereuse stockée, prod correctement configurée sauf le mot de passe de la base |
+| **Comparaison des secrets de prod aux valeurs publiques du dépôt**, sans afficher aucun secret (seule l'égalité est testée) | Mot de passe public `bloodshare123` encore configuré sur la base de prod |
 
 ## Failles corrigées dans l'US-29
 
@@ -72,7 +74,8 @@ statique, droits du BO, routes de l'API) : voir [Analyses automatiques](#analyse
 | 15 | 🔴 | **SSRF par les notifications push** : l'adresse d'abonnement était libre, et le serveur y envoie une requête à chaque notification (panel Dokploy, base, services internes). | Prouvé : un abonnement vers `http://127.0.0.1:8000/preuve-ssrf-aima` a fait appeler cette URL par le serveur | Seuls les services de push des navigateurs (Google, Mozilla, Apple, Microsoft) sont acceptés, en HTTPS | `e02b1a1d0` |
 | 16 | 🔴 | **Dump SQL public** : `bloodshare_backup.sql` (email et hash bcrypt d'un compte) versionné de juin à octobre dans un dépôt public. La grille RGPD le donnait à tort pour conforme. | Relecture des fichiers suivis par git | Fichier retiré, `*.sql` ignoré, règle gitleaks dédiée. Compte supprimé, historique non réécrit (décision d'équipe) | `c280d3f74` |
 | 17 | 🟠 | **Données des comptes dans les journaux** : une erreur SQL écrivait l'email, le hash et toute la ligne (sexe compris), gardés 180 jours. | gitleaks sur le dossier de travail : 7 hashs dans `laravel.log` (comptes de test, aucun en prod) | Les erreurs SQL sont journalisées sans leurs valeurs | `fc724cad0` |
-| 18 | 🟡 | **Configuration de production** : rien n'empêchait un déploiement avec le debug actif ou les mots de passe de dev, cookie de session non `Secure`, base et pgAdmin locaux ouverts au réseau, aucun en-tête de sécurité HTTP. | Lecture de la config Dokploy (prod saine) et de `docker-compose.yml` | Le conteneur refuse de démarrer en production avec une config dangereuse, cookie `Secure`, ports locaux sur `127.0.0.1`, en-têtes `nosniff`, `SAMEORIGIN`, `Referrer-Policy`, HSTS | `890201537` |
+| 18 | 🟡 | **Configuration de production** : rien n'empêchait un déploiement avec le debug actif ou les mots de passe de dev, cookie de session non `Secure`, base et pgAdmin locaux ouverts au réseau, aucun en-tête de sécurité HTTP. | Lecture de la config Dokploy (debug désactivé, mais voir la faille 19) et de `docker-compose.yml` | Le conteneur refuse de démarrer en production avec une config dangereuse, cookie `Secure`, ports locaux sur `127.0.0.1`, en-têtes `nosniff`, `SAMEORIGIN`, `Referrer-Policy`, HSTS | `890201537` |
+| 19 | 🟠 | **Mot de passe public sur la base de prod** : le service `bloodshare-db` de Dokploy était configuré avec `bloodshare123`, le mot de passe de dev publié dans `docker-compose.yml` (dépôt public). La base n'est pas exposée hors du réseau Docker, mais une SSRF (faille 15) ou un autre conteneur compromis suffisait à l'ouvrir. | Comparaison des variables de chaque service Dokploy aux valeurs publiques du dépôt (`APP_KEY`, clés VAPID et mot de passe du backend : propres) | Rotation : nouveau mot de passe aléatoire de 40 caractères appliqué par `ALTER USER`, reporté dans Dokploy (backend, scheduler, base), redéploiement. API vérifiée après coup (route lisant la base : 200) | Prod (hors code) |
 
 La faille 1 comprend aussi le téléchargement du QR centre, qui acceptait toute session ouverte
 (même sans accès au BO).
@@ -102,7 +105,7 @@ La faille 1 comprend aussi le téléchargement du QR centre, qui acceptait toute
 - **Injection SQL** : toutes les requêtes passent par Eloquent (requêtes préparées). Le contenu
   d'une image envoyée n'est jamais placé dans une requête.
 - **Bonnes réponses des quiz** : jamais envoyées à l'app.
-- **Production Dokploy** : `APP_DEBUG=false`, mots de passe propres à la prod, base non exposée.
+- **Production Dokploy** : `APP_DEBUG=false`, `APP_KEY` et clés VAPID propres à la prod et jamais commitées, base non exposée hors du réseau Docker.
 
 ## Risques acceptés ou reportés
 
@@ -138,6 +141,7 @@ chaque semaine. Les tests de sécurité tournent avec les autres dans `tests.yml
 | Action | Qui |
 | --- | --- |
 | Sur Dokploy : ne pas exposer le port `8001` (backend en HTTP) sur Internet, le retirer s'il ne sert pas | Équipe |
+| À chaque nouveau secret de prod : générer une valeur aléatoire, jamais reprendre une valeur du dépôt | Équipe |
 | Ouvrir le lien de l'écran du centre sur la tablette du centre, imprimer le QR de secours | ADSB-NC |
 | Activer les alertes Dependabot (Settings → Code security) | Propriétaire du dépôt |
 | Tester puis ajouter un en-tête CSP sur la PWA | Équipe, V1 si le temps le permet |
@@ -155,5 +159,8 @@ chaque semaine. Les tests de sécurité tournent avec les autres dans `tests.yml
   mais ne marchait pas sous PostgreSQL (faille 7).
 - **Les outils ne trouvent pas tout** : aucun outil n'aurait vu la suspension sans effet, et
   gitleaks ne voyait pas le dump SQL sans règle dédiée. La revue de code reste indispensable.
+- **Changer la variable ne change pas le mot de passe** : Postgres ne lit `POSTGRES_PASSWORD`
+  qu'à la création de la base. Pour une rotation, il faut `ALTER USER`, puis reporter la même
+  valeur partout où elle est utilisée.
 - **Sécurité et RGPD se recoupent** : 4 des failles (16, 17, 9, 10) exposaient des données
   personnelles.
