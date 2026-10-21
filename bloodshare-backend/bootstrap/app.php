@@ -50,6 +50,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->append(\App\Http\Middleware\EnTetesSecurite::class);
 
+        // 📖 Limite globale de l'API (limiteur « api », AppServiceProvider) : scan, quiz,
+        //    abonnements push... n'avaient aucune limite.
+        $middleware->throttleApi();
+
         // 📖 Le middleware `auth` redirige un visiteur non connecté vers la route nommée
         //    `login`, que Laravel ne déclare pas ici (la connexion est celle de Filament) :
         //    une route web protégée par `auth` ouverte sans session donnait une 500
