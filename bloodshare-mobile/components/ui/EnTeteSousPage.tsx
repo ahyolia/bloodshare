@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Theme } from '../../constants/colors';
 import { Espace, Ombre } from '../../constants/spacing';
@@ -23,13 +23,21 @@ type Props = {
 
 const BOUTON = 44;
 
+/** « /tabs/profil/points » → « /tabs/profil » ; « /notifications » → « / ». */
+export const pageParente = (chemin: string) => chemin.replace(/\/[^/]+\/?$/, '') || '/';
+
 export function EnTeteSousPage({ titre, onRetour }: Props) {
   const router = useRouter();
+  const chemin = usePathname();
+
+  // 📖 Sans historique (page rechargée sur le web, lien direct), `back()` ne fait
+  //    rien : on remonte alors à la page parente.
+  const retour = () => (router.canGoBack() ? router.back() : router.replace(pageParente(chemin) as Href));
 
   return (
     <View style={styles.enTete}>
       <Pressable
-        onPress={onRetour ?? (() => router.back())}
+        onPress={onRetour ?? retour}
         hitSlop={2}
         accessibilityRole="button"
         accessibilityLabel="Retour"
