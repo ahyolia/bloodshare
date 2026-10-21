@@ -40,6 +40,15 @@ class ConfigSecuriteTest extends TestCase
             ->assertFailed();
     }
 
+    public function test_refuse_le_mot_de_passe_du_super_admin_de_developpement(): void
+    {
+        $this->enProduction(['app.seed_admin_password' => 'Admin-local-1234']);
+
+        $this->artisan('securite:verifier-config')
+            ->expectsOutputToContain('SEED_ADMIN_PASSWORD')
+            ->assertFailed();
+    }
+
     public function test_refuse_une_app_key_vide(): void
     {
         $this->enProduction(['app.key' => '']);
@@ -85,6 +94,7 @@ class ConfigSecuriteTest extends TestCase
             'app.debug' => false,
             'app.key' => 'base64:' . base64_encode(str_repeat('a', 32)),
             'database.connections.pgsql.password' => 'un-vrai-mot-de-passe',
+            'app.seed_admin_password' => null,
             'session.secure' => true,
             ...$config,
         ]);

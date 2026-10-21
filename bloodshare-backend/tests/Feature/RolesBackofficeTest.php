@@ -8,6 +8,8 @@ use App\Filament\Resources\QuestionEligibiliteResource\Pages\ListQuestionsEligib
 use App\Filament\Resources\UserResource\Pages\ListUsers;
 use App\Models\QuestionEligibilite;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\DemoSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
@@ -81,7 +83,13 @@ class RolesBackofficeTest extends TestCase
         parent::setUp();
 
         // 📖 Données de référence : chaque page /{record} a besoin d'un enregistrement.
-        $this->seed();
+        //    DemoSeeder (bannières, défis...) ne tourne qu'en APP_ENV=local : c'est le cas dans
+        //    le conteneur (variable d'environnement réelle), pas en CI (APP_ENV=testing). On
+        //    passe en local le temps de créer les données, sans toucher au garde-fou du seeder.
+        $environnement = $this->app['env'];
+        $this->app['env'] = 'local';
+        $this->seed([DatabaseSeeder::class, DemoSeeder::class]);
+        $this->app['env'] = $environnement;
 
         $this->admin = $this->compteBo('admin');
         $this->superAdmin = $this->compteBo('super_admin');
