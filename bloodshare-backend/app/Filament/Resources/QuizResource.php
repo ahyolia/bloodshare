@@ -36,6 +36,7 @@ class QuizResource extends Resource
                     ->required()
                     ->maxLength(255),
                 Forms\Components\Textarea::make('description')
+                    ->maxLength(1000)
                     ->columnSpanFull(),
                 Forms\Components\Toggle::make('aleatoire')
                     ->required(),

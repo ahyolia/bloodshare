@@ -55,6 +55,7 @@ class QuestionEligibiliteResource extends Resource
 
                 Forms\Components\Textarea::make('message_refus')
                     ->label('Message affiché si bloquant')
+                    ->maxLength(1000)
                     ->rows(3)
                     ->columnSpanFull(),
 

@@ -54,6 +54,9 @@ class ContenuResource extends Resource
 
                 Forms\Components\Textarea::make('contenu')
                     ->label('Contenu')
+                    // 📖 Limites des textes du BO : renvoyés tels quels à chaque appel de
+                    //    l'API, ils ne doivent pas pouvoir grossir sans borne (audit cybersécurité).
+                    ->maxLength(10000)
                     ->required()
                     ->rows(6)
                     ->columnSpanFull(),
@@ -69,6 +72,7 @@ class ContenuResource extends Resource
 
                 Forms\Components\Textarea::make('le_saviez_vous')
                     ->label('Le saviez-vous ?')
+                    ->maxLength(1000)
                     ->helperText('Facultatif : un fait court affiché en bas de la fiche.')
                     ->rows(3)
                     ->columnSpanFull()

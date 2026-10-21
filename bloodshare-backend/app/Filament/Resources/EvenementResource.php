@@ -32,6 +32,7 @@ class EvenementResource extends Resource
 
                 Forms\Components\Textarea::make('description')
                     ->label('Description')
+                    ->maxLength(2000)
                     ->rows(4)
                     ->columnSpanFull(),
 

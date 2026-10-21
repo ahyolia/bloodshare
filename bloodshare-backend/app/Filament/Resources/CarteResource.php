@@ -61,6 +61,7 @@ class CarteResource extends Resource
 
                 Forms\Components\Textarea::make('description')
                     ->label('Description')
+                    ->maxLength(1000)
                     ->rows(4)
                     ->columnSpanFull(),
 
