@@ -8,6 +8,33 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    /**
+     * Catégorie d'affichage par classe de notification : l'app en tire l'icône et
+     * la couleur de la pastille. Une classe absente de la table tombe sur « autre ».
+     */
+    private const CATEGORIES = [
+        'BadgeDebloqueNotification' => 'badge',
+        'NiveauAtteintNotification' => 'niveau',
+        'NouveauQuizNotification' => 'quiz',
+        'QuizDuJourNotification' => 'quiz',
+        'QuizNonTermineNotification' => 'quiz',
+        'DefiReussiNotification' => 'defi',
+        'NouveauDefiNotification' => 'defi',
+        'ProgressionDefiNotification' => 'defi',
+        'NouvelEvenementNotification' => 'evenement',
+        'VeilleEvenementNotification' => 'evenement',
+        'JourneeMondialeNotification' => 'evenement',
+        'AnniversaireDonNotification' => 'don',
+        'FinIneligibiliteNotification' => 'don',
+        'RetourInactiviteNotification' => 'don',
+        'RemerciementPenurieNotification' => 'don',
+        'AlertePenurieNotification' => 'alerte',
+        'BanniereUrgenteNotification' => 'alerte',
+        'FilleulInscritNotification' => 'parrainage',
+        'PremierDonFilleulNotification' => 'parrainage',
+        'CarteDuMoisNotification' => 'carte',
+    ];
+
     public function __construct(private NotificationService $notifications)
     {
     }
@@ -53,6 +80,7 @@ class NotificationController extends Controller
                 'titre' => $notification->data['title'] ?? null,
                 'corps' => $notification->data['body'] ?? null,
                 'lue' => $notification->read_at !== null,
+                'categorie' => self::CATEGORIES[class_basename($notification->type)] ?? 'autre',
                 'created_at' => $notification->created_at,
             ]);
 

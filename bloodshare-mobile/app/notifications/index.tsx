@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Bouton } from '../../components/ui/Bouton';
@@ -6,12 +7,14 @@ import { Chargement } from '../../components/ui/Chargement';
 import { EnTeteSousPage } from '../../components/ui/EnTeteSousPage';
 import { EtatErreur } from '../../components/ui/EtatErreur';
 import { EtatVide } from '../../components/ui/EtatVide';
+import { Groupe, Separateur } from '../../components/ui/Groupe';
 import { entreeSousPage } from '../../constants/animations';
 import { Theme } from '../../constants/colors';
-import { Espace, Ombre, Rayon } from '../../constants/spacing';
+import { Espace, Rayon } from '../../constants/spacing';
+import { TEINTES_PASTILLE, type TeintePastille } from '../../constants/teintes';
 import { Typo } from '../../constants/typography';
 import { useNotifications } from '../../hooks/useNotifications';
-import { NotificationItem } from '../../services/notifications.service';
+import type { CategorieNotification, NotificationItem } from '../../services/notifications.service';
 
 // 📖 "2026-10-08T09:00:00Z" → "8 oct." / aujourd'hui → "09:00". On distingue juste
 //    aujourd'hui du reste pour que la liste reste lisible sans date absolue sur les
@@ -24,6 +27,25 @@ const formatDate = (iso: string) => {
     ? date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
     : date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 };
+
+type Icone = ComponentProps<typeof Ionicons>['name'];
+
+// 📖 Icône et teinte de pastille par catégorie (renvoyée par l'API). Record<…> : une
+//    catégorie ajoutée à l'union oblige à compléter cette table.
+const META_CATEGORIE: Record<CategorieNotification, { icone: Icone; teinte: TeintePastille }> = {
+  badge: { icone: 'ribbon-outline', teinte: 'orange' },
+  niveau: { icone: 'trending-up-outline', teinte: 'mousse' },
+  quiz: { icone: 'school-outline', teinte: 'petrole' },
+  defi: { icone: 'flag-outline', teinte: 'mousse' },
+  evenement: { icone: 'calendar-outline', teinte: 'petrole' },
+  don: { icone: 'water-outline', teinte: 'corail' },
+  alerte: { icone: 'alert-circle-outline', teinte: 'corail' },
+  parrainage: { icone: 'people-outline', teinte: 'orange' },
+  carte: { icone: 'albums-outline', teinte: 'petrole' },
+  autre: { icone: 'notifications-outline', teinte: 'petrole' },
+};
+
+type Section = { cle: 'nouvelles' | 'lues'; titre: string; items: NotificationItem[] };
 
 export default function NotificationsScreen() {
   const { notifications, loading, chargementSuite, error, marquerLue, marquerToutesLues, chargerPlus, recharger } =
@@ -56,16 +78,24 @@ export default function NotificationsScreen() {
     );
   }
 
+  // 📖 Deux cartes au plus : les nouvelles (à toucher pour les lire), puis les déjà
+  //    lues. L'API trie déjà du plus récent au plus ancien.
+  const sections = (
+    [
+      { cle: 'nouvelles', titre: 'Nouvelles', items: notifications.filter((n) => !n.lue) },
+      { cle: 'lues', titre: 'Déjà lues', items: notifications.filter((n) => n.lue) },
+    ] satisfies Section[]
+  ).filter((s) => s.items.length > 0);
+
   return (
     <View style={styles.screen}>
       <FlatList
-        data={notifications}
-        keyExtractor={(n) => n.id}
+        data={sections}
+        keyExtractor={(s) => s.cle}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={enTete}
-        ItemSeparatorComponent={EspaceListe}
-        renderItem={({ item }) => <LigneNotification notification={item} onPress={() => marquerLue(item.id)} />}
+        renderItem={({ item }) => <SectionNotifications section={item} onLire={marquerLue} />}
         onEndReached={chargerPlus}
         onEndReachedThreshold={0.4}
         ListEmptyComponent={
@@ -82,53 +112,65 @@ export default function NotificationsScreen() {
   );
 }
 
-function EspaceListe() {
-  return <View style={styles.espace} />;
+/**
+ * 📖 Surélevé = interactif : les nouvelles se touchent (elles passent en lues), leur
+ *    carte flotte. Les lues n'ont plus d'action : carte à plat, contour fin.
+ */
+function SectionNotifications({ section, onLire }: { section: Section; onLire: (id: string) => void }) {
+  return (
+    <Animated.View entering={entreeSousPage}>
+      <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+        {section.titre}
+      </Text>
+      <Groupe variante={section.cle === 'nouvelles' ? 'interactif' : 'info'}>
+        {section.items.map((notification, i) => (
+          <View key={notification.id}>
+            {i > 0 && <Separateur />}
+            <LigneNotification notification={notification} onPress={() => onLire(notification.id)} />
+          </View>
+        ))}
+      </Groupe>
+    </Animated.View>
+  );
 }
 
 /**
- * 📖 Surélevé = interactif : une notification non lue se touche (elle passe en lue),
- *    elle flotte. Une fois lue, elle n'a plus d'action : plus de carte du tout, posée
- *    à plat sur la page, titre adouci. Adouci par la couleur (aubergine 500, 6:1 sur
- *    le fond de page) et non par la transparence, qui ferait passer le texte sous les
- *    4,5:1 exigés.
+ * 📖 Une lue garde sa pastille colorée (on reconnaît son type d'un coup d'œil), mais
+ *    son titre passe en graisse normale et en aubergine 500 (6:1 sur la carte) :
+ *    adouci par la couleur, pas par la transparence, qui passerait sous les 4,5:1.
  */
 function LigneNotification({ notification, onPress }: { notification: NotificationItem; onPress: () => void }) {
   const nonLue = !notification.lue;
+  const meta = META_CATEGORIE[notification.categorie];
+  const teinte = TEINTES_PASTILLE[meta.teinte];
 
   return (
-    <Animated.View entering={entreeSousPage}>
-      <Pressable
-        onPress={onPress}
-        disabled={!nonLue}
-        accessibilityRole="button"
-        accessibilityLabel={`${nonLue ? 'Non lue. ' : ''}${notification.titre}. ${notification.corps}`}
-        accessibilityHint={nonLue ? 'Marque la notification comme lue' : undefined}
-        accessibilityState={{ disabled: !nonLue }}
-        style={({ pressed }) => [styles.ligne, nonLue ? styles.ligneNonLue : styles.ligneLue, pressed && styles.presse]}
-      >
-        <View style={[styles.pastille, nonLue ? styles.pastilleNonLue : styles.pastilleLue]}>
-          <Ionicons
-            name="notifications-outline"
-            size={20}
-            color={nonLue ? Theme.info.icone : Theme.texte.secondaire}
-          />
-        </View>
+    <Pressable
+      onPress={onPress}
+      disabled={!nonLue}
+      accessibilityRole="button"
+      accessibilityLabel={`${nonLue ? 'Non lue. ' : ''}${notification.titre}. ${notification.corps}`}
+      accessibilityHint={nonLue ? 'Marque la notification comme lue' : undefined}
+      accessibilityState={{ disabled: !nonLue }}
+      style={({ pressed }) => [styles.ligne, pressed && styles.presse]}
+    >
+      <View style={[styles.pastille, { backgroundColor: teinte.fond }]}>
+        <Ionicons name={meta.icone} size={20} color={teinte.icone} />
+      </View>
 
-        <View style={styles.textes}>
-          <View style={styles.titreLigne}>
-            <Text style={[nonLue ? Typo.corpsFort : Typo.corps, styles.titre, !nonLue && styles.titreLu]} numberOfLines={2}>
-              {notification.titre}
-            </Text>
-            <Text style={[Typo.legende, styles.date]}>{formatDate(notification.date)}</Text>
-          </View>
-          <Text style={[Typo.legende, styles.corps]}>{notification.corps}</Text>
+      <View style={styles.textes}>
+        <View style={styles.titreLigne}>
+          <Text style={[nonLue ? Typo.corpsFort : Typo.corps, styles.titre, !nonLue && styles.titreLu]} numberOfLines={2}>
+            {notification.titre}
+          </Text>
+          <Text style={[Typo.legende, styles.date]}>{formatDate(notification.date)}</Text>
         </View>
+        <Text style={[Typo.legende, styles.corps]}>{notification.corps}</Text>
+      </View>
 
-        {/* 📖 Le point ne porte pas l'info seul : « Non lue » est dans le libellé. */}
-        {nonLue && <View style={styles.point} />}
-      </Pressable>
-    </Animated.View>
+      {/* 📖 Le point ne porte pas l'info seul : « Non lue » est dans le libellé. */}
+      {nonLue && <View style={styles.point} />}
+    </Pressable>
   );
 }
 
@@ -151,23 +193,18 @@ const styles = StyleSheet.create({
     marginTop: -Espace[4],
     marginBottom: Espace[2],
   },
-  espace: {
-    height: Espace[2],
+  sectionTitre: {
+    color: Theme.texte.principal,
+    marginTop: Espace[4],
+    marginBottom: Espace[3],
   },
+  // 📖 Marge de 16 + pastille de 40 + écart de 12 : le filet de `Separateur` démarre
+  //    sous le texte, comme dans les autres groupes.
   ligne: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Espace[3],
     padding: Espace[4],
-    borderRadius: Rayon.lg,
-  },
-  ligneNonLue: {
-    backgroundColor: Theme.fond.surface,
-    ...Ombre.flottante,
-  },
-  // Pas de fond ni de bordure : la notification lue n'est plus une carte.
-  ligneLue: {
-    paddingVertical: Espace[3],
   },
   presse: {
     opacity: 0.85,
@@ -175,15 +212,9 @@ const styles = StyleSheet.create({
   pastille: {
     width: PASTILLE,
     height: PASTILLE,
-    borderRadius: PASTILLE / 2,
+    borderRadius: Rayon.md,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  pastilleNonLue: {
-    backgroundColor: Theme.info.fond,
-  },
-  pastilleLue: {
-    backgroundColor: Theme.fond.surfaceEnfoncee,
   },
   textes: {
     flex: 1,
@@ -207,6 +238,7 @@ const styles = StyleSheet.create({
   corps: {
     color: Theme.texte.secondaire,
   },
+  // Pastille corail posée sur le coin haut gauche de l'icône.
   point: {
     position: 'absolute',
     top: Espace[3],

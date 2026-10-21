@@ -35,6 +35,17 @@ class NotificationsTest extends TestCase
             ->assertJsonPath('data.0.lue', false);
     }
 
+    public function test_donne_la_categorie_d_affichage_de_la_notification(): void
+    {
+        $this->creerNotification($this->user, 'Inconnue');
+        $this->creerNotification($this->user, 'Badge', type: 'App\\Notifications\\BadgeDebloqueNotification');
+
+        $categories = collect($this->getJson('/api/notifications')->json('data'))->pluck('categorie', 'titre');
+
+        $this->assertSame('badge', $categories['Badge']);
+        $this->assertSame('autre', $categories['Inconnue']);
+    }
+
     public function test_ne_montre_pas_les_notifications_des_autres(): void
     {
         $this->creerNotification(User::factory()->create(), 'Pas pour moi');
@@ -123,12 +134,12 @@ class NotificationsTest extends TestCase
         $this->assertSame(0, $this->user->pushSubscriptions()->count());
     }
 
-    private function creerNotification(User $user, string $titre, string $corps = '', bool $lue = false): string
+    private function creerNotification(User $user, string $titre, string $corps = '', bool $lue = false, string $type = 'App\\Notifications\\Test'): string
     {
         $id = (string) Str::uuid();
         $user->notifications()->create([
             'id' => $id,
-            'type' => 'App\\Notifications\\Test',
+            'type' => $type,
             'data' => ['title' => $titre, 'body' => $corps],
             'read_at' => $lue ? now() : null,
         ]);
