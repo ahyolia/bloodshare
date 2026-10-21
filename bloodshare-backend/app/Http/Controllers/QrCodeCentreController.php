@@ -62,7 +62,7 @@ class QrCodeCentreController extends Controller
             ]);
         }
 
-        return Pdf::loadView('qrcode-centre.pdf', [
+        $pdf = Pdf::loadView('qrcode-centre.pdf', [
             'png' => base64_encode($png),
             'titre' => $centre ? 'QR Code de secours du centre' : ($qrCode->evenement?->titre ?? 'Événement'),
             'consigne' => $centre
@@ -71,6 +71,10 @@ class QrCodeCentreController extends Controller
             'note' => $centre
                 ? "À n'utiliser que si l'écran du centre est en panne : ce QR Code ne fonctionne que lorsque le mode secours est activé dans le backoffice."
                 : null,
-        ])->download("{$nom}.pdf");
+        ]);
+
+        // 📖 « Imprimer » (?imprimer=1) : ouvert dans l'onglet, prêt pour l'impression du
+        //    navigateur, au lieu d'être téléchargé.
+        return request()->boolean('imprimer') ? $pdf->stream("{$nom}.pdf") : $pdf->download("{$nom}.pdf");
     }
 }

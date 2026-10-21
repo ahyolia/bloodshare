@@ -4,7 +4,6 @@ namespace App\Filament\Pages;
 
 use App\Models\QrCode;
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\URL;
@@ -40,54 +39,11 @@ class QrCodeCentre extends Page
         return url(URL::signedRoute('qrcode.centre.affichage', ['qrCode' => $this->qrCode], absolute: false));
     }
 
+    // 📖 Seule action de la page entière en haut ; les autres sont affichées dans la section
+    //    qu'elles concernent (vue qr-code-centre.blade.php).
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('ouvrir')
-                ->label("Ouvrir l'affichage")
-                ->icon('heroicon-o-tv')
-                ->url(fn () => $this->getLienAffichage())
-                ->openUrlInNewTab(),
-
-            ActionGroup::make([
-                Action::make('telecharger_png')
-                    ->label('PNG')
-                    ->url(fn () => route('qrcode.telecharger', ['qrCode' => $this->qrCode, 'format' => 'png'])),
-                Action::make('telecharger_pdf')
-                    ->label('PDF')
-                    ->url(fn () => route('qrcode.telecharger', ['qrCode' => $this->qrCode, 'format' => 'pdf'])),
-            ])
-                ->label('Télécharger le QR de secours')
-                ->icon('heroicon-o-arrow-down-tray')
-                ->color('gray')
-                ->button(),
-
-            Action::make('activer_secours')
-                ->label('Activer le QR de secours')
-                ->icon('heroicon-o-lifebuoy')
-                ->color('warning')
-                ->visible(fn () => ! $this->qrCode->secoursActif())
-                ->requiresConfirmation()
-                ->modalHeading('Activer le QR de secours ?')
-                ->modalDescription("Le QR Code imprimé sera accepté jusqu'à ce soir 23h59. Pendant ce temps, une photo de ce QR permet de valider un don sans être au centre : à n'utiliser que si l'écran est en panne.")
-                ->modalSubmitActionLabel('Activer')
-                ->action(function () {
-                    $this->qrCode->update(['secours_jusqu_a' => now()->endOfDay()]);
-
-                    Notification::make()->title("QR de secours actif jusqu'à ce soir 23h59")->warning()->send();
-                }),
-
-            Action::make('desactiver_secours')
-                ->label('Désactiver le QR de secours')
-                ->icon('heroicon-o-lifebuoy')
-                ->color('success')
-                ->visible(fn () => $this->qrCode->secoursActif())
-                ->action(function () {
-                    $this->qrCode->update(['secours_jusqu_a' => null]);
-
-                    Notification::make()->title('QR de secours désactivé')->success()->send();
-                }),
-
             Action::make('regenerer')
                 ->label('Régénérer le QR Code')
                 ->icon('heroicon-o-arrow-path')
@@ -114,5 +70,78 @@ class QrCodeCentre extends Page
                         ->send();
                 }),
         ];
+    }
+
+    // ── Section « Lien de l'écran du centre » ───────────────────
+
+    public function ouvrirAffichageAction(): Action
+    {
+        return Action::make('ouvrirAffichage')
+            ->label("Ouvrir l'affichage")
+            ->icon('heroicon-o-tv')
+            ->url(fn () => $this->getLienAffichage())
+            ->openUrlInNewTab();
+    }
+
+    // ── Section « QR de secours » ───────────────────────────────
+
+    public function imprimerSecoursAction(): Action
+    {
+        return Action::make('imprimerSecours')
+            ->label('Imprimer')
+            ->icon('heroicon-o-printer')
+            ->color('gray')
+            ->url(fn () => route('qrcode.telecharger', ['qrCode' => $this->qrCode, 'format' => 'pdf', 'imprimer' => 1]))
+            ->openUrlInNewTab();
+    }
+
+    public function telechargerSecoursPngAction(): Action
+    {
+        return Action::make('telechargerSecoursPng')
+            ->label('Télécharger (PNG)')
+            ->icon('heroicon-o-arrow-down-tray')
+            ->color('gray')
+            ->url(fn () => route('qrcode.telecharger', ['qrCode' => $this->qrCode, 'format' => 'png']));
+    }
+
+    public function telechargerSecoursPdfAction(): Action
+    {
+        return Action::make('telechargerSecoursPdf')
+            ->label('Télécharger (PDF)')
+            ->icon('heroicon-o-arrow-down-tray')
+            ->color('gray')
+            ->url(fn () => route('qrcode.telecharger', ['qrCode' => $this->qrCode, 'format' => 'pdf']));
+    }
+
+    public function activerSecoursAction(): Action
+    {
+        return Action::make('activerSecours')
+            ->label('Activer le mode secours')
+            ->icon('heroicon-o-lifebuoy')
+            ->color('warning')
+            ->visible(fn () => ! $this->qrCode->secoursActif())
+            ->requiresConfirmation()
+            ->modalHeading('Activer le QR de secours ?')
+            ->modalDescription("Le QR Code imprimé sera accepté jusqu'à ce soir 23h59. Pendant ce temps, une photo de ce QR permet de valider un don sans être au centre : à n'utiliser que si l'écran est en panne.")
+            ->modalSubmitActionLabel('Activer')
+            ->action(function () {
+                $this->qrCode->update(['secours_jusqu_a' => now()->endOfDay()]);
+
+                Notification::make()->title("QR de secours actif jusqu'à ce soir 23h59")->warning()->send();
+            });
+    }
+
+    public function desactiverSecoursAction(): Action
+    {
+        return Action::make('desactiverSecours')
+            ->label('Désactiver le mode secours')
+            ->icon('heroicon-o-lifebuoy')
+            ->color('success')
+            ->visible(fn () => $this->qrCode->secoursActif())
+            ->action(function () {
+                $this->qrCode->update(['secours_jusqu_a' => null]);
+
+                Notification::make()->title('QR de secours désactivé')->success()->send();
+            });
     }
 }

@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\QrCodeCentre;
 use App\Models\QrCode;
 use App\Models\User;
 use App\Services\QrCentreTournant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -68,7 +70,13 @@ class QrCodeCentreTest extends TestCase
         $this->actingAs($this->admin())
             ->get('/admin/qr-code-centre')
             ->assertOk()
-            ->assertSee('/qrcode-centre/affichage/', false);
+            ->assertSee('/qrcode-centre/affichage/', false)
+            // 📖 Chaque bouton dans la section qu'il concerne, pas en haut de page.
+            ->assertSeeInOrder([
+                'Régénérer le QR Code',
+                "Lien de l'écran du centre", "Ouvrir l'affichage",
+                'QR de secours (imprimé)', 'Imprimer', 'Télécharger (PNG)', 'Télécharger (PDF)', 'Activer le mode secours',
+            ], false);
     }
 
     public function test_le_jeton_affiche_valide_un_don(): void
@@ -104,6 +112,37 @@ class QrCodeCentreTest extends TestCase
             ->assertHeader('Content-Type', 'application/pdf');
 
         $this->assertStringStartsWith('%PDF', $reponse->getContent());
+    }
+
+    public function test_imprimer_ouvre_le_pdf_dans_l_onglet_au_lieu_de_le_telecharger(): void
+    {
+        $this->sansImagickSauter();
+        $qr = QrCode::create(['type' => 'centre', 'token' => 'centre-1', 'actif' => true]);
+
+        $reponse = $this->actingAs($this->admin())
+            ->get(route('qrcode.telecharger', ['qrCode' => $qr, 'format' => 'pdf', 'imprimer' => 1]))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf');
+
+        $this->assertStringStartsWith('inline', $reponse->headers->get('Content-Disposition'));
+    }
+
+    public function test_active_puis_desactive_le_mode_secours_depuis_sa_section(): void
+    {
+        $qr = QrCode::create(['type' => 'centre', 'token' => 'centre-1', 'actif' => true]);
+        $this->actingAs($this->admin());
+
+        Livewire::test(QrCodeCentre::class)
+            ->assertActionHidden('desactiverSecours')
+            ->callAction('activerSecours')
+            ->assertActionVisible('desactiverSecours')
+            ->assertActionHidden('activerSecours');
+
+        $this->assertTrue($qr->fresh()->secoursActif());
+
+        Livewire::test(QrCodeCentre::class)->callAction('desactiverSecours');
+
+        $this->assertFalse($qr->fresh()->secoursActif());
     }
 
     public function test_refuse_le_telechargement_sans_acces_au_backoffice(): void
