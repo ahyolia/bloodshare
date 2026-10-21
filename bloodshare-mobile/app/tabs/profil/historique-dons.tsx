@@ -118,9 +118,10 @@ function EspaceListe() {
 }
 
 /**
- * Le remerciement, mis en avant : voile aubergine à 12 % (l'aplat plein était trop lourd),
- * titre aubergine 900 (9,9:1), phrase aubergine 500 (4,8:1), goutte corail 700 (4,5:1).
- * Le pétrole pâle essayé avant manquait de lisibilité.
+ * Le remerciement, mis en avant : aplat corail 500, chaleureux, entre l'aubergine pleine
+ * (trop lourde) et son voile à 12 % (trop fade). Titre, phrase et goutte en aubergine 900
+ * (5,1:1) : le crème n'y atteint que 2,7:1, et il faudrait foncer le corail jusqu'à
+ * la brique (#BE4E35) pour qu'il passe les 4,5:1. Le pétrole pâle essayé avant manquait de lisibilité.
  * 📖 Pas de blocs de chiffres ici : ils reprenaient ceux de la page Profil et
  *    brouillaient la hiérarchie entre les deux pages.
  * 📖 Contrastes sur l'aubergine : texte crème ≈ 13:1, goutte lime 8,98:1.
@@ -131,7 +132,7 @@ function Resume({ dons, total }: { dons: Don[]; total: number }) {
 
   return (
     <Animated.View entering={entreeSousPage} style={styles.merci}>
-      <Ionicons name="water" size={22} color={Palette.corail[700]} />
+      <Ionicons name="water" size={22} color={Theme.texte.principal} />
       <View style={styles.merciTextes}>
         <Text style={[Typo.corpsFort, styles.merciTitre]}>
           {total > 1 ? `Merci pour tes ${compter(total, 'don')} ♡` : 'Merci pour ton don ❤️'}
@@ -195,8 +196,7 @@ const styles = StyleSheet.create({
     gap: Espace[3],
     padding: Espace[4],
     borderRadius: Rayon.lg,
-    // Aubergine à 12 % d'opacité (suffixe hexadécimal 1F).
-    backgroundColor: `${Theme.texte.principal}1F`,
+    backgroundColor: Palette.corail[500],
   },
   merciTextes: {
     flex: 1,
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     color: Theme.texte.principal,
   },
   merciTexte: {
-    color: Theme.texte.secondaire,
+    color: Theme.texte.principal,
   },
   sectionTitre: {
     color: Theme.texte.principal,

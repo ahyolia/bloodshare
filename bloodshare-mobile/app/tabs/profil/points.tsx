@@ -25,10 +25,9 @@ type Icone = ComponentProps<typeof Ionicons>['name'];
 
 // 📖 Métadonnées d'affichage par source. Record<SourcePoints, …> → si un jour on
 //    ajoute une source à l'union, le compilateur exige de compléter cette table.
-//    `action` : le libellé du tag « Comment gagner des points ».
-const META_SOURCE: Record<SourcePoints, { icone: Icone; teinte: TeintePastille; libelle: string; action: string }> = {
-  quiz: { icone: 'school-outline', teinte: 'petrole', libelle: 'Quiz complété', action: 'Terminer un quiz' },
-  parrainage: { icone: 'people-outline', teinte: 'orange', libelle: 'Parrainage validé', action: 'Parrainer un proche' },
+const META_SOURCE: Record<SourcePoints, { icone: Icone; teinte: TeintePastille; libelle: string }> = {
+  quiz: { icone: 'school-outline', teinte: 'petrole', libelle: 'Quiz complété' },
+  parrainage: { icone: 'people-outline', teinte: 'orange', libelle: 'Parrainage validé' },
 };
 
 export default function PointsScreen() {
@@ -80,9 +79,9 @@ export default function PointsScreen() {
 
         {!loading && !error && profil && historique && (
           <>
-            {/* 📖 Hiérarchie : 1. le niveau (bloc vedette bleu canard), 2. comment gagner
-                des points (titre + tags, puis la règle du don gratuit en gris),
-                3. l'historique des points. */}
+            {/* 📖 Hiérarchie : 1. le niveau (bloc vedette bleu canard), 2. deux notes sans
+                carte : comment gagner des points (texte foncé, c'est utile) puis la règle
+                du don gratuit (texte gris, secondaire), 3. l'historique des points. */}
 
             {/* NIVEAU */}
             <Animated.View entering={entreeSousPage}>
@@ -101,14 +100,12 @@ export default function PointsScreen() {
             </Animated.View>
 
             {/* COMMENT GAGNER DES POINTS — juste sous le niveau, avant l'historique */}
-            <Animated.View entering={entreeSousPage}>
-              <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
-                Comment gagner des points
-              </Text>
-              <View style={styles.tags}>
-                {Object.values(META_SOURCE).map((meta) => (
-                  <Tag key={meta.action} icone={meta.icone} libelle={meta.action} />
-                ))}
+            <Animated.View entering={entreeSousPage} style={styles.aide}>
+              <View style={styles.note}>
+                <Ionicons name="bulb-outline" size={18} color={Theme.texte.principal} />
+                <Text style={[Typo.legende, styles.noteTexte, styles.noteImportante]}>
+                  Pour gagner des points, termine un quiz ou parraine un proche.
+                </Text>
               </View>
               {/* 📖 Règle éthique ADSB-NC : le don est gratuit, il ne rapporte jamais de points. */}
               <View style={styles.note}>
@@ -155,18 +152,6 @@ function Pastille({ icone, teinte }: { icone: Icone; teinte: TeintePastille }) {
   return (
     <View style={[styles.pastille, { backgroundColor: couleurs.fond }]}>
       <Ionicons name={icone} size={20} color={couleurs.icone} />
-    </View>
-  );
-}
-
-// 📖 Tag à contour pétrole 700 sur fond crème : les fonds pâles des pastilles
-//    (pétrole 100, orange 100) ne font que 1,0:1 avec le fond de page, la forme
-//    disparaissait. Contour 5,5:1 sur la page, texte 6:1 sur la surface.
-function Tag({ icone, libelle }: { icone: Icone; libelle: string }) {
-  return (
-    <View style={styles.tag}>
-      <Ionicons name={icone} size={16} color={Theme.info.icone} />
-      <Text style={[Typo.legendeForte, { color: Theme.info.icone }]}>{libelle}</Text>
     </View>
   );
 }
@@ -238,31 +223,21 @@ const styles = StyleSheet.create({
     borderRadius: Rayon.plein,
     backgroundColor: Theme.accent.signatureAplat,
   },
-  tags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  aide: {
+    marginTop: Espace[4],
     gap: Espace[2],
-  },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Espace[2],
-    paddingHorizontal: Espace[3],
-    paddingVertical: Espace[2],
-    borderRadius: Rayon.plein,
-    borderWidth: 1.5,
-    borderColor: Theme.info.icone,
-    backgroundColor: Theme.fond.surface,
   },
   note: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Espace[2],
-    marginTop: Espace[3],
     paddingHorizontal: Espace[1],
   },
   noteTexte: {
     flex: 1,
     color: Theme.texte.secondaire,
+  },
+  noteImportante: {
+    color: Theme.texte.principal,
   },
 });
