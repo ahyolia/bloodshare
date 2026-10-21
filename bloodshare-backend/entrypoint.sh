@@ -45,6 +45,11 @@ php artisan storage:link --force
 
 php artisan migrate --force
 
+# 📖 En production (APP_ENV=production), refuse de démarrer avec une config dangereuse :
+#    debug actif, mots de passe de développement, cookie de session non sécurisé. Ne fait
+#    rien en local. Le message d'erreur est dans les logs du service.
+php artisan securite:verifier-config
+
 # 📖 Données de référence (cartes, badges, avatars, rôles, super admin...) : uniquement
 #    quand RUN_SEEDERS=true (docker-compose local). Les seeders sont idempotents. Jamais
 #    déclenché sur Dokploy : la production a ses propres données.

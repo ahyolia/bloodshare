@@ -48,6 +48,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // en http:// sur une page servie en https:// (mixed content bloqué).
         $middleware->trustProxies(at: '*');
 
+        $middleware->append(\App\Http\Middleware\EnTetesSecurite::class);
+
         // 📖 Le middleware `auth` redirige un visiteur non connecté vers la route nommée
         //    `login`, que Laravel ne déclare pas ici (la connexion est celle de Filament) :
         //    une route web protégée par `auth` ouverte sans session donnait une 500
