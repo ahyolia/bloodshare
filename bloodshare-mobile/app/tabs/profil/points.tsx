@@ -25,9 +25,10 @@ type Icone = ComponentProps<typeof Ionicons>['name'];
 
 // 📖 Métadonnées d'affichage par source. Record<SourcePoints, …> → si un jour on
 //    ajoute une source à l'union, le compilateur exige de compléter cette table.
-const META_SOURCE: Record<SourcePoints, { icone: Icone; teinte: TeintePastille; libelle: string }> = {
-  quiz: { icone: 'school-outline', teinte: 'petrole', libelle: 'Quiz complété' },
-  parrainage: { icone: 'people-outline', teinte: 'orange', libelle: 'Parrainage validé' },
+//    `action` : le libellé du tag « Comment gagner des points ».
+const META_SOURCE: Record<SourcePoints, { icone: Icone; teinte: TeintePastille; libelle: string; action: string }> = {
+  quiz: { icone: 'school-outline', teinte: 'petrole', libelle: 'Quiz complété', action: 'Terminer un quiz' },
+  parrainage: { icone: 'people-outline', teinte: 'orange', libelle: 'Parrainage validé', action: 'Parrainer un proche' },
 };
 
 export default function PointsScreen() {
@@ -79,7 +80,11 @@ export default function PointsScreen() {
 
         {!loading && !error && profil && historique && (
           <>
-            {/* NIVEAU — le bloc vedette (bleu canard pâle, barre aubergine) de l'écran */}
+            {/* 📖 Hiérarchie : 1. le niveau (bloc vedette bleu canard), 2. comment gagner
+                des points (titre + tags, puis la règle du don gratuit en gris),
+                3. l'historique des points. */}
+
+            {/* NIVEAU */}
             <Animated.View entering={entreeSousPage}>
               <BarreProgression
                 variante="surPetrole"
@@ -95,16 +100,16 @@ export default function PointsScreen() {
               />
             </Animated.View>
 
-            {/* COMMENT GAGNER DES POINTS */}
+            {/* COMMENT GAGNER DES POINTS — juste sous le niveau, avant l'historique */}
             <Animated.View entering={entreeSousPage}>
               <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
                 Comment gagner des points
               </Text>
-              <Groupe variante="info">
-                <LigneInfo icone="school-outline" teinte="petrole" texte="Termine un quiz" />
-                <Separateur />
-                <LigneInfo icone="people-outline" teinte="orange" texte="Parraine un proche" />
-              </Groupe>
+              <View style={styles.tags}>
+                {Object.values(META_SOURCE).map((meta) => (
+                  <Tag key={meta.action} icone={meta.icone} libelle={meta.action} />
+                ))}
+              </View>
               {/* 📖 Règle éthique ADSB-NC : le don est gratuit, il ne rapporte jamais de points. */}
               <View style={styles.note}>
                 <Ionicons name="heart-outline" size={18} color={Theme.texte.secondaire} />
@@ -137,6 +142,7 @@ export default function PointsScreen() {
                 </Groupe>
               )}
             </Animated.View>
+
           </>
         )}
       </ScrollView>
@@ -153,11 +159,14 @@ function Pastille({ icone, teinte }: { icone: Icone; teinte: TeintePastille }) {
   );
 }
 
-function LigneInfo({ icone, teinte, texte }: { icone: Icone; teinte: TeintePastille; texte: string }) {
+// 📖 Tag à contour pétrole 700 sur fond crème : les fonds pâles des pastilles
+//    (pétrole 100, orange 100) ne font que 1,0:1 avec le fond de page, la forme
+//    disparaissait. Contour 5,5:1 sur la page, texte 6:1 sur la surface.
+function Tag({ icone, libelle }: { icone: Icone; libelle: string }) {
   return (
-    <View style={styles.ligne}>
-      <Pastille icone={icone} teinte={teinte} />
-      <Text style={[Typo.corpsFort, styles.ligneTexte]}>{texte}</Text>
+    <View style={styles.tag}>
+      <Ionicons name={icone} size={16} color={Theme.info.icone} />
+      <Text style={[Typo.legendeForte, { color: Theme.info.icone }]}>{libelle}</Text>
     </View>
   );
 }
@@ -192,7 +201,7 @@ const styles = StyleSheet.create({
     paddingTop: 54,
     paddingBottom: CONTENU_MARGE_BASSE,
   },
-  // 📖 Bloc lime plus aéré que la variante par défaut : c'est la vedette de l'écran.
+  // 📖 Bloc niveau plus aéré que la variante par défaut : c'est la vedette de l'écran.
   niveau: {
     paddingHorizontal: Espace[6],
     paddingVertical: Espace[6],
@@ -218,10 +227,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ligneTexte: {
-    flex: 1,
-    color: Theme.texte.principal,
-  },
   ligneTextes: {
     flex: 1,
     gap: 2,
@@ -232,6 +237,22 @@ const styles = StyleSheet.create({
     paddingVertical: Espace[1],
     borderRadius: Rayon.plein,
     backgroundColor: Theme.accent.signatureAplat,
+  },
+  tags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Espace[2],
+  },
+  tag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Espace[2],
+    paddingHorizontal: Espace[3],
+    paddingVertical: Espace[2],
+    borderRadius: Rayon.plein,
+    borderWidth: 1.5,
+    borderColor: Theme.info.icone,
+    backgroundColor: Theme.fond.surface,
   },
   note: {
     flexDirection: 'row',

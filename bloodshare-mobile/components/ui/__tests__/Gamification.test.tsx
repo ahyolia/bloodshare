@@ -49,15 +49,14 @@ describe('BarreProgression', () => {
     expect(screen.getByText('71 %')).toBeTruthy();
   });
 
-  it('le bloc niveau met une barre aubergine sur fond bleu canard pâle', async () => {
+  it('le bloc niveau met une barre crème sur fond bleu canard', async () => {
     await render(<BarreProgression titre="Niveau 2 — Informé" valeur={8} max={100} variante="surPetrole" />);
 
     const barre = screen.getByRole('progressbar', { name: 'Niveau 2 — Informé' });
-    expect(barre).toHaveStyle({ backgroundColor: Theme.info.fond });
-    expect(screen.getByText('8 %')).toHaveStyle({ color: Theme.texte.principal });
-    // Texte sur le fond : 4,5:1 minimum ; barre aubergine sur sa piste blanche : 3:1 minimum.
-    expect(contraste(Theme.texte.principal, Theme.info.fond)).toBeGreaterThanOrEqual(4.5);
-    expect(contraste(Theme.texte.principal, Theme.fond.surface)).toBeGreaterThanOrEqual(3);
+    expect(barre).toHaveStyle({ backgroundColor: Theme.info.icone });
+    expect(screen.getByText('8 %')).toHaveStyle({ color: Theme.texte.surAccent });
+    // Texte et remplissage crème sur le fond : 4,5:1 minimum (le remplissage n'en exige que 3).
+    expect(contraste(Theme.texte.surAccent, Theme.info.icone)).toBeGreaterThanOrEqual(4.5);
   });
 
   it("ne déborde pas quand l'objectif est dépassé", async () => {

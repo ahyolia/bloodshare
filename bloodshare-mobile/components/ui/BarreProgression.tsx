@@ -7,9 +7,11 @@ import { Typo } from '../../constants/typography';
  * Barre de progression (Figma : Gamification › ProgressBar).
  * - `standard` : ex. « Collection 2026 — 4 cartes sur 12 », remplissage pétrole.
  * - `surLime` : bloc vedette, ex. défi du mois, remplissage aubergine.
- * - `surPetrole` : bloc niveau, fond bleu canard pâle, remplissage aubergine. Texte
- *   aubergine ≈ 12:1 sur le fond. Fond pâle et non pétrole foncé : une barre aubergine
- *   sur le pétrole 700 n'aurait que 2,3:1 (3:1 exigé).
+ * - `surPetrole` : bloc niveau, fond bleu canard (pétrole 700), texte crème ≈ 6:1.
+ *   Remplissage crème (≈ 6:1 sur le fond) sur une piste crème translucide : la barre
+ *   reste dans la teinte du bloc. Une barre aubergine sur le pétrole n'aurait que 2,3:1
+ *   (3:1 exigé). Le pétrole pâle, essayé avant, se distinguait trop peu du fond de
+ *   page ; le pétrole 500 plafonne à 3,5:1 sous du texte.
  *
  * 📖 Rôle `progressbar` + valeur : un lecteur d'écran annonce « Collection 2026,
  *    4 cartes sur 12 », pas seulement une forme colorée.
@@ -42,11 +44,12 @@ const COULEURS: Record<Variante, { fond?: string; titre: string; detail: string;
     remplissage: Theme.texte.principal,
   },
   surPetrole: {
-    fond: Theme.info.fond,
-    titre: Theme.texte.principal,
-    detail: Theme.texte.principal,
-    piste: Theme.fond.surface,
-    remplissage: Theme.texte.principal,
+    fond: Theme.info.icone,
+    titre: Theme.texte.surAccent,
+    detail: Theme.texte.surAccent,
+    // Crème à 30 % d'opacité (suffixe hexadécimal 4D).
+    piste: `${Theme.texte.surAccent}4D`,
+    remplissage: Theme.texte.surAccent,
   },
 };
 

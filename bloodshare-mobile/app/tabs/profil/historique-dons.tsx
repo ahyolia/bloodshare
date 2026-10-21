@@ -9,6 +9,7 @@ import { EtatErreur } from '../../../components/ui/EtatErreur';
 import { EtatVide } from '../../../components/ui/EtatVide';
 import { entreeSousPage } from '../../../constants/animations';
 import { Theme } from '../../../constants/colors';
+import { Palette } from '../../../constants/palette';
 import { compter } from '../../../utils/pluriel';
 import { Espace, Rayon } from '../../../constants/spacing';
 import { TEINTES_PASTILLE } from '../../../constants/teintes';
@@ -117,8 +118,9 @@ function EspaceListe() {
 }
 
 /**
- * Le remerciement, mis en avant : fond aubergine et texte crème, comme le bloc de niveau
- * de la page Points. Le pétrole pâle essayé avant manquait de lisibilité.
+ * Le remerciement, mis en avant : voile aubergine à 12 % (l'aplat plein était trop lourd),
+ * titre aubergine 900 (9,9:1), phrase aubergine 500 (4,8:1), goutte corail 700 (4,5:1).
+ * Le pétrole pâle essayé avant manquait de lisibilité.
  * 📖 Pas de blocs de chiffres ici : ils reprenaient ceux de la page Profil et
  *    brouillaient la hiérarchie entre les deux pages.
  * 📖 Contrastes sur l'aubergine : texte crème ≈ 13:1, goutte lime 8,98:1.
@@ -129,7 +131,7 @@ function Resume({ dons, total }: { dons: Don[]; total: number }) {
 
   return (
     <Animated.View entering={entreeSousPage} style={styles.merci}>
-      <Ionicons name="water" size={22} color={Theme.accent.signatureAplat} />
+      <Ionicons name="water" size={22} color={Palette.corail[700]} />
       <View style={styles.merciTextes}>
         <Text style={[Typo.corpsFort, styles.merciTitre]}>
           {total > 1 ? `Merci pour tes ${compter(total, 'don')} ♡` : 'Merci pour ton don ❤️'}
@@ -193,17 +195,18 @@ const styles = StyleSheet.create({
     gap: Espace[3],
     padding: Espace[4],
     borderRadius: Rayon.lg,
-    backgroundColor: Theme.texte.principal,
+    // Aubergine à 12 % d'opacité (suffixe hexadécimal 1F).
+    backgroundColor: `${Theme.texte.principal}1F`,
   },
   merciTextes: {
     flex: 1,
     gap: 2,
   },
   merciTitre: {
-    color: Theme.texte.surAccent,
+    color: Theme.texte.principal,
   },
   merciTexte: {
-    color: Theme.texte.surAccent,
+    color: Theme.texte.secondaire,
   },
   sectionTitre: {
     color: Theme.texte.principal,
