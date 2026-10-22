@@ -21,6 +21,11 @@ if grep -q 'A_REMPLACER' "$ENV_PROD"; then
 fi
 
 BUILD=$(mktemp -d)
+# 📖 mktemp crée le dossier en 700, et tar enregistre ces droits pour la racine de
+#    l'archive : sans ce chmod, l'extraction rendait ~/aima/backend privé, Apache
+#    répondait 403 sur tout le site jusqu'à la fin d'installer.sh (ou pour de bon
+#    s'il s'arrêtait avant l'étape des permissions).
+chmod 755 "$BUILD"
 trap 'rm -rf "$BUILD"' EXIT
 
 echo "▶ Export de $BRANCHE ($(git -C "$REPO" rev-parse --short "$BRANCHE"))"
@@ -42,8 +47,9 @@ trap 'rm -rf "$BUILD"; "${SSH[@]}" -O exit "$SERVEUR" 2>/dev/null || true' EXIT
 
 echo "▶ Envoi sur $SERVEUR"
 # vendor/ est vidé avant l'extraction pour ne pas garder d'anciens fichiers.
+# --no-overwrite-dir : les dossiers existants gardent leurs droits et leurs ACL.
 tar -cz -C "$BUILD" . | "${SSH[@]}" "$SERVEUR" \
-    'mkdir -p ~/aima/backend && rm -rf ~/aima/backend/vendor && tar -xz -C ~/aima/backend'
+    'mkdir -p ~/aima/backend && rm -rf ~/aima/backend/vendor && tar -xz --no-overwrite-dir -C ~/aima/backend'
 "${SSH[@]}" "$SERVEUR" 'umask 077 && cat > ~/aima/backend/.env' < "$ENV_PROD"
 
 echo "▶ Installation sur le serveur"
