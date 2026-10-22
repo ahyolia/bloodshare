@@ -36,16 +36,20 @@ php artisan vendor:publish --tag=livewire:assets --force --no-ansi > /dev/null
 #    pouvoir écrire dans storage/ et bootstrap/cache/. Les ACL le permettent sans
 #    rendre le code ni le .env lisibles par les autres comptes du serveur.
 echo "▶ Permissions"
+#    Seuls les fichiers de $USER sont modifiés : ceux qu'Apache a créés (vues compilées,
+#    sessions) appartiennent à www-data, chmod/setfacl y sont refusés, et c'est inutile
+#    (www-data en est propriétaire, $USER y accède par les ACL par défaut des dossiers).
+#    Un « chmod -R » arrêtait le script ici, laissant le site en 403.
 if command -v setfacl > /dev/null; then
     chmod 711 "$HOME"
-    chmod -R o-rwx "$HOME/aima"
-    setfacl -R -m u:www-data:rX "$HOME/aima"
-    setfacl -R -m u:www-data:rwX -m d:u:www-data:rwX -m u:"$USER":rwX -m d:u:"$USER":rwX \
-        storage bootstrap/cache
+    find "$HOME/aima" -user "$USER" -exec chmod o-rwx {} +
+    find "$HOME/aima" -user "$USER" -exec setfacl -m u:www-data:rX {} +
+    find storage bootstrap/cache -user "$USER" -exec setfacl -m u:www-data:rwX -m u:"$USER":rwX {} +
+    find storage bootstrap/cache -type d -user "$USER" -exec setfacl -m d:u:www-data:rwX -m d:u:"$USER":rwX {} +
 else
     # Repli sans ACL : fonctionne, mais le code et le .env restent lisibles par tous.
     echo "⚠️  setfacl absent : storage/ et bootstrap/cache/ passent en 777."
-    chmod -R 777 storage bootstrap/cache
+    find storage bootstrap/cache -user "$USER" -exec chmod 777 {} +
     chmod 644 .env
 fi
 
