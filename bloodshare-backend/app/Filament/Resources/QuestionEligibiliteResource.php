@@ -55,6 +55,7 @@ class QuestionEligibiliteResource extends Resource
 
                 Forms\Components\Textarea::make('message_refus')
                     ->label('Message affiché si bloquant')
+                    ->maxLength(1000)
                     ->rows(3)
                     ->columnSpanFull(),
 
@@ -112,6 +113,23 @@ class QuestionEligibiliteResource extends Resource
     // 📖 Filet de sécurité en plus du bouton masqué : empêche aussi l'accès direct
     //    à l'URL d'édition pour un admin non super_admin.
     public static function canEdit($record): bool
+    {
+        return auth()->user()->hasRole('super_admin');
+    }
+
+    // 📖 Même règle pour créer et supprimer : un admin pouvait ajouter une question médicale
+    //    ou les supprimer en masse, alors qu'il ne doit que les activer/désactiver.
+    public static function canCreate(): bool
+    {
+        return auth()->user()->hasRole('super_admin');
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->user()->hasRole('super_admin');
+    }
+
+    public static function canDeleteAny(): bool
     {
         return auth()->user()->hasRole('super_admin');
     }

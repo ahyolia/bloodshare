@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Rules\EndpointPushAutorise;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
@@ -15,7 +16,7 @@ class NotificationController extends Controller
     public function storeSubscription(Request $request)
     {
         $validated = $request->validate([
-            'endpoint' => 'required|string',
+            'endpoint' => ['required', 'string', 'max:500', new EndpointPushAutorise()],
             'keys' => 'required|array',
             'keys.p256dh' => 'required|string',
             'keys.auth' => 'required|string',

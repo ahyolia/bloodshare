@@ -16,11 +16,18 @@ class QrCode extends Model
         'token',
         'evenement_id',
         'actif',
+        'secours_jusqu_a',
     ];
 
     protected $casts = [
         'actif' => 'boolean',
+        'secours_jusqu_a' => 'datetime',
     ];
+
+    public function secoursActif(): bool
+    {
+        return (bool) $this->secours_jusqu_a?->isFuture();
+    }
 
     public function evenement()
     {

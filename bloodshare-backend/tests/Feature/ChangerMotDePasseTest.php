@@ -32,6 +32,26 @@ class ChangerMotDePasseTest extends TestCase
         $this->assertTrue(Hash::check('NouveauMdp123', $user->password));
     }
 
+    public function test_deconnecte_les_autres_appareils_mais_garde_la_session_en_cours(): void
+    {
+        // 📖 Audit cybersécurité : un token volé restait valable après le changement.
+        $user = User::factory()->create(['password' => Hash::make('AncienMdp123')]);
+        $autreAppareil = $user->createToken('mobile')->plainTextToken;
+        $sessionEnCours = $user->createToken('mobile')->plainTextToken;
+
+        $this->withToken($sessionEnCours)->postJson('/api/me/changer-mot-de-passe', [
+            'mot_de_passe_actuel' => 'AncienMdp123',
+            'password' => 'NouveauMdp123',
+            'password_confirmation' => 'NouveauMdp123',
+        ])->assertOk();
+
+        $this->assertSame(1, $user->tokens()->count());
+        $this->app['auth']->forgetGuards();
+        $this->withToken($autreAppareil)->getJson('/api/me')->assertUnauthorized();
+        $this->app['auth']->forgetGuards();
+        $this->withToken($sessionEnCours)->getJson('/api/me')->assertOk();
+    }
+
     public function test_refuse_si_le_mot_de_passe_actuel_est_incorrect(): void
     {
         $user = User::factory()->create([

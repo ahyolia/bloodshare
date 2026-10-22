@@ -28,6 +28,11 @@ return [
 
     'env' => env('APP_ENV', 'production'),
 
+    // 📖 Mot de passe du super admin créé par le seeder, lu par securite:verifier-config
+    //    (refusé en production s'il reprend celui de .env.example). Passé par la config et
+    //    non par env() dans la commande : les tests peuvent le fixer.
+    'seed_admin_password' => env('SEED_ADMIN_PASSWORD'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode
