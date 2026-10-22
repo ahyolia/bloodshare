@@ -177,6 +177,36 @@ class QuizTest extends TestCase
         $this->assertSame(10, $this->user->fresh()->points_cumules);
     }
 
+    public function test_une_question_deguisee_en_autre_identifiant_ne_compte_qu_une_fois(): void
+    {
+        // 📖 Revue de la PR #120 : « +1 » passe la validation et était rangé à part de 1 par
+        //    keyBy, alors que la comparaison souple retrouvait la même question : la bonne
+        //    réponse comptait deux fois.
+        $q = $this->questions[0];
+        $id = $q['question']->id;
+
+        $this->postJson("/api/quiz/{$this->quiz->id}/soumettre", ['reponses' => [
+            ['question_id' => $id, 'reponse_ids' => [$q['bonne']->id]],
+            ['question_id' => "+{$id}", 'reponse_ids' => [$q['bonne']->id]],
+        ]])
+            ->assertOk()
+            ->assertJson(['score' => 1, 'points_gagnes' => 10]);
+
+        $this->assertSame(10, $this->user->fresh()->points_cumules);
+    }
+
+    public function test_refuse_un_identifiant_de_question_qui_n_est_pas_un_entier(): void
+    {
+        // 📖 « 1.0 » arrivait jusqu'à la règle exists, et PostgreSQL le rejetait : erreur 500.
+        $q = $this->questions[0];
+
+        foreach (["{$q['question']->id}.0", "0{$q['question']->id}", 'abc'] as $questionId) {
+            $this->postJson("/api/quiz/{$this->quiz->id}/soumettre", ['reponses' => [
+                ['question_id' => $questionId, 'reponse_ids' => [$q['bonne']->id]],
+            ]])->assertUnprocessable()->assertJsonValidationErrors('reponses.0.question_id');
+        }
+    }
+
     public function test_refuse_une_soumission_sans_reponses(): void
     {
         $this->postJson("/api/quiz/{$this->quiz->id}/soumettre", [])

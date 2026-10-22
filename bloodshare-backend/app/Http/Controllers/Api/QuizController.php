@@ -174,7 +174,9 @@ class QuizController extends Controller
     {
         $validated = $request->validate([
             'reponses' => 'required|array',
-            'reponses.*.question_id' => 'required|exists:questions,id',
+            // 📖 bail + integer avant exists : « 1.0 » arrivait jusqu'à PostgreSQL, qui le
+            //    rejetait pour une colonne entière (erreur 500).
+            'reponses.*.question_id' => 'bail|required|integer|exists:questions,id',
             'reponses.*.reponse_ids' => 'required|array',
         ]);
 
@@ -189,9 +191,12 @@ class QuizController extends Controller
 
         // 📖 keyBy : une question n'est comptée qu'une fois. Sans ça, renvoyer 100 fois la
         //    même bonne réponse donnait un score de 100/4 et 1 000 points pour un quiz qui
-        //    en vaut 40 (audit cybersécurité).
-        foreach (collect($validated['reponses'])->keyBy('question_id') as $reponseSoumise) {
-            $question = $quiz->questions->firstWhere('id', $reponseSoumise['question_id']);
+        //    en vaut 40 (audit cybersécurité). La clé est convertie en entier : sinon « +1 »
+        //    était rangé à part de 1, puis retrouvait la même question (revue PR #120).
+        $reponsesParQuestion = collect($validated['reponses'])->keyBy(fn ($r) => (int) $r['question_id']);
+
+        foreach ($reponsesParQuestion as $questionId => $reponseSoumise) {
+            $question = $quiz->questions->firstWhere('id', $questionId);
 
             if (! $question) {
                 continue;
@@ -205,7 +210,8 @@ class QuizController extends Controller
             }
         }
 
-        $score = $bonnesReponses;
+        // 📖 Plafond par sécurité : quoi qu'on envoie, jamais plus que le nombre de questions.
+        $score = min($bonnesReponses, $totalQuestions);
 
         $userQuiz = UserQuiz::where('user_id', $user->id)
             ->where('quiz_id', $quiz->id)
