@@ -74,6 +74,17 @@ class AdminPanelProvider extends PanelProvider
             ])
             // 📖 Mode clair aux couleurs de l'app (beige, aubergine) : voir la vue pour le détail.
             ->renderHook(PanelsRenderHook::STYLES_AFTER, fn (): string => view('filament.theme-aima')->render())
+            // 📖 Ordre des groupes du menu. Sans cette liste, Filament les range dans l'ordre de
+            //    découverte des fichiers, ce qui mettait les stocks de sang (mis à jour le plus
+            //    souvent) tout en bas. Un groupe absent de la liste s'affiche après ceux-ci.
+            ->navigationGroups([
+                'Administration',
+                'Opérations',
+                'Communication',
+                'Gamification',
+                'Contenu éditorial',
+                'Utilisateurs',
+            ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
