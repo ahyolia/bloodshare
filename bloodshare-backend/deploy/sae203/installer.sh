@@ -32,6 +32,14 @@ php artisan package:discover --no-ansi > /dev/null
 #    qui garde le sous-dossier. Republier à chaque fois : la version doit suivre vendor/.
 php artisan vendor:publish --tag=livewire:assets --force --no-ansi > /dev/null
 
+# 📖 Même garde que entrypoint.sh (Docker) : refuser une config de prod dangereuse
+#    (APP_DEBUG, APP_KEY vide, mot de passe de .env.example...) AVANT les migrations.
+#    config:clear d'abord, sinon c'est la config en cache de la version précédente
+#    qui serait vérifiée, pas le .env qui vient d'arriver.
+echo "▶ Configuration de production"
+php artisan config:clear --no-ansi > /dev/null
+php artisan securite:verifier-config --no-ansi
+
 # 📖 Apache tourne sous www-data, le cron et SSH sous cameliaa : les deux doivent
 #    pouvoir écrire dans storage/ et bootstrap/cache/. Les ACL le permettent sans
 #    rendre le code ni le .env lisibles par les autres comptes du serveur.
