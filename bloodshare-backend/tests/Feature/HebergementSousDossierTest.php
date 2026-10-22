@@ -65,6 +65,26 @@ class HebergementSousDossierTest extends TestCase
         );
     }
 
+    public function test_le_backoffice_envoie_les_actions_livewire_dans_le_sous_dossier(): void
+    {
+        // 📖 Sans le sous-dossier, le navigateur poste sur https://sae203.hopto.org/livewire/update
+        //    (hors du dossier utilisateur) : la connexion au backoffice est impossible.
+        $this->call('GET', 'https://sae203.hopto.org/~cameliaa/admin/login', [], [], [], [
+            'SCRIPT_NAME' => '/~cameliaa/index.php',
+            'SCRIPT_FILENAME' => '/home/cameliaa/public_html/index.php',
+            'PHP_SELF' => '/~cameliaa/index.php',
+        ])
+            ->assertOk()
+            ->assertSee('data-update-uri="/~cameliaa/livewire/update"', false);
+    }
+
+    public function test_les_actions_livewire_restent_a_la_racine_sans_sous_dossier(): void
+    {
+        $this->get('/admin/login')
+            ->assertOk()
+            ->assertSee('data-update-uri="/livewire/update"', false);
+    }
+
     public function test_l_api_accepte_le_preflight_cors_du_front_autorise(): void
     {
         config(['cors.allowed_origins' => ['https://aima-forum.netlify.app']]);

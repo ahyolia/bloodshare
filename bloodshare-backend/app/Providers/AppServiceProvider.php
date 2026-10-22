@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Support\Livewire\HandleRequestsSousDossier;
 use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Mechanisms\HandleRequests\HandleRequests;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,7 +16,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // 📖 Livewire enregistre ses mécanismes avant les providers de l'app et les
+        //    résout toujours via le conteneur : remplacer l'instance ici suffit, avant
+        //    que son boot() ne déclare la route livewire/update. Voir HandleRequestsSousDossier.
+        $this->app->instance(HandleRequests::class, new HandleRequestsSousDossier);
     }
 
     /**

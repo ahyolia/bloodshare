@@ -27,6 +27,10 @@ echo "▶ Fichiers Laravel"
 cp deploy/sae203/.htaccess public/.htaccess
 php artisan package:discover --no-ansi > /dev/null
 [ -L public/storage ] || php artisan storage:link --no-ansi
+# 📖 Servi par sa route, livewire.min.js serait appelé à la racine du domaine (sans
+#    /~cameliaa) ; publié dans public/vendor, Livewire génère son URL avec url(),
+#    qui garde le sous-dossier. Republier à chaque fois : la version doit suivre vendor/.
+php artisan vendor:publish --tag=livewire:assets --force --no-ansi > /dev/null
 
 # 📖 Apache tourne sous www-data, le cron et SSH sous cameliaa : les deux doivent
 #    pouvoir écrire dans storage/ et bootstrap/cache/. Les ACL le permettent sans
@@ -75,10 +79,16 @@ echo "   $(crontab -l | grep -c 'schedule:run') ligne schedule:run dans le cront
 echo "▶ Vérification en ligne"
 local_=(--resolve sae203.hopto.org:443:127.0.0.1)
 code=$(curl -s "${local_[@]}" -o /dev/null -w '%{http_code}' "$URL/api/stock-sang" || true)
-admin=$(curl -s "${local_[@]}" -o /dev/null -w '%{http_code}' "$URL/admin/login" || true)
+page=$(mktemp)
+admin=$(curl -s "${local_[@]}" -o "$page" -w '%{http_code}' "$URL/admin/login" || true)
+# Un 200 ne suffit pas : sans le sous-dossier dans les URLs Livewire, la page
+# s'affiche mais le formulaire de connexion ne fonctionne pas.
+livewire=$(grep -oE '(src|data-update-uri)="[^"]*livewire[^"]*"' "$page" | grep -vc '/~cameliaa/' || true)
+rm -f "$page"
 echo "   API      $URL/api/stock-sang → HTTP $code"
 echo "   Backoffice $URL/admin/login → HTTP $admin"
-if [ "$code" = "200" ] && [ "$admin" = "200" ]; then
+echo "   URLs Livewire hors du sous-dossier : $livewire"
+if [ "$code" = "200" ] && [ "$admin" = "200" ] && [ "$livewire" = "0" ]; then
     echo "✅ Déploiement terminé."
 else
     echo "❌ Le site ne répond pas comme prévu : voir storage/logs/laravel-$(date +%F).log"

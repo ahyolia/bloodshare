@@ -393,6 +393,7 @@ L'URL Netlify doit figurer dans `CORS_ALLOWED_ORIGINS`, exactement et sans `/` f
 | 500 sur tout le site | `storage/logs/laravel-<date>.log` sur le Pi. Si le log est vide : `.htaccess` (directive non autorisée) ou permissions de `storage/` |
 | 404 sur toutes les routes sauf l'accueil | `public/.htaccess` n'est pas celui de `deploy/sae203/` : relancer `installer.sh` |
 | Images cassées | `ls -l ~/aima/backend/public/storage` doit être un lien vers `storage/app/public` |
+| Backoffice affiché mais connexion sans effet | URLs Livewire sans `/~cameliaa` (console du navigateur : 404 sur `/livewire/...`). Vérifier que `public/vendor/livewire` existe (publié par `installer.sh`) et que `AppServiceProvider` branche `HandleRequestsSousDossier` |
 | Erreur CORS dans la console du navigateur | `CORS_ALLOWED_ORIGINS` ne correspond pas exactement à l'URL Netlify, puis republier |
 | Changement de `.env` sans effet | La config est en cache : republier, ou `php artisan optimize` sur le Pi |
 | Notifications planifiées absentes | `crontab -l` doit contenir la ligne `schedule:run` ; `php artisan schedule:list` |
