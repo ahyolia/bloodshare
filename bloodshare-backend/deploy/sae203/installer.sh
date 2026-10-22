@@ -48,16 +48,21 @@ echo "▶ Permissions"
 #    sessions) appartiennent à www-data, chmod/setfacl y sont refusés, et c'est inutile
 #    (www-data en est propriétaire, $USER y accède par les ACL par défaut des dossiers).
 #    Un « chmod -R » arrêtait le script ici, laissant le site en 403.
+#    « ! -readable -prune » saute les dossiers qu'Apache crée en 700 (ex. l'upload
+#    temporaire de Livewire, storage/app/private/livewire-tmp) : find ne peut pas les
+#    ouvrir, s'arrêtait en erreur, et il n'y a rien à y changer.
+mes_fichiers() { find "$@" \( ! -readable -prune \) -o -user "$USER" -print0; }
+mes_dossiers() { find "$@" \( ! -readable -prune \) -o -type d -user "$USER" -print0; }
 if command -v setfacl > /dev/null; then
     chmod 711 "$HOME"
-    find "$HOME/aima" -user "$USER" -exec chmod o-rwx {} +
-    find "$HOME/aima" -user "$USER" -exec setfacl -m u:www-data:rX {} +
-    find storage bootstrap/cache -user "$USER" -exec setfacl -m u:www-data:rwX -m u:"$USER":rwX {} +
-    find storage bootstrap/cache -type d -user "$USER" -exec setfacl -m d:u:www-data:rwX -m d:u:"$USER":rwX {} +
+    mes_fichiers "$HOME/aima" | xargs -0 -r chmod o-rwx
+    mes_fichiers "$HOME/aima" | xargs -0 -r setfacl -m u:www-data:rX
+    mes_fichiers storage bootstrap/cache | xargs -0 -r setfacl -m u:www-data:rwX -m u:"$USER":rwX
+    mes_dossiers storage bootstrap/cache | xargs -0 -r setfacl -m d:u:www-data:rwX -m d:u:"$USER":rwX
 else
     # Repli sans ACL : fonctionne, mais le code et le .env restent lisibles par tous.
     echo "⚠️  setfacl absent : storage/ et bootstrap/cache/ passent en 777."
-    find storage bootstrap/cache -user "$USER" -exec chmod 777 {} +
+    mes_fichiers storage bootstrap/cache | xargs -0 -r chmod 777
     chmod 644 .env
 fi
 
