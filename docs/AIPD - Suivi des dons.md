@@ -99,9 +99,9 @@ Ces données sont rattachées à un compte **pseudonyme** : pseudo et adresse em
 
 | | |
 | --- | --- |
-| **Sources de risque** | Utilisateur qui scanne le QR code du centre sans avoir donné, par exemple à partir d'une photo partagée : ce code est unique et fixe par centre, et un scan apporte une carte, des badges, la validation du parrainage et une contribution au défi (mais jamais de points) ; administrateur qui modifie une donnée par erreur |
+| **Sources de risque** | Utilisateur qui scanne le QR code du centre sans avoir donné, par exemple à partir d'une photo partagée : ce code était fixe jusqu'à l'US-29 (il change maintenant toutes les 30 secondes, une photo ne peut plus être relayée que pendant une minute au plus), et un scan apporte une carte, des badges, la validation du parrainage et une contribution au défi (mais jamais de points) ; administrateur qui modifie une donnée par erreur |
 | **Menaces** | Dates de don fausses, donc un historique inexact et un rappel « vous pouvez redonner » envoyé au mauvais moment |
-| **Mesures existantes** | Un seul scan de don par période d'éligibilité (8 ou 12 semaines), refusé sinon ; action « Régénérer le QR Code » dans le backoffice, qui désactive l'ancien code et en crée un nouveau ; le rappel est indicatif et l'entretien médical préalable au don reste obligatoire (rappelé dans les CGU et sur l'écran d'éligibilité) |
+| **Mesures existantes** | Un seul scan de don par période d'éligibilité (8 ou 12 semaines), refusé sinon ; QR code du centre tournant, affiché sur un écran du centre et renouvelé toutes les 30 secondes : une photo ne sert qu'une minute au plus (audit cybersécurité, US-29) ; action « Régénérer le QR Code » dans le backoffice, qui désactive l'ancien code et le lien de l'écran ; le rappel est indicatif et l'entretien médical préalable au don reste obligatoire (rappelé dans les CGU et sur l'écran d'éligibilité) |
 | **Mesures prévues** | Régénérer le code du centre à intervalles réguliers, et aussitôt s'il circule (procédure ADSB-NC, dès la V1) ; passer à un code à usage unique remis à chaque donneur (V2) |
 | **Gravité** | **Négligeable** : l'entretien médical empêche un don trop rapproché, et la triche ne nuit qu'à l'exactitude du jeu |
 | **Vraisemblance** | **Importante** : le code est fixe et facile à partager |
@@ -140,7 +140,7 @@ Ces données sont rattachées à un compte **pseudonyme** : pseudo et adresse em
 | 7 | Traçabilité des actions des administrateurs | R1, R2 | V2 | Équipe |
 | 8 | Export des données par l'utilisateur ; modification du sexe dans l'application | Droits | V2 | Équipe |
 | 9 | Consentement santé facultatif (application utilisable sans suivi des dons) | Base légale | V2 | Équipe |
-| 10 | Régénérer régulièrement le QR code de don du centre (action déjà disponible dans le BO), et aussitôt s'il circule | R2 | Dès la mise en ligne | ADSB-NC |
+| 10 | ✅ QR code de don du centre tournant (30 s), affiché sur un écran du centre. Régénérer le QR code dans le BO si le lien de l'écran a circulé | R2 | Fait (US-29) | Équipe |
 | 11 | Passer à un QR code de don à usage unique par donneur | R2 | V2 | Équipe |
 
 ## 5. Validation

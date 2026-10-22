@@ -40,6 +40,7 @@ class DocumentJuridiqueResource extends Resource
                 //    côté mobile.
                 Forms\Components\Textarea::make('contenu')
                     ->label('Contenu')
+                    ->maxLength(50000)
                     ->rows(25)
                     ->helperText('Mise en forme : « ## Titre » pour un titre de section, « - » en début de ligne pour une puce, une ligne vide entre deux paragraphes. Tant que le contenu est vide, l\'app affiche « bientôt disponible ».')
                     ->columnSpanFull(),

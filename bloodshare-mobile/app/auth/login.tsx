@@ -49,7 +49,8 @@ export default function LoginScreen() {
       if (__DEV__) console.warn('[auth] connexion échouée :', error.response?.status ?? error.message);
 
       if (error.response) {
-        if (error.response.status === 401) {
+        // 📖 403 : compte suspendu, le message vient de l'API.
+        if (error.response.status === 401 || error.response.status === 403) {
           setErrorMessage(error.response.data?.message || 'Email ou mot de passe incorrect.');
         } else {
           setErrorMessage('Une erreur est survenue côté serveur.');

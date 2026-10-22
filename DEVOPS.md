@@ -15,8 +15,8 @@ Le projet tourne entièrement en Docker (4 services), orchestrés par `docker-co
 |---|---|---|---|
 | `backend` (`bloodshare_backend`) | build local (`bloodshare-backend/Dockerfile`, PHP 8.3-cli) | 8000 | API Laravel + Backoffice Filament |
 | `scheduler` (`bloodshare_scheduler`) | même image que `backend` | — | Exécute les tâches planifiées (`php artisan schedule:work`) |
-| `db` (`bloodshare_db`) | `postgres:15-alpine` | 5433 → 5432 | Base de données PostgreSQL |
-| `pgadmin` (`bloodshare_pgadmin`) | `dpage/pgadmin4` | 5050 → 80 | Interface d'administration de la BDD |
+| `db` (`bloodshare_db`) | `postgres:15-alpine` | 127.0.0.1:5433 → 5432 | Base de données PostgreSQL |
+| `pgadmin` (`bloodshare_pgadmin`) | `dpage/pgadmin4` | 127.0.0.1:5050 → 80 | Interface d'administration de la BDD |
 
 ### Service `scheduler`
 
@@ -133,6 +133,27 @@ cp bloodshare-backend/.env.example bloodshare-backend/.env
 ```bash
 docker exec -it bloodshare_backend php artisan config:show
 ```
+
+### Configuration de production (Dokploy)
+
+En production (`APP_ENV=production`), `entrypoint.sh` lance `php artisan securite:verifier-config`
+avant de démarrer le serveur. **Le conteneur refuse de démarrer** (erreur dans les logs du
+service) si :
+
+| Contrôle | Valeur attendue |
+| --- | --- |
+| `APP_DEBUG` | `false` |
+| `APP_KEY` | définie |
+| `DB_PASSWORD`, `SEED_ADMIN_PASSWORD` | différents de ceux de `.env.example` (publics, le dépôt l'est) |
+| `SESSION_SECURE_COOKIE` | `true` (valeur par défaut en production) |
+
+À vérifier aussi à la main :
+- **HTTPS** : le BO et l'API ne sont utilisés que par le tunnel HTTPS. Le port publié par
+  Dokploy (`8001`) sert le backend en HTTP sur toutes les interfaces de la machine : ne pas
+  l'ouvrir sur Internet (box, pare-feu), et le retirer s'il ne sert pas.
+- **Base de données** : aucun port publié pour le service `db` de Dokploy.
+- **En local**, PostgreSQL (`5433`) et pgAdmin (`5050`) n'écoutent que sur `127.0.0.1` :
+  leurs mots de passe sont ceux du dépôt.
 
 ---
 

@@ -10,6 +10,7 @@ use App\Models\UserCarte;
 use App\Services\BadgeService;
 use App\Services\DefiService;
 use App\Services\ParrainageService;
+use App\Services\QrCentreTournant;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,9 +22,13 @@ class ScanController extends Controller
     {
         $request->validate(['token' => 'required|string']);
 
-        $qrCode = QrCode::where('token', $request->token)
-            ->where('actif', true)
-            ->first();
+        // 📖 Le QR centre n'est plus accepté que sous sa forme tournante : son token brut est
+        //    celui des anciens QR imprimés ou téléchargés, qui ne doivent plus valider de don.
+        $qrCode = app(QrCentreTournant::class)->verifier($request->token)
+            ?? QrCode::where('token', $request->token)
+                ->where('type', 'evenement')
+                ->where('actif', true)
+                ->first();
 
         if (! $qrCode) {
             return response()->json(['message' => 'QR Code invalide ou expiré.'], 404);
@@ -32,6 +37,13 @@ class ScanController extends Controller
         $user = $request->user();
 
         return DB::transaction(function () use ($user, $qrCode) {
+            // 📖 Verrou sur la ligne user : sérialise les scans simultanés d'un même
+            //    utilisateur (double-tap, retry réseau). Sans lui, 8 scans parallèles du QR
+            //    centre passaient tous le contrôle d'éligibilité avant que l'un ait écrit,
+            //    et créaient 5 dons (reproduit, audit cybersécurité). Il protège aussi le
+            //    contrôle « une participation par événement ».
+            $user->newQuery()->whereKey($user->id)->lockForUpdate()->first();
+
             return match ($qrCode->type) {
                 'centre'    => $this->handleDon($user, $this->enregistrerScan($user, $qrCode)),
                 'evenement' => $this->handleEvenement($user, $qrCode),
@@ -102,13 +114,16 @@ class ScanController extends Controller
                 //    add_unique_constraint_to_user_cartes_table — fait respecter la règle au
                 //    niveau base. Un doublon veut juste dire que l'autre requête a gagné la
                 //    course ; la carte est déjà possédée, rien d'autre à faire.
+                //    Transaction imbriquée (savepoint) : sous PostgreSQL, une violation de
+                //    contrainte annule toute la transaction en cours, et sans savepoint la
+                //    requête suivante échouait en 500 malgré le catch.
                 try {
-                    UserCarte::create([
+                    DB::transaction(fn () => UserCarte::create([
                         'user_id'    => $user->id,
                         'carte_id'   => $carte->id,
                         'quantite'   => 1,
                         'obtenue_at' => now(),
-                    ]);
+                    ]));
                 } catch (QueryException $e) {
                     if (! str_contains($e->getMessage(), 'user_cartes_user_id_carte_id_unique')) {
                         throw $e;
@@ -160,13 +175,10 @@ class ScanController extends Controller
 
         // 📖 Une participation par événement : sans ce contrôle, rescanner le même QR
         //    rapportait une carte à chaque fois (et le badge « Toujours partant », 3 cartes
-        //    événement, s'obtenait avec un seul événement). Le verrou sur la ligne user
-        //    sérialise deux scans simultanés du même utilisateur (double-tap, retry réseau),
-        //    qui passeraient sinon tous les deux le contrôle avant que l'un ait écrit.
+        //    événement, s'obtenait avec un seul événement). Les scans simultanés sont
+        //    sérialisés par le verrou posé dans scan().
         //    Le scan n'est enregistré qu'APRÈS les contrôles : un scan refusé (événement
         //    en brouillon, par ex.) ne doit pas bloquer la participation une fois publié.
-        $user->newQuery()->whereKey($user->id)->lockForUpdate()->first();
-
         $dejaParticipe = QrCodeScan::where('user_id', $user->id)
             ->where('qr_code_id', $qrCode->id)
             ->exists();
@@ -196,12 +208,12 @@ class ScanController extends Controller
             } else {
                 // 📖 Même protection que dans handleDon : voir le commentaire là-bas.
                 try {
-                    UserCarte::create([
+                    DB::transaction(fn () => UserCarte::create([
                         'user_id'    => $user->id,
                         'carte_id'   => $carte->id,
                         'quantite'   => 1,
                         'obtenue_at' => now(),
-                    ]);
+                    ]));
                 } catch (QueryException $e) {
                     if (! str_contains($e->getMessage(), 'user_cartes_user_id_carte_id_unique')) {
                         throw $e;

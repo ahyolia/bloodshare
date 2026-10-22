@@ -17,6 +17,13 @@ if [ -f .env ] && grep -q '^APP_KEY=$' .env; then
     php artisan key:generate --force
 fi
 
+# 📖 En production (APP_ENV=production), refuse de démarrer avec une config dangereuse :
+#    debug actif, mots de passe de développement, cookie de session non sécurisé. Ne fait
+#    rien en local. Le message d'erreur est dans les logs du service. Lancé avant toute
+#    connexion à la base : avec une mauvaise config, les migrations ne doivent pas toucher
+#    la prod (revue PR #120). Ne lit que la config, la base n'a pas besoin d'être prête.
+php artisan securite:verifier-config
+
 # 📖 Attend que PostgreSQL accepte les connexions avant de migrer. Sans ça, après un
 #    redémarrage de Docker le backend plantait (base pas encore joignable) et Swarm le
 #    relançait en boucle : plusieurs minutes d'erreurs 502/503. On teste avec Laravel

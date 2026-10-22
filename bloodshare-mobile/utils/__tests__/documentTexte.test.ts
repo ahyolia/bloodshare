@@ -40,6 +40,13 @@ describe('decouperDocument', () => {
     ]);
   });
 
+  it("garde le HTML et les liens comme du texte, sans rien interpréter", () => {
+    // 📖 Audit cybersécurité : le texte vient du BO, il ne doit jamais devenir du code ou un lien.
+    const piege = '<script>alert(1)</script> [clic](javascript:alert(1))';
+
+    expect(decouperDocument(piege)).toEqual([{ type: 'paragraphe', texte: piege }]);
+  });
+
   it('renvoie une liste vide pour un texte vide', () => {
     expect(decouperDocument('  \n ')).toEqual([]);
   });

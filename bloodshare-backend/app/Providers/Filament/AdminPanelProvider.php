@@ -39,7 +39,8 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            // 📖 Limite les tentatives par compte visé, pas seulement par IP (voir Connexion).
+            ->login(\App\Filament\Pages\Auth\Connexion::class)
             // 📖 Identité Aïma : nom dans l'onglet et la barre latérale, logo (variante
             //    crème pour le thème sombre) et favicon, tirés des exports officiels du branding.
             ->brandName('Aïma')

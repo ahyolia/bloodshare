@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Middleware\MetAJourDerniereActivite;
+use App\Http\Middleware\RefuseCompteBloque;
 use App\Models\DocumentJuridique;
 use App\Http\Controllers\Api\BadgeController;
 use App\Http\Controllers\Api\CarteController;
@@ -35,14 +36,15 @@ Route::get('/documents-juridiques/{type}', [ContenuController::class, 'documentJ
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])
         ->middleware('throttle:15,1');
+    // 📖 Limite par compte visé, pas seulement par IP : voir AppServiceProvider.
     Route::post('/login', [AuthController::class, 'login'])
-        ->middleware('throttle:6,1');
+        ->middleware('throttle:connexion');
     Route::post('/logout', [AuthController::class, 'logout'])
         ->middleware('auth:sanctum');
 });
 
 // Profil (connecté obligatoire)
-Route::middleware(['auth:sanctum', MetAJourDerniereActivite::class])->group(function () {
+Route::middleware(['auth:sanctum', RefuseCompteBloque::class, MetAJourDerniereActivite::class])->group(function () {
     Route::get('/me', [ProfilController::class, 'show']);
     Route::put('/me', [ProfilController::class, 'update']);
     Route::delete('/me', [ProfilController::class, 'destroy']);
