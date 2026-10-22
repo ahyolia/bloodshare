@@ -345,6 +345,7 @@ tourne sur le serveur d'un enseignant, le front web est sur Netlify.
 | `publier.sh` | Lancé depuis WSL : exporte le code commité, construit `vendor/` dans Docker, envoie le tout et lance `installer.sh` |
 | `installer.sh` | Lancé sur le Pi : vérifie les extensions, `.htaccess`, `storage:link`, permissions, lien `public_html`, migrations, cache, cron, puis teste l'API et le backoffice |
 | `.htaccess` | Remplace `public/.htaccess` : ajoute `RewriteBase /~cameliaa/` et retire `Options`, interdit dans un `.htaccess` par la config UserDir par défaut (erreur 500 sinon) |
+| `construire-front.ps1` | Lancé depuis PowerShell 7 : construit le front web branché sur sae203 (dossier + zip dans Téléchargements), à glisser dans Netlify |
 
 ### Prérequis (une seule fois)
 
@@ -397,15 +398,36 @@ modification faite directement dans le `.env` du serveur sera écrasée.
 
 ### Front web (Netlify)
 
-Dans *Site configuration → Environment variables*, puis relancer un déploiement (les valeurs
-sont intégrées au build) :
+Le site `https://aima-nc.netlify.app` est déployé **par glisser-déposer** d'un build fait en
+local : les variables d'environnement de Netlify ne servent donc à rien. `EXPO_PUBLIC_API_URL` et
+`EXPO_PUBLIC_VAPID_PUBLIC_KEY` sont gravées dans le JS au moment de `expo export`, sur le poste
+qui construit. Un build fait avec son propre `.env.local` (localhost, ngrok…) appellerait ce
+backend-là : toujours passer par le script, depuis PowerShell 7 (Node est côté Windows) :
 
-| Variable | Valeur |
-| --- | --- |
-| `EXPO_PUBLIC_API_URL` | `https://sae203.hopto.org/~cameliaa/api` |
-| `EXPO_PUBLIC_VAPID_PUBLIC_KEY` | `VAPID_PUBLIC_KEY` de `.env.production` (pas celle du local) |
+```powershell
+pwsh -ExecutionPolicy Bypass -File bloodshare-backend\deploy\sae203\construire-front.ps1
+```
+
+Il construit avec l'URL de sae203 et la clé VAPID **publique** de `.env.production`, sans toucher
+au `.env.local`, puis vérifie le résultat (URL présente, ni `localhost:8000` ni clé privée,
+fichiers PWA présents). Il produit `Téléchargements\aima-dist-sae203` et le `.zip` du même nom,
+à glisser dans Netlify : site **aima-nc** (pas un nouveau site, sinon l'URL change et le CORS
+refuse) → *Deploys* → zone de dépôt.
 
 L'URL Netlify doit figurer dans `CORS_ALLOWED_ORIGINS`, exactement et sans `/` final.
+
+### Mettre à jour après une modification
+
+| Modifié | À faire |
+| --- | --- |
+| Backend seulement | Commiter, puis `publier.sh` |
+| Front seulement | `construire-front.ps1`, puis glisser le résultat dans Netlify |
+| Les deux | **Backend d'abord**, puis front : l'ancien front reste compatible avec le nouveau backend le temps de glisser le build, l'inverse n'est pas garanti (route ou champ attendu absent) |
+| Une migration | Rien de plus : `installer.sh` lance `migrate --force` (après la vérification de la config) |
+| `.env.production` | `publier.sh`, même sans changement de code : le `.env` est renvoyé et la config remise en cache |
+
+Après une mise à jour du front, la PWA peut garder l'ancienne version en cache : Ctrl+F5, ou
+F12 → *Application* → *Service workers* → *Unregister*.
 
 ### Dépannage
 
