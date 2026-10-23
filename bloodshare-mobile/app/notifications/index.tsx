@@ -51,22 +51,7 @@ export default function NotificationsScreen() {
   const { notifications, loading, chargementSuite, error, marquerLue, marquerToutesLues, chargerPlus, recharger } =
     useNotifications();
 
-  const aDesNonLues = notifications?.some((n) => !n.lue) ?? false;
-
-  const enTete = (
-    <>
-      <EnTeteSousPage titre="Notifications" />
-      {aDesNonLues && (
-        <Bouton
-          variante="discret"
-          libelle="Tout marquer comme lu"
-          icone="checkmark-done-outline"
-          onPress={marquerToutesLues}
-          style={styles.toutLire}
-        />
-      )}
-    </>
-  );
+  const enTete = <EnTeteSousPage titre="Notifications" />;
 
   if (loading || error || !notifications) {
     return (
@@ -95,7 +80,9 @@ export default function NotificationsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={enTete}
-        renderItem={({ item }) => <SectionNotifications section={item} onLire={marquerLue} />}
+        renderItem={({ item }) => (
+          <SectionNotifications section={item} onLire={marquerLue} onToutLire={marquerToutesLues} />
+        )}
         onEndReached={chargerPlus}
         onEndReachedThreshold={0.4}
         ListEmptyComponent={
@@ -115,13 +102,33 @@ export default function NotificationsScreen() {
 /**
  * 📖 Surélevé = interactif : les nouvelles se touchent (elles passent en lues), leur
  *    carte flotte. Les lues n'ont plus d'action : carte à plat, contour fin.
+ *    « Tout marquer comme lu » vit sur la ligne du titre « Nouvelles » : il agit sur
+ *    cette section, et n'existe donc que lorsqu'elle est affichée.
  */
-function SectionNotifications({ section, onLire }: { section: Section; onLire: (id: string) => void }) {
+function SectionNotifications({
+  section,
+  onLire,
+  onToutLire,
+}: {
+  section: Section;
+  onLire: (id: string) => void;
+  onToutLire: () => void;
+}) {
   return (
     <Animated.View entering={entreeSousPage}>
-      <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
-        {section.titre}
-      </Text>
+      <View style={styles.sectionEnTete} testID={`en-tete-${section.cle}`}>
+        <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+          {section.titre}
+        </Text>
+        {section.cle === 'nouvelles' && (
+          <Bouton
+            variante="discret"
+            libelle="Tout marquer comme lu"
+            icone="checkmark-done-outline"
+            onPress={onToutLire}
+          />
+        )}
+      </View>
       <Groupe variante={section.cle === 'nouvelles' ? 'interactif' : 'info'}>
         {section.items.map((notification, i) => (
           <View key={notification.id}>
@@ -188,15 +195,19 @@ const styles = StyleSheet.create({
     paddingTop: 54,
     paddingBottom: Espace[12],
   },
-  toutLire: {
-    alignSelf: 'flex-end',
-    marginTop: -Espace[4],
-    marginBottom: Espace[2],
+  // 📖 Titre et bouton sur une ligne ; flexWrap : sur un écran étroit (ou un texte
+  //    agrandi), le bouton passe sous le titre au lieu de déborder.
+  sectionEnTete: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    columnGap: Espace[2],
+    marginTop: Espace[4],
+    marginBottom: Espace[3],
   },
   sectionTitre: {
     color: Theme.texte.principal,
-    marginTop: Espace[4],
-    marginBottom: Espace[3],
   },
   // 📖 Marge de 16 + pastille de 40 + écart de 12 : le filet de `Separateur` démarre
   //    sous le texte, comme dans les autres groupes.
