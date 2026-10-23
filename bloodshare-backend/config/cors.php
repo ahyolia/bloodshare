@@ -4,7 +4,7 @@
 //    supports_credentials ni de SANCTUM_STATEFUL_DOMAINS à régler pour le CORS.
 //    En local, toutes les origines restent autorisées (Expo web, ngrok, IP LAN).
 //    En production, CORS_ALLOWED_ORIGINS liste les domaines du front, séparés
-//    par des virgules (ex. https://aima-forum.netlify.app).
+//    par des virgules (ex. https://aima-nc.netlify.app).
 
 return [
 

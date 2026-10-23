@@ -87,20 +87,20 @@ class HebergementSousDossierTest extends TestCase
 
     public function test_l_api_accepte_le_preflight_cors_du_front_autorise(): void
     {
-        config(['cors.allowed_origins' => ['https://aima-forum.netlify.app']]);
+        config(['cors.allowed_origins' => ['https://aima-nc.netlify.app']]);
 
         $this->call('OPTIONS', '/api/me', [], [], [], [
-            'HTTP_ORIGIN' => 'https://aima-forum.netlify.app',
+            'HTTP_ORIGIN' => 'https://aima-nc.netlify.app',
             'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'GET',
             'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => 'authorization',
         ])
             ->assertNoContent()
-            ->assertHeader('Access-Control-Allow-Origin', 'https://aima-forum.netlify.app');
+            ->assertHeader('Access-Control-Allow-Origin', 'https://aima-nc.netlify.app');
     }
 
     public function test_l_api_refuse_une_origine_non_autorisee(): void
     {
-        config(['cors.allowed_origins' => ['https://aima-forum.netlify.app']]);
+        config(['cors.allowed_origins' => ['https://aima-nc.netlify.app']]);
 
         $reponse = $this->call('OPTIONS', '/api/me', [], [], [], [
             'HTTP_ORIGIN' => 'https://site-inconnu.example',
@@ -135,8 +135,8 @@ class HebergementSousDossierTest extends TestCase
             $definir(null);
             $this->assertSame(['*'], $config()['allowed_origins']);
 
-            $definir('https://aima-forum.netlify.app, http://localhost:8081');
-            $this->assertSame(['https://aima-forum.netlify.app', 'http://localhost:8081'], $config()['allowed_origins']);
+            $definir('https://aima-nc.netlify.app, http://localhost:8081');
+            $this->assertSame(['https://aima-nc.netlify.app', 'http://localhost:8081'], $config()['allowed_origins']);
         } finally {
             [$server, $env, $getenv] = $avant;
             $definir(null);
