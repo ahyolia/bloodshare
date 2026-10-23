@@ -34,7 +34,7 @@ L'authentification de l'API repose sur Laravel Sanctum (tokens Bearer). Le forma
 
 | Document | Description |
 |---|---|
-| [DEVOPS.md](DEVOPS.md) | Architecture Docker, workflow Git |
+| [DEVOPS.md](DEVOPS.md) | Architecture Docker, workflow Git, déploiement sur le serveur de démo (section 6) |
 | [docs/contrat_API.md](docs/contrat_API.md) | Format des endpoints API mobile |
 | [bloodshare-backend/README.md](bloodshare-backend/README.md) | Documentation backend |
 | [bloodshare-mobile/README.md](bloodshare-mobile/README.md) | Documentation mobile |
@@ -79,6 +79,10 @@ Compte de test pour l'app mobile : `test@example.com` / `password` (aucun accès
 | API Laravel | http://localhost:8000 |
 | Backoffice Filament | http://localhost:8000/admin |
 | pgAdmin | http://localhost:5050 |
+
+Démo en ligne (hébergement temporaire) : front sur https://aima-nc.netlify.app, API et
+backoffice sur https://sae203.hopto.org/~cameliaa. Mise à jour du back ou du front : voir
+[DEVOPS.md, section 6](DEVOPS.md#6-déploiement-sur-le-serveur-de-démo-sae203).
 
 ## Connexion pgAdmin
 

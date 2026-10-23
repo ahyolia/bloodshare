@@ -64,11 +64,16 @@ Scannez le QR Code avec Expo Go sur votre téléphone, ou appuyez sur :
 
 ## Connexion au backend
 
-Configurez l'URL de l'API dans votre fichier de configuration :
+Configurez l'URL de l'API dans `bloodshare-mobile/.env.local` (copie de `.env.example`, qui
+détaille ngrok et l'IP LAN) :
 
 ```
-API_URL=http://localhost:8000/api
+EXPO_PUBLIC_API_URL=http://localhost:8000/api
 ```
+
+Cette valeur est intégrée au build : **ne pas construire le site en ligne (Netlify) avec son
+`.env.local`**, il appellerait votre backend local. Utiliser le script dédié, voir
+[DEVOPS.md, section 6](../DEVOPS.md#front-web-netlify).
 
 ## Endpoints disponibles
 
