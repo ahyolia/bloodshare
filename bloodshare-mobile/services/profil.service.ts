@@ -31,7 +31,11 @@ export type MajProfilPayload = {
 // 📖 Catalogue local des avatars : des emojis « nature et objets », neutres (ni
 //    visage, ni genre) pour respecter l'anonymat. Pas d'appel réseau : l'API ne
 //    transmet que `avatar_id`, l'app en déduit l'emoji. Chaque id doit exister
-//    dans la table `avatars` (AvatarSeeder), sinon PUT /me refuse le choix.
+//    dans la table `avatars`, sinon PUT /me refuse le choix.
+//    ⚠️ Le lien repose sur l'id, pas sur le nom : la migration backend
+//    2026_10_23_000000_seed_avatars_emoji crée les avatars 1 à 8 à ces ids exacts et
+//    refuse de passer si une base a un id qui porte un autre avatar. Ajouter un avatar
+//    ici = l'ajouter aussi dans une nouvelle migration, au même id.
 //    `nom` sert de libellé aux lecteurs d'écran.
 export type Avatar = { id: number; emoji: string; nom: string };
 
