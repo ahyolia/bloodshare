@@ -103,6 +103,21 @@ class NotificationsTest extends TestCase
         $this->getJson('/api/notifications/non-lues')->assertExactJson(['count' => 0]);
     }
 
+    public function test_accepte_un_put_envoye_en_post_avec_x_http_method_override(): void
+    {
+        // 📖 Le serveur de démo refuse PUT/DELETE au niveau d'Apache : l'app les envoie en
+        //    POST avec la vraie méthode dans cet en-tête (services/api.ts). Si Laravel cessait
+        //    de le lire, profil, suppression de compte et notifications casseraient en ligne.
+        $id = $this->creerNotification($this->user, 'A');
+        $this->creerNotification($this->user, 'B');
+
+        $this->postJson("/api/notifications/{$id}/lue", [], ['X-HTTP-Method-Override' => 'PUT'])->assertOk();
+        $this->getJson('/api/notifications/non-lues')->assertExactJson(['count' => 1]);
+
+        $this->postJson('/api/notifications/lues', [], ['X-HTTP-Method-Override' => 'PUT'])->assertOk();
+        $this->getJson('/api/notifications/non-lues')->assertExactJson(['count' => 0]);
+    }
+
     // ── Abonnement push ─────────────────────────────────────────
 
     public function test_enregistre_un_abonnement_push(): void

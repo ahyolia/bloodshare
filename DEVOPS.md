@@ -441,6 +441,7 @@ F12 → *Application* → *Service workers* → *Unregister*.
 | Erreur CORS dans la console du navigateur | `CORS_ALLOWED_ORIGINS` ne correspond pas exactement à l'URL Netlify, puis republier |
 | Changement de `.env` sans effet | La config est en cache : republier, ou `php artisan optimize` sur le Pi |
 | Notifications planifiées absentes | `crontab -l` doit contenir la ligne `schedule:run` ; `php artisan schedule:list` |
+| Une modification semble enregistrée puis revient (notif lue, profil, progression de quiz) | La config UserDir de Debian n'autorise que GET, POST et OPTIONS : un `PUT`/`DELETE` reçoit un 403 HTML d'Apache, avant Laravel. L'app les envoie en POST avec `X-HTTP-Method-Override` (`bloodshare-mobile/services/api.ts`) : vérifier que le front publié est récent, et ne jamais appeler `axios.put`/`delete` en dehors de ce client |
 
 ### Limites connues
 
