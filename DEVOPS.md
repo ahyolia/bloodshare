@@ -501,10 +501,17 @@ sans rien perdre une fois le Pi revenu.
 
 ### Limites du plan B
 
-- **Page d'avertissement de ngrok** (plan gratuit) : elle s'intercale devant les pages ouvertes
-  dans un navigateur. L'API n'est pas touchée (l'app envoie `ngrok-skip-browser-warning`), mais
-  les **images** chargées par les téléphones des visiteurs peuvent ne pas s'afficher, et le BO
-  demande un clic sur « Visit Site » la première fois.
+- **Images absentes dans l'app** (vérifié) : sur le plan gratuit, ngrok répond à toute requête
+  de navigateur sans l'en-tête `ngrok-skip-browser-warning` par son message d'avertissement
+  (236 octets en `text/plain`) au lieu du fichier. L'app envoie cet en-tête pour l'API, mais une
+  balise image ne le peut pas : actualités, événements, cartes et badges illustrés s'affichent
+  sans image. Les avatars (emojis) ne sont pas touchés. Le BO demande un clic sur « Visit Site »
+  la première fois.
+- **Plus lent** : 2 à 3,5 s par appel d'API via ngrok (contre ~0,5 s sur sae203).
+- Alternative sans page d'avertissement : un tunnel Cloudflare gratuit (`cloudflared tunnel
+  --url http://localhost:8002`), mais son adresse change à chaque lancement : il faudrait
+  reconstruire le front (`construire-front.ps1 -Secours -UrlSecours <adresse>`) au moment de la
+  panne, et mettre l'adresse dans `APP_URL` du secours.
 - **Images** : seules celles copiées à la dernière préparation. Une image envoyée depuis le BO
   pendant la panne reste sur le PC et devra être renvoyée sur sae203.
 - **Pas de tâches planifiées** sur le secours (pas de cron) : notifications du matin absentes
