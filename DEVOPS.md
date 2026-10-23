@@ -146,6 +146,7 @@ service) si :
 | `APP_KEY` | définie |
 | `DB_PASSWORD`, `SEED_ADMIN_PASSWORD` | différents de ceux de `.env.example` (publics, le dépôt l'est) |
 | `SESSION_SECURE_COOKIE` | `true` (valeur par défaut en production) |
+| `CORS_ALLOWED_ORIGINS` | l'URL exacte du front, sans `/` final (`*`, la valeur par défaut, est refusé) |
 
 À vérifier aussi à la main :
 - **HTTPS** : le BO et l'API ne sont utilisés que par le tunnel HTTPS. Le port publié par

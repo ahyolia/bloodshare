@@ -67,6 +67,25 @@ class ConfigSecuriteTest extends TestCase
             ->assertFailed();
     }
 
+    public function test_refuse_toutes_les_origines_cors_en_production(): void
+    {
+        $this->enProduction(['cors.allowed_origins' => ['*']]);
+
+        $this->artisan('securite:verifier-config')
+            ->expectsOutputToContain('CORS_ALLOWED_ORIGINS')
+            ->assertFailed();
+    }
+
+    public function test_refuse_une_liste_d_origines_cors_contenant_tout(): void
+    {
+        // Une origine précise ne rattrape pas un « * » oublié dans la liste.
+        $this->enProduction(['cors.allowed_origins' => ['https://aima-nc.netlify.app', '*']]);
+
+        $this->artisan('securite:verifier-config')
+            ->expectsOutputToContain('CORS_ALLOWED_ORIGINS')
+            ->assertFailed();
+    }
+
     // ── En-têtes HTTP ───────────────────────────────────────────
 
     public function test_ajoute_les_en_tetes_de_securite(): void
@@ -96,6 +115,7 @@ class ConfigSecuriteTest extends TestCase
             'database.connections.pgsql.password' => 'un-vrai-mot-de-passe',
             'app.seed_admin_password' => null,
             'session.secure' => true,
+            'cors.allowed_origins' => ['https://aima-nc.netlify.app'],
             ...$config,
         ]);
     }
