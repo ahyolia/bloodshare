@@ -346,7 +346,7 @@ tourne sur le serveur d'un enseignant, le front web est sur Netlify.
 | `publier.sh` | Lancé depuis WSL : exporte le code commité, construit `vendor/` dans Docker, envoie le tout et lance `installer.sh` |
 | `installer.sh` | Lancé sur le Pi : vérifie les extensions, `.htaccess`, `storage:link`, permissions, lien `public_html`, migrations, cache, cron, puis teste l'API et le backoffice |
 | `.htaccess` | Remplace `public/.htaccess` : ajoute `RewriteBase /~cameliaa/` et retire `Options`, interdit dans un `.htaccess` par la config UserDir par défaut (erreur 500 sinon) |
-| `construire-front.ps1` | Lancé depuis PowerShell 7 : construit le front web branché sur sae203 (dossier + zip dans Téléchargements), à glisser dans Netlify |
+| `construire-front.ps1` | Lancé depuis PowerShell 7 : construit le front web branché sur sae203 (dossier + zip dans Téléchargements), à glisser dans Netlify. Avec `-Secours`, le front du plan B (section 7) |
 
 ### Prérequis (une seule fois)
 
@@ -454,6 +454,62 @@ F12 → *Application* → *Service workers* → *Unregister*.
   sans ACL, ces fichiers seraient lisibles par les autres comptes.
 - **RGPD** : base hébergée en Australie, donc hors UE. Réservé à la démo, avec des comptes de test,
   jamais de vrais utilisateurs.
+- **Charge** (mesurée en lecture, 0 erreur) : moins d'1 s jusqu'à 10 requêtes simultanées, 2 à 4 s
+  à 20-30. L'accueil de l'app lance 5 à 6 requêtes : 5 personnes qui l'ouvrent au même instant
+  attendent quelques secondes. Le jour d'une démo, garder Neon éveillé avec une ligne de cron
+  temporaire sur le Pi : `*/4 * * * * curl -s -o /dev/null https://sae203.hopto.org/~cameliaa/api/stock-sang`.
+- **Limites anti-abus par IP** (US-29) : sur un Wi-Fi partagé, toute la salle sort avec la même
+  IP. Inscription 15/min, connexion 30/min, pages publiques 300/min pour toute la salle ; une fois
+  connecté, chacun a sa propre limite.
+
+---
+
+## 7. Plan B : backend de secours si sae203 tombe
+
+Si le Pi ne répond plus pendant une démo, un backend de secours tourne sur un PC de l'équipe et
+remplace sae203 en quelques minutes. Il utilise **la même base Neon** et les mêmes clés (`APP_KEY`,
+VAPID) : comptes, contenus et abonnements push restent les mêmes, et on rebascule sur sae203
+sans rien perdre une fois le Pi revenu.
+
+| Élément | Valeur |
+| --- | --- |
+| Backend de secours | conteneur `aima-secours`, `http://localhost:8002`, dossier `~/aima-secours` |
+| Adresse publique | tunnel ngrok à URL fixe : `https://autistic-cold-unafraid.ngrok-free.dev` |
+| Front de secours | `Téléchargements\aima-dist-secours` (`construire-front.ps1 -Secours`) |
+| Scripts | `bloodshare-backend/deploy/secours/` |
+
+### À préparer avant chaque démo (sae203 en marche)
+
+1. `bash bloodshare-backend/deploy/secours/preparer-secours.sh` (WSL, sur `dev` à jour) :
+   exporte `dev`, construit `vendor/`, crée un `.env` à partir de `.env.production` (seuls
+   `APP_URL` et `SESSION_PATH` changent) et **copie les images du Pi**, qui ne sont nulle part
+   ailleurs. Si le Pi ne répond pas, il reprend les images de la préparation précédente.
+2. `pwsh -ExecutionPolicy Bypass -File bloodshare-backend\deploy\sae203\construire-front.ps1 -Secours`
+   (PowerShell 7) : build du front branché sur l'URL ngrok, à garder sous la main.
+3. Si une image a été ajoutée dans le BO depuis : relancer l'étape 1.
+
+### Basculer le jour d'une panne
+
+1. `bash bloodshare-backend/deploy/secours/lancer-secours.sh` : démarre le secours et vérifie
+   l'API. Il ne lance **ni migration ni seeder** : la base reste celle de sae203.
+2. Arrêter le tunnel ngrok en cours (il sert le backend de dev, port 8000), puis
+   `ngrok http --url=autistic-cold-unafraid.ngrok-free.dev 8002`.
+3. Glisser `aima-dist-secours` dans Netlify (site **aima-nc** → *Deploys*). L'URL du front ne
+   change pas : le CORS (`aima-nc.netlify.app`) reste valable.
+4. Retour à la normale : glisser de nouveau `aima-dist-sae203`, puis
+   `lancer-secours.sh arreter` et relancer le tunnel de dev.
+
+### Limites du plan B
+
+- **Page d'avertissement de ngrok** (plan gratuit) : elle s'intercale devant les pages ouvertes
+  dans un navigateur. L'API n'est pas touchée (l'app envoie `ngrok-skip-browser-warning`), mais
+  les **images** chargées par les téléphones des visiteurs peuvent ne pas s'afficher, et le BO
+  demande un clic sur « Visit Site » la première fois.
+- **Images** : seules celles copiées à la dernière préparation. Une image envoyée depuis le BO
+  pendant la panne reste sur le PC et devra être renvoyée sur sae203.
+- **Pas de tâches planifiées** sur le secours (pas de cron) : notifications du matin absentes
+  tant qu'il sert. Le push déclenché depuis le BO (bannière d'urgence) fonctionne.
+- Le PC qui sert le secours doit rester allumé, connecté, et ne pas se mettre en veille.
 
 ---
 
