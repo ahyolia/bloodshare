@@ -32,6 +32,7 @@ class VerifierConfigSecurite extends Command
             'DB_PASSWORD reprend le mot de passe de développement.' => in_array(config('database.connections.pgsql.password'), self::MOTS_DE_PASSE_DE_DEV, true),
             'SEED_ADMIN_PASSWORD reprend le mot de passe de développement.' => in_array(config('app.seed_admin_password'), self::MOTS_DE_PASSE_DE_DEV, true),
             "SESSION_SECURE_COOKIE est désactivé : le cookie de session du BO partirait aussi en HTTP." => ! config('session.secure'),
+            "CORS_ALLOWED_ORIGINS vaut * : n'importe quel site pourrait appeler l'API depuis le navigateur de ses visiteurs. Y mettre l'URL exacte du front." => in_array('*', (array) config('cors.allowed_origins'), true),
         ]));
 
         if ($problemes === []) {
