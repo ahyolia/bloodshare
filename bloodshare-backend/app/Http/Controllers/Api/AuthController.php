@@ -155,6 +155,15 @@ class AuthController extends Controller
             ], 403);
         }
 
+        // 📖 L'app est réservée aux donneurs : un compte du backoffice qui s'y connecte
+        //    obtiendrait un token mobile en plus de sa session BO, pour rien.
+        if ($user->estCompteBackoffice()) {
+            return response()->json([
+                'message' => "Ce compte sert au backoffice : connecte-toi sur le site d'administration. "
+                    . "Pour utiliser l'app, crée un compte donneur.",
+            ], 403);
+        }
+
         $user->update(['derniere_connexion' => now()]);
 
         $token = $user->createToken('mobile')->plainTextToken;

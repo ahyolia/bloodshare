@@ -160,6 +160,20 @@ Connecte un utilisateur déjà inscrit et renvoie un nouveau token à stocker.
 > suppression (`supprime-{id}@bloodshare.local`), donc l'ancien email ne correspond plus à
 > aucun compte.
 
+**Réponse 403** (identifiants corrects, mais connexion refusée, sans token) :
+
+```json
+{ "message": "Ton compte est suspendu. Contacte l'association pour en savoir plus." }
+```
+
+```json
+{ "message": "Ce compte sert au backoffice : connecte-toi sur le site d'administration. Pour utiliser l'app, crée un compte donneur." }
+```
+
+> L'app est réservée aux donneurs : un compte `admin` ou `super_admin` est refusé. Les routes
+> authentifiées répondent aussi 403 à un token appartenant à un compte suspendu ou du
+> backoffice. L'écran de connexion affiche le `message` tel quel.
+
 ## `POST /auth/logout`
 Invalide le token côté serveur. À appeler quand l'utilisateur clique sur "Se déconnecter" — penser aussi à effacer le token stocké localement sur le téléphone. _Authentifié._ Aucune requête body.
 **Réponse 200 :**
