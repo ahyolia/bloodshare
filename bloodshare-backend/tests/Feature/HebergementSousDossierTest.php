@@ -116,12 +116,39 @@ class HebergementSousDossierTest extends TestCase
     {
         $config = fn () => require config_path('cors.php');
 
-        putenv('CORS_ALLOWED_ORIGINS');
-        $this->assertSame(['*'], $config()['allowed_origins']);
+        // 📖 env() lit $_SERVER et $_ENV avant getenv() : en CI, le .env copié depuis
+        //    .env.example y met déjà CORS_ALLOWED_ORIGINS=*, qu'un putenv() seul ne
+        //    remplace pas. On fixe donc la variable aux trois endroits, puis on remet tout.
+        $avant = [$_SERVER['CORS_ALLOWED_ORIGINS'] ?? null, $_ENV['CORS_ALLOWED_ORIGINS'] ?? null, getenv('CORS_ALLOWED_ORIGINS')];
+        $definir = function (?string $valeur): void {
+            foreach (['_SERVER', '_ENV'] as $source) {
+                if ($valeur === null) {
+                    unset($GLOBALS[$source]['CORS_ALLOWED_ORIGINS']);
+                } else {
+                    $GLOBALS[$source]['CORS_ALLOWED_ORIGINS'] = $valeur;
+                }
+            }
+            putenv($valeur === null ? 'CORS_ALLOWED_ORIGINS' : "CORS_ALLOWED_ORIGINS={$valeur}");
+        };
 
-        putenv('CORS_ALLOWED_ORIGINS=https://aima-forum.netlify.app, http://localhost:8081');
-        $this->assertSame(['https://aima-forum.netlify.app', 'http://localhost:8081'], $config()['allowed_origins']);
+        try {
+            $definir(null);
+            $this->assertSame(['*'], $config()['allowed_origins']);
 
-        putenv('CORS_ALLOWED_ORIGINS');
+            $definir('https://aima-forum.netlify.app, http://localhost:8081');
+            $this->assertSame(['https://aima-forum.netlify.app', 'http://localhost:8081'], $config()['allowed_origins']);
+        } finally {
+            [$server, $env, $getenv] = $avant;
+            $definir(null);
+            if ($server !== null) {
+                $_SERVER['CORS_ALLOWED_ORIGINS'] = $server;
+            }
+            if ($env !== null) {
+                $_ENV['CORS_ALLOWED_ORIGINS'] = $env;
+            }
+            if ($getenv !== false) {
+                putenv("CORS_ALLOWED_ORIGINS={$getenv}");
+            }
+        }
     }
 }
