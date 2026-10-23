@@ -449,8 +449,8 @@ F12 → *Application* → *Service workers* → *Unregister*.
 - **Uploads limités à 2 Mo** (`upload_max_filesize` du serveur) : compresser les images avant de les
   envoyer depuis le backoffice.
 - **Serveur partagé** : `installer.sh` réserve le code et le `.env` à Apache par des ACL. Si
-  `setfacl` manque sur le serveur, il prévient : ces fichiers restent alors lisibles par les
-  autres comptes.
+  `setfacl` manque (paquet `acl`), il s'arrête avant toute modification plutôt que de publier :
+  sans ACL, ces fichiers seraient lisibles par les autres comptes.
 - **RGPD** : base hébergée en Australie, donc hors UE. Réservé à la démo, avec des comptes de test,
   jamais de vrais utilisateurs.
 

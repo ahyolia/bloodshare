@@ -22,6 +22,14 @@ if [ -n "$manque" ]; then
     echo "   sudo apt install$manque && sudo systemctl restart apache2"
     exit 1
 fi
+# 📖 Sans ACL, la seule façon de laisser Apache lire le code serait de le rendre lisible
+#    par tous les comptes du serveur, .env (mots de passe, APP_KEY) compris. On refuse
+#    de publier dans ce cas, avant d'avoir rien modifié.
+if ! command -v setfacl > /dev/null; then
+    echo "❌ setfacl absent : sans ACL, le .env et le code seraient lisibles par tous les comptes."
+    echo "   À faire installer par l'admin du serveur : sudo apt install acl"
+    exit 1
+fi
 
 echo "▶ Fichiers Laravel"
 cp deploy/sae203/.htaccess public/.htaccess
@@ -53,18 +61,11 @@ echo "▶ Permissions"
 #    ouvrir, s'arrêtait en erreur, et il n'y a rien à y changer.
 mes_fichiers() { find "$@" \( ! -readable -prune \) -o -user "$USER" -print0; }
 mes_dossiers() { find "$@" \( ! -readable -prune \) -o -type d -user "$USER" -print0; }
-if command -v setfacl > /dev/null; then
-    chmod 711 "$HOME"
-    mes_fichiers "$HOME/aima" | xargs -0 -r chmod o-rwx
-    mes_fichiers "$HOME/aima" | xargs -0 -r setfacl -m u:www-data:rX
-    mes_fichiers storage bootstrap/cache | xargs -0 -r setfacl -m u:www-data:rwX -m u:"$USER":rwX
-    mes_dossiers storage bootstrap/cache | xargs -0 -r setfacl -m d:u:www-data:rwX -m d:u:"$USER":rwX
-else
-    # Repli sans ACL : fonctionne, mais le code et le .env restent lisibles par tous.
-    echo "⚠️  setfacl absent : storage/ et bootstrap/cache/ passent en 777."
-    mes_fichiers storage bootstrap/cache | xargs -0 -r chmod 777
-    chmod 644 .env
-fi
+chmod 711 "$HOME"
+mes_fichiers "$HOME/aima" | xargs -0 -r chmod o-rwx
+mes_fichiers "$HOME/aima" | xargs -0 -r setfacl -m u:www-data:rX
+mes_fichiers storage bootstrap/cache | xargs -0 -r setfacl -m u:www-data:rwX -m u:"$USER":rwX
+mes_dossiers storage bootstrap/cache | xargs -0 -r setfacl -m d:u:www-data:rwX -m d:u:"$USER":rwX
 
 echo "▶ Dossier web (~/public_html → public/)"
 if [ -d "$HOME/public_html" ] && [ ! -L "$HOME/public_html" ]; then
