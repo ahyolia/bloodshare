@@ -38,6 +38,15 @@ export const Theme = {
     discreteTexte: Palette.aubergine[500],
     destructive: Palette.brique[700],
     destructiveTexte: Palette.brique[700],
+    /** Valider une saisie (« Enregistrer ») : pétrole. Texte blanc : 6,2:1. */
+    validation: Palette.petrole[700],
+    validationPresse: Palette.petrole[500],
+    /**
+     * Quitter (« Se déconnecter ») : brique plein. Le 700 et non le 500, qui
+     * plafonne à 4,4:1 sous un texte blanc (4,5:1 exigé). Texte blanc : 5,9:1.
+     */
+    sortie: Palette.brique[700],
+    sortiePresse: Palette.brique[500],
     desactiveFond: Palette.neutre[100],
     desactiveTexte: Palette.aubergine[300],
   },

@@ -36,7 +36,7 @@ describe('useNotificationsNonLues', () => {
     await waitFor(() => expect(result.current).toBe(3));
   });
 
-  it('reste à 0 si l’appel échoue (pas de pastille plutôt qu’un plantage)', async () => {
+  it("reste à 0 si l'appel échoue (pas de pastille plutôt qu'un plantage)", async () => {
     mockCount.mockRejectedValue(new Error('réseau'));
 
     const { result } = await renderHook(() => useNotificationsNonLues());

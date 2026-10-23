@@ -1,16 +1,13 @@
-import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { Colors } from '../../../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { ReduceMotion, ZoomIn } from 'react-native-reanimated';
+import { BarreProgression } from '../../../components/ui/BarreProgression';
+import { Chargement } from '../../../components/ui/Chargement';
+import { EnTeteSousPage } from '../../../components/ui/EnTeteSousPage';
+import { EtatErreur } from '../../../components/ui/EtatErreur';
+import { FeuilleBas } from '../../../components/ui/FeuilleBas';
+import { entreeSousPage } from '../../../constants/animations';
 import {
   BADGES_INFO,
   BadgeInfo,
@@ -19,7 +16,12 @@ import {
   CATEGORIES_FILTRE,
   CategorieBadge,
 } from '../../../constants/badges';
+import { Theme } from '../../../constants/colors';
+import { Espace, Rayon } from '../../../constants/spacing';
+import { Typo } from '../../../constants/typography';
 import { Badge, getBadges } from '../../../services/badges.service';
+import { formaterDateHeureLongue } from '../../../utils/dates';
+import { CONTENU_MARGE_BASSE } from '../_layout';
 
 // 📖 Repli si un badge existe en base (BO) mais pas encore dans BADGES_INFO : l'écran
 //    affiche quand même quelque chose de cohérent plutôt qu'un `undefined` qui plante
@@ -33,15 +35,29 @@ const INFO_PAR_DEFAUT: BadgeInfo = {
 
 const infoDe = (nom: string): BadgeInfo => BADGES_INFO[nom] ?? INFO_PAR_DEFAUT;
 
+// 📖 « Révélation » du badge : le médaillon grandit avec un léger rebond, juste après
+//    l'arrivée de la feuille (qui dure 320 ms). Rien ne bouge si « Réduire les animations ».
+const REVELATION = ZoomIn.delay(180).springify().damping(12).stiffness(220).reduceMotion(ReduceMotion.System);
+
+// 📖 Fond pâle de la catégorie : sa couleur à 15 % d'opacité (suffixe hexa « 26 »).
+const fondCategorie = (categorie: CategorieBadge) => `${CATEGORIE_COLOR[categorie]}26`;
+
+const COLONNES = 3;
+
+/** Découpe la liste en lignes de 3 : la dernière ligne garde des tuiles de même largeur. */
+const enLignes = <T,>(elements: T[]): T[][] =>
+  Array.from({ length: Math.ceil(elements.length / COLONNES) }, (_, i) =>
+    elements.slice(i * COLONNES, i * COLONNES + COLONNES),
+  );
+
 export default function BadgesScreen() {
-  const router = useRouter();
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [filtreActif, setFiltreActif] = useState<'tous' | CategorieBadge>('tous');
   const [badgeSelectionne, setBadgeSelectionne] = useState<Badge | null>(null);
 
-  useEffect(() => {
+  const charger = useCallback(() => {
     let cancelled = false;
 
     getBadges()
@@ -63,192 +79,190 @@ export default function BadgesScreen() {
     };
   }, []);
 
+  useEffect(() => charger(), [charger]);
+
+  // 📖 Remise à zéro ici et pas dans `charger` : appelée depuis l'effet, elle
+  //    déclencherait un rendu en cascade (règle react-hooks du lint).
+  const reessayer = () => {
+    setLoading(true);
+    setError(false);
+    charger();
+  };
+
   const badgesFiltres =
     filtreActif === 'tous' ? badges : badges.filter((b) => infoDe(b.nom).categorie === filtreActif);
 
   const nbObtenus = badges.filter((b) => b.obtenu).length;
+  const pret = !loading && !error;
 
   return (
     <View style={styles.screen}>
-      <TouchableOpacity
-        onPress={() => router.back()}
-        style={styles.header}
-        accessibilityRole="button"
-      >
-        <Text style={styles.retour}>← Mes badges</Text>
-        {!loading && !error && (
-          <Text style={styles.sousTitre}>
-            {nbObtenus}/{badges.length} badges obtenus
-          </Text>
-        )}
-      </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* 📖 Pas de sous-titre : la barre « Ma collection » donne déjà le décompte. */}
+        <EnTeteSousPage titre="Mes badges" />
 
-      {loading && <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />}
+        {loading && <Chargement message="On récupère tes badges…" />}
+        {!loading && error && <EtatErreur onReessayer={reessayer} />}
 
-      {!loading && error && (
-        <Text style={styles.errorText}>Impossible de charger tes badges.</Text>
-      )}
-
-      {!loading && !error && (
-        <>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filtres}
-          >
-            <Pill
-              label="Tous"
-              active={filtreActif === 'tous'}
-              onPress={() => setFiltreActif('tous')}
-            />
-            {CATEGORIES_FILTRE.map((categorie) => (
-              <Pill
-                key={categorie}
-                label={CATEGORIE_LABEL[categorie]}
-                active={filtreActif === categorie}
-                onPress={() => setFiltreActif(categorie)}
+        {pret && (
+          <>
+            <Animated.View entering={entreeSousPage}>
+              <BarreProgression
+                titre="Ma collection"
+                valeur={nbObtenus}
+                max={badges.length}
+                detail={`${nbObtenus} sur ${badges.length}`}
               />
-            ))}
-          </ScrollView>
+            </Animated.View>
 
-          <FlatList
-            data={badgesFiltres}
-            numColumns={3}
-            keyExtractor={(item) => item.id.toString()}
-            columnWrapperStyle={styles.ligne}
-            contentContainerStyle={styles.grille}
-            renderItem={({ item }) => (
-              <BadgeTuile badge={item} onPress={() => setBadgeSelectionne(item)} />
-            )}
-          />
-        </>
-      )}
-
-      <Modal
-        visible={badgeSelectionne !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setBadgeSelectionne(null)}
-      >
-        <TouchableOpacity
-          style={styles.modaleFond}
-          activeOpacity={1}
-          onPress={() => setBadgeSelectionne(null)}
-        >
-          {badgeSelectionne && (
-            <TouchableOpacity activeOpacity={1} style={styles.modaleCard}>
-              <DetailBadge badge={badgeSelectionne} />
-              <TouchableOpacity
-                style={styles.boutonFermer}
-                onPress={() => setBadgeSelectionne(null)}
-                accessibilityRole="button"
+            {/* FILTRES — débordent volontairement jusqu'aux bords de l'écran */}
+            <Animated.View entering={entreeSousPage}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.filtresDefilement}
+                contentContainerStyle={styles.filtres}
               >
-                <Text style={styles.boutonFermerTexte}>Fermer</Text>
-              </TouchableOpacity>
-            </TouchableOpacity>
-          )}
-        </TouchableOpacity>
-      </Modal>
+                <Puce libelle="Tous" active={filtreActif === 'tous'} onPress={() => setFiltreActif('tous')} />
+                {CATEGORIES_FILTRE.map((categorie) => (
+                  <Puce
+                    key={categorie}
+                    libelle={CATEGORIE_LABEL[categorie]}
+                    active={filtreActif === categorie}
+                    onPress={() => setFiltreActif(categorie)}
+                  />
+                ))}
+              </ScrollView>
+            </Animated.View>
+
+            {badgesFiltres.length === 0 ? (
+              <Text style={[Typo.corps, styles.aucun]}>{"Aucun badge dans cette catégorie pour l'instant."}</Text>
+            ) : (
+              // 📖 La clé change avec le filtre : la grille est recréée et rejoue son
+              //    animation d'entrée, ce qui signale que la liste a changé.
+              <View key={filtreActif} style={styles.grille}>
+                {enLignes(badgesFiltres).map((ligne, i) => (
+                  <Animated.View key={i} entering={entreeSousPage} style={styles.ligne}>
+                    {ligne.map((badge) => (
+                      <TuileBadge key={badge.id} badge={badge} onPress={() => setBadgeSelectionne(badge)} />
+                    ))}
+                    {/* Cases vides : la dernière ligne garde des tuiles de même largeur. */}
+                    {Array.from({ length: COLONNES - ligne.length }, (_, j) => (
+                      <View key={`vide-${j}`} style={styles.tuileVide} />
+                    ))}
+                  </Animated.View>
+                ))}
+              </View>
+            )}
+          </>
+        )}
+      </ScrollView>
+
+      <FeuilleBas visible={badgeSelectionne !== null} onFermer={() => setBadgeSelectionne(null)}>
+        {badgeSelectionne && <DetailBadge badge={badgeSelectionne} />}
+      </FeuilleBas>
     </View>
   );
 }
 
-function Pill({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
+function Puce({ libelle, active, onPress }: { libelle: string; active: boolean; onPress: () => void }) {
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      style={[styles.pill, active ? styles.pillActive : styles.pillInactive]}
       accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      style={({ pressed }) => [styles.puce, active ? styles.puceActive : styles.puceInactive, pressed && styles.presse]}
     >
-      <Text style={active ? styles.pillTexteActif : styles.pillTexteInactif}>{label}</Text>
-    </TouchableOpacity>
+      <Text style={[Typo.legendeForte, { color: active ? Theme.texte.surAccent : Theme.texte.secondaire }]}>
+        {libelle}
+      </Text>
+    </Pressable>
   );
 }
 
-function BadgeTuile({ badge, onPress }: { badge: Badge; onPress: () => void }) {
+function TuileBadge({ badge, onPress }: { badge: Badge; onPress: () => void }) {
   const info = infoDe(badge.nom);
 
   return (
-    <TouchableOpacity
-      style={[styles.tuile, badge.obtenu ? styles.tuileObtenue : styles.tuileVerrouillee]}
+    <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityLabel={`${badge.nom}, ${badge.obtenu ? 'badge obtenu' : 'badge à débloquer'}`}
+      accessibilityHint="Affiche comment l'obtenir"
+      style={({ pressed }) => [styles.tuile, pressed && styles.tuilePresse]}
     >
-      <Text style={[styles.tuileEmoji, !badge.obtenu && styles.tuileEmojiVerrouille]}>
-        {info.emoji}
-      </Text>
+      <View
+        style={[
+          styles.medaille,
+          badge.obtenu
+            ? { backgroundColor: fondCategorie(info.categorie) }
+            : styles.medailleVerrouillee,
+        ]}
+      >
+        <Text style={[styles.emoji, !badge.obtenu && styles.emojiVerrouille]}>{info.emoji}</Text>
+        {/* 📖 Verrouillé = cadenas + médaillon pointillé + emoji estompé : pas la couleur seule. */}
+        {!badge.obtenu && (
+          <View style={styles.cadenas}>
+            <Ionicons name="lock-closed" size={12} color={Theme.texte.secondaire} />
+          </View>
+        )}
+      </View>
+
       <Text
-        style={badge.obtenu ? styles.tuileNomObtenu : styles.tuileNomVerrouille}
+        style={[Typo.legendeForte, styles.nom, { color: badge.obtenu ? Theme.texte.principal : Theme.texte.secondaire }]}
         numberOfLines={2}
       >
         {badge.nom}
       </Text>
-
-      {badge.obtenu ? (
-        <View
-          style={[styles.pastille, { backgroundColor: CATEGORIE_COLOR[info.categorie] }]}
-        />
-      ) : (
-        <Text style={styles.cadenas}>🔒</Text>
-      )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 function DetailBadge({ badge }: { badge: Badge }) {
   const info = infoDe(badge.nom);
-  const couleur = CATEGORIE_COLOR[info.categorie];
 
   return (
     <>
-      <View
+      <Animated.View
+        entering={REVELATION}
         style={[
-          styles.detailPastille,
-          { backgroundColor: badge.obtenu ? `${couleur}26` : Colors.fondGris },
+          styles.detailMedaille,
+          { backgroundColor: badge.obtenu ? fondCategorie(info.categorie) : Theme.fond.surfaceEnfoncee },
         ]}
       >
-        <Text style={[styles.detailEmoji, !badge.obtenu && styles.detailEmojiVerrouille]}>
-          {info.emoji}
-        </Text>
-        {!badge.obtenu && <Text style={styles.detailCadenas}>🔒</Text>}
+        <Text style={[styles.detailEmoji, !badge.obtenu && styles.emojiVerrouille]}>{info.emoji}</Text>
+        {!badge.obtenu && (
+          <View style={styles.detailCadenas}>
+            <Ionicons name="lock-closed" size={16} color={Theme.texte.principal} />
+          </View>
+        )}
+      </Animated.View>
+
+      <Text style={[Typo.titre2, styles.detailTitre]} accessibilityRole="header">
+        {badge.nom}
+      </Text>
+      <View style={[styles.categorie, { backgroundColor: fondCategorie(info.categorie) }]}>
+        <Text style={[Typo.legendeForte, { color: Theme.texte.principal }]}>{CATEGORIE_LABEL[info.categorie]}</Text>
       </View>
 
-      <Text style={styles.detailTitre}>{badge.nom}</Text>
-
-      <View style={[styles.detailPillCategorie, { backgroundColor: `${couleur}26` }]}>
-        <Text style={styles.detailPillCategorieTexte}>{CATEGORIE_LABEL[info.categorie]}</Text>
+      <View style={styles.detailBloc}>
+        <Text style={[Typo.legendeForte, { color: Theme.texte.secondaire }]}>{"Comment l'obtenir ?"}</Text>
+        <Text style={[Typo.corps, { color: Theme.texte.principal }]}>{info.condition}</Text>
+        <Text style={[Typo.legende, styles.description]}>{info.description}</Text>
       </View>
-
-      <View style={styles.detailSeparateur} />
-
-      <Text style={styles.detailSectionTitre}>{"🎯 Comment l'obtenir ?"}</Text>
-      <Text style={styles.detailCondition}>{info.condition}</Text>
-
-      <Text style={styles.detailDescription}>{info.description}</Text>
 
       {badge.obtenu && badge.obtenu_at ? (
-        <>
-          <Text style={styles.detailObtenuTitre}>✅ Débloqué le</Text>
-          <Text style={styles.detailObtenuDate}>
-            {new Date(badge.obtenu_at).toLocaleDateString('fr-FR', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
+        <View style={[styles.statut, { backgroundColor: Theme.feedback.succesSurface }]}>
+          <Ionicons name="checkmark-circle" size={20} color={Theme.feedback.succesTexte} />
+          <Text style={[Typo.legendeForte, { color: Theme.texte.principal }]}>
+            Débloqué le {formaterDateHeureLongue(badge.obtenu_at)}
           </Text>
-        </>
+        </View>
       ) : (
-        <View style={styles.detailEncouragement}>
-          <Text style={styles.detailEncouragementTexte}>
-            💡 Continue à donner et à participer pour débloquer ce badge !
+        <View style={[styles.statut, { backgroundColor: Theme.fond.surfaceEnfoncee }]}>
+          <Ionicons name="sparkles-outline" size={20} color={Theme.texte.secondaire} />
+          <Text style={[Typo.legende, styles.encouragement]}>
+            Continue à participer pour débloquer ce badge !
           </Text>
         </View>
       )}
@@ -256,230 +270,149 @@ function DetailBadge({ badge }: { badge: Badge }) {
   );
 }
 
+const MEDAILLE = 64;
+const DETAIL_MEDAILLE = 96;
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
-    paddingTop: 54,
+    backgroundColor: Theme.fond.page,
   },
-  header: {
+  content: {
     paddingHorizontal: 18,
-    marginBottom: 8,
+    paddingTop: 54,
+    paddingBottom: CONTENU_MARGE_BASSE,
   },
-  retour: {
-    fontSize: 15,
-    color: Colors.petrole[500],
-    fontWeight: '600',
-  },
-  sousTitre: {
-    fontSize: 14,
-    color: Colors.grisMoyen,
-    marginTop: 4,
-  },
-  loader: {
-    marginTop: 40,
-  },
-  errorText: {
-    color: Colors.grisMoyen,
-    textAlign: 'center',
-    marginTop: 40,
+  filtresDefilement: {
+    marginHorizontal: -18,
+    marginTop: Espace[6],
   },
   filtres: {
     paddingHorizontal: 18,
-    gap: 8,
-    paddingBottom: 12,
+    gap: Espace[2],
   },
-  pill: {
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+  puce: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Espace[4],
+    borderRadius: Rayon.plein,
   },
-  pillActive: {
-    backgroundColor: Colors.aubergine,
+  puceActive: {
+    backgroundColor: Theme.action.primaire,
   },
-  pillInactive: {
-    backgroundColor: Colors.blanc,
+  puceInactive: {
+    backgroundColor: Theme.fond.surface,
     borderWidth: 1,
-    borderColor: Colors.fondGris,
+    borderColor: Theme.fond.bordure,
   },
-  pillTexteActif: {
-    color: Colors.blanc,
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  pillTexteInactif: {
-    color: Colors.grisMoyen,
-    fontWeight: '600',
-    fontSize: 13,
+  presse: { opacity: 0.85 },
+  aucun: {
+    color: Theme.texte.secondaire,
+    textAlign: 'center',
+    marginTop: Espace[8],
   },
   grille: {
-    padding: 16,
-    gap: 12,
-    paddingBottom: 40,
+    gap: Espace[3],
+    marginTop: Espace[4],
   },
   ligne: {
-    gap: 12,
+    flexDirection: 'row',
+    gap: Espace[3],
   },
+  // 📖 Exception assumée à « surélevé = interactif » : 15 cartes ombrées alourdissaient
+  //    la grille. Un badge reste un médaillon et son nom (comme le Badge du design
+  //    system) ; la grille se lit comme une collection, et l'appui assombrit le badge.
   tuile: {
     flex: 1,
-    aspectRatio: 1,
+    alignItems: 'center',
+    gap: Espace[2],
+    paddingVertical: Espace[2],
+    paddingHorizontal: Espace[1],
+    borderRadius: Rayon.lg,
+  },
+  tuilePresse: {
+    backgroundColor: Theme.fond.surfaceEnfoncee,
+  },
+  tuileVide: { flex: 1 },
+  medaille: {
+    width: MEDAILLE,
+    height: MEDAILLE,
+    borderRadius: MEDAILLE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  medailleVerrouillee: {
+    backgroundColor: Theme.fond.surfaceEnfoncee,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: Theme.formulaire.bordure,
+  },
+  emoji: { fontSize: 32 },
+  emojiVerrouille: { opacity: 0.35 },
+  nom: { textAlign: 'center' },
+  cadenas: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Theme.fond.surface,
+    borderWidth: 1,
+    borderColor: Theme.fond.bordure,
+  },
+
+  detailMedaille: {
+    width: DETAIL_MEDAILLE,
+    height: DETAIL_MEDAILLE,
+    borderRadius: DETAIL_MEDAILLE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  detailEmoji: { fontSize: 48 },
+  detailCadenas: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 32,
+    height: 32,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
-  },
-  tuileObtenue: {
-    backgroundColor: Colors.blanc,
-    elevation: 3,
-    shadowColor: Colors.aubergine,
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  tuileVerrouillee: {
-    backgroundColor: Colors.fondGris,
-  },
-  tuileEmoji: {
-    fontSize: 32,
-  },
-  tuileEmojiVerrouille: {
-    opacity: 0.3,
-  },
-  tuileNomObtenu: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    textAlign: 'center',
-    marginTop: 6,
-  },
-  tuileNomVerrouille: {
-    fontSize: 11,
-    color: Colors.grisMoyen,
-    textAlign: 'center',
-    marginTop: 6,
-  },
-  pastille: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  cadenas: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    fontSize: 12,
-    color: Colors.grisMoyen,
-  },
-  modaleFond: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modaleCard: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    backgroundColor: Colors.blanc,
-    alignItems: 'center',
-  },
-  detailPastille: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  detailEmoji: {
-    fontSize: 40,
-  },
-  detailEmojiVerrouille: {
-    opacity: 0.4,
-  },
-  detailCadenas: {
-    position: 'absolute',
-    fontSize: 28,
+    backgroundColor: Theme.fond.surface,
+    borderWidth: 1,
+    borderColor: Theme.fond.bordure,
   },
   detailTitre: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    textAlign: 'center',
-    marginTop: 12,
-  },
-  detailPillCategorie: {
-    borderRadius: 20,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    marginTop: 8,
-  },
-  detailPillCategorieTexte: {
-    fontSize: 12,
-    color: Colors.aubergine,
-  },
-  detailSeparateur: {
-    height: 1,
-    backgroundColor: Colors.fondGris,
-    marginVertical: 16,
-    alignSelf: 'stretch',
-  },
-  detailSectionTitre: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.grisMoyen,
-    marginBottom: 4,
-    alignSelf: 'flex-start',
-  },
-  detailCondition: {
-    fontSize: 15,
-    color: Colors.aubergine,
-    alignSelf: 'flex-start',
-    marginBottom: 16,
-  },
-  detailDescription: {
-    fontSize: 14,
-    color: Colors.grisMoyen,
-    lineHeight: 20,
-    fontStyle: 'italic',
-    alignSelf: 'flex-start',
-  },
-  detailObtenuTitre: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.petrole[500],
-    marginTop: 16,
-    alignSelf: 'flex-start',
-  },
-  detailObtenuDate: {
-    fontSize: 15,
-    color: Colors.aubergine,
-    alignSelf: 'flex-start',
-    marginTop: 2,
-  },
-  detailEncouragement: {
-    backgroundColor: Colors.creme,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 16,
-    alignSelf: 'stretch',
-  },
-  detailEncouragementTexte: {
-    fontSize: 13,
-    color: Colors.grisMoyen,
+    color: Theme.texte.principal,
     textAlign: 'center',
   },
-  boutonFermer: {
-    backgroundColor: Colors.aubergine,
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 16,
-    alignSelf: 'stretch',
+  categorie: {
+    paddingHorizontal: Espace[3],
+    paddingVertical: Espace[1],
+    borderRadius: Rayon.plein,
   },
-  boutonFermerTexte: {
-    color: Colors.blanc,
-    fontWeight: '700',
-    textAlign: 'center',
+  detailBloc: {
+    alignSelf: 'stretch',
+    gap: Espace[1],
+    marginTop: Espace[2],
+  },
+  description: {
+    color: Theme.texte.secondaire,
+    marginTop: Espace[2],
+  },
+  statut: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Espace[2],
+    padding: Espace[3],
+    borderRadius: Rayon.md,
+  },
+  encouragement: {
+    flex: 1,
+    color: Theme.texte.secondaire,
   },
 });

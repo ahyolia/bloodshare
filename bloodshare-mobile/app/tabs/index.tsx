@@ -279,6 +279,7 @@ export default function AccueilScreen() {
           variante="accueil"
           pseudo={user?.pseudo ?? ''}
           initiale={initialePseudo(user?.pseudo)}
+          avatarId={user?.avatar_id}
           points={user?.points_cumules ?? 0}
           profil={user}
           notificationsNonLues={notificationsNonLues}

@@ -58,7 +58,7 @@ describe('submitQuiz (maquette)', () => {
     expect(resultat.details?.find((d) => d.question_id === multiple.question_id)?.correcte).toBe(false);
   });
 
-  it('accepte les bonnes réponses d’une question multiple dans n’importe quel ordre', async () => {
+  it("accepte les bonnes réponses d'une question multiple dans n'importe quel ordre", async () => {
     const reponses = await toutesLesBonnesReponses(1);
     const multiple = reponses.find((r) => r.reponse_ids.length > 1)!;
     multiple.reponse_ids = [...multiple.reponse_ids].reverse();

@@ -43,7 +43,12 @@ export default function RootLayout() {
 
   const inAuthGroup = segments[0] === "auth";
   const inChangerMdpGroup = segments[0] === "changer-mot-de-passe";
-  const inPublicGroup = segments[0] === "documents";
+  const chemin = usePathname();
+  // 📖 « Mot de passe oublié » s'ouvre depuis la connexion ET depuis Paramètres
+  //    (connecté) : public, comme les documents. Sinon, une fois connecté, la
+  //    garde ci-dessous le prenait pour la zone `auth` et renvoyait sur /tabs.
+  const inPublicGroup =
+    segments[0] === "documents" || chemin === "/auth/mot-de-passe-oublie";
   // 📖 `detail` et `notifications` = écrans ouverts par-dessus les onglets : pour le
   //    garde ci-dessous, c'est de la zone connectée au même titre que `tabs`. Sans ça,
   //    l'ouverture d'un de ces écrans renverrait aussitôt l'utilisateur sur /tabs.
@@ -56,7 +61,7 @@ export default function RootLayout() {
   // 📖 Au lancement, on est sur `app/index.tsx` (le splash), dont le chemin est "/".
   //    On teste le chemin et non `segments` : avec les routes typées, useSegments()
   //    ne prévoit pas de tableau vide, ce qui rendrait la condition fragile.
-  const surSplash = usePathname() === "/";
+  const surSplash = chemin === "/";
 
   useEffect(() => {
     // Attendre que la navigation soit prête

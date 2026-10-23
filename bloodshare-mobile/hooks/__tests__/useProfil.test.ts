@@ -21,7 +21,6 @@ const profil = {
   id: 1,
   pseudo: 'Goutte',
   avatar_url: null,
-  statut_donneur: 'quelques_dons',
   points_cumules: 150,
   niveau: { niveau: 2, label: 'Informé' },
   code_parrainage: 'ABCD1234',
@@ -44,7 +43,7 @@ describe('useProfil', () => {
     expect(result.current.error).toBe(false);
   });
 
-  it('est en chargement tant que le serveur n’a pas répondu', async () => {
+  it("est en chargement tant que le serveur n'a pas répondu", async () => {
     mockGetProfil.mockReturnValue(new Promise(() => {}));
 
     const { result } = await renderHook(() => useProfil());
@@ -68,7 +67,7 @@ describe('useProfilComplet', () => {
   const dons = { total_dons: 2, dons: [] };
   const badges = { obtenus: 1, total: 6 };
 
-  it('affiche d’abord l’aperçu en cache, puis les données fraîches', async () => {
+  it("affiche d'abord l'aperçu en cache, puis les données fraîches", async () => {
     mockGetUser.mockResolvedValue({ pseudo: 'AncienPseudo', points_cumules: 100 });
     mockGetProfil.mockResolvedValue(profil);
     mockGetDons.mockResolvedValue(dons);
@@ -123,7 +122,7 @@ describe('useProfilComplet', () => {
     expect(mockSaveUser).not.toHaveBeenCalled();
   });
 
-  it('reload efface l’erreur une fois le réseau revenu', async () => {
+  it("reload efface l'erreur une fois le réseau revenu", async () => {
     mockGetUser.mockResolvedValue(null);
     mockGetProfil.mockRejectedValueOnce(new Error('réseau')).mockResolvedValue(profil);
     mockGetDons.mockResolvedValue(dons);

@@ -49,7 +49,6 @@ class AuthController extends Controller
                     ->numbers(),
             ],
             'sexe' => 'required|in:homme,femme',
-            'statut_donneur' => 'nullable|in:donneur_regulier,quelques_dons,jamais_donne',
             'avatar_id' => 'nullable|exists:avatars,id',
             // Un code inconnu était ignoré en silence (inscription réussie, aucun parrainage
             // créé) : l'utilisateur croyait son code pris en compte. On refuse désormais.
@@ -78,7 +77,6 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'sexe' => $validated['sexe'],
-            'statut_donneur' => $validated['statut_donneur'] ?? null,
             'avatar_id' => $validated['avatar_id'] ?? null,
             'code_parrainage' => $codeParrainage,
         ]);
@@ -181,8 +179,8 @@ class AuthController extends Controller
         return [
             'id' => $user->id,
             'pseudo' => $user->pseudo,
+            'avatar_id' => $user->avatar_id,
             'avatar_url' => null,
-            'statut_donneur' => $user->statut_donneur,
             'points_cumules' => $user->points_cumules,
             'code_parrainage' => $user->code_parrainage,
             'doit_changer_mdp' => $user->doit_changer_mdp,

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { EnTete } from '../../../components/EnTete';
 import { Colors } from '../../../constants/colors';
+import { accorder } from '../../../utils/pluriel';
 import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues';
 import { useProfil } from '../../../hooks/useProfil';
 import { CategorieQuiz, getQuizCategories, QuizItem } from '../../../services/quiz.service';
@@ -151,6 +152,7 @@ export default function QuizScreen() {
           variante="page"
           titre="Quiz"
           initiale={initialePseudo(profil?.pseudo)}
+          avatarId={profil?.avatar_id}
           points={profil?.points_cumules ?? 0}
           profil={profil}
           notificationsNonLues={notificationsNonLues}
@@ -202,7 +204,7 @@ export default function QuizScreen() {
                       </View>
 
                       <Text style={styles.progressLabel}>
-                        {quiz.questions_repondues}/{quiz.nb_questions} questions
+                        {quiz.questions_repondues}/{quiz.nb_questions} {accorder(quiz.nb_questions, 'question')}
                       </Text>
                       <View style={styles.progressTrack}>
                         <View

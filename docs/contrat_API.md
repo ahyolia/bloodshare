@@ -73,7 +73,6 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
   "password": "MotDePasse123",
   "password_confirmation": "MotDePasse123",
   "sexe": "homme",
-  "statut_donneur": "quelques_dons",
   "avatar_id": 3,
   "code_parrainage": "ABCD1234",
   "cgu_acceptees": true,
@@ -87,10 +86,9 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
 > dates de don, qui sont des données de santé) et `majeur` (18 ans minimum) sont **obligatoires
 > et doivent valoir `true`** ; sinon 422 sur le champ concerné et aucun compte n'est créé. Le
 > serveur enregistre la version des CGU acceptée et la date des consentements.
-> `statut_donneur`, `avatar_id` et `code_parrainage` sont optionnels. `sexe` est requis
+> `avatar_id` et `code_parrainage` sont optionnels. `sexe` est requis
 > (`homme` ou `femme`) : il est stocké côté serveur car la fréquence maximale de don en dépend,
 > mais il n'est jamais renvoyé dans la réponse et ne doit pas être conservé sur le téléphone.
-> `statut_donneur` accepte `donneur_regulier`, `quelques_dons` ou `jamais_donne`.
 > `password` doit faire au moins 8 caractères et contenir majuscule, minuscule et chiffre.
 > Si `code_parrainage` est renseigné, il doit être **celui d'un utilisateur existant** (la casse n'a pas d'importance) ; sinon l'inscription est refusée (422, voir ci-dessous) et aucun compte n'est créé. Laisser le champ vide ou l'omettre reste valable.
 
@@ -103,7 +101,6 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
     "id": 12,
     "pseudo": "BloodHero42",
     "avatar_url": "https://cdn.aima.nc/avatars/3.webp",
-    "statut_donneur": "quelques_dons",
     "points_cumules": 0,
     "code_parrainage": "XYZ98765"
   }
@@ -144,7 +141,6 @@ Connecte un utilisateur déjà inscrit et renvoie un nouveau token à stocker.
     "id": 12,
     "pseudo": "BloodHero42",
     "avatar_url": "https://cdn.aima.nc/avatars/3.webp",
-    "statut_donneur": "quelques_dons",
     "points_cumules": 250,
     "code_parrainage": "XYZ98765"
   }
@@ -196,7 +192,6 @@ Récupère les informations complètes du profil de l'utilisateur actuellement c
   "id": 12,
   "pseudo": "BloodHero42",
   "avatar_url": "https://cdn.aima.nc/avatars/3.webp",
-  "statut_donneur": "quelques_dons",
   "sexe": "homme",
   "points_cumules": 250,
   "niveau": {
@@ -390,16 +385,15 @@ Renvoie le détail de chaque gain de points (utile si vous voulez afficher un hi
 
 ```json
 {
-  "points_cumules": 280,
+  "points_cumules": 105,
   "historique": [
     { "points": 30, "source": "quiz", "created_at": "2026-05-08T14:00:00Z" },
-    { "points": 75, "source": "parrainage", "created_at": "2026-05-10T09:01:00Z" },
-    { "points": 50, "source": "defi", "created_at": "2026-05-31T23:59:00Z" }
+    { "points": 75, "source": "parrainage", "created_at": "2026-05-10T09:01:00Z" }
   ]
 }
 ```
 
-> Les sources possibles sont uniquement `quiz`, `defi`, `parrainage` — un don ou un événement ne génère jamais d'entrée ici (voir section 3 sur `/scan`).
+> Les sources possibles sont uniquement `quiz` et `parrainage` — un don, un événement ou un défi (y participer, c'est donner) ne génère jamais d'entrée ici (voir section 3 sur `/scan`). Les anciens points « defi » ont été retirés en octobre 2026.
 # 8\. Quiz
 ## `GET /quiz`
 Alimente l'écran d'accueil de l'onglet Quiz — la liste de tous les quiz disponibles, déjà triés par catégorie. _Authentifié._ Liste groupée par catégorie.

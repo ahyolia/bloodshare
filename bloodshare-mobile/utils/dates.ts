@@ -33,3 +33,27 @@ export function formaterDateLongue(dateIso: string): string {
 
   return `${jourAffiche} ${nomMois.toLowerCase()} ${annee}`;
 }
+
+/**
+ * Date-heure de l'API (« 2026-05-10T09:00:00Z ») → « 10 mai 2026 ».
+ *
+ * 📖 Ici on passe par `new Date` : c'est un instant, il faut l'afficher dans le
+ *    fuseau du téléphone (un don à 23 h à Nouméa est daté du jour local, pas de
+ *    la veille en UTC). Les noms de mois restent ceux de `utils/mois.ts`, pour
+ *    le même texte sur web, en natif et dans Jest.
+ * 📖 Valeur illisible → renvoyée telle quelle, comme `formaterDateLongue`.
+ */
+export function formaterDateHeureLongue(dateHeureIso: string): string {
+  const date = new Date(dateHeureIso);
+  if (Number.isNaN(date.getTime())) return dateHeureIso;
+
+  const jour = date.getDate();
+  const jourAffiche = jour === 1 ? '1er' : String(jour);
+  return `${jourAffiche} ${getNomMois(date.getMonth() + 1).toLowerCase()} ${date.getFullYear()}`;
+}
+
+/** Comme `formaterDateHeureLongue`, sans l'année : « 10 mai ». Pour les chiffres clés, où la place manque. */
+export function formaterDateHeureCourte(dateHeureIso: string): string {
+  const longue = formaterDateHeureLongue(dateHeureIso);
+  return longue === dateHeureIso ? longue : longue.replace(/ \d{4}$/, '');
+}

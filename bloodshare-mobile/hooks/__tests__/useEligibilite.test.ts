@@ -34,7 +34,7 @@ describe('useEligibilite', () => {
     expect(result.current.progression).toBeCloseTo((2 / 15) * 100);
   });
 
-  it('s’arrête sur une contre-indication définitive (moins de 18 ans)', async () => {
+  it("s'arrête sur une contre-indication définitive (moins de 18 ans)", async () => {
     const { result } = await renderHook(() => useEligibilite());
 
     await act(() => result.current.repondre('non'));
@@ -42,7 +42,7 @@ describe('useEligibilite', () => {
     expect(result.current.resultat).toMatchObject({ eligible: false, type: 'definitive' });
   });
 
-  it('s’arrête sur une contre-indication temporaire (pas en bonne santé)', async () => {
+  it("s'arrête sur une contre-indication temporaire (pas en bonne santé)", async () => {
     const { result } = await renderHook(() => useEligibilite());
 
     await act(() => result.current.repondre('oui'));

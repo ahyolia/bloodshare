@@ -1,4 +1,4 @@
-import { formaterDateLongue } from '../dates';
+import { formaterDateHeureCourte, formaterDateHeureLongue, formaterDateLongue } from '../dates';
 
 describe('formaterDateLongue', () => {
   describe('date valide au format AAAA-MM-JJ', () => {
@@ -6,7 +6,7 @@ describe('formaterDateLongue', () => {
       expect(formaterDateLongue('2026-12-29')).toBe('29 décembre 2026');
     });
 
-    it('lit la date renvoyée par le contrat d’API', () => {
+    it("lit la date renvoyée par le contrat d'API", () => {
       expect(formaterDateLongue('2026-07-15')).toBe('15 juillet 2026');
     });
   });
@@ -44,5 +44,31 @@ describe('formaterDateLongue', () => {
     ])('%s', (_description, entree) => {
       expect(formaterDateLongue(entree)).toBe(entree);
     });
+  });
+});
+
+// 📖 Heures choisies à midi UTC : le jour reste le même quel que soit le fuseau
+//    de la machine qui lance les tests (de UTC−11 à UTC+11).
+describe('formaterDateHeureLongue', () => {
+  it("formate une date-heure de l'API", () => {
+    expect(formaterDateHeureLongue('2026-05-10T12:00:00Z')).toBe('10 mai 2026');
+  });
+
+  it('écrit « 1er » pour le premier jour du mois', () => {
+    expect(formaterDateHeureLongue('2027-01-01T12:00:00Z')).toBe('1er janvier 2027');
+  });
+
+  it('renvoie une valeur illisible telle quelle', () => {
+    expect(formaterDateHeureLongue('pas une date')).toBe('pas une date');
+  });
+});
+
+describe('formaterDateHeureCourte', () => {
+  it("retire l'année", () => {
+    expect(formaterDateHeureCourte('2026-08-03T12:00:00Z')).toBe('3 août');
+  });
+
+  it('renvoie une valeur illisible telle quelle', () => {
+    expect(formaterDateHeureCourte('')).toBe('');
   });
 });

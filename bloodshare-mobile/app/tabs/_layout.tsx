@@ -261,10 +261,26 @@ export default function TabsLayout() {
         name="profil"
         options={{
           title: 'Profil',
+          // 📖 Chaque onglet garde son historique, donc revenir sur Profil
+          // réaffichait la dernière sous-page ouverte (ex. Mes badges). En quittant
+          // l'onglet (autre onglet, ou avatar de l'en-tête au retour), on referme
+          // ses sous-pages. Une page ouverte par-dessus les onglets (ex. changer de
+          // mot de passe) ne compte pas : son retour ramène où on était.
+          popToTopOnBlur: true,
           tabBarButton: (props) => (
             <BoutonOnglet {...props} icone="person-circle" label="Profil" />
           ),
         }}
+        // 📖 Appui sur Profil alors qu'on est DÉJÀ dans l'onglet (ex. sur Mes badges) :
+        // popToTopOnBlur ne joue pas (on ne quitte pas l'onglet), et le retour au
+        // début de la pile prévu par React Navigation ne se déclenche pas avec nos
+        // boutons personnalisés. Même solution que pour Don : on y va explicitement.
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('profil', { screen: 'index' });
+          },
+        })}
       />
     </Tabs>
   );

@@ -85,7 +85,9 @@ const styles = StyleSheet.create({
   libelle: { color: Theme.texte.principal },
   champ: {
     minHeight: 48,
-    borderRadius: Rayon.md,
+    // 📖 Plus arrondi qu'une carte, mais pas en pilule : la pilule reste la forme
+    //    des boutons, un champ ne doit pas se confondre avec une action.
+    borderRadius: Rayon.lg,
     paddingVertical: Espace[3],
     backgroundColor: Theme.fond.surface,
     color: Theme.texte.principal,

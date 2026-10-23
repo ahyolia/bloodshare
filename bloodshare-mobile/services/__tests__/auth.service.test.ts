@@ -59,6 +59,7 @@ describe('login', () => {
     const { user } = await login('user@example.com', 'MotDePasse123');
 
     expect(user).not.toHaveProperty('groupe_sanguin');
+    expect(user).not.toHaveProperty('statut_donneur');
   });
 });
 
@@ -69,7 +70,6 @@ describe('register', () => {
     password: 'MotDePasse123',
     password_confirmation: 'MotDePasse123',
     sexe: 'femme' as const,
-    statut_donneur: 'quelques_dons',
     avatar_id: 3,
     cgu_acceptees: true,
     confidentialite_acceptee: true,
@@ -111,6 +111,7 @@ describe('register', () => {
     const { user } = await register(inscription);
 
     expect(user).not.toHaveProperty('groupe_sanguin');
+    expect(user).not.toHaveProperty('statut_donneur');
   });
 
   // 📖 C'est sur cette erreur que repose tout l'affichage des messages par

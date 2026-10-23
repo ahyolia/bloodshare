@@ -23,7 +23,7 @@ describe('soumettreScan', () => {
     expect(apiPost).toHaveBeenCalledWith('/scan', { token: 'token-du-centre' });
   });
 
-  it('renvoie la carte et les badges obtenus tels que renvoyés par l’API', async () => {
+  it("renvoie la carte et les badges obtenus tels que renvoyés par l'API", async () => {
     const resultat = {
       type: 'don',
       carte_obtenue: { id: 10, titre: 'Octobre', categorie: 'mois_don', deja_possedee: false },
@@ -38,9 +38,9 @@ describe('soumettreScan', () => {
   //    « pas encore éligible », « QR Code invalide »... : le service ne doit pas avaler l'erreur.
   it.each([
     [404, 'QR Code invalide ou expiré.'],
-    [422, 'Tu n’es pas encore éligible pour donner.'],
-    [503, 'La carte du mois n’est pas encore disponible.'],
-  ])('propage une réponse %i pour que l’écran affiche le bon message', async (status, message) => {
+    [422, "Tu n'es pas encore éligible pour donner."],
+    [503, "La carte du mois n'est pas encore disponible."],
+  ])("propage une réponse %i pour que l'écran affiche le bon message", async (status, message) => {
     const erreur = { response: { status, data: { message } } };
     apiPost.mockRejectedValue(erreur);
 

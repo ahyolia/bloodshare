@@ -31,8 +31,6 @@ export function NiveauModal({ visible, onClose, profil }: NiveauModalProps) {
           <Text style={styles.niveauNumero}>{niveau.niveau}</Text>
           <Text style={styles.niveauNom}>{niveau.label}</Text>
 
-          <View style={styles.separateur} />
-
           <Text style={styles.progressionLabel}>
             {niveau.points_prochain_niveau !== null
               ? `${profil.points_cumules}/${niveau.points_prochain_niveau}`
@@ -115,14 +113,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 4,
   },
-  // 📖 Token de bordure plutôt qu'un gris texte à 30 % d'opacité : c'est
-  //    exactement ce que `fond.bordure` désigne, et la valeur ne dépend plus
-  //    d'une opacité réglée à l'œil.
-  separateur: {
-    height: 1,
-    width: '100%',
-    backgroundColor: Theme.fond.bordure,
-  },
   progressionLabel: {
     fontSize: 14,
     color: Theme.texte.secondaire,
@@ -140,7 +130,7 @@ const styles = StyleSheet.create({
   progressFill: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: Theme.action.primaire,
+    backgroundColor: Theme.accent.signatureAplat,
   },
 
   infoCard: {
@@ -148,7 +138,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.fond.surfaceEnfoncee,
     borderRadius: 12,
     padding: 16,
-    marginTop: 8,
+    marginTop: 20,
   },
   infoTitre: {
     fontSize: 14,

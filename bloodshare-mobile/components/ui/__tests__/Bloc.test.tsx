@@ -9,13 +9,13 @@ describe('Bloc', () => {
     expect(screen.getByText('Prends un vrai repas.')).toBeTruthy();
   });
 
-  it('sans onPress, n’est pas annoncé comme un bouton', async () => {
+  it("sans onPress, n'est pas annoncé comme un bouton", async () => {
     await render(<Bloc titre="Avant ton don" />);
 
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('avec onPress, est un bouton qui réagit à l’appui', async () => {
+  it("avec onPress, est un bouton qui réagit à l'appui", async () => {
     const onPress = jest.fn();
     await render(<Bloc titre="Défi du mois" variante="signature" onPress={onPress} />);
 

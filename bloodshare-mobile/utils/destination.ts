@@ -9,7 +9,7 @@ export type ContexteNavigation = {
   inAuthGroup: boolean;
   inTabsGroup: boolean;
   inChangerMdpGroup: boolean;
-  /** Écrans publics (documents juridiques), ouverts connecté ou non. */
+  /** Écrans publics (documents juridiques, mot de passe oublié), ouverts connecté ou non. */
   inPublicGroup: boolean;
 };
 

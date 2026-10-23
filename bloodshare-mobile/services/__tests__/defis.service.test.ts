@@ -27,7 +27,7 @@ describe('getDefiActuel', () => {
   it.each([
     ['null', null],
     ['un corps vide', ''],
-  ])('renvoie null quand l’API répond %s', async (_description, corps) => {
+  ])("renvoie null quand l'API répond %s", async (_description, corps) => {
     apiGet.mockResolvedValue({ data: corps });
 
     await expect(getDefiActuel()).resolves.toBeNull();
