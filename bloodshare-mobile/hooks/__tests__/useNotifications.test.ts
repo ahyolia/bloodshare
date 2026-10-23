@@ -98,15 +98,46 @@ describe('useNotifications', () => {
     expect(mockMarquerToutes).toHaveBeenCalled();
   });
 
-  it('garde le marquage local même si le serveur échoue', async () => {
-    mockGetNotifications.mockResolvedValue({ items: [notif('a')], pageSuivante: null });
+  // 📖 Avant, le marquage local était gardé malgré l'échec : sur le serveur de démo, qui
+  //    refusait les PUT, chaque notification redevenait non lue au rechargement sans que
+  //    personne ne le voie. On annule désormais, et l'écran prévient.
+  it("annule le marquage et prévient l'écran si le serveur échoue", async () => {
+    mockGetNotifications.mockResolvedValue({ items: [notif('a'), notif('b')], pageSuivante: null });
     mockMarquerLue.mockRejectedValue(new Error('réseau'));
-    const { result } = await renderHook(() => useNotifications());
+    const onErreurMarquage = jest.fn();
+    const { result } = await renderHook(() => useNotifications({ onErreurMarquage }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(() => result.current.marquerLue('a'));
 
-    await waitFor(() => expect(result.current.notifications?.[0].lue).toBe(true));
+    await waitFor(() => expect(result.current.notifications?.map((n) => n.lue)).toEqual([false, false]));
+    expect(onErreurMarquage).toHaveBeenCalledTimes(1);
+  });
+
+  it('annule « tout marquer » sans toucher aux notifications déjà lues', async () => {
+    mockGetNotifications.mockResolvedValue({ items: [notif('a'), notif('b', true), notif('c')], pageSuivante: null });
+    mockMarquerToutes.mockRejectedValue(new Error('réseau'));
+    const onErreurMarquage = jest.fn();
+    const { result } = await renderHook(() => useNotifications({ onErreurMarquage }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(() => result.current.marquerToutesLues());
+
+    await waitFor(() => expect(result.current.notifications?.map((n) => n.lue)).toEqual([false, true, false]));
+    expect(onErreurMarquage).toHaveBeenCalledTimes(1);
+  });
+
+  it("ne prévient pas l'écran quand le serveur enregistre", async () => {
+    mockGetNotifications.mockResolvedValue({ items: [notif('a')], pageSuivante: null });
+    const onErreurMarquage = jest.fn();
+    const { result } = await renderHook(() => useNotifications({ onErreurMarquage }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(() => result.current.marquerLue('a'));
+    await act(() => result.current.marquerToutesLues());
+
+    expect(result.current.notifications?.[0].lue).toBe(true);
+    expect(onErreurMarquage).not.toHaveBeenCalled();
   });
 
   it('recharger repart de la première page', async () => {

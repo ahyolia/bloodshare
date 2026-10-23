@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import NotificationsScreen from '../../app/notifications';
+import { DialogueProvider } from '../DialogueProvider';
 import { useNotifications } from '../../hooks/useNotifications';
 import type { NotificationItem } from '../../services/notifications.service';
 
@@ -37,7 +38,12 @@ const afficher = async (notifications: NotificationItem[]) => {
     chargerPlus: jest.fn(),
     recharger: jest.fn(),
   });
-  await render(<NotificationsScreen />);
+  // L'écran prévient d'un échec de marquage par une boîte de dialogue (useDialogue).
+  await render(
+    <DialogueProvider>
+      <NotificationsScreen />
+    </DialogueProvider>,
+  );
 };
 
 beforeEach(() => jest.clearAllMocks());
@@ -59,6 +65,21 @@ describe('écran Notifications', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Tout marquer comme lu' }));
 
     expect(marquerToutesLues).toHaveBeenCalledTimes(1);
+  });
+
+  it('prévient quand le serveur refuse le marquage', async () => {
+    await afficher([notif('a', false)]);
+
+    // Le hook signale l'échec par onErreurMarquage : on le déclenche comme lui.
+    // 📖 Sans await sur son résultat : informer() ne se résout qu'à la fermeture de la
+    //    boîte de dialogue, que personne ne ferme dans ce test.
+    const { onErreurMarquage } = mockUseNotifications.mock.calls[0][0];
+    await act(async () => {
+      onErreurMarquage();
+    });
+
+    expect(screen.getByText('Pas enregistré')).toBeTruthy();
+    expect(screen.getByText(/Vérifie ta connexion et réessaie/)).toBeTruthy();
   });
 
   it("n'affiche pas le bouton sans notification non lue", async () => {
