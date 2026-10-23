@@ -499,6 +499,31 @@ sans rien perdre une fois le Pi revenu.
 4. Retour à la normale : glisser de nouveau `aima-dist-sae203`, puis
    `lancer-secours.sh arreter` et relancer le tunnel de dev.
 
+### Sauvegarder la base Neon (avant chaque démo)
+
+Le plan gratuit de Neon garde peu d'historique : une sauvegarde locale avant chaque démo.
+
+```bash
+bash bloodshare-backend/deploy/secours/sauvegarder-neon.sh
+```
+
+Lecture seule sur Neon. Le fichier (`~/sauvegardes-aima/neon-<date>.dump`, format `pg_dump -Fc`)
+est vérifié, et les 10 plus récents sont gardés. ⚠️ Il contient des données personnelles
+(emails, mots de passe hachés) : hors du repo, lisible par son seul propriétaire (`600`), à ne
+jamais commiter (`*.dump` est ignoré par git) ni partager.
+
+**Restaurer** (remplace le contenu de la base visée : vérifier deux fois `DB_HOST`) :
+
+```bash
+docker run --rm -e PGPASSWORD=... -v ~/sauvegardes-aima:/s postgres:18-alpine \
+    pg_restore --clean --if-exists --no-owner --no-acl \
+    -d "host=<DB_HOST> port=5432 dbname=<DB_DATABASE> user=<DB_USERNAME> sslmode=require" \
+    /s/neon-<date>.dump
+```
+
+Pour vérifier une sauvegarde sans risque, la restaurer dans un Postgres 18 jetable
+(`docker run -d -e POSTGRES_PASSWORD=x postgres:18-alpine`) et y compter les lignes.
+
 ### Limites du plan B
 
 - **Images absentes dans l'app** (vérifié) : sur le plan gratuit, ngrok répond à toute requête
