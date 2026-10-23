@@ -49,7 +49,9 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogoHeight('2.25rem')
             // PNG et non SVG : Safari n'affiche pas les favicons SVG. Le ?v= force les
             // navigateurs à recharger l'icône (incrémenter à chaque changement du fichier).
-            ->favicon(asset('images/branding/favicon-aima.png').'?v=3')
+            // Icône aubergine (l'app a l'icône crème) : on distingue l'onglet du BO de celui de
+            // l'app. 64 px, tirée de aima-icone-aubergine@2x.png du kit de branding.
+            ->favicon(asset('images/branding/favicon-aima-bo.png').'?v=4')
             // 📖 Corail = couleur de marque de l'app (bloodshare-mobile/constants/palette.ts).
             //    C'est l'accent (liens, cases cochées, focus) ; les boutons pleins et l'élément actif
             //    du menu suivent le design system (aubergine / beige), voir filament/theme-aima.

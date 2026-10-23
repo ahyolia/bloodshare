@@ -16,7 +16,8 @@ class BrandingBackofficeTest extends TestCase
             ->assertSee('Aïma')
             ->assertSee('images/branding/logo-aima.svg', false)
             ->assertSee('images/branding/logo-aima-sombre.svg', false)
-            ->assertSee('images/branding/favicon-aima.png', false);
+            // Favicon aubergine : distingue l'onglet du BO de celui de l'app (favicon crème).
+            ->assertSee('images/branding/favicon-aima-bo.png', false);
     }
 
     public function test_les_couleurs_aima_sont_appliquees(): void
@@ -44,7 +45,7 @@ class BrandingBackofficeTest extends TestCase
     {
         // 📖 Le logo officiel remplacera ces fichiers sous le même nom : s'il en manque un,
         //    le BO afficherait une image cassée sans qu'aucune autre vérification ne le voie.
-        foreach (['logo-aima.svg', 'logo-aima-sombre.svg', 'favicon-aima.png'] as $fichier) {
+        foreach (['logo-aima.svg', 'logo-aima-sombre.svg', 'favicon-aima.png', 'favicon-aima-bo.png'] as $fichier) {
             $this->assertFileExists(public_path("images/branding/{$fichier}"));
         }
     }
