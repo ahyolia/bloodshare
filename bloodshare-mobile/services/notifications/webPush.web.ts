@@ -20,6 +20,34 @@ function aSupportPush(): boolean {
   );
 }
 
+// L'abonnement a-t-il été créé avec cette clé VAPID ?
+function memeCle(abonnement: PushSubscription, cle: Uint8Array): boolean {
+  const cleAbonnement = abonnement.options?.applicationServerKey;
+  if (!cleAbonnement) return false;
+  const octets = new Uint8Array(cleAbonnement);
+  return octets.length === cle.length && octets.every((octet, i) => octet === cle[i]);
+}
+
+// 📖 Un abonnement créé avec une ancienne clé VAPID ne reçoit plus rien (le service
+//    push refuse les envois en 403) et le navigateur refuse d'en créer un autre tant
+//    qu'il existe : on le retire d'abord, puis on s'abonne avec la clé actuelle.
+async function abonner(registration: ServiceWorkerRegistration, cleVapid: string): Promise<void> {
+  const cle = urlBase64ToUint8Array(cleVapid);
+  const existant = await registration.pushManager.getSubscription();
+  if (existant && !memeCle(existant, cle)) {
+    await existant.unsubscribe();
+    // Le backend le supprimerait au prochain envoi refusé ; autant le faire tout de suite.
+    await api.delete('/notifications/subscription', { data: { endpoint: existant.endpoint } }).catch(() => {});
+  }
+
+  const abonnement = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: cle as BufferSource,
+  });
+
+  await api.post('/notifications/subscription', abonnement.toJSON());
+}
+
 export async function subscribe(): Promise<boolean> {
   if (!aSupportPush() || !VAPID_PUBLIC_KEY) return false;
 
@@ -31,14 +59,25 @@ export async function subscribe(): Promise<boolean> {
   //    worker actif : s'abonner tout de suite échoue parfois avec "no active
   //    Service Worker". `.ready` n'aboutit qu'une fois un worker réellement actif.
   const registration = await navigator.serviceWorker.ready;
-  const abonnement = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
-  });
-
-  await api.post('/notifications/subscription', abonnement.toJSON());
+  await abonner(registration, VAPID_PUBLIC_KEY);
 
   return true;
+}
+
+/**
+ * Au lancement : si les notifications sont actives mais que l'abonnement du navigateur
+ * a été créé avec une autre clé VAPID (clés régénérées côté serveur), on le refait.
+ * Sans abonnement existant, on ne fait rien : l'utilisateur les a peut-être désactivées.
+ */
+export async function verifierAbonnement(): Promise<void> {
+  if (!aSupportPush() || !VAPID_PUBLIC_KEY || Notification.permission !== 'granted') return;
+
+  const registration = await navigator.serviceWorker.getRegistration();
+  const existant = await registration?.pushManager.getSubscription();
+  if (!registration || !existant) return;
+  if (memeCle(existant, urlBase64ToUint8Array(VAPID_PUBLIC_KEY))) return;
+
+  await abonner(registration, VAPID_PUBLIC_KEY);
 }
 
 export async function unsubscribe(): Promise<void> {

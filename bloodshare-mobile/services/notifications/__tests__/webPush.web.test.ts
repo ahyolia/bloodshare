@@ -29,9 +29,15 @@ const charger = () => {
   return module;
 };
 
-const simulerNavigateur = (permission: NotificationPermission, abonnementExistant: object | null = null) => {
+const simulerNavigateur = (
+  permission: NotificationPermission,
+  abonnementExistant: object | null = null,
+  // Clé VAPID avec laquelle l'abonnement existant a été créé.
+  cleExistante: Uint8Array | null = null
+) => {
   const abonnement = {
     endpoint: 'https://push.example.test/abc',
+    options: { applicationServerKey: cleExistante?.buffer ?? null },
     toJSON: () => ({ endpoint: 'https://push.example.test/abc', keys: { p256dh: 'cle', auth: 'secret' } }),
     unsubscribe: jest.fn().mockResolvedValue(true),
   };
@@ -49,7 +55,7 @@ const simulerNavigateur = (permission: NotificationPermission, abonnementExistan
       getRegistration: jest.fn().mockResolvedValue(registration),
     },
   };
-  g.Notification = { requestPermission: jest.fn().mockResolvedValue(permission) };
+  g.Notification = { permission, requestPermission: jest.fn().mockResolvedValue(permission) };
 
   return { abonnement, pushManager };
 };
@@ -126,5 +132,68 @@ describe('unsubscribe', () => {
     await charger().unsubscribe();
 
     expect(mockApiDelete).not.toHaveBeenCalled();
+  });
+});
+
+// Clé VAPID réellement utilisée par le module (inscrite en dur depuis .env.local s'il
+// existe) : on la récupère via un premier abonnement plutôt que de la recalculer.
+const cleDuModule = async (): Promise<Uint8Array> => {
+  const { pushManager } = simulerNavigateur('granted');
+  await charger().subscribe();
+  const cle = pushManager.subscribe.mock.calls[0][0].applicationServerKey as Uint8Array;
+  jest.clearAllMocks();
+  return cle;
+};
+
+const autreCle = () => new Uint8Array(65).fill(7);
+
+describe('abonnement créé avec une ancienne clé VAPID', () => {
+  it("subscribe retire l'ancien abonnement avant d'en créer un nouveau", async () => {
+    const { abonnement, pushManager } = simulerNavigateur('granted', {}, autreCle());
+
+    await expect(charger().subscribe()).resolves.toBe(true);
+
+    expect(abonnement.unsubscribe).toHaveBeenCalled();
+    expect(mockApiDelete).toHaveBeenCalledWith('/notifications/subscription', {
+      data: { endpoint: 'https://push.example.test/abc' },
+    });
+    expect(pushManager.subscribe).toHaveBeenCalled();
+    expect(mockApiPost).toHaveBeenCalled();
+  });
+
+  it("verifierAbonnement refait l'abonnement si la clé a changé", async () => {
+    const { abonnement, pushManager } = simulerNavigateur('granted', {}, autreCle());
+
+    await charger().verifierAbonnement();
+
+    expect(abonnement.unsubscribe).toHaveBeenCalled();
+    expect(pushManager.subscribe).toHaveBeenCalled();
+    expect(mockApiPost).toHaveBeenCalledWith('/notifications/subscription', expect.any(Object));
+  });
+
+  it("verifierAbonnement ne touche à rien si la clé est la bonne", async () => {
+    const cle = await cleDuModule();
+    const { abonnement, pushManager } = simulerNavigateur('granted', {}, cle);
+
+    await charger().verifierAbonnement();
+
+    expect(abonnement.unsubscribe).not.toHaveBeenCalled();
+    expect(pushManager.subscribe).not.toHaveBeenCalled();
+  });
+
+  it("verifierAbonnement ne réabonne pas quelqu'un qui n'a pas d'abonnement", async () => {
+    const { pushManager } = simulerNavigateur('granted', null);
+
+    await charger().verifierAbonnement();
+
+    expect(pushManager.subscribe).not.toHaveBeenCalled();
+  });
+
+  it('verifierAbonnement ne fait rien sans la permission', async () => {
+    const { pushManager } = simulerNavigateur('default', {}, autreCle());
+
+    await charger().verifierAbonnement();
+
+    expect(pushManager.subscribe).not.toHaveBeenCalled();
   });
 });
