@@ -11,6 +11,8 @@ jest.mock('expo-router', () => {
     useRouter: () => ({ push: mockPush }),
     // L'écran charge ses quiz au focus : on le simule par un effet au montage.
     useFocusEffect: (effet: () => void) => useEffect(effet, [effet]),
+    // Hors barre d'onglets : aucun appui à écouter (useRelanceOnglet).
+    useNavigation: () => ({ getState: () => undefined, getParent: () => undefined }),
   };
 });
 // eslint-disable-next-line @typescript-eslint/no-require-imports

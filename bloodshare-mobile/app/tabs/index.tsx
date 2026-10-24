@@ -18,6 +18,7 @@ import { useRouter } from 'expo-router';
 import { EnTete } from '../../components/EnTete';
 import { Colors } from '../../constants/colors';
 import { useNotificationsNonLues } from '../../hooks/useNotificationsNonLues';
+import { useRelanceOnglet } from '../../hooks/useRelanceOnglet';
 import { Actualite, getActualites } from '../../services/actualites.service';
 import { Banniere, getBanniere, TypeBanniere } from '../../services/bannieres.service';
 import { DefiActuel, getDefiActuel } from '../../services/defis.service';
@@ -80,6 +81,8 @@ const formatHeure = (iso: string) =>
     .replace(':', 'h');
 
 export default function AccueilScreen() {
+  // Appui sur l'onglet : retour en haut de la page et animations d'entrée rejouées.
+  const cleOnglet = useRelanceOnglet('index');
   const router = useRouter();
   const notificationsNonLues = useNotificationsNonLues();
 
@@ -263,6 +266,7 @@ export default function AccueilScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView
+        key={cleOnglet}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={

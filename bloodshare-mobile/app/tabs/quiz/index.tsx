@@ -17,11 +17,14 @@ import { Espace } from '../../../constants/spacing';
 import { Typo } from '../../../constants/typography';
 import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues';
 import { useProfil } from '../../../hooks/useProfil';
+import { useRelanceOnglet } from '../../../hooks/useRelanceOnglet';
 import { CategorieQuiz, getQuizCategories, QuizItem } from '../../../services/quiz.service';
 import { initialePseudo } from '../../../utils/profil';
 import { premierQuizAFaire, progressionQuiz, quizAReprendre } from '../../../utils/quizAccueil';
 
 export default function QuizScreen() {
+  // Appui sur l'onglet : retour en haut de la page et animations d'entrée rejouées.
+  const cleOnglet = useRelanceOnglet('quiz');
   const router = useRouter();
   // 📖 <EnTete /> est purement présentationnel : c'est l'écran qui fournit les
   //    données du profil (pseudo + points), via le hook partagé.
@@ -89,7 +92,7 @@ export default function QuizScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView key={cleOnglet} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {enTete}
 
         {/* 📖 Chargement, erreur et liste vide : centrés dans la place sous l'en-tête. */}

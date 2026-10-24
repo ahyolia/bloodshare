@@ -14,6 +14,7 @@ import { EnTete } from '../../../components/EnTete';
 import { Colors } from '../../../constants/colors';
 import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues';
 import { useProfil } from '../../../hooks/useProfil';
+import { useRelanceOnglet } from '../../../hooks/useRelanceOnglet';
 import {
   Cartes,
   CarteParrainage,
@@ -24,6 +25,8 @@ import {
 import { initialePseudo } from '../../../utils/profil';
 
 export default function CartesScreen() {
+  // Appui sur l'onglet : retour en haut de la page et animations d'entrée rejouées.
+  const cleOnglet = useRelanceOnglet('cartes');
   const router = useRouter();
   // 📖 <EnTete /> ne charge rien : l'écran lui fournit pseudo + points.
   const { profil } = useProfil();
@@ -65,6 +68,7 @@ export default function CartesScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView
+        key={cleOnglet}
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
