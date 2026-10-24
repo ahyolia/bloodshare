@@ -18,11 +18,11 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000
 //    (bundle mis en cache, .env.local oublié) se manifeste seulement par un
 //    timeout au bout de 10 s, impossible à distinguer d'une panne réseau.
 if (__DEV__) {
-  console.log(`[api] URL utilisée : ${API_URL}`);
+  console.log(`[api] URL utilisée : ${API_URL}`);
 
   if (!process.env.EXPO_PUBLIC_API_URL) {
     console.warn(
-      "[api] EXPO_PUBLIC_API_URL n'est pas défini : repli sur " +
+      "[api] EXPO_PUBLIC_API_URL n'est pas défini : repli sur " +
         `${API_URL}. Depuis un téléphone physique, créez bloodshare-mobile/.env.local ` +
         'avec EXPO_PUBLIC_API_URL=<votre tunnel ou IP LAN>/api, puis `npx expo start -c`.'
     );

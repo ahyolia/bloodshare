@@ -59,7 +59,7 @@ export default function Onboarding() {
     try {
       await setOnboardingVu();
     } catch (error) {
-      if (__DEV__) console.warn('[onboarding] mémorisation impossible :', error);
+      if (__DEV__) console.warn('[onboarding] mémorisation impossible :', error);
     }
     router.replace(destination);
   };

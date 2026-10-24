@@ -33,7 +33,7 @@ export default function ResultatScanScreen() {
   // → Pourquoi le fallback [] : sans lui, badgesList.length planterait si aucun badge n'a été débloqué (badges serait undefined)
   const badgesList: { id: number; nom: string }[] = badges ? JSON.parse(badges) : [];
 
-  const titre = type === 'evenement' ? 'Présence confirmée ! 🎉' : 'Don validé ! 🩸';
+  const titre = type === 'evenement' ? 'Présence confirmée ! 🎉' : 'Don validé ! 🩸';
   const categorieLabel = CATEGORIE_LABELS[carte_categorie] ?? carte_categorie;
 
   return (
@@ -52,7 +52,7 @@ export default function ResultatScanScreen() {
         <Text style={styles.cardCategorie}>{categorieLabel}</Text>
         {dejaPossedee && (
           <Text style={styles.dejaPossedeeNote}>
-            {"Tu possèdes déjà cette carte : elle ne peut être obtenue qu'une seule fois. " +
+            {"Tu possèdes déjà cette carte : elle ne peut être obtenue qu'une seule fois. " +
               "Aucun point n'est attribué pour un don."}
           </Text>
         )}

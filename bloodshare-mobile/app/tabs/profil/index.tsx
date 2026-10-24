@@ -70,7 +70,7 @@ export default function ProfilScreen() {
   const handleLogout = async () => {
     const ok = await confirmer({
       titre: "Se déconnecter",
-      message: "Veux-tu vraiment te déconnecter ?",
+      message: "Veux-tu vraiment te déconnecter ?",
       libelleRester: "Non, je reste",
       libelleAction: "Me déconnecter",
     });
@@ -111,7 +111,7 @@ export default function ProfilScreen() {
   // 📖 GET /dons renvoie les dons du plus récent au plus ancien.
   const dernierDon = dons?.dons[0]?.date_don;
   const sousTitreDons = dernierDon
-    ? `Dernier : ${formaterDateHeureLongue(dernierDon)}`
+    ? `Dernier : ${formaterDateHeureLongue(dernierDon)}`
     : "Tes dons et cartes-souvenirs";
 
   return (

@@ -94,7 +94,7 @@ export default function RegisterScreen() {
     } catch (error: any) {
       // 📖 Jamais l'objet d'erreur entier : il contient la requête envoyée, donc l'email
       //    et le mot de passe en clair (audit RGPD). Le statut suffit pour déboguer.
-      if (__DEV__) console.warn('[auth] inscription échouée :', error.response?.status ?? error.message);
+      if (__DEV__) console.warn('[auth] inscription échouée :', error.response?.status ?? error.message);
 
       if (error.response?.status === 422) {
         const errors = error.response.data?.errors ?? {};
@@ -176,7 +176,7 @@ export default function RegisterScreen() {
             </Pressable>
 
             <Pressable onPress={() => router.replace('/auth/login')} style={styles.linkContainer}>
-              <Text style={styles.linkText}>Tu as un compte ? <Text style={styles.linkTextBold}>Connecte-toi</Text></Text>
+              <Text style={styles.linkText}>Tu as un compte ? <Text style={styles.linkTextBold}>Connecte-toi</Text></Text>
             </Pressable>
           </View>
         )}
@@ -237,7 +237,7 @@ export default function RegisterScreen() {
         {step === 3 && (
           <View style={styles.stepContent}>
             <Text style={styles.titleCenter}>Choisis ton avatar ^-^</Text>
-            <Text style={styles.hintCenter}>Facultatif : tu pourras le choisir plus tard dans ton profil.</Text>
+            <Text style={styles.hintCenter}>Facultatif : tu pourras le choisir plus tard dans ton profil.</Text>
 
             <View style={styles.avatarGrid}>
               {AVATARS.map((a) => (

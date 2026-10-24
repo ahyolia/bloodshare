@@ -52,7 +52,7 @@ export default function MotDePasseOublieScreen() {
 
         <Animated.View entering={entreeSousPage}>
           <Text style={[Typo.corps, styles.intro]}>
-            {"Pas encore de réinitialisation automatique : c'est l'équipe qui s'en charge. " +
+            {"Pas encore de réinitialisation automatique : c'est l'équipe qui s'en charge. " +
               'Voici comment faire.'}
           </Text>
 
@@ -63,7 +63,7 @@ export default function MotDePasseOublieScreen() {
                   <View style={styles.numero} accessibilityElementsHidden importantForAccessibility="no">
                     <Text style={[Typo.legendeForte, styles.numeroTexte]}>{i + 1}</Text>
                   </View>
-                  <View style={styles.etapeTextes} accessible accessibilityLabel={`Étape ${i + 1} : ${etape.titre}. ${etape.detail}`}>
+                  <View style={styles.etapeTextes} accessible accessibilityLabel={`Étape ${i + 1} : ${etape.titre}. ${etape.detail}`}>
                     <Text style={[Typo.corpsFort, { color: Theme.texte.principal }]}>{etape.titre}</Text>
                     <Text style={[Typo.legende, { color: Theme.texte.secondaire }]}>{etape.detail}</Text>
                   </View>
