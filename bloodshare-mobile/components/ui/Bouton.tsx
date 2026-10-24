@@ -14,7 +14,7 @@ import { Typo } from '../../constants/typography';
  * 📖 « Désactivé » n'est pas une variante mais un ÉTAT (`desactive`) : n'importe
  *    quel bouton peut l'être, par exemple tant qu'un formulaire est incomplet.
  */
-export type VarianteBouton = 'primaire' | 'secondaire' | 'discret' | 'destructif' | 'validation' | 'sortie';
+export type VarianteBouton = 'primaire' | 'secondaire' | 'discret' | 'destructif' | 'validation' | 'sortie' | 'info';
 
 type Props = {
   libelle: string;
@@ -51,6 +51,14 @@ const COULEURS: Record<VarianteBouton, { fond?: string; fondPresse?: string; tex
   sortie: {
     fond: Theme.action.sortie,
     fondPresse: Theme.action.sortiePresse,
+    texte: Theme.action.primaireTexte,
+  },
+  // 📖 `info` mène vers du contenu à lire (fiches pratiques) : pétrole, la couleur des
+  //    informations, plein pour bien se voir sans concurrencer l'aubergine du `primaire`.
+  //    Texte blanc sur pétrole 700 : 6,2:1.
+  info: {
+    fond: Theme.info.icone,
+    fondPresse: Theme.action.validationPresse,
     texte: Theme.action.primaireTexte,
   },
 };
