@@ -20,9 +20,10 @@ import { initialePseudo } from '../../../utils/profil';
 // 📖 Table de correspondance catégorie → icône + couleur de fond du cercle
 // → Pourquoi une table plutôt qu'un switch : plus lisible, et facile à compléter si de nouvelles catégories de quiz apparaissent
 const CATEGORIE_STYLE: Record<string, { emoji: string; fond: string }> = {
-  'Les bases du don': { emoji: '🩸', fond: Colors.fondRose },
-  'Les groupes sanguins': { emoji: '🔬', fond: Colors.fondBleu },
-  "L'association ADSB-NC": { emoji: '🏥', fond: Colors.fondVert },
+  // Mêmes libellés que le backoffice (QuizResource, QuizContenuSeeder).
+  'Qui peut donner ?': { emoji: '🙋', fond: Colors.fondRose },
+  'Le don du sang': { emoji: '🩸', fond: Colors.fondBleu },
+  "Le Centre et l'ADSB-NC": { emoji: '🏥', fond: Colors.fondVert },
 };
 
 const getCategorieStyle = (categorie: string) =>
