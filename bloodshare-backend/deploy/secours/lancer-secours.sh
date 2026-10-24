@@ -24,14 +24,25 @@ fi
 docker image inspect "$IMAGE" > /dev/null 2>&1 \
     || { echo "❌ Image $IMAGE absente : lancer une fois « docker compose build backend » à la racine du repo."; exit 1; }
 
+# 📖 Le conteneur tourne avec notre utilisateur (l'image n'en définit pas : ce serait root).
+#    Des fichiers laissés par un ancien lancement en root bloqueraient les caches.
+if [ -n "$(find "$DOSSIER" -user 0 -print -quit)" ]; then
+    # 📖 Docker plutôt que sudo : pas de mot de passe à taper, et ça marche sans droits sudo.
+    echo "❌ Des fichiers de $DOSSIER appartiennent à root (ancien lancement). Corriger une fois avec :"
+    echo "   docker run --rm -v $DOSSIER:/d alpine chown -R $(id -u):$(id -g) /d"
+    exit 1
+fi
+
 docker rm -f "$NOM" > /dev/null 2>&1 || true
 
 # 📖 Point d'entrée remplacé : celui de l'image (entrypoint.sh) lance composer, les
 #    migrations et les seeders du mode dev. Ici, rien ne touche la base : sae203 reste
 #    la référence, et ses migrations y sont déjà passées. La config est vérifiée comme en
 #    prod, puis mise en cache. PHP_CLI_SERVER_WORKERS : plusieurs requêtes à la fois.
+#    Pas de --restart : le secours ne doit pas revenir tout seul au démarrage du PC, branché
+#    sur la base de démo avec un code peut-être ancien. Après un redémarrage, on le relance.
 echo "▶ Démarrage du secours sur http://localhost:$PORT"
-docker run -d --name "$NOM" --restart unless-stopped \
+docker run -d --name "$NOM" -u "$(id -u):$(id -g)" -e HOME=/tmp \
     -p "127.0.0.1:$PORT:8000" -v "$DOSSIER":/app -w /app \
     -e PHP_CLI_SERVER_WORKERS=8 \
     --entrypoint sh "$IMAGE" -c '

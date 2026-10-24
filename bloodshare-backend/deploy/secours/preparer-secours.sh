@@ -12,11 +12,15 @@ set -euo pipefail
 REPO=$(git rev-parse --show-toplevel)
 BRANCHE=${1:-dev}
 DOSSIER="$HOME/aima-secours"
-URL_SECOURS=${URL_SECOURS:-https://autistic-cold-unafraid.ngrok-free.dev}
 ENV_PROD="$REPO/bloodshare-backend/.env.production"
 SERVEUR=cameliaa@sae203.hopto.org
 
 [ -f "$ENV_PROD" ] || { echo "❌ $ENV_PROD introuvable : le secours utilise la même base et les mêmes clés."; exit 1; }
+
+# 📖 Adresse du tunnel ngrok : lue dans .env.production (hors du dépôt), comme les autres
+#    secrets. URL_SECOURS=<adresse> en variable d'environnement la remplace.
+URL_SECOURS=${URL_SECOURS:-$(grep '^SECOURS_URL=' "$ENV_PROD" | cut -d= -f2- || true)}
+[ -n "$URL_SECOURS" ] || { echo "❌ SECOURS_URL absent de $ENV_PROD (adresse du tunnel ngrok, voir DEVOPS.md section 7)."; exit 1; }
 
 NOUVEAU="$DOSSIER.nouveau"
 rm -rf "$NOUVEAU" && mkdir -p "$NOUVEAU"

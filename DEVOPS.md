@@ -474,7 +474,7 @@ sans rien perdre une fois le Pi revenu.
 | Élément | Valeur |
 | --- | --- |
 | Backend de secours | conteneur `aima-secours`, `http://localhost:8002`, dossier `~/aima-secours` |
-| Adresse publique | tunnel ngrok à URL fixe : `https://autistic-cold-unafraid.ngrok-free.dev` |
+| Adresse publique | tunnel ngrok à URL fixe, dans `SECOURS_URL` de `bloodshare-backend/.env.production` (hors du dépôt, à demander à l'équipe) |
 | Front de secours | `Téléchargements\aima-dist-secours` (`construire-front.ps1 -Secours`) |
 | Scripts | `bloodshare-backend/deploy/secours/` |
 
@@ -491,9 +491,10 @@ sans rien perdre une fois le Pi revenu.
 ### Basculer le jour d'une panne
 
 1. `bash bloodshare-backend/deploy/secours/lancer-secours.sh` : démarre le secours et vérifie
-   l'API. Il ne lance **ni migration ni seeder** : la base reste celle de sae203.
+   l'API. Il ne lance **ni migration ni seeder** : la base reste celle de sae203. Le secours
+   ne redémarre **pas** tout seul avec le PC : après un redémarrage, relancer ce script.
 2. Arrêter le tunnel ngrok en cours (il sert le backend de dev, port 8000), puis
-   `ngrok http --url=autistic-cold-unafraid.ngrok-free.dev 8002`.
+   `ngrok http --url=<SECOURS_URL sans https://> 8002` (le script affiche la commande exacte).
 3. Glisser `aima-dist-secours` dans Netlify (site **aima-nc** → *Deploys*). L'URL du front ne
    change pas : le CORS (`aima-nc.netlify.app`) reste valable.
 4. Retour à la normale : glisser de nouveau `aima-dist-sae203`, puis

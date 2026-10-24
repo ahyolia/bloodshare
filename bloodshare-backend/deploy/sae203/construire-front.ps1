@@ -10,9 +10,11 @@
 #
 # Avec -Secours : build du plan B, branché sur le backend de secours exposé par ngrok
 # (deploy/secours/), produit sous le nom aima-dist-secours pour ne pas le confondre.
+# L'adresse du tunnel est lue dans SECOURS_URL de .env.production (hors du dépôt) ;
+# -UrlSecours <adresse> la remplace pour un autre tunnel.
 param(
     [switch] $Secours,
-    [string] $UrlSecours = 'https://autistic-cold-unafraid.ngrok-free.dev'
+    [string] $UrlSecours
 )
 $ErrorActionPreference = 'Stop'
 
@@ -22,8 +24,6 @@ $envProd = Join-Path $repo 'bloodshare-backend\.env.production'
 $nom = if ($Secours) { 'aima-dist-secours' } else { 'aima-dist-sae203' }
 $sortie = Join-Path ([Environment]::GetFolderPath('UserProfile')) "Downloads\$nom"
 $zip = "$sortie.zip"
-$api = if ($Secours) { "$($UrlSecours.TrimEnd('/'))/api" } else { 'https://sae203.hopto.org/~cameliaa/api' }
-Write-Host "▶ Front branché sur $api"
 
 function Lire-Variable($nom) {
     $ligne = Select-String -Path $envProd -Pattern "^$nom=(.+)$"
@@ -32,6 +32,11 @@ function Lire-Variable($nom) {
 }
 
 if (-not (Test-Path $envProd)) { throw "$envProd introuvable : la clé VAPID publique en vient." }
+
+if ($Secours -and -not $UrlSecours) { $UrlSecours = Lire-Variable 'SECOURS_URL' }
+$api = if ($Secours) { "$($UrlSecours.TrimEnd('/'))/api" } else { 'https://sae203.hopto.org/~cameliaa/api' }
+Write-Host "▶ Front branché sur $api"
+
 $vapidPublique = Lire-Variable 'VAPID_PUBLIC_KEY'
 $vapidPrivee = Lire-Variable 'VAPID_PRIVATE_KEY'
 
