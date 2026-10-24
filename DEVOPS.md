@@ -392,7 +392,9 @@ bash bloodshare-backend/deploy/sae203/publier.sh
 Le script se termine par `✅ Déploiement terminé.` si l'API et la page de connexion du backoffice
 répondent 200. Il peut être relancé sans risque, par exemple après l'installation des extensions.
 Les images envoyées depuis le backoffice (`storage/app/public`) sont conservées d'une publication à
-l'autre.
+l'autre. `vendor/` est remplacé d'un coup (envoyé en `vendor.nouveau`, puis échangé par deux
+renommages) : le site et le cron ne restent pas sans dépendances pendant l'envoi. Le code, lui,
+est réécrit fichier par fichier pendant quelques secondes : éviter de publier en pleine démo.
 
 `.env.production` (en local) fait référence : il est renvoyé à chaque publication, donc une
 modification faite directement dans le `.env` du serveur sera écrasée.
