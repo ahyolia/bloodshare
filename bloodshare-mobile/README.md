@@ -112,4 +112,7 @@ Après `login`/`register`, stocker le `token` reçu (idéalement via `expo-secur
 
 ## Rôles utilisateur
 
-L'application mobile est accessible uniquement aux utilisateurs avec le rôle `utilisateur`. Les admins accèdent au backoffice via http://localhost:8000/admin.
+L'application mobile est réservée aux donneurs, c'est-à-dire aux comptes **sans rôle** (il
+n'existe pas de rôle `utilisateur`). Un compte du backoffice (`admin`, `super_admin`) est refusé
+à la connexion (403), et un token mobile qu'il aurait obtenu avant est refusé sur toutes les
+routes. Les admins accèdent au backoffice via http://localhost:8000/admin.
