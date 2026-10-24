@@ -117,7 +117,7 @@ La faille 1 comprend aussi le téléchargement du QR centre, qui acceptait toute
 | Inscription limitée par IP seulement | Accepté | Contournable pour créer des comptes en masse, sans accès aux comptes existants |
 | Token dans le `localStorage` de la PWA | Accepté | Pas d'alternative sur le web sans changer l'authentification. Expiration à 90 jours |
 | Photo du QR tournant relayée en direct | Accepté | Fenêtre d'une minute au plus, contre un QR valable indéfiniment auparavant |
-| 5 dépendances npm vulnérables | Accepté | 4 servent seulement aux outils de build et de test. La 5ᵉ (`decode-uri-component`) peut figer l'onglet de la victime, sans accès aux données. Détail dans `bloodshare-mobile/audit-ci.jsonc` |
+| 5 dépendances npm vulnérables | Accepté | 4 servent seulement aux outils de build et de test. La 5ᵉ (`decode-uri-component`) peut figer l'onglet de la victime, sans accès aux données. Détail dans `bloodshare-mobile/audit-ci.jsonc`. Mise à jour du 24/10/2026 : `zod` (GHSA-mrhx-c7xc-m3w5, CLI Expo seulement, absent du build) ajouté, `braces` retiré (plus présent) |
 | En-tête CSP sur la PWA | Reporté | À tester dans un navigateur réel (polices, push, appels à l'API) pour ne pas casser l'app |
 | Double authentification du BO, journal des actions des admins | Reporté en V2 | Déjà prévus par l'audit RGPD |
 
