@@ -3,6 +3,7 @@ import type { ComponentProps } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Bouton } from '../../components/ui/Bouton';
+import { useDialogue } from '../../components/DialogueProvider';
 import { Chargement } from '../../components/ui/Chargement';
 import { EnTeteSousPage } from '../../components/ui/EnTeteSousPage';
 import { EtatErreur } from '../../components/ui/EtatErreur';
@@ -48,8 +49,12 @@ const META_CATEGORIE: Record<CategorieNotification, { icone: Icone; teinte: Tein
 type Section = { cle: 'nouvelles' | 'lues'; titre: string; items: NotificationItem[] };
 
 export default function NotificationsScreen() {
+  const { informer } = useDialogue();
   const { notifications, loading, chargementSuite, error, marquerLue, marquerToutesLues, chargerPlus, recharger } =
-    useNotifications();
+    useNotifications({
+      onErreurMarquage: () =>
+        informer('Pas enregistré', "La notification n'a pas pu être marquée comme lue. Vérifie ta connexion et réessaie."),
+    });
 
   const enTete = <EnTeteSousPage titre="Notifications" />;
 
