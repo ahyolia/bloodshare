@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Mechanisms\HandleRequests\HandleRequests;
+use NotificationChannels\WebPush\Events\NotificationFailed;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,6 +39,16 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(NotificationSending::class, function (NotificationSending $event) {
             if ($event->notifiable instanceof User && $event->notifiable->statut === 'supprime') {
                 return false;
+            }
+        });
+
+        // 📖 Abonnement push signé avec une autre clé VAPID que celle du serveur (clés
+        //    régénérées, app compilée avec une ancienne clé) : le service push répond 403 à
+        //    chaque envoi, pour toujours. Le paquet ne supprime que les abonnements expirés
+        //    (404/410) ; on retire aussi ceux-là, l'app en recrée un avec la bonne clé.
+        Event::listen(NotificationFailed::class, function (NotificationFailed $event) {
+            if ($event->report->getResponse()?->getStatusCode() === 403) {
+                $event->subscription->delete();
             }
         });
 
