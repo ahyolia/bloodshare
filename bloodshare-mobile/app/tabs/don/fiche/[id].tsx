@@ -24,7 +24,7 @@ function LeSaviezVous({ texte }: { texte: string }) {
         onPress={() => setOpen((value) => !value)}
         activeOpacity={0.85}
       >
-        <Text style={styles.saviezTitle}>Le savais-tu ?</Text>
+        <Text style={styles.saviezTitle}>Le savais-tu ?</Text>
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={20}
@@ -137,8 +137,8 @@ export default function FicheScreen() {
             <View style={styles.quizCard}>
               <Text style={styles.quizTitle}>Tester ses connaissances</Text>
               <Text style={styles.quizText}>
-                Tu penses tout savoir sur le don du sang ? Teste tes connaissances et gagne
-                des points !
+                Tu penses tout savoir sur le don du sang ? Teste tes connaissances et gagne
+                des points !
               </Text>
 
               <TouchableOpacity

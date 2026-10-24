@@ -102,7 +102,7 @@ export default function HistoriqueDonsScreen() {
           !loading && !error && data ? (
             <EtatVide
               titre="Ton premier don t'attend"
-              message="Scanne le QR code au centre de don ou lors d'une collecte : il apparaîtra ici."
+              message="Scanne le QR code au centre de don ou lors d'une collecte : il apparaîtra ici."
               libelleAction="Aller au don"
               onAction={() => router.push('/tabs/don')}
             />
@@ -152,7 +152,7 @@ function CarteDon({ don }: { don: Don }) {
   const teinte = TEINTES_PASTILLE[estEvenement ? 'petrole' : 'corail'];
   const date = formaterDateHeureLongue(don.date_don);
   const lieu = estEvenement ? 'Événement' : 'Centre de don';
-  const carte = don.carte_obtenue ? `Carte « ${don.carte_obtenue.titre} »` : 'Pas de carte associée';
+  const carte = don.carte_obtenue ? `Carte « ${don.carte_obtenue.titre} »` : 'Pas de carte associée';
 
   return (
     <View style={styles.carte} accessible accessibilityLabel={`Don du ${date}, ${lieu}, ${carte}`}>

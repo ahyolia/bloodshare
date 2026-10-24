@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Theme } from '../../constants/colors';
 import { Espace, Rayon } from '../../constants/spacing';
 import { Typo } from '../../constants/typography';
@@ -61,6 +63,15 @@ export function BarreProgression({ titre, valeur, max, detail, variante = 'stand
   const couleurs = COULEURS[variante];
   const vedette = couleurs.fond !== undefined;
 
+  // 📖 La barre glisse jusqu'à sa nouvelle valeur (ex. question suivante d'un quiz) au
+  //    lieu de sauter. Au premier affichage elle est déjà à sa valeur : rien ne bouge.
+  //    withTiming suit le réglage « Réduire les animations » du système.
+  const progression = useSharedValue(ratio);
+  useEffect(() => {
+    progression.value = withTiming(ratio, { duration: 400, easing: Easing.out(Easing.cubic) });
+  }, [progression, ratio]);
+  const styleRemplissage = useAnimatedStyle(() => ({ width: `${progression.value * 100}%` }));
+
   return (
     <View
       style={[styles.conteneur, vedette && [styles.vedette, { backgroundColor: couleurs.fond }], style]}
@@ -77,7 +88,7 @@ export function BarreProgression({ titre, valeur, max, detail, variante = 'stand
       </View>
 
       <View style={[styles.piste, { backgroundColor: couleurs.piste }]}>
-        <View style={[styles.remplissage, { width: `${ratio * 100}%`, backgroundColor: couleurs.remplissage }]} />
+        <Animated.View style={[styles.remplissage, { backgroundColor: couleurs.remplissage }, styleRemplissage]} />
       </View>
     </View>
   );

@@ -9,8 +9,7 @@ import { EtatErreur } from '../../../components/ui/EtatErreur';
 import { FeuilleBas } from '../../../components/ui/FeuilleBas';
 import { entreeSousPage } from '../../../constants/animations';
 import {
-  BADGES_INFO,
-  BadgeInfo,
+  infoBadge,
   CATEGORIE_COLOR,
   CATEGORIE_LABEL,
   CATEGORIES_FILTRE,
@@ -22,18 +21,6 @@ import { Typo } from '../../../constants/typography';
 import { Badge, getBadges } from '../../../services/badges.service';
 import { formaterDateHeureLongue } from '../../../utils/dates';
 import { CONTENU_MARGE_BASSE } from '../_layout';
-
-// 📖 Repli si un badge existe en base (BO) mais pas encore dans BADGES_INFO : l'écran
-//    affiche quand même quelque chose de cohérent plutôt qu'un `undefined` qui plante
-//    l'accès à `info.categorie` un peu partout ci-dessous.
-const INFO_PAR_DEFAUT: BadgeInfo = {
-  emoji: '🏅',
-  categorie: 'dons',
-  description: 'Un nouveau badge à découvrir.',
-  condition: 'Continue à utiliser Aïma pour le débloquer.',
-};
-
-const infoDe = (nom: string): BadgeInfo => BADGES_INFO[nom] ?? INFO_PAR_DEFAUT;
 
 // 📖 « Révélation » du badge : le médaillon grandit avec un léger rebond, juste après
 //    l'arrivée de la feuille (qui dure 320 ms). Rien ne bouge si « Réduire les animations ».
@@ -90,7 +77,7 @@ export default function BadgesScreen() {
   };
 
   const badgesFiltres =
-    filtreActif === 'tous' ? badges : badges.filter((b) => infoDe(b.nom).categorie === filtreActif);
+    filtreActif === 'tous' ? badges : badges.filter((b) => infoBadge(b.nom).categorie === filtreActif);
 
   const nbObtenus = badges.filter((b) => b.obtenu).length;
   const pret = !loading && !error;
@@ -181,7 +168,7 @@ function Puce({ libelle, active, onPress }: { libelle: string; active: boolean; 
 }
 
 function TuileBadge({ badge, onPress }: { badge: Badge; onPress: () => void }) {
-  const info = infoDe(badge.nom);
+  const info = infoBadge(badge.nom);
 
   return (
     <Pressable
@@ -219,7 +206,7 @@ function TuileBadge({ badge, onPress }: { badge: Badge; onPress: () => void }) {
 }
 
 function DetailBadge({ badge }: { badge: Badge }) {
-  const info = infoDe(badge.nom);
+  const info = infoBadge(badge.nom);
 
   return (
     <>
@@ -246,7 +233,7 @@ function DetailBadge({ badge }: { badge: Badge }) {
       </View>
 
       <View style={styles.detailBloc}>
-        <Text style={[Typo.legendeForte, { color: Theme.texte.secondaire }]}>{"Comment l'obtenir ?"}</Text>
+        <Text style={[Typo.legendeForte, { color: Theme.texte.secondaire }]}>{"Comment l'obtenir ?"}</Text>
         <Text style={[Typo.corps, { color: Theme.texte.principal }]}>{info.condition}</Text>
         <Text style={[Typo.legende, styles.description]}>{info.description}</Text>
       </View>
@@ -262,7 +249,7 @@ function DetailBadge({ badge }: { badge: Badge }) {
         <View style={[styles.statut, { backgroundColor: Theme.fond.surfaceEnfoncee }]}>
           <Ionicons name="sparkles-outline" size={20} color={Theme.texte.secondaire} />
           <Text style={[Typo.legende, styles.encouragement]}>
-            Continue à participer pour débloquer ce badge !
+            Continue à participer pour débloquer ce badge !
           </Text>
         </View>
       )}

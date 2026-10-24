@@ -1,35 +1,30 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EnTete } from '../../../components/EnTete';
-import { Colors } from '../../../constants/colors';
-import { accorder } from '../../../utils/pluriel';
+import { BandeauQuiz } from '../../../components/quiz/BandeauQuiz';
+import { LigneQuiz } from '../../../components/quiz/LigneQuiz';
+import { TuileCategorie } from '../../../components/quiz/TuileCategorie';
+import { Bouton } from '../../../components/ui/Bouton';
+import { CarteChiffre } from '../../../components/ui/CarteChiffre';
+import { Chargement } from '../../../components/ui/Chargement';
+import { EtatErreur } from '../../../components/ui/EtatErreur';
+import { EtatVide } from '../../../components/ui/EtatVide';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { entree } from '../../../constants/animations';
+import { Theme } from '../../../constants/colors';
+import { Espace } from '../../../constants/spacing';
+import { Typo } from '../../../constants/typography';
 import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues';
 import { useProfil } from '../../../hooks/useProfil';
+import { useRelanceOnglet } from '../../../hooks/useRelanceOnglet';
 import { CategorieQuiz, getQuizCategories, QuizItem } from '../../../services/quiz.service';
 import { initialePseudo } from '../../../utils/profil';
-
-// 📖 Table de correspondance catégorie → icône + couleur de fond du cercle
-// → Pourquoi une table plutôt qu'un switch : plus lisible, et facile à compléter si de nouvelles catégories de quiz apparaissent
-const CATEGORIE_STYLE: Record<string, { emoji: string; fond: string }> = {
-  // Mêmes libellés que le backoffice (QuizResource, QuizContenuSeeder).
-  'Qui peut donner ?': { emoji: '🙋', fond: Colors.fondRose },
-  'Le don du sang': { emoji: '🩸', fond: Colors.fondBleu },
-  "Le Centre et l'ADSB-NC": { emoji: '🏥', fond: Colors.fondVert },
-};
-
-const getCategorieStyle = (categorie: string) =>
-  CATEGORIE_STYLE[categorie] ?? { emoji: '💡', fond: Colors.fondNeutre };
+import { premierQuizAFaire, progressionQuiz, quizAReprendre } from '../../../utils/quizAccueil';
 
 export default function QuizScreen() {
+  // Appui sur l'onglet : retour en haut de la page et animations d'entrée rejouées.
+  const cleOnglet = useRelanceOnglet('quiz');
   const router = useRouter();
   // 📖 <EnTete /> est purement présentationnel : c'est l'écran qui fournit les
   //    données du profil (pseudo + points), via le hook partagé.
@@ -39,507 +34,234 @@ export default function QuizScreen() {
   const [categories, setCategories] = useState<CategorieQuiz[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [categorieChoisie, setCategorieChoisie] = useState<string | null>(null);
   // Vrai dès qu'un chargement a réussi : un échec ultérieur ne doit pas masquer la liste.
   const dejaCharge = useRef(false);
 
-  // 📖 Une catégorie ouverte = sa clé (le nom de catégorie) présente dans le Set
-  // → Pourquoi un Set et pas un simple string : plusieurs catégories peuvent être ouvertes en même temps ici
-  //   (contrairement à l'onglet Don où un seul panneau à la fois faisait sens) ; un Set permet d'ajouter/retirer
-  //   une clé sans impacter les autres déjà ouvertes
-  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
-  const [openEnCours, setOpenEnCours] = useState<Set<string>>(new Set());
+  const charger = useCallback(() => {
+    let cancelled = false;
+
+    getQuizCategories()
+      .then((quizData) => {
+        if (cancelled) return;
+        dejaCharge.current = true;
+        setCategories(quizData);
+        setError(false);
+      })
+      .catch(() => {
+        if (!cancelled && !dejaCharge.current) setError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // 📖 useFocusEffect et pas useEffect : l'onglet Quiz reste monté en arrière-plan, donc un
   //    useEffect ne se relancerait pas quand on revient de l'écran d'un quiz (terminé ou
-  //    abandonné) → "Quiz en cours" et "Complété" seraient périmés jusqu'au prochain reload.
+  //    abandonné) → "Quiz en cours" et les états seraient périmés jusqu'au prochain reload.
   //    Si le rechargement échoue, on garde la liste déjà affichée.
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
+  useFocusEffect(charger);
 
-      getQuizCategories()
-        .then((quizData) => {
-          if (cancelled) return;
-          dejaCharge.current = true;
-          setCategories(quizData);
-          setError(false);
-        })
-        .catch(() => {
-          if (!cancelled && !dejaCharge.current) setError(true);
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
-        });
+  const ouvrirQuiz = (quiz: QuizItem) =>
+    router.push({ pathname: '/tabs/quiz/[id]', params: { id: quiz.id } });
 
-      return () => {
-        cancelled = true;
-      };
-    }, [])
+  const aReprendre = categories ? quizAReprendre(categories) : [];
+  const { moyenne, totalTermines } = categories
+    ? progressionQuiz(categories)
+    : { moyenne: null, totalTermines: 0 };
+  // Première catégorie par défaut, ou si celle choisie a disparu entre deux chargements.
+  const categorieAffichee =
+    categories?.find((c) => c.categorie === categorieChoisie) ?? categories?.[0] ?? null;
+
+  const enTete = (
+    <EnTete
+      variante="page"
+      titre="Quiz"
+      initiale={initialePseudo(profil?.pseudo)}
+      avatarId={profil?.avatar_id}
+      points={profil?.points_cumules ?? 0}
+      profil={profil}
+      notificationsNonLues={notificationsNonLues}
+      onPressNotifications={() => router.push('/notifications')}
+    />
   );
-
-  const toggleCategorie = (categorie: string) => {
-    setOpenCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(categorie)) next.delete(categorie);
-      else next.add(categorie);
-      return next;
-    });
-  };
-
-  const toggleEnCours = (categorie: string) => {
-    setOpenEnCours((prev) => {
-      const next = new Set(prev);
-      if (next.has(categorie)) next.delete(categorie);
-      else next.add(categorie);
-      return next;
-    });
-  };
-
-  // 📖 Un quiz "en cours" a au moins une réponse enregistrée (questions_repondues > 0) mais
-  //    n'est pas terminé (complete === false)
-  const categoriesEnCours = useMemo(() => {
-    if (!categories) return [];
-    return categories
-      .map((cat) => ({
-        categorie: cat.categorie,
-        quiz: cat.quiz.filter((q) => !q.complete && q.questions_repondues > 0),
-      }))
-      .filter((cat) => cat.quiz.length > 0);
-  }, [categories]);
-
-  // 📖 Moyenne des 5 quiz complétés les plus récents (les derniers de la liste = les plus récents)
-  // → Pourquoi les 5 derniers et pas une moyenne globale : reflète le niveau ACTUEL de l'utilisateur,
-  //   une moyenne globale se dilue avec le temps et ne bouge presque plus après beaucoup de quiz
-  const { moyenne, totalCompletes } = useMemo(() => {
-    if (!categories) return { moyenne: null as number | null, totalCompletes: 0 };
-
-    const quizCompletes = categories
-      .flatMap((cat) => cat.quiz)
-      .filter((q): q is QuizItem & { score: number } => q.complete && q.score !== null);
-
-    const cinqDerniers = quizCompletes.slice(-5);
-    // 📖 Le score est un nombre de bonnes réponses sur nb_questions (variable d'un quiz à
-    //    l'autre) alors que l'affichage est "/5" : on ramène chaque quiz sur 5 avant de moyenner.
-    const surCinq = (q: QuizItem & { score: number }) =>
-      q.nb_questions > 0 ? (q.score / q.nb_questions) * 5 : 0;
-    const moyenneCalculee =
-      cinqDerniers.length > 0
-        ? cinqDerniers.reduce((somme, q) => somme + surCinq(q), 0) / cinqDerniers.length
-        : null;
-
-    return { moyenne: moyenneCalculee, totalCompletes: quizCompletes.length };
-  }, [categories]);
-
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={Colors.corail[600]} size="large" />
-      </View>
-    );
-  }
-
-  if (error || !categories) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>Impossible de charger les quiz.</Text>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <EnTete
-          variante="page"
-          titre="Quiz"
-          initiale={initialePseudo(profil?.pseudo)}
-          avatarId={profil?.avatar_id}
-          points={profil?.points_cumules ?? 0}
-          profil={profil}
-          notificationsNonLues={notificationsNonLues}
-          onPressNotifications={() => router.push('/notifications')}
-        />
+      <ScrollView key={cleOnglet} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {enTete}
 
-        <Text style={styles.sectionTitle}>Quiz en cours</Text>
+        {/* 📖 Chargement, erreur et liste vide : centrés dans la place sous l'en-tête. */}
+        {(!categories || categories.length === 0) && (
+          <View style={styles.etat}>
+            {loading && !categories && <Chargement message="On prépare tes quiz…" />}
 
-        {categoriesEnCours.length === 0 ? (
-          <View style={styles.aVenirCard}>
-            <View style={styles.aVenirIconCircle}>
-              <Text style={styles.aVenirIcon}>💡</Text>
-            </View>
-            <View style={styles.aVenirTexte}>
-              <Text style={styles.aVenirTitre}>À venir</Text>
-              <Text style={styles.aVenirSousTitre}>{"D'autres quiz arrivent prochainement !"}</Text>
-            </View>
+            {error && !categories && (
+              <EtatErreur
+                titre="Les quiz font une pause"
+                message="Vérifie ton réseau puis réessaie."
+                onReessayer={() => {
+                  setError(false);
+                  setLoading(true);
+                  charger();
+                }}
+              />
+            )}
+
+            {categories && categories.length === 0 && (
+              <EtatVide titre="Pas encore de quiz" message="De nouveaux quiz arrivent bientôt, reviens vite !" />
+            )}
           </View>
-        ) : (
-          categoriesEnCours.map((cat) => {
-            const style = getCategorieStyle(cat.categorie);
-            const ouvert = openEnCours.has(cat.categorie);
-
-            return (
-              <View key={cat.categorie} style={styles.accordionCard}>
-                <TouchableOpacity
-                  style={styles.accordionHeader}
-                  onPress={() => toggleEnCours(cat.categorie)}
-                  activeOpacity={0.8}
-                >
-                  <View style={[styles.iconCircle, { backgroundColor: style.fond }]}>
-                    <Text style={styles.iconEmoji}>💡</Text>
-                  </View>
-                  <View style={styles.accordionCenter}>
-                    <Text style={styles.accordionTitre}>{cat.categorie}</Text>
-                    <Text style={styles.accordionSousTitre}>{cat.quiz.length} quiz en cours</Text>
-                  </View>
-                  <Ionicons name={ouvert ? 'chevron-down' : 'chevron-forward'} size={18} color={Colors.grisMoyen} />
-                </TouchableOpacity>
-
-                {ouvert &&
-                  cat.quiz.map((quiz) => (
-                    <View key={quiz.id} style={styles.subCard}>
-                      <View style={styles.subCardRow}>
-                        <Text style={styles.subCardTitre}>{quiz.titre}</Text>
-                        <View style={styles.pointsPill}>
-                          <Text style={styles.pointsPillText}>{quiz.points_attribues} ★</Text>
-                        </View>
-                      </View>
-
-                      <Text style={styles.progressLabel}>
-                        {quiz.questions_repondues}/{quiz.nb_questions} {accorder(quiz.nb_questions, 'question')}
-                      </Text>
-                      <View style={styles.progressTrack}>
-                        <View
-                          style={[
-                            styles.progressFill,
-                            {
-                              width: `${(quiz.questions_repondues / quiz.nb_questions) * 100}%`,
-                            },
-                          ]}
-                        />
-                      </View>
-
-                      <TouchableOpacity
-                        style={styles.reprendreButton}
-                        onPress={() =>
-                          router.push({ pathname: '/tabs/quiz/[id]', params: { id: quiz.id } })
-                        }
-                      >
-                        <Text style={styles.reprendreButtonText}>Reprendre</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-              </View>
-            );
-          })
         )}
 
-        <Text style={[styles.sectionTitle, styles.sectionTitleSpaced]}>Tous les quiz</Text>
+        {categories && categories.length > 0 && (
+          <>
+            {/* 📖 Les quiz à reprendre sont dans le carrousel du bandeau, sous le titre
+                « Quiz en cours » ; sans quiz commencé, le bandeau « Teste tes connaissances »
+                se suffit à lui-même. */}
+            {/* 📖 Les sections arrivent en cascade, comme sur les autres pages principales. */}
+            <Animated.View entering={entree(0)} style={styles.section}>
+              {aReprendre.length > 0 && (
+                <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+                  Quiz en cours
+                </Text>
+              )}
+              <BandeauQuiz
+                enCours={aReprendre}
+                aCommencer={premierQuizAFaire(categories)}
+                onOuvrir={ouvrirQuiz}
+              />
+            </Animated.View>
 
-        {categories.map((cat) => {
-          const style = getCategorieStyle(cat.categorie);
-          const ouvert = openCategories.has(cat.categorie);
-
-          return (
-            <View key={cat.categorie} style={styles.accordionCard}>
-              <TouchableOpacity
-                style={styles.accordionHeader}
-                onPress={() => toggleCategorie(cat.categorie)}
-                activeOpacity={0.8}
+            <Animated.View entering={entree(1)} style={styles.section}>
+              <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+                Catégories
+              </Text>
+              {/* 📖 La rangée déborde des marges de la page : on voit qu'elle défile. */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.rangee}
+                contentContainerStyle={styles.rangeeContenu}
               >
-                <View style={[styles.iconCircle, { backgroundColor: style.fond }]}>
-                  <Text style={styles.iconEmoji}>{style.emoji}</Text>
-                </View>
-                <View style={styles.accordionCenter}>
-                  <Text style={styles.accordionTitre}>{cat.categorie}</Text>
-                  <Text style={styles.accordionSousTitre}>{cat.quiz.length} quiz</Text>
-                </View>
-                <Ionicons name={ouvert ? 'chevron-down' : 'chevron-forward'} size={18} color={Colors.grisMoyen} />
-              </TouchableOpacity>
-
-              {ouvert &&
-                cat.quiz.map((quiz) => (
-                  <TouchableOpacity
-                    key={quiz.id}
-                    style={styles.subCard}
-                    onPress={() =>
-                      router.push({ pathname: '/tabs/quiz/[id]', params: { id: quiz.id } })
-                    }
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.subCardRow}>
-                      <Text style={styles.subCardTitre}>{quiz.titre}</Text>
-
-                      {quiz.complete ? (
-                        <View style={styles.completeBadge}>
-                          <Text style={styles.completeBadgeText}>✓ Complété</Text>
-                        </View>
-                      ) : (
-                        <View style={styles.pointsPill}>
-                          <Text style={styles.pointsPillText}>{quiz.points_attribues} ★</Text>
-                        </View>
-                      )}
-                    </View>
-                  </TouchableOpacity>
+                {categories.map((cat) => (
+                  <TuileCategorie
+                    key={cat.categorie}
+                    categorie={cat.categorie}
+                    nbQuiz={cat.quiz.length}
+                    selectionnee={cat.categorie === categorieAffichee?.categorie}
+                    onPress={() => setCategorieChoisie(cat.categorie)}
+                  />
                 ))}
-            </View>
-          );
-        })}
+              </ScrollView>
 
-        <Text style={[styles.sectionTitle, styles.sectionTitleSpaced]}>
-          Historique et progression
-        </Text>
+              {/* 📖 Une clé par catégorie : la liste réapparaît en fondu quand on change de tuile. */}
+              {categorieAffichee && (
+                <Animated.View
+                  key={categorieAffichee.categorie}
+                  entering={FadeIn.duration(220)}
+                  style={styles.liste}
+                >
+                  {categorieAffichee.quiz.map((quiz) => (
+                    <LigneQuiz
+                      key={quiz.id}
+                      quiz={quiz}
+                      categorie={categorieAffichee.categorie}
+                      onPress={() => ouvrirQuiz(quiz)}
+                    />
+                  ))}
+                </Animated.View>
+              )}
+            </Animated.View>
 
-        <View style={styles.historiqueCard}>
-          <Text style={styles.historiqueLabel}>Moyenne</Text>
-          <Text style={styles.historiqueScore}>{moyenne !== null ? moyenne.toFixed(1) : '–'}/5</Text>
-          <Text style={styles.historiqueSousLabel}>Sur les 5 derniers quiz</Text>
-
-          <View style={styles.separateur} />
-
-          <Text style={styles.historiqueLabel}>Tu as complété</Text>
-          <Text style={styles.historiqueTotal}>{totalCompletes} Quiz au total !</Text>
-
-          <View style={styles.separateur} />
-
-          <Text style={styles.historiqueLabel}>{"Envie d'en apprendre plus ?"}</Text>
-          <TouchableOpacity
-            style={styles.fichesButton}
-            onPress={() => router.push({ pathname: '/tabs/don', params: { section: 'fiches' } })}
-          >
-            <Text style={styles.fichesButtonText}>Lire les fiches pratiques</Text>
-          </TouchableOpacity>
-        </View>
+            <Animated.View entering={entree(2)} style={[styles.section, styles.sectionProgression]}>
+              <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+                Ta progression
+              </Text>
+              <View style={styles.chiffres}>
+                <CarteChiffre
+                  valeur={moyenne !== null ? `${moyenne.toFixed(1).replace('.', ',')}/5` : '–'}
+                  libelle="Moyenne récente"
+                  icone="stats-chart-outline"
+                  teinte="petrole"
+                  inclinaison="-2deg"
+                />
+                <CarteChiffre
+                  valeur={String(totalTermines)}
+                  libelle="Quiz terminés"
+                  icone="trophy-outline"
+                  teinte="mousse"
+                  inclinaison="2deg"
+                />
+              </View>
+              <Bouton
+                libelle="Lire les fiches pratiques"
+                variante="info"
+                icone="document-text-outline"
+                onPress={() => router.push({ pathname: '/tabs/don', params: { section: 'fiches' } })}
+              />
+            </Animated.View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
 }
 
+const MARGE = Espace[4];
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
-  },
-  centered: {
-    flex: 1,
-    backgroundColor: Colors.creme,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  errorText: {
-    color: Colors.grisMoyen,
-    fontSize: 15,
-    textAlign: 'center',
+    backgroundColor: Theme.fond.page,
   },
   content: {
-    padding: 18,
+    // flexGrow : le contenu occupe au moins tout l'écran, pour pouvoir centrer un état.
+    flexGrow: 1,
+    padding: MARGE,
     paddingTop: 54,
     paddingBottom: 126,
+    gap: Espace[6],
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    marginBottom: 12,
-  },
-  sectionTitleSpaced: {
-    marginTop: 24,
-  },
-  aVenirCard: {
-    backgroundColor: Colors.fondGris,
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  aVenirIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.fondNeutre,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  aVenirIcon: {
-    fontSize: 20,
-    opacity: 0.4,
-  },
-  aVenirTexte: {
-    alignItems: 'center',
-  },
-  aVenirTitre: {
-    color: Colors.grisMoyen,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  aVenirSousTitre: {
-    color: Colors.grisMoyen,
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  accordionCard: {
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  accordionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-  },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconEmoji: {
-    fontSize: 18,
-  },
-  accordionCenter: {
+  etat: {
     flex: 1,
-    marginLeft: 12,
+    justifyContent: 'center',
   },
-  accordionTitre: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.aubergine,
+  section: {
+    gap: Espace[3],
   },
-  accordionSousTitre: {
-    fontSize: 12,
-    color: Colors.grisMoyen,
-    marginTop: 2,
+  liste: {
+    gap: Espace[3],
   },
-  subCard: {
-    backgroundColor: Colors.fondGrisClair,
-    borderRadius: 8,
-    margin: 8,
-    marginTop: 0,
-    padding: 12,
+  // 📖 Un peu plus d'air avant « Ta progression » : l'ombre des lignes de quiz, juste
+  //    au-dessus, mange une partie de l'écart entre sections.
+  sectionProgression: {
+    marginTop: Espace[3],
   },
-  subCardRow: {
+  sectionTitre: {
+    color: Theme.texte.principal,
+  },
+  rangee: {
+    marginHorizontal: -MARGE,
+    // Rattrape une partie du rembourrage du bas : l'écart avec la liste reste raisonnable.
+    marginBottom: -Espace[2],
+  },
+  rangeeContenu: {
+    paddingHorizontal: MARGE,
+    // 📖 De la place pour l'ombre des tuiles (décalée de 6 px, floue sur 16 px), que le
+    //    ScrollView rognerait : sinon on voit une ligne nette sous la rangée.
+    paddingTop: Espace[2],
+    paddingBottom: Espace[6],
+    gap: Espace[3],
+  },
+  chiffres: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  subCardTitre: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.aubergine,
-    marginRight: 8,
-  },
-  pointsPill: {
-    backgroundColor: Colors.lime,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  pointsPillText: {
-    color: Colors.aubergine,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  completeBadge: {
-    backgroundColor: Colors.fondVert,
-    borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  completeBadgeText: {
-    color: Colors.succes,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  progressLabel: {
-    fontSize: 12,
-    color: Colors.grisMoyen,
-    marginTop: 8,
-  },
-  progressTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.fondGris,
-    marginTop: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.corail[600],
-  },
-  reprendreButton: {
-    backgroundColor: Colors.aubergine,
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    alignSelf: 'flex-end',
-    marginTop: 10,
-  },
-  reprendreButtonText: {
-    color: Colors.blanc,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  historiqueCard: {
-    backgroundColor: Colors.blanc,
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-  historiqueLabel: {
-    color: Colors.grisMoyen,
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  historiqueScore: {
-    fontSize: 48,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    textAlign: 'center',
-  },
-  historiqueSousLabel: {
-    color: Colors.grisMoyen,
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  historiqueTotal: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  separateur: {
-    height: 1,
-    width: '100%',
-    backgroundColor: Colors.fondGris,
-    marginVertical: 12,
-  },
-  fichesButton: {
-    backgroundColor: Colors.aubergine,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    marginTop: 8,
-    width: '100%',
-    alignItems: 'center',
-  },
-  fichesButtonText: {
-    color: Colors.blanc,
-    fontSize: 15,
-    fontWeight: '700',
+    gap: Espace[3],
+    // Les cartes sont inclinées : sans cet écart, leur coin touche presque le bouton.
+    marginBottom: Espace[3],
   },
 });

@@ -15,6 +15,7 @@ import { Colors } from '../../../constants/colors';
 import { compter } from '../../../utils/pluriel';
 import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues';
 import { useProfil } from '../../../hooks/useProfil';
+import { useRelanceOnglet } from '../../../hooks/useRelanceOnglet';
 import { FicheInfo, getFichesInfos } from '../../../services/fichesInfos.service';
 import { initialePseudo } from '../../../utils/profil';
 
@@ -34,6 +35,8 @@ const CATEGORIES: Category[] = [
 ];
 
 export default function DonScreen() {
+  // Appui sur l'onglet : retour en haut de la page et animations d'entrée rejouées.
+  const cleOnglet = useRelanceOnglet('don');
   const router = useRouter();
   const { section } = useLocalSearchParams<{ section?: string }>();
   // 📖 <EnTete /> ne charge rien : l'écran lui fournit pseudo + points.
@@ -77,6 +80,7 @@ export default function DonScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView
+        key={cleOnglet}
         ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.content}
@@ -103,7 +107,7 @@ export default function DonScreen() {
               <Text style={styles.questionCircleText}>?</Text>
             </View>
             <View style={styles.eligibilityTextContainer}>
-              <Text style={styles.eligibilityTitle}>Suis-je éligible ?</Text>
+              <Text style={styles.eligibilityTitle}>Suis-je éligible ?</Text>
               <Text style={styles.eligibilitySubtitle}>Sans données conservées (2 mins)</Text>
             </View>
             <Ionicons name="arrow-forward" size={20} color={Colors.aubergine} />
