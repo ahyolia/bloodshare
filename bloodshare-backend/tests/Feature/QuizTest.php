@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Contenu;
 use App\Models\Question;
 use App\Models\Quiz;
 use App\Models\Reponse;
@@ -268,6 +269,191 @@ class QuizTest extends TestCase
         $this->soumettre(4);
 
         $this->assertNull(UserQuiz::where('user_id', $this->user->id)->sole()->progression);
+    }
+
+    // ── Correction question par question (US-30) ────────────────
+
+    public function test_verifier_corrige_une_bonne_reponse_avec_explication_et_fiche(): void
+    {
+        $fiche = Contenu::create(['type' => 'fiche_info', 'titre' => 'Le paludisme', 'contenu' => '…', 'statut' => 'publie']);
+        $q1 = $this->questions[0];
+        $q1['question']->update(['explication' => 'Parce que.', 'contenu_id' => $fiche->id]);
+
+        $this->verifier($q1['question'], [$q1['bonne']->id])
+            ->assertOk()
+            ->assertJson([
+                'question_id' => $q1['question']->id,
+                'correcte' => true,
+                'reponse_ids' => [$q1['bonne']->id],
+                'reponses_correctes' => [$q1['bonne']->id],
+                'explication' => 'Parce que.',
+                'contenu' => ['id' => $fiche->id, 'titre' => 'Le paludisme'],
+            ]);
+    }
+
+    public function test_verifier_corrige_une_mauvaise_reponse_et_montre_la_bonne(): void
+    {
+        $q1 = $this->questions[0];
+
+        $this->verifier($q1['question'], [$q1['mauvaise']->id])
+            ->assertOk()
+            ->assertJson([
+                'correcte' => false,
+                'reponses_correctes' => [$q1['bonne']->id],
+                'explication' => null,
+                'contenu' => null,
+            ]);
+    }
+
+    public function test_verifier_une_question_multiple_exige_toutes_les_bonnes_reponses(): void
+    {
+        $question = Question::create(['quiz_id' => $this->quiz->id, 'intitule' => 'Multiple', 'type' => 'multiple', 'ordre' => 5]);
+        $a = Reponse::create(['question_id' => $question->id, 'texte' => 'A', 'est_correcte' => true]);
+        $b = Reponse::create(['question_id' => $question->id, 'texte' => 'B', 'est_correcte' => true]);
+
+        $this->verifier($question, [$a->id])->assertJson(['correcte' => false]);
+    }
+
+    public function test_verifier_accepte_une_question_multiple_dans_le_desordre(): void
+    {
+        $question = Question::create(['quiz_id' => $this->quiz->id, 'intitule' => 'Multiple', 'type' => 'multiple', 'ordre' => 5]);
+        $a = Reponse::create(['question_id' => $question->id, 'texte' => 'A', 'est_correcte' => true]);
+        $b = Reponse::create(['question_id' => $question->id, 'texte' => 'B', 'est_correcte' => true]);
+
+        $this->verifier($question, [$b->id, $a->id])->assertJson(['correcte' => true]);
+    }
+
+    public function test_une_question_verifiee_ne_peut_pas_changer_de_reponse(): void
+    {
+        $q1 = $this->questions[0];
+        $this->verifier($q1['question'], [$q1['mauvaise']->id]);
+
+        $this->verifier($q1['question'], [$q1['bonne']->id])
+            ->assertOk()
+            ->assertJson(['correcte' => false, 'reponse_ids' => [$q1['mauvaise']->id]]);
+    }
+
+    public function test_la_soumission_compte_la_reponse_verrouillee_et_non_celle_envoyee(): void
+    {
+        // 📖 Sinon : valider une mauvaise réponse, lire la correction, soumettre la bonne.
+        $q1 = $this->questions[0];
+        $this->verifier($q1['question'], [$q1['mauvaise']->id]);
+
+        $this->soumettre(4)->assertJson(['score' => 3, 'points_gagnes' => 30]);
+    }
+
+    public function test_la_progression_ne_remplace_pas_une_reponse_verrouillee(): void
+    {
+        $q1 = $this->questions[0];
+        $this->verifier($q1['question'], [$q1['mauvaise']->id]);
+
+        $this->putJson("/api/quiz/{$this->quiz->id}/progression", ['reponses' => [
+            ['question_id' => $q1['question']->id, 'reponse_ids' => [$q1['bonne']->id]],
+        ]])->assertOk();
+
+        $this->assertSame(
+            [$q1['question']->id => [$q1['mauvaise']->id]],
+            UserQuiz::where('user_id', $this->user->id)->sole()->progression,
+        );
+    }
+
+    public function test_le_detail_restitue_la_correction_des_questions_deja_verifiees(): void
+    {
+        $q1 = $this->questions[0];
+        $this->verifier($q1['question'], [$q1['mauvaise']->id]);
+
+        $this->getJson("/api/quiz/{$this->quiz->id}")
+            ->assertJsonPath('reponses_donnees.0.question_id', $q1['question']->id)
+            ->assertJsonPath('reponses_donnees.0.correction.correcte', false)
+            ->assertJsonPath('reponses_donnees.0.correction.reponses_correctes', [$q1['bonne']->id]);
+    }
+
+    public function test_verifier_un_quiz_termine_corrige_sans_verrouiller(): void
+    {
+        $this->soumettre(0);
+        $q1 = $this->questions[0];
+
+        $this->verifier($q1['question'], [$q1['mauvaise']->id])->assertJson(['correcte' => false]);
+        $this->verifier($q1['question'], [$q1['bonne']->id])->assertJson(['correcte' => true]);
+
+        $this->assertNull(UserQuiz::where('user_id', $this->user->id)->sole()->progression);
+    }
+
+    public function test_verifier_refuse_une_question_d_un_autre_quiz(): void
+    {
+        $autre = Quiz::create(['titre' => 'Autre', 'statut' => 'actif']);
+        $question = Question::create(['quiz_id' => $autre->id, 'intitule' => 'Ailleurs', 'type' => 'unique', 'ordre' => 1]);
+        $bonne = Reponse::create(['question_id' => $question->id, 'texte' => 'Oui', 'est_correcte' => true]);
+
+        $this->postJson("/api/quiz/{$this->quiz->id}/questions/{$question->id}/verifier", ['reponse_ids' => [$bonne->id]])
+            ->assertNotFound();
+    }
+
+    public function test_verifier_refuse_des_reponses_etrangeres_a_la_question(): void
+    {
+        $q1 = $this->questions[0];
+        $q2 = $this->questions[1];
+
+        $this->verifier($q1['question'], [$q2['bonne']->id])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('reponse_ids');
+        $this->assertDatabaseCount('user_quiz', 0);
+    }
+
+    public function test_verifier_refuse_une_reponse_vide(): void
+    {
+        $this->verifier($this->questions[0]['question'], [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('reponse_ids');
+    }
+
+    public function test_verifier_un_quiz_inactif_est_introuvable(): void
+    {
+        $this->quiz->update(['statut' => 'inactif']);
+        $q1 = $this->questions[0];
+
+        $this->verifier($q1['question'], [$q1['bonne']->id])->assertNotFound();
+    }
+
+    public function test_une_fiche_non_publiee_n_est_pas_proposee(): void
+    {
+        $brouillon = Contenu::create(['type' => 'fiche_info', 'titre' => 'Brouillon', 'contenu' => '…', 'statut' => 'brouillon']);
+        $q1 = $this->questions[0];
+        $q1['question']->update(['contenu_id' => $brouillon->id]);
+
+        $this->verifier($q1['question'], [$q1['bonne']->id])->assertJson(['contenu' => null]);
+    }
+
+    public function test_la_soumission_renvoie_la_correction_de_chaque_question(): void
+    {
+        $q1 = $this->questions[0];
+        $q1['question']->update(['explication' => 'Parce que.']);
+
+        $this->soumettre(3)
+            ->assertJsonCount(4, 'details')
+            ->assertJsonPath('details.0.question_id', $q1['question']->id)
+            ->assertJsonPath('details.0.correcte', true)
+            ->assertJsonPath('details.0.reponse_ids', [$q1['bonne']->id])
+            ->assertJsonPath('details.0.explication', 'Parce que.')
+            ->assertJsonPath('details.3.correcte', false)
+            ->assertJsonPath('details.3.reponses_correctes', [$this->questions[3]['bonne']->id]);
+    }
+
+    public function test_le_detail_ne_revele_pas_les_bonnes_reponses_des_questions_non_verifiees(): void
+    {
+        $q1 = $this->questions[0];
+        $this->verifier($q1['question'], [$q1['bonne']->id]);
+
+        $contenu = $this->getJson("/api/quiz/{$this->quiz->id}")->getContent();
+
+        $this->assertStringNotContainsString('est_correcte', $contenu);
+        $this->assertSame(1, substr_count($contenu, 'reponses_correctes'));
+    }
+
+    /** Valide une question avec les réponses données. */
+    private function verifier(Question $question, array $reponseIds)
+    {
+        return $this->postJson("/api/quiz/{$this->quiz->id}/questions/{$question->id}/verifier", ['reponse_ids' => $reponseIds]);
     }
 
     /** Soumet le quiz avec `$bonnes` bonnes réponses, le reste en mauvaises. */

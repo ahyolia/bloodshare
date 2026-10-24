@@ -65,6 +65,8 @@ Route::middleware(['auth:sanctum', RefuseCompteBloque::class, MetAJourDerniereAc
     Route::get('/quiz', [QuizController::class, 'index']);
     Route::get('/quiz/{id}', [QuizController::class, 'show']);
     Route::put('/quiz/{id}/progression', [QuizController::class, 'progression']);
+    Route::post('/quiz/{id}/questions/{questionId}/verifier', [QuizController::class, 'verifier'])
+        ->whereNumber(['id', 'questionId']);
     Route::post('/quiz/{id}/soumettre', [QuizController::class, 'soumettre']);
     Route::get('/defis/actuel', [DefiController::class, 'actuel']);
 
