@@ -1,213 +1,144 @@
-// 📖 'definitive' = contre-indication permanente (aucune date de retour possible)
-//    'temporaire' = contre-indication qui disparaît après un délai (delai_jours)
-export type TypeIneligibilite = 'definitive' | 'temporaire';
+// 📖 Les 15 critères du Don du Sang (liste officielle transmise par le centre), posés dans
+//    l'ordre. Une réponse « bloquante » arrête le questionnaire : c'est un délai ou une
+//    situation à voir avec le centre. L'app ne rend jamais de verdict définitif ni de date :
+//    seuls les médecins du Don du Sang décident, le jour du don.
+//    Même contenu que QuestionEligibiliteSeeder côté backend : modifier les deux ensemble.
 
-export type ResultatEligibilite =
-  | { eligible: true }
-  | {
-      eligible: false;
-      type: TypeIneligibilite;
-      motif: string;
-      // Présent seulement si type === 'temporaire' : sert à calculer la date de retour possible
-      delai_jours?: number;
-    };
+export type Reponse = 'oui' | 'non' | 'ne_sait_pas';
 
 export type Question = {
   id: number;
-  ordre: number;
   texte: string;
   sous_texte?: string;
-  // 📖 Chaque réponse mène soit à la question suivante ({ suivant }), soit directement à un résultat final
-  reponse_oui: ResultatEligibilite | { suivant: number };
-  reponse_non: ResultatEligibilite | { suivant: number };
+  // Réponse qui empêche de donner pour le moment.
+  reponse_bloquante: 'oui' | 'non';
+  // Ce qui est expliqué à l'utilisateur quand il donne la réponse bloquante.
+  motif: string;
 };
+
+export type ResultatEligibilite =
+  | { statut: 'eligible' }
+  | { statut: 'delai'; motif: string }
+  // « Je ne sais pas » : on renvoie vers le centre plutôt que de deviner.
+  | { statut: 'a_verifier'; question: string };
+
+// Messages du Don du Sang, au tutoiement de l'app.
+export const MESSAGE_ELIGIBLE =
+  "D'après tes réponses, rien ne semble t'empêcher de donner ton sang. Seuls les médecins du Don du Sang peuvent confirmer ton éligibilité le jour du don.";
+export const MESSAGE_DELAI =
+  "D'après tes réponses, un délai est habituellement nécessaire avant de donner. Contacte le Don du Sang afin de vérifier ta situation précise.";
+export const MESSAGE_A_VERIFIER =
+  'Contacte le Don du Sang afin de vérifier ta situation précise.';
 
 export const QUESTIONS: Question[] = [
   {
     id: 1,
-    ordre: 1,
     texte: 'As-tu entre 18 et 70 ans ?',
-    reponse_oui: { suivant: 2 },
-    reponse_non: {
-      eligible: false,
-      type: 'definitive',
-      motif: 'Le don de sang est réservé aux personnes âgées de 18 à 70 ans.',
-    },
+    reponse_bloquante: 'non',
+    motif: 'Le don du sang est possible de 18 à 70 ans.',
   },
   {
     id: 2,
-    ordre: 2,
     texte: 'Pèses-tu plus de 50 kg ?',
-    reponse_oui: { suivant: 3 },
-    reponse_non: {
-      eligible: false,
-      type: 'definitive',
-      motif: 'Tu dois peser plus de 50 kg pour pouvoir donner ton sang.',
-    },
+    reponse_bloquante: 'non',
+    motif: 'Il faut peser plus de 50 kg pour donner son sang.',
   },
   {
     id: 3,
-    ordre: 3,
     texte: "Es-tu en bonne santé aujourd'hui ?",
-    reponse_oui: { suivant: 4 },
-    reponse_non: {
-      eligible: false,
-      type: 'temporaire',
-      motif: 'Tu dois être en bonne santé le jour du don.',
-      delai_jours: 0,
-    },
+    reponse_bloquante: 'non',
+    motif: 'Il faut être en bonne santé le jour du don.',
   },
   {
     id: 4,
-    ordre: 4,
-    texte: 'Es-tu enceinte ou as-tu accouché dans les 6 derniers mois ?',
-    reponse_oui: {
-      eligible: false,
-      type: 'temporaire',
-      motif:
-        "Le don est contre-indiqué pendant la grossesse et dans les 6 mois suivant l'accouchement.",
-      delai_jours: 180,
-    },
-    reponse_non: { suivant: 5 },
+    texte: 'Es-tu enceinte, ou as-tu accouché dans les 6 derniers mois ?',
+    reponse_bloquante: 'oui',
+    motif:
+      "Le don n'est pas possible pendant la grossesse, ni dans les 6 mois qui suivent l'accouchement.",
   },
   {
     id: 5,
-    ordre: 5,
-    texte: 'As-tu eu de la fièvre, une grippe, une gastro ou une infection dans les 15 derniers jours ?',
-    sous_texte: 'bronchite, infection urinaire, symptômes infectieux...',
-    reponse_oui: {
-      eligible: false,
-      type: 'temporaire',
-      motif: 'Attends la disparition complète des symptômes avant de donner.',
-      delai_jours: 15,
-    },
-    reponse_non: { suivant: 6 },
+    texte: 'As-tu eu de la fièvre ou une infection dans les 15 derniers jours ?',
+    sous_texte: 'grippe, gastro-entérite, bronchite, infection urinaire…',
+    reponse_bloquante: 'oui',
+    motif: 'Il faut attendre 15 jours après la disparition complète des symptômes.',
   },
   {
     id: 6,
-    ordre: 6,
-    texte: 'As-tu une plaie, blessure ou infection de la peau non cicatrisée ?',
-    sous_texte: 'furoncle, abcès...',
-    reponse_oui: {
-      eligible: false,
-      type: 'temporaire',
-      motif: 'Attends la cicatrisation complète avant de donner.',
-      delai_jours: 0,
-    },
-    reponse_non: { suivant: 7 },
+    texte: "As-tu une plaie, une blessure ou une infection de la peau qui n'est pas encore cicatrisée ?",
+    sous_texte: 'furoncle, égratignure qui suinte…',
+    reponse_bloquante: 'oui',
+    motif: 'Il faut attendre que la peau soit complètement cicatrisée.',
   },
   {
     id: 7,
-    ordre: 7,
-    texte: 'As-tu reçu une transfusion sanguine ou subi une greffe ?',
+    texte: 'As-tu déjà reçu une transfusion sanguine ou une greffe ?',
     sous_texte: "quelle qu'en soit la date",
-    reponse_oui: {
-      eligible: false,
-      type: 'definitive',
-      motif: 'Les personnes ayant reçu une transfusion ou une greffe ne peuvent pas donner leur sang.',
-    },
-    reponse_non: { suivant: 8 },
+    reponse_bloquante: 'oui',
+    motif: 'Une transfusion ou une greffe, même ancienne, est à signaler au Don du Sang.',
   },
   {
     id: 8,
-    ordre: 8,
     texte: 'As-tu des antécédents cardiaques ou neurologiques ?',
-    sous_texte: 'infarctus, trouble du rythme, valvulopathie, AVC...',
-    reponse_oui: {
-      eligible: false,
-      type: 'definitive',
-      motif: 'Ces antécédents contre-indiquent le don de sang. Consulte le personnel médical du CHT.',
-    },
-    reponse_non: { suivant: 9 },
+    sous_texte: 'infarctus, trouble du rythme, valvulopathie, AVC…',
+    reponse_bloquante: 'oui',
+    motif: 'Les antécédents cardiaques ou neurologiques sont à voir avec un médecin du Don du Sang.',
   },
   {
     id: 9,
-    ordre: 9,
-    texte: 'As-tu eu un cancer au cours de ta vie ?',
-    reponse_oui: {
-      eligible: false,
-      type: 'definitive',
-      motif: 'Un antécédent de cancer contre-indique le don de sang.',
-    },
-    reponse_non: { suivant: 10 },
+    texte: 'As-tu déjà eu un cancer ?',
+    reponse_bloquante: 'oui',
+    motif: 'Un antécédent de cancer est à voir avec un médecin du Don du Sang.',
   },
   {
     id: 10,
-    ordre: 10,
     texte: 'As-tu eu une fibroscopie ou une coloscopie dans les 2 derniers mois ?',
-    reponse_oui: {
-      eligible: false,
-      type: 'temporaire',
-      motif: 'Attends 2 mois après cet examen avant de donner.',
-      delai_jours: 60,
-    },
-    reponse_non: { suivant: 11 },
+    reponse_bloquante: 'oui',
+    motif: 'Il faut attendre 2 mois après une fibroscopie ou une coloscopie.',
   },
   {
     id: 11,
-    ordre: 11,
-    texte: 'As-tu subi une intervention chirurgicale dans les 4 derniers mois ?',
-    reponse_oui: {
-      eligible: false,
-      type: 'temporaire',
-      motif: 'Attends 4 mois après une intervention chirurgicale avant de donner.',
-      delai_jours: 120,
-    },
-    reponse_non: { suivant: 12 },
+    texte: 'As-tu subi une opération chirurgicale dans les 4 derniers mois ?',
+    reponse_bloquante: 'oui',
+    motif: 'Il faut attendre 4 mois après une opération.',
   },
   {
     id: 12,
-    ordre: 12,
-    texte: 'As-tu fait un piercing ou un tatouage dans les 2 derniers mois ?',
-    reponse_oui: {
-      eligible: false,
-      type: 'temporaire',
-      motif: 'Attends 2 mois après un piercing ou tatouage avant de donner.',
-      delai_jours: 60,
-    },
-    reponse_non: { suivant: 13 },
+    texte: 'As-tu fait un tatouage ou un piercing dans les 2 derniers mois ?',
+    sous_texte: "y compris maquillage permanent et trous d'oreilles",
+    reponse_bloquante: 'oui',
+    motif: 'Il faut attendre 2 mois après un tatouage ou un piercing.',
   },
   {
     id: 13,
-    ordre: 13,
     texte: "As-tu eu plus d'un partenaire sexuel dans les 4 derniers mois ?",
-    sous_texte: 'même si rapports protégés',
-    reponse_oui: {
-      eligible: false,
-      type: 'temporaire',
-      motif:
-        'Pour des raisons de sécurité transfusionnelle, ce critère contre-indique le don pendant 4 mois.',
-      delai_jours: 120,
-    },
-    reponse_non: { suivant: 14 },
+    sous_texte: 'même avec des rapports protégés',
+    reponse_bloquante: 'oui',
+    motif: "Il faut attendre 4 mois après avoir eu plus d'un partenaire sexuel.",
   },
   {
     id: 14,
-    ordre: 14,
     texte: 'As-tu voyagé dans une zone impaludée dans les 4 derniers mois ?',
-    sous_texte: 'Vanuatu, Afrique, Asie du Sud-Est, Amérique centrale ou du Sud',
-    reponse_oui: {
-      eligible: false,
-      type: 'temporaire',
-      motif: 'Attends 4 mois après un retour de zone impaludée avant de donner.',
-      delai_jours: 120,
-    },
-    reponse_non: { suivant: 15 },
+    sous_texte: 'zone où le paludisme est présent : Vanuatu, Afrique, Asie du Sud-Est, Amérique centrale ou du Sud',
+    reponse_bloquante: 'oui',
+    motif: "Il faut attendre 4 mois après le retour d'une zone impaludée.",
   },
   {
     id: 15,
-    ordre: 15,
-    texte: 'As-tu consommé de la drogue ?',
-    sous_texte: 'par voie intraveineuse ou autre',
-    reponse_oui: {
-      eligible: false,
-      type: 'definitive',
-      motif: 'La consommation de drogues contre-indique définitivement le don de sang.',
-    },
-    reponse_non: { eligible: true },
+    texte: "As-tu bu de l'alcool ou consommé de la drogue dans les 72 dernières heures ?",
+    reponse_bloquante: 'oui',
+    motif: "Il faut attendre 72 heures (3 jours) sans alcool ni drogue avant de donner.",
   },
 ];
 
-// 📖 Le "!" dit à TypeScript "je te garantis que find() ne renverra jamais undefined ici"
-// → Pourquoi c'est acceptable : les ids référencés par { suivant } sont tous des ids réels de QUESTIONS, contrôlés par nous-mêmes dans ce fichier ; ce n'est pas une donnée utilisateur imprévisible
-export const getQuestion = (id: number): Question => QUESTIONS.find((q) => q.id === id)!;
+export const TOTAL_QUESTIONS = QUESTIONS.length;
+
+/**
+ * Résultat déclenché par une réponse, ou `null` si le questionnaire continue.
+ * 📖 Fonction pure : le hook s'en sert, et elle se teste sans monter de composant.
+ */
+export const resultatPour = (question: Question, reponse: Reponse): ResultatEligibilite | null => {
+  if (reponse === 'ne_sait_pas') return { statut: 'a_verifier', question: question.texte };
+  if (reponse === question.reponse_bloquante) return { statut: 'delai', motif: question.motif };
+  return null;
+};
