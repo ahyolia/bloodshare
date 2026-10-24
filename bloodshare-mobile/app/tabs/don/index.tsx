@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -9,8 +9,10 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { EnTete } from '../../../components/EnTete';
+import { CarteEligibilite } from '../../../components/eligibilite/CarteEligibilite';
+import { effacerQuestionnaire, questionnaireEnCours } from '../../../stores/eligibilite.store';
 import { Colors } from '../../../constants/colors';
 import { compter } from '../../../utils/pluriel';
 import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues';
@@ -48,6 +50,14 @@ export default function DonScreen() {
   const [openCategorie, setOpenCategorie] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const fichesY = useRef(0);
+  const [questionnaire, setQuestionnaire] = useState(questionnaireEnCours);
+
+  // 📖 Relu à chaque retour sur la page : le questionnaire a pu avancer ou se terminer.
+  useFocusEffect(
+    useCallback(() => {
+      setQuestionnaire(questionnaireEnCours());
+    }, [])
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -97,23 +107,6 @@ export default function DonScreen() {
           onPressNotifications={() => router.push('/notifications')}
         />
 
-        <TouchableOpacity
-          style={styles.eligibilityCard}
-          onPress={() => router.push('/tabs/don/eligibilite')}
-          activeOpacity={0.88}
-        >
-          <View style={styles.rowCenter}>
-            <View style={styles.questionCircle}>
-              <Text style={styles.questionCircleText}>?</Text>
-            </View>
-            <View style={styles.eligibilityTextContainer}>
-              <Text style={styles.eligibilityTitle}>Suis-je éligible ?</Text>
-              <Text style={styles.eligibilitySubtitle}>Sans données conservées (2 mins)</Text>
-            </View>
-            <Ionicons name="arrow-forward" size={20} color={Colors.aubergine} />
-          </View>
-        </TouchableOpacity>
-
         <View style={styles.qrCard}>
           <Text style={styles.qrTitle}>Valider mon don</Text>
 
@@ -133,6 +126,18 @@ export default function DonScreen() {
             <Ionicons name="scan-outline" size={16} color={Colors.aubergine} />
             <Text style={styles.scanButtonText}>Scanner un QR Code</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* 📖 Sous le QR code et non plus tout en haut (retour des tests utilisateurs). */}
+        <View style={styles.eligibiliteBlock}>
+          <CarteEligibilite
+            enCours={questionnaire}
+            onCommencer={() => router.push('/tabs/don/eligibilite')}
+            onRecommencer={() => {
+              effacerQuestionnaire();
+              router.push('/tabs/don/eligibilite');
+            }}
+          />
         </View>
 
         <View style={styles.donationBlock}>
@@ -252,46 +257,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  eligibilityCard: {
-    backgroundColor: '#F8F4EC',
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1.5,
-    borderColor: '#403530',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-  questionCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.aubergine,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  questionCircleText: {
-    color: Colors.cremeClair,
-    fontWeight: '700',
-    fontSize: 18,
-  },
-  eligibilityTextContainer: {
-    flex: 1,
-    marginRight: 10,
-  },
-  eligibilityTitle: {
-    color: Colors.aubergine,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  eligibilitySubtitle: {
-    color: Colors.grisMoyen,
-    fontSize: 11,
-    marginTop: 2,
+  eligibiliteBlock: {
+    marginBottom: 22,
   },
   qrCard: {
     backgroundColor: '#D9D6D1',

@@ -1,243 +1,158 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../constants/colors';
-import { ResultatEligibilite } from '../../constants/eligibilite';
+import type { ComponentProps } from 'react';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Theme } from '../../constants/colors';
+import {
+  MESSAGE_A_VERIFIER,
+  MESSAGE_DELAI,
+  MESSAGE_ELIGIBLE,
+  ResultatEligibilite,
+} from '../../constants/eligibilite';
+import { Espace, Rayon } from '../../constants/spacing';
+import { Typo } from '../../constants/typography';
+import { Bloc } from '../ui/Bloc';
+import { Bouton } from '../ui/Bouton';
 
 const RESERVATION_URL = 'https://www.dondusang.nc/reservation-en-ligne/';
+// 📖 Page d'accueil du site du Don du Sang : coordonnées et horaires à jour, plutôt
+//    qu'un numéro écrit en dur dans l'app.
+const CONTACT_URL = 'https://www.dondusang.nc/';
 
 type Props = {
   resultat: ResultatEligibilite;
   onRecommencer: () => void;
 };
 
-// 📖 Formate une date de retour possible en français lisible, à partir d'un délai en jours depuis aujourd'hui
-// → Pourquoi ici et pas dans le hook : c'est un détail d'AFFICHAGE (format de date), pas une donnée métier — le hook n'a pas à savoir comment on la présente
-const formaterDateProchaine = (delaiJours: number) => {
-  const dateProchaine = new Date();
-  dateProchaine.setDate(dateProchaine.getDate() + delaiJours);
-  return dateProchaine.toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+const PRESENTATION: Record<
+  ResultatEligibilite['statut'],
+  { titre: string; icone: ComponentProps<typeof Ionicons>['name']; fondIcone: string }
+> = {
+  eligible: {
+    titre: 'Tu sembles pouvoir donner !',
+    icone: 'checkmark',
+    fondIcone: Theme.feedback.succesSurface,
+  },
+  delai: {
+    titre: 'Un délai est sans doute nécessaire',
+    icone: 'time-outline',
+    fondIcone: Theme.fond.surfaceEnfoncee,
+  },
+  a_verifier: {
+    titre: 'À vérifier avec le Don du Sang',
+    icone: 'help',
+    fondIcone: Theme.fond.surfaceEnfoncee,
+  },
 };
 
+// 📖 Pas de verdict « don contre-indiqué » ni de date de retour : c'est la consigne du
+//    Don du Sang. L'app oriente, seuls ses médecins décident le jour du don.
 export function ResultatView({ resultat, onRecommencer }: Props) {
   const router = useRouter();
+  const { titre, icone, fondIcone } = PRESENTATION[resultat.statut];
 
-  if (resultat.eligible) {
-    return (
-      <View style={styles.screen}>
-        <View style={styles.iconCircle}>
-          <Ionicons name="checkmark" size={30} color={Colors.aubergine} />
-        </View>
+  const message =
+    resultat.statut === 'eligible'
+      ? MESSAGE_ELIGIBLE
+      : resultat.statut === 'delai'
+        ? MESSAGE_DELAI
+        : MESSAGE_A_VERIFIER;
 
-        <Text style={styles.titre}>Tu sembles éligible !</Text>
-        <Text style={styles.texte}>
-          {"D'après tes réponses, rien ne semble t'empêcher de donner ton sang. Seul le " +
-            'personnel du CHT peut confirmer ton éligibilité le jour du don.'}
-        </Text>
-
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => Linking.openURL(RESERVATION_URL)}
-        >
-          <Text style={styles.primaryButtonText}>Prendre un rendez-vous</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/tabs')}>
-          <Text style={styles.secondaryButtonText}>{"Retour à l'accueil"}</Text>
-        </TouchableOpacity>
-
-        <Disclaimer />
-      </View>
-    );
-  }
-
-  if (resultat.type === 'temporaire') {
-    const dateFormatee =
-      resultat.delai_jours !== undefined && resultat.delai_jours > 0
-        ? formaterDateProchaine(resultat.delai_jours)
-        : null;
-
-    return (
-      <View style={styles.screen}>
-        <View style={styles.iconCircle}>
-          <Ionicons name="alert" size={28} color={Colors.aubergine} />
-        </View>
-
-        <Text style={styles.titreSecondaire}>Report temporaire probable</Text>
-        <Text style={styles.texte}>{resultat.motif}</Text>
-
-        {dateFormatee && (
-          <View style={styles.card}>
-            <Text style={styles.cardLabel}>Tu pourrais donner à partir du :</Text>
-            <Text style={styles.cardDate}>{dateFormatee}</Text>
-          </View>
-        )}
-
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => router.push({ pathname: '/tabs/don', params: { section: 'fiches' } })}
-        >
-          <Text style={styles.primaryButtonText}>Lire les fiches pratiques</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/tabs')}>
-          <Text style={styles.secondaryButtonText}>{"Retour à l'accueil"}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.textButton} onPress={onRecommencer}>
-          <Text style={styles.textButtonText}>Recommencer le questionnaire</Text>
-        </TouchableOpacity>
-
-        <Disclaimer />
-      </View>
-    );
-  }
-
-  // 📖 Dernier cas restant : type === 'definitive'
   return (
-    <View style={styles.screen}>
-      <View style={styles.iconCircle}>
-        <Ionicons name="close" size={30} color={Colors.aubergine} />
+    <ScrollView style={styles.screen} contentContainerStyle={styles.contenu}>
+      <View style={[styles.iconCircle, { backgroundColor: fondIcone }]}>
+        <Ionicons name={icone} size={30} color={Theme.texte.principal} />
       </View>
 
-      <Text style={styles.titreSecondaire}>Don contre-indiqué</Text>
-      <Text style={styles.texte}>{resultat.motif}</Text>
-      <Text style={styles.texteEncourageant}>
-        {"Tu peux toujours soutenir l'association ADSB-NC en sensibilisant ton entourage ou en " +
-          'devenant bénévole.'}
+      <Text style={[Typo.titre2, styles.titre]} accessibilityRole="header">
+        {titre}
       </Text>
+      <Text style={[Typo.corps, styles.texte]}>{message}</Text>
 
-      <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/tabs')}>
-        <Text style={styles.secondaryButtonText}>{"Retour à l'accueil"}</Text>
-      </TouchableOpacity>
+      {resultat.statut === 'delai' && <Bloc texte={resultat.motif} style={styles.bloc} />}
+      {resultat.statut === 'a_verifier' && (
+        <Bloc texte={`Tu as répondu « Je ne sais pas » à : ${resultat.question}`} style={styles.bloc} />
+      )}
 
-      <TouchableOpacity style={styles.textButton} onPress={onRecommencer}>
-        <Text style={styles.textButtonText}>Recommencer</Text>
-      </TouchableOpacity>
+      <View style={styles.boutons}>
+        {resultat.statut === 'eligible' ? (
+          <>
+            <Bouton
+              libelle="Prendre rendez-vous"
+              icone="calendar-outline"
+              onPress={() => Linking.openURL(RESERVATION_URL)}
+            />
+            <Bouton
+              libelle="Retour à l'accueil"
+              variante="secondaire"
+              onPress={() => router.replace('/tabs')}
+            />
+          </>
+        ) : (
+          <>
+            <Bouton
+              libelle="Contacter le Don du Sang"
+              icone="call-outline"
+              onPress={() => Linking.openURL(CONTACT_URL)}
+            />
+            <Bouton
+              libelle="Lire les fiches pratiques"
+              variante="secondaire"
+              onPress={() => router.push({ pathname: '/tabs/don', params: { section: 'fiches' } })}
+            />
+            <Bouton libelle="Recommencer le questionnaire" variante="discret" onPress={onRecommencer} />
+          </>
+        )}
+      </View>
 
-      <Disclaimer />
-    </View>
-  );
-}
-
-// 📖 Rappel légal/médical répété sur les 3 variantes de résultat : ce questionnaire ne remplace jamais l'avis du personnel du CHT
-function Disclaimer() {
-  return (
-    <Text style={styles.disclaimer}>
-      {"Ce questionnaire est indicatif et ne remplace pas l'entretien médical obligatoire " +
-        'avec le personnel du CHT le jour du don.'}
-    </Text>
+      <Text style={[Typo.legende, styles.disclaimer]}>
+        {"Ce questionnaire est indicatif et ne remplace pas l'entretien médical obligatoire " +
+          'avec les médecins du Don du Sang le jour du don.'}
+      </Text>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
+    backgroundColor: Theme.fond.page,
+  },
+  contenu: {
+    flexGrow: 1,
     alignItems: 'center',
-    padding: 24,
+    padding: Espace[6],
     paddingTop: 64,
-    gap: 14,
+    gap: Espace[4],
   },
   iconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 1.5,
-    borderColor: Colors.aubergine,
+    width: 64,
+    height: 64,
+    borderRadius: Rayon.plein,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
   },
   titre: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    textAlign: 'center',
-  },
-  titreSecondaire: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.aubergine,
+    color: Theme.texte.principal,
     textAlign: 'center',
   },
   texte: {
-    color: Colors.grisMoyen,
-    textAlign: 'center',
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  texteEncourageant: {
-    color: Colors.petrole[500],
-    fontSize: 14,
+    color: Theme.texte.secondaire,
     textAlign: 'center',
   },
-  card: {
-    width: '100%',
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+  bloc: {
+    alignSelf: 'stretch',
   },
-  cardLabel: {
-    color: Colors.aubergine,
-    fontSize: 14,
-  },
-  cardDate: {
-    color: Colors.corail[600],
-    fontWeight: '700',
-    fontSize: 18,
-    marginTop: 4,
-  },
-  primaryButton: {
-    width: '100%',
-    backgroundColor: Colors.aubergine,
-    borderRadius: 20,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  primaryButtonText: {
-    color: Colors.cremeClair,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  secondaryButton: {
-    width: '100%',
-    backgroundColor: '#E2DFD8',
-    borderRadius: 20,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: Colors.aubergine,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  textButton: {
-    paddingVertical: 6,
-  },
-  textButtonText: {
-    color: Colors.aubergine,
-    fontWeight: '600',
-    fontSize: 14,
-    textDecorationLine: 'underline',
+  boutons: {
+    alignSelf: 'stretch',
+    gap: Espace[3],
+    marginTop: Espace[2],
   },
   disclaimer: {
-    fontSize: 11,
-    color: Colors.grisMoyen,
+    color: Theme.texte.secondaire,
     textAlign: 'center',
     fontStyle: 'italic',
     marginTop: 'auto',
-    paddingTop: 20,
+    paddingTop: Espace[6],
   },
 });
