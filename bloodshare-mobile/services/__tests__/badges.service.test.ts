@@ -1,5 +1,5 @@
 import api from '../api';
-import { getBadges, getBadgesResume } from '../badges.service';
+import { getBadges, getBadgesAFeter, getBadgesResume } from '../badges.service';
 
 jest.mock('../../constants/config', () => ({ USE_MOCK_DATA: false }));
 
@@ -42,5 +42,18 @@ describe('getBadges', () => {
 
     expect(await getBadges()).toEqual(badges);
     expect(apiGet).toHaveBeenCalledWith('/badges');
+  });
+});
+
+describe('getBadgesAFeter', () => {
+  it('appelle GET /badges/a-feter et renomme notification_id', async () => {
+    apiGet.mockResolvedValue({
+      data: [{ notification_id: 'abc', id: 7, nom: 'Premier Pas', image_url: null }],
+    });
+
+    expect(await getBadgesAFeter()).toEqual([
+      { notificationId: 'abc', id: 7, nom: 'Premier Pas', image_url: null },
+    ]);
+    expect(apiGet).toHaveBeenCalledWith('/badges/a-feter');
   });
 });

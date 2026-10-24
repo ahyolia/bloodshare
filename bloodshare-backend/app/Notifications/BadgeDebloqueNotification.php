@@ -39,9 +39,10 @@ class BadgeDebloqueNotification extends Notification
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app
-    //    (canal database) que dans la notification push.
+    //    (canal database) que dans la notification push. `badge_id` permet à l'app
+    //    de retrouver le badge pour le fêter (GET /badges/a-feter).
     public function toArray($notifiable): array
     {
-        return $this->toWebPush($notifiable, null)->toArray();
+        return $this->toWebPush($notifiable, null)->toArray() + ['badge_id' => $this->badge->id];
     }
 }

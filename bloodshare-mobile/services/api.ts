@@ -2,6 +2,7 @@ import axios from 'axios';
 import { router } from 'expo-router';
 import { getToken, removeToken } from '../stores/auth.store';
 import { API_URL } from '../constants/api';
+import { espacesInsecablesPartout } from '../utils/typographie';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -45,9 +46,15 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Intercepteur réponse : gère les 401
+// Intercepteur réponse : espaces insécables dans les textes reçus, et gestion des 401.
+// 📖 Les textes du backoffice (catégories, quiz, fiches, notifications…) sont saisis avec
+//    des espaces normales avant « ? » ou « ! » : on les corrige ici, une fois pour toute
+//    l'app, plutôt que dans chaque écran.
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    response.data = espacesInsecablesPartout(response.data);
+    return response;
+  },
   async (error) => {
     if (error.response?.status === 401) {
       await removeToken();

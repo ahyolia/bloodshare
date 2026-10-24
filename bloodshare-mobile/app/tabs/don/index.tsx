@@ -103,7 +103,7 @@ export default function DonScreen() {
               <Text style={styles.questionCircleText}>?</Text>
             </View>
             <View style={styles.eligibilityTextContainer}>
-              <Text style={styles.eligibilityTitle}>Suis-je éligible ?</Text>
+              <Text style={styles.eligibilityTitle}>Suis-je éligible ?</Text>
               <Text style={styles.eligibilitySubtitle}>Sans données conservées (2 mins)</Text>
             </View>
             <Ionicons name="arrow-forward" size={20} color={Colors.aubergine} />

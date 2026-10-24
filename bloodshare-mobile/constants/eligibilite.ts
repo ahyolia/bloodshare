@@ -26,7 +26,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 1,
     ordre: 1,
-    texte: 'As-tu entre 18 et 70 ans ?',
+    texte: 'As-tu entre 18 et 70 ans ?',
     reponse_oui: { suivant: 2 },
     reponse_non: {
       eligible: false,
@@ -37,7 +37,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 2,
     ordre: 2,
-    texte: 'Pèses-tu plus de 50 kg ?',
+    texte: 'Pèses-tu plus de 50 kg ?',
     reponse_oui: { suivant: 3 },
     reponse_non: {
       eligible: false,
@@ -48,7 +48,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 3,
     ordre: 3,
-    texte: "Es-tu en bonne santé aujourd'hui ?",
+    texte: "Es-tu en bonne santé aujourd'hui ?",
     reponse_oui: { suivant: 4 },
     reponse_non: {
       eligible: false,
@@ -60,7 +60,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 4,
     ordre: 4,
-    texte: 'Es-tu enceinte ou as-tu accouché dans les 6 derniers mois ?',
+    texte: 'Es-tu enceinte ou as-tu accouché dans les 6 derniers mois ?',
     reponse_oui: {
       eligible: false,
       type: 'temporaire',
@@ -73,7 +73,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 5,
     ordre: 5,
-    texte: 'As-tu eu de la fièvre, une grippe, une gastro ou une infection dans les 15 derniers jours ?',
+    texte: 'As-tu eu de la fièvre, une grippe, une gastro ou une infection dans les 15 derniers jours ?',
     sous_texte: 'bronchite, infection urinaire, symptômes infectieux...',
     reponse_oui: {
       eligible: false,
@@ -86,7 +86,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 6,
     ordre: 6,
-    texte: 'As-tu une plaie, blessure ou infection de la peau non cicatrisée ?',
+    texte: 'As-tu une plaie, blessure ou infection de la peau non cicatrisée ?',
     sous_texte: 'furoncle, abcès...',
     reponse_oui: {
       eligible: false,
@@ -99,7 +99,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 7,
     ordre: 7,
-    texte: 'As-tu reçu une transfusion sanguine ou subi une greffe ?',
+    texte: 'As-tu reçu une transfusion sanguine ou subi une greffe ?',
     sous_texte: "quelle qu'en soit la date",
     reponse_oui: {
       eligible: false,
@@ -111,7 +111,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 8,
     ordre: 8,
-    texte: 'As-tu des antécédents cardiaques ou neurologiques ?',
+    texte: 'As-tu des antécédents cardiaques ou neurologiques ?',
     sous_texte: 'infarctus, trouble du rythme, valvulopathie, AVC...',
     reponse_oui: {
       eligible: false,
@@ -123,7 +123,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 9,
     ordre: 9,
-    texte: 'As-tu eu un cancer au cours de ta vie ?',
+    texte: 'As-tu eu un cancer au cours de ta vie ?',
     reponse_oui: {
       eligible: false,
       type: 'definitive',
@@ -134,7 +134,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 10,
     ordre: 10,
-    texte: 'As-tu eu une fibroscopie ou une coloscopie dans les 2 derniers mois ?',
+    texte: 'As-tu eu une fibroscopie ou une coloscopie dans les 2 derniers mois ?',
     reponse_oui: {
       eligible: false,
       type: 'temporaire',
@@ -146,7 +146,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 11,
     ordre: 11,
-    texte: 'As-tu subi une intervention chirurgicale dans les 4 derniers mois ?',
+    texte: 'As-tu subi une intervention chirurgicale dans les 4 derniers mois ?',
     reponse_oui: {
       eligible: false,
       type: 'temporaire',
@@ -158,7 +158,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 12,
     ordre: 12,
-    texte: 'As-tu fait un piercing ou un tatouage dans les 2 derniers mois ?',
+    texte: 'As-tu fait un piercing ou un tatouage dans les 2 derniers mois ?',
     reponse_oui: {
       eligible: false,
       type: 'temporaire',
@@ -170,7 +170,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 13,
     ordre: 13,
-    texte: "As-tu eu plus d'un partenaire sexuel dans les 4 derniers mois ?",
+    texte: "As-tu eu plus d'un partenaire sexuel dans les 4 derniers mois ?",
     sous_texte: 'même si rapports protégés',
     reponse_oui: {
       eligible: false,
@@ -184,7 +184,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 14,
     ordre: 14,
-    texte: 'As-tu voyagé dans une zone impaludée dans les 4 derniers mois ?',
+    texte: 'As-tu voyagé dans une zone impaludée dans les 4 derniers mois ?',
     sous_texte: 'Vanuatu, Afrique, Asie du Sud-Est, Amérique centrale ou du Sud',
     reponse_oui: {
       eligible: false,
@@ -197,7 +197,7 @@ export const QUESTIONS: Question[] = [
   {
     id: 15,
     ordre: 15,
-    texte: 'As-tu consommé de la drogue ?',
+    texte: 'As-tu consommé de la drogue ?',
     sous_texte: 'par voie intraveineuse ou autre',
     reponse_oui: {
       eligible: false,
