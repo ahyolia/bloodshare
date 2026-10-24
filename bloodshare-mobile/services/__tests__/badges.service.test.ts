@@ -28,7 +28,7 @@ describe('getBadgesResume', () => {
     expect(await getBadgesResume()).toEqual({ obtenus: 2, total: 3 });
   });
 
-  it('renvoie 0/0 quand il n’existe aucun badge', async () => {
+  it("renvoie 0/0 quand il n'existe aucun badge", async () => {
     apiGet.mockResolvedValue({ data: [] });
 
     expect(await getBadgesResume()).toEqual({ obtenus: 0, total: 0 });

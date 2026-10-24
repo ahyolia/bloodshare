@@ -115,7 +115,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: CIBLE_MIN,
-    borderRadius: Rayon.md,
+    // 📖 Plus arrondi qu'une carte, mais pas en pilule : la pilule reste la forme
+    //    des boutons, un champ ne doit pas se confondre avec une action.
+    borderRadius: Rayon.lg,
     backgroundColor: Theme.fond.surface,
   },
   saisie: {

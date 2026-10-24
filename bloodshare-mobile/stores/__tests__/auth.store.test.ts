@@ -32,26 +32,32 @@ describe('token', () => {
     await expect(getToken()).resolves.toBe('abc123');
   });
 
-  it('renvoie null quand aucun token n’est enregistré', async () => {
+  it("renvoie null quand aucun token n'est enregistré", async () => {
     await expect(getToken()).resolves.toBeNull();
   });
 });
 
 describe('utilisateur', () => {
-  it('enregistre l’utilisateur en JSON et le relit en objet', async () => {
+  it("enregistre l'utilisateur en JSON et le relit en objet", async () => {
     await saveUser({ pseudo: 'Goutte', points_cumules: 120 });
 
     expect(secureStorage.setItem).toHaveBeenCalledWith('auth_user', '{"pseudo":"Goutte","points_cumules":120}');
     await expect(getUser()).resolves.toEqual({ pseudo: 'Goutte', points_cumules: 120 });
   });
 
-  it('renvoie null quand aucun utilisateur n’est enregistré', async () => {
+  it('écarte le profil de donneur gardé par une ancienne version (donnée de santé)', async () => {
+    await saveUser({ pseudo: 'Goutte', statut_donneur: 'donneur_regulier' });
+
+    await expect(getUser()).resolves.toEqual({ pseudo: 'Goutte' });
+  });
+
+  it("renvoie null quand aucun utilisateur n'est enregistré", async () => {
     await expect(getUser()).resolves.toBeNull();
   });
 });
 
 describe('removeToken (déconnexion)', () => {
-  it('efface à la fois le token et l’utilisateur', async () => {
+  it("efface à la fois le token et l'utilisateur", async () => {
     await saveToken('abc123');
     await saveUser({ pseudo: 'Goutte' });
 

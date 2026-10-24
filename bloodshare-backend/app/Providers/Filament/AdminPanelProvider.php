@@ -39,7 +39,8 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            // 📖 Limite les tentatives par compte visé, pas seulement par IP (voir Connexion).
+            ->login(\App\Filament\Pages\Auth\Connexion::class)
             // 📖 Identité Aïma : nom dans l'onglet et la barre latérale, logo (variante
             //    crème pour le thème sombre) et favicon, tirés des exports officiels du branding.
             ->brandName('Aïma')
@@ -48,7 +49,9 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogoHeight('2.25rem')
             // PNG et non SVG : Safari n'affiche pas les favicons SVG. Le ?v= force les
             // navigateurs à recharger l'icône (incrémenter à chaque changement du fichier).
-            ->favicon(asset('images/branding/favicon-aima.png').'?v=3')
+            // Icône aubergine (l'app a l'icône crème) : on distingue l'onglet du BO de celui de
+            // l'app. 64 px, tirée de aima-icone-aubergine@2x.png du kit de branding.
+            ->favicon(asset('images/branding/favicon-aima-bo.png').'?v=4')
             // 📖 Corail = couleur de marque de l'app (bloodshare-mobile/constants/palette.ts).
             //    C'est l'accent (liens, cases cochées, focus) ; les boutons pleins et l'élément actif
             //    du menu suivent le design system (aubergine / beige), voir filament/theme-aima.
@@ -73,6 +76,17 @@ class AdminPanelProvider extends PanelProvider
             ])
             // 📖 Mode clair aux couleurs de l'app (beige, aubergine) : voir la vue pour le détail.
             ->renderHook(PanelsRenderHook::STYLES_AFTER, fn (): string => view('filament.theme-aima')->render())
+            // 📖 Ordre des groupes du menu. Sans cette liste, Filament les range dans l'ordre de
+            //    découverte des fichiers, ce qui mettait les stocks de sang (mis à jour le plus
+            //    souvent) tout en bas. Un groupe absent de la liste s'affiche après ceux-ci.
+            ->navigationGroups([
+                'Administration',
+                'Opérations',
+                'Communication',
+                'Gamification',
+                'Contenu éditorial',
+                'Utilisateurs',
+            ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([

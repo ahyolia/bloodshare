@@ -1,0 +1,98 @@
+# 📖 Analyses de sécurité automatiques (audit cybersécurité, US-29), sur chaque PR vers
+#    dev / main, à chaque push sur ces branches et une fois par semaine : une faille connue
+#    peut être publiée sur une dépendance sans que le code ait changé.
+name: Sécurité
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+  schedule:
+    - cron: '0 20 * * 0' # dimanche 20h UTC, lundi 7h à Nouméa
+  workflow_dispatch:
+
+concurrency:
+  group: securite-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dependances-backend:
+    name: Dépendances backend (composer audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: bloodshare-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      # 📖 Lit composer.lock : pas besoin d'installer les dépendances.
+      - name: Failles connues des dépendances PHP
+        run: composer audit --locked --no-interaction
+
+  dependances-mobile:
+    name: Dépendances mobile (audit-ci)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: bloodshare-mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # 📖 Bloque une faille haute ou critique d'une dépendance livrée dans l'app. Les
+      #    failles déjà analysées et acceptées sont listées et justifiées dans audit-ci.jsonc.
+      - name: Failles connues des dépendances npm
+        run: npx --yes audit-ci@7.1.0 --config audit-ci.jsonc
+
+  secrets:
+    name: Secrets (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Tout l'historique : un secret ajouté puis retiré dans la même PR reste dans git.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 📖 Règles par défaut + hashs bcrypt (.gitleaks.toml). Fuites connues et acceptées :
+      #    .gitleaksignore. --redact : un secret trouvé n'est jamais affiché dans les logs.
+      - name: Recherche de secrets dans l'historique git
+        run: >-
+          docker run --rm -v "$PWD":/repo zricethezav/gitleaks:v8.21.2
+          git /repo --config /repo/.gitleaks.toml --gitleaks-ignore-path /repo/.gitleaksignore
+          --redact --no-banner
+
+  analyse-statique:
+    name: Analyse statique (Semgrep)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: semgrep/semgrep:1.95.0
+    steps:
+      - uses: actions/checkout@v4
+
+      # 📖 Règles PHP, TypeScript et React du registre Semgrep : 0 résultat sur le code au
+      #    moment de l'audit, donc bloquant. Un faux positif se justifie dans le code avec
+      #    un commentaire « nosemgrep » expliquant pourquoi.
+      - name: Recherche de motifs de code dangereux
+        run: >-
+          semgrep scan --config p/php --config p/typescript --config p/react
+          --metrics=off --error
+          bloodshare-backend/app bloodshare-backend/routes bloodshare-backend/config
+          bloodshare-backend/resources/views
+          bloodshare-mobile/app bloodshare-mobile/components bloodshare-mobile/services
+          bloodshare-mobile/utils bloodshare-mobile/stores bloodshare-mobile/public

@@ -1,15 +1,19 @@
-import { useEffect, useState } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useState, type ComponentProps } from "react";
+import { ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import Animated from "react-native-reanimated";
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
-import { Colors } from "../../../constants/colors";
+import { Bouton } from "../../../components/ui/Bouton";
+import { ElementListe } from "../../../components/ui/ElementListe";
+import { EnTeteSousPage } from "../../../components/ui/EnTeteSousPage";
+import { Groupe, Separateur } from "../../../components/ui/Groupe";
+import { entreeSousPage } from "../../../constants/animations";
+import { Theme } from "../../../constants/colors";
+import { Palette } from "../../../constants/palette";
+import { Espace, Rayon } from "../../../constants/spacing";
+import { TEINTES_PASTILLE, type TeintePastille } from "../../../constants/teintes";
+import { Typo } from "../../../constants/typography";
 import {
   subscribe as sAbonnerNotifsWeb,
   unsubscribe as seDesabonnerNotifsWeb,
@@ -23,6 +27,7 @@ import {
   setPenurieActivee,
 } from "../../../utils/preferences";
 import { useDialogue } from "../../../components/DialogueProvider";
+import { CONTENU_MARGE_BASSE } from "../_layout";
 
 // 📖 expo-notifications ne fonctionne plus dans Expo Go (SDK 53+) et son simple
 //    import y jette une erreur. On le charge donc en `require()` paresseux, à
@@ -172,194 +177,207 @@ export default function ParametresScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityRole="button"
-        >
-          <Text style={styles.retour}>← Paramètres</Text>
-        </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <EnTeteSousPage titre="Paramètres" />
 
         {/* COMPTE */}
-        <Text style={styles.sectionTitle}>Compte</Text>
-        <View style={styles.card}>
-          <LigneLien
-            label="Modifier mes informations"
-            onPress={() => router.push("/tabs/profil/informations")}
-          />
-          <LigneLien
-            label="Changer mon mot de passe"
-            onPress={() => router.push("/changer-mot-de-passe")}
-          />
-          <LigneLien
-            label="Mot de passe oublié"
-            onPress={() => router.push("/auth/mot-de-passe-oublie")}
-            dernier
-          />
-        </View>
+        <Animated.View entering={entreeSousPage}>
+          <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+            Compte
+          </Text>
+          <Groupe>
+            <ElementListe
+              icone="person-outline"
+              teinte="corail"
+              titre="Modifier mes informations"
+              sousTitre="Pseudo et avatar"
+              onPress={() => router.push("/tabs/profil/informations")}
+            />
+            <Separateur />
+            <ElementListe
+              icone="key-outline"
+              titre="Changer mon mot de passe"
+              onPress={() => router.push("/changer-mot-de-passe")}
+            />
+            <Separateur />
+            <ElementListe
+              icone="help-circle-outline"
+              titre="Mot de passe oublié"
+              onPress={() => router.push("/auth/mot-de-passe-oublie")}
+            />
+          </Groupe>
+        </Animated.View>
 
         {/* NOTIFICATIONS */}
-        <Text style={styles.sectionTitle}>Notifications</Text>
-        <View style={styles.card}>
-          <LigneSwitch
-            label="Notifications push"
-            valeur={notifs}
-            onChange={basculerNotifs}
-          />
-          <LigneSwitch
-            label="Alertes pénurie de sang"
-            valeur={penurie}
-            onChange={basculerPenurie}
-            dernier
-          />
-        </View>
+        <Animated.View entering={entreeSousPage}>
+          <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+            Notifications
+          </Text>
+          <Groupe>
+            <LigneInterrupteur
+              icone="notifications-outline"
+              teinte="petrole"
+              titre="Notifications push"
+              sousTitre="Rappels et nouveautés"
+              valeur={notifs}
+              onChange={basculerNotifs}
+            />
+            <Separateur />
+            <LigneInterrupteur
+              icone="water-outline"
+              teinte="corail"
+              titre="Alertes pénurie de sang"
+              sousTitre="Quand les réserves sont basses"
+              valeur={penurie}
+              onChange={basculerPenurie}
+            />
+          </Groupe>
+        </Animated.View>
 
         {/* À PROPOS */}
-        <Text style={styles.sectionTitle}>À propos</Text>
-        <View style={styles.card}>
-          <LigneLien
-            label="Politique de confidentialité"
-            onPress={() => router.push("/documents/confidentialite")}
-          />
-          <LigneLien
-            label="Conditions d'utilisation"
-            onPress={() => router.push("/documents/cgu")}
-          />
-          <LigneLien
-            label="Mentions légales"
-            onPress={() => router.push("/documents/mentions_legales")}
-          />
-          <View style={[styles.ligne, styles.ligneDerniere]}>
-            <Text style={styles.ligneLabel}>{"Version de l'app"}</Text>
-            <Text style={styles.version}>v{version}</Text>
-          </View>
-        </View>
+        <Animated.View entering={entreeSousPage}>
+          <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+            À propos
+          </Text>
+          <Groupe>
+            <ElementListe
+              icone="shield-checkmark-outline"
+              teinte="mousse"
+              titre="Politique de confidentialité"
+              onPress={() => router.push("/documents/confidentialite")}
+            />
+            <Separateur />
+            <ElementListe
+              icone="document-text-outline"
+              teinte="mousse"
+              titre="Conditions d'utilisation"
+              onPress={() => router.push("/documents/cgu")}
+            />
+            <Separateur />
+            <ElementListe
+              icone="information-circle-outline"
+              teinte="mousse"
+              titre="Mentions légales"
+              onPress={() => router.push("/documents/mentions_legales")}
+            />
+          </Groupe>
+          {/* 📖 Hors de la carte : une info, pas une ligne qui se touche (surélevé = interactif). */}
+          <Text style={[Typo.legende, styles.version]}>Aïma · version {version}</Text>
+        </Animated.View>
 
         {/* ZONE DANGEREUSE */}
-        <Text style={styles.sectionTitle}>Zone dangereuse</Text>
-        <TouchableOpacity
-          style={styles.boutonSupprimer}
-          onPress={supprimer}
-          accessibilityRole="button"
-        >
-          <Text style={styles.boutonSupprimerTexte}>Supprimer mon compte</Text>
-        </TouchableOpacity>
+        <Animated.View entering={entreeSousPage}>
+          <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+            Zone dangereuse
+          </Text>
+          <Text style={[Typo.legende, styles.avertissement]}>
+            La suppression est définitive : ton pseudo, tes points, tes badges et tes cartes disparaissent.
+          </Text>
+          {/* 📖 Variante `destructif` : toujours derrière une confirmation (ici, double). */}
+          <Bouton
+            libelle="Supprimer mon compte"
+            icone="trash-outline"
+            variante="destructif"
+            onPress={supprimer}
+          />
+        </Animated.View>
       </ScrollView>
     </View>
   );
 }
 
-function LigneLien({
-  label,
-  onPress,
-  dernier,
-}: {
-  label: string;
-  onPress: () => void;
-  dernier?: boolean;
-}) {
+type Icone = ComponentProps<typeof Ionicons>["name"];
+
+function Pastille({ icone, teinte }: { icone: Icone; teinte: TeintePastille }) {
+  const couleurs = TEINTES_PASTILLE[teinte];
   return (
-    <TouchableOpacity
-      style={[styles.ligne, dernier && styles.ligneDerniere]}
-      onPress={onPress}
-      accessibilityRole="button"
-    >
-      <Text style={styles.ligneLabel}>{label}</Text>
-      <Text style={styles.chevron}>›</Text>
-    </TouchableOpacity>
+    <View style={[styles.pastille, { backgroundColor: couleurs.fond }]}>
+      <Ionicons name={icone} size={20} color={couleurs.icone} />
+    </View>
   );
 }
 
-function LigneSwitch({
-  label,
+/** Ligne de réglage on/off, même gabarit qu'ElementListe (pastille, titre, sous-titre). */
+function LigneInterrupteur({
+  icone,
+  teinte,
+  titre,
+  sousTitre,
   valeur,
   onChange,
-  dernier,
 }: {
-  label: string;
+  icone: Icone;
+  teinte: TeintePastille;
+  titre: string;
+  sousTitre: string;
   valeur: boolean;
   onChange: (v: boolean) => void;
-  dernier?: boolean;
 }) {
   return (
-    <View style={[styles.ligne, dernier && styles.ligneDerniere]}>
-      <Text style={styles.ligneLabel}>{label}</Text>
+    <View style={styles.ligne}>
+      <Pastille icone={icone} teinte={teinte} />
+      <View style={styles.ligneTextes}>
+        <Text style={[Typo.corpsFort, { color: Theme.texte.principal }]}>{titre}</Text>
+        <Text style={[Typo.legende, { color: Theme.texte.secondaire }]}>{sousTitre}</Text>
+      </View>
       <Switch
         value={valeur}
         onValueChange={onChange}
-        trackColor={{ true: Colors.corail[600], false: Colors.fondGris }}
-        thumbColor={Colors.blanc}
+        accessibilityLabel={titre}
+        // 📖 Pétrole un peu transparent : l'état « activé » reste lisible sans
+        //    la lourdeur de l'aubergine.
+        trackColor={{ true: COULEUR_ACTIVE, false: Theme.fond.bordure }}
+        thumbColor={Theme.fond.surface}
       />
     </View>
   );
 }
 
+const PASTILLE = 40;
+// 📖 Pétrole 500 à 70 % d'opacité (suffixe hexadécimal B3).
+const COULEUR_ACTIVE = `${Palette.petrole[500]}B3`;
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
+    backgroundColor: Theme.fond.page,
   },
   content: {
     paddingHorizontal: 18,
     paddingTop: 54,
-    paddingBottom: 60,
+    paddingBottom: CONTENU_MARGE_BASSE,
   },
-  retour: {
-    fontSize: 15,
-    color: Colors.petrole[500],
-    fontWeight: "600",
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: Colors.grisMoyen,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  card: {
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    overflow: "hidden",
+  sectionTitre: {
+    color: Theme.texte.principal,
+    marginTop: Espace[6],
+    marginBottom: Espace[3],
   },
   ligne: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.fondNeutre,
+    gap: Espace[3],
+    minHeight: 68,
+    paddingHorizontal: Espace[4],
+    paddingVertical: Espace[3],
   },
-  ligneDerniere: {
-    borderBottomWidth: 0,
-  },
-  ligneLabel: {
-    fontSize: 15,
-    color: Colors.aubergine,
-    flex: 1,
-  },
-  chevron: {
-    fontSize: 18,
-    color: Colors.grisMoyen,
+  pastille: {
+    width: PASTILLE,
+    height: PASTILLE,
+    borderRadius: Rayon.md,
+    alignItems: "center",
+    justifyContent: "center",
   },
   version: {
-    fontSize: 14,
-    color: Colors.grisMoyen,
+    color: Theme.texte.secondaire,
+    textAlign: "center",
+    marginTop: Espace[3],
   },
-  boutonSupprimer: {
-    backgroundColor: "transparent",
-    borderWidth: 1.5,
-    borderColor: Colors.deconnexion[500],
-    borderRadius: 12,
-    padding: 14,
-    alignItems: "center",
+  ligneTextes: {
+    flex: 1,
+    gap: 2,
   },
-  boutonSupprimerTexte: {
-    color: Colors.deconnexion[500],
-    fontWeight: "700",
+  avertissement: {
+    color: Theme.texte.secondaire,
+    marginBottom: Espace[3],
   },
 });

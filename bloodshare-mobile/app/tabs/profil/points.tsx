@@ -1,23 +1,33 @@
-import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../../constants/colors';
+import { BarreProgression } from '../../../components/ui/BarreProgression';
+import { Chargement } from '../../../components/ui/Chargement';
+import { EnTeteSousPage } from '../../../components/ui/EnTeteSousPage';
+import { EtatErreur } from '../../../components/ui/EtatErreur';
+import { EtatVide } from '../../../components/ui/EtatVide';
+import { Groupe, Separateur } from '../../../components/ui/Groupe';
+import { entreeSousPage } from '../../../constants/animations';
+import { Theme } from '../../../constants/colors';
+import { accorder, compter } from '../../../utils/pluriel';
+import { Espace, Rayon } from '../../../constants/spacing';
+import { TEINTES_PASTILLE, type TeintePastille } from '../../../constants/teintes';
+import { Typo } from '../../../constants/typography';
 import { GainPoints, getPointsHistorique, SourcePoints } from '../../../services/points.service';
 import { getProfil, Profil } from '../../../services/profil.service';
+import { formaterDateHeureLongue } from '../../../utils/dates';
+import { CONTENU_MARGE_BASSE } from '../_layout';
+
+type Icone = ComponentProps<typeof Ionicons>['name'];
 
 // 📖 Métadonnées d'affichage par source. Record<SourcePoints, …> → si un jour on
 //    ajoute une source à l'union, le compilateur exige de compléter cette table.
-const META_SOURCE: Record<SourcePoints, { emoji: string; fond: string; libelle: string }> = {
-  quiz: { emoji: '📚', fond: Colors.fondBleu, libelle: 'Quiz complété' },
-  parrainage: { emoji: '🤝', fond: Colors.fondVert, libelle: 'Parrainage validé' },
-  defi: { emoji: '🏆', fond: Colors.fondRose, libelle: 'Défi du mois' },
+const META_SOURCE: Record<SourcePoints, { icone: Icone; teinte: TeintePastille; libelle: string }> = {
+  quiz: { icone: 'school-outline', teinte: 'petrole', libelle: 'Quiz complété' },
+  parrainage: { icone: 'people-outline', teinte: 'orange', libelle: 'Parrainage validé' },
 };
 
 export default function PointsScreen() {
@@ -27,7 +37,7 @@ export default function PointsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const charger = useCallback(() => {
     let cancelled = false;
 
     // 📖 Deux ressources indépendantes → Promise.all, un seul await.
@@ -49,187 +59,185 @@ export default function PointsScreen() {
     };
   }, []);
 
+  useEffect(() => charger(), [charger]);
+
+  // 📖 Remise à zéro ici et pas dans `charger` : appelée depuis l'effet, elle
+  //    déclencherait un rendu en cascade (règle react-hooks du lint).
+  const reessayer = () => {
+    setLoading(true);
+    setError(false);
+    charger();
+  };
+
   return (
     <View style={styles.screen}>
-      <TouchableOpacity
-        onPress={() => router.back()}
-        style={styles.header}
-        accessibilityRole="button"
-      >
-        <Text style={styles.retour}>← Points et progression</Text>
-      </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <EnTeteSousPage titre="Points et niveau" />
 
-      {loading && <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />}
+        {loading && <Chargement message="On récupère tes points…" />}
+        {!loading && error && <EtatErreur onReessayer={reessayer} />}
 
-      {!loading && error && (
-        <Text style={styles.errorText}>Impossible de charger tes points.</Text>
-      )}
+        {!loading && !error && profil && historique && (
+          <>
+            {/* 📖 Hiérarchie : 1. le niveau (bloc vedette bleu canard), 2. deux notes sans
+                carte : comment gagner des points (texte foncé, c'est utile) puis la règle
+                du don gratuit (texte gris, secondaire), 3. l'historique des points. */}
 
-      {!loading && !error && profil && historique && (
-        <FlatList
-          data={historique}
-          keyExtractor={(g) => String(g.id)}
-          contentContainerStyle={styles.liste}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={<NiveauCard profil={profil} />}
-          renderItem={({ item }) => <GainRow gain={item} />}
-          ListEmptyComponent={
-            <Text style={styles.empty}>
-              Complète des quiz ou parraine un proche pour gagner tes premiers points !
-            </Text>
-          }
-        />
-      )}
+            {/* NIVEAU */}
+            <Animated.View entering={entreeSousPage}>
+              <BarreProgression
+                variante="surPetrole"
+                titre={`Niveau ${profil.niveau.niveau} — ${profil.niveau.label}`}
+                valeur={profil.niveau.progression}
+                max={100}
+                detail={
+                  profil.niveau.points_prochain_niveau !== null
+                    ? `${profil.points_cumules}/${profil.niveau.points_prochain_niveau} pts`
+                    : 'Niveau max 🎉'
+                }
+                style={styles.niveau}
+              />
+            </Animated.View>
+
+            {/* COMMENT GAGNER DES POINTS — juste sous le niveau, avant l'historique */}
+            <Animated.View entering={entreeSousPage} style={styles.aide}>
+              <View style={styles.note}>
+                <Ionicons name="bulb-outline" size={18} color={Theme.texte.principal} />
+                <Text style={[Typo.legende, styles.noteTexte, styles.noteImportante]}>
+                  Pour gagner des points, termine un quiz ou parraine un proche.
+                </Text>
+              </View>
+              {/* 📖 Règle éthique ADSB-NC : le don est gratuit, il ne rapporte jamais de points. */}
+              <View style={styles.note}>
+                <Ionicons name="heart-outline" size={18} color={Theme.texte.secondaire} />
+                <Text style={[Typo.legende, styles.noteTexte]}>
+                  {"Un don de sang ne rapporte jamais de points : c'est un geste gratuit."}
+                </Text>
+              </View>
+            </Animated.View>
+
+            {/* HISTORIQUE */}
+            <Animated.View entering={entreeSousPage}>
+              <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+                Historique
+              </Text>
+              {historique.length === 0 ? (
+                <EtatVide
+                  titre="Pas encore de points"
+                  message="Termine un quiz ou parraine un proche pour gagner tes premiers points."
+                  libelleAction="Découvrir les quiz"
+                  onAction={() => router.push('/tabs/quiz')}
+                />
+              ) : (
+                <Groupe variante="info">
+                  {historique.map((gain, i) => (
+                    <View key={gain.id}>
+                      {i > 0 && <Separateur />}
+                      <LigneGain gain={gain} />
+                    </View>
+                  ))}
+                </Groupe>
+              )}
+            </Animated.View>
+
+          </>
+        )}
+      </ScrollView>
     </View>
   );
 }
 
-function NiveauCard({ profil }: { profil: Profil }) {
+function Pastille({ icone, teinte }: { icone: Icone; teinte: TeintePastille }) {
+  const couleurs = TEINTES_PASTILLE[teinte];
   return (
-    <View style={styles.niveauCard}>
-      <Text style={styles.niveauTitre}>
-        Niveau {profil.niveau.niveau} — {profil.niveau.label}
-      </Text>
-      <Text style={styles.niveauSousTitre}>{profil.points_cumules} points cumulés</Text>
-
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${profil.niveau.progression}%` }]} />
-      </View>
-
-      <Text style={styles.progressLabel}>
-        {profil.niveau.points_prochain_niveau !== null
-          ? `${profil.points_cumules}/${profil.niveau.points_prochain_niveau} pts`
-          : 'Niveau maximum atteint 🎉'}
-      </Text>
+    <View style={[styles.pastille, { backgroundColor: couleurs.fond }]}>
+      <Ionicons name={icone} size={20} color={couleurs.icone} />
     </View>
   );
 }
 
-function GainRow({ gain }: { gain: GainPoints }) {
+function LigneGain({ gain }: { gain: GainPoints }) {
   const meta = META_SOURCE[gain.source];
-  const date = new Date(gain.date).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  const date = formaterDateHeureLongue(gain.date);
 
   return (
-    <View style={styles.row}>
-      <View style={[styles.rowIcon, { backgroundColor: meta.fond }]}>
-        <Text style={styles.rowIconEmoji}>{meta.emoji}</Text>
+    <View style={styles.ligne} accessible accessibilityLabel={`${meta.libelle}, ${date}, plus ${compter(gain.points, 'point')}`}>
+      <Pastille icone={meta.icone} teinte={meta.teinte} />
+      <View style={styles.ligneTextes}>
+        <Text style={[Typo.corpsFort, { color: Theme.texte.principal }]}>{meta.libelle}</Text>
+        <Text style={[Typo.legende, { color: Theme.texte.secondaire }]}>{date}</Text>
       </View>
-
-      <View style={styles.rowCentre}>
-        <Text style={styles.rowLibelle}>{meta.libelle}</Text>
-        <Text style={styles.rowDate}>{date}</Text>
+      <View style={styles.gain}>
+        <Text style={[Typo.legendeForte, { color: Theme.accent.signatureTexte }]}>+{gain.points} {accorder(gain.points, 'pt')}</Text>
       </View>
-
-      <Text style={styles.rowPoints}>+{gain.points} pts</Text>
     </View>
   );
 }
+
+const PASTILLE = 40;
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
-    paddingTop: 54,
+    backgroundColor: Theme.fond.page,
   },
-  header: {
+  content: {
     paddingHorizontal: 18,
+    paddingTop: 54,
+    paddingBottom: CONTENU_MARGE_BASSE,
   },
-  retour: {
-    fontSize: 15,
-    color: Colors.petrole[500],
-    fontWeight: '600',
+  // 📖 Bloc niveau plus aéré que la variante par défaut : c'est la vedette de l'écran.
+  niveau: {
+    paddingHorizontal: Espace[6],
+    paddingVertical: Espace[6],
+    gap: Espace[4],
   },
-  loader: {
-    marginTop: 40,
+  sectionTitre: {
+    color: Theme.texte.principal,
+    marginTop: Espace[6],
+    marginBottom: Espace[3],
   },
-  errorText: {
-    color: Colors.grisMoyen,
-    textAlign: 'center',
-    marginTop: 40,
-  },
-  liste: {
-    padding: 18,
-    paddingBottom: 126,
-    flexGrow: 1,
-  },
-  niveauCard: {
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  niveauTitre: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  niveauSousTitre: {
-    fontSize: 13,
-    color: Colors.grisMoyen,
-    marginTop: 2,
-  },
-  progressTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.fondGris,
-    marginTop: 14,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.corail[600],
-  },
-  progressLabel: {
-    fontSize: 11,
-    color: Colors.grisMoyen,
-    textAlign: 'right',
-    marginTop: 6,
-  },
-  row: {
+  ligne: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.fondNeutre,
+    gap: Espace[3],
+    minHeight: 68,
+    paddingHorizontal: Espace[4],
+    paddingVertical: Espace[3],
   },
-  rowIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  pastille: {
+    width: PASTILLE,
+    height: PASTILLE,
+    borderRadius: Rayon.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
-  rowIconEmoji: {
-    fontSize: 16,
-  },
-  rowCentre: {
+  ligneTextes: {
     flex: 1,
+    gap: 2,
   },
-  rowLibelle: {
-    fontSize: 15,
-    color: Colors.aubergine,
+  // 📖 Même aplat lime que la pastille de points de l'en-tête.
+  gain: {
+    paddingHorizontal: Espace[3],
+    paddingVertical: Espace[1],
+    borderRadius: Rayon.plein,
+    backgroundColor: Theme.accent.signatureAplat,
   },
-  rowDate: {
-    fontSize: 12,
-    color: Colors.grisMoyen,
-    marginTop: 2,
+  aide: {
+    marginTop: Espace[4],
+    gap: Espace[2],
   },
-  rowPoints: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.corail[600],
+  note: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Espace[2],
+    paddingHorizontal: Espace[1],
   },
-  empty: {
-    fontSize: 14,
-    color: Colors.grisMoyen,
-    textAlign: 'center',
-    marginTop: 24,
-    paddingHorizontal: 16,
+  noteTexte: {
+    flex: 1,
+    color: Theme.texte.secondaire,
+  },
+  noteImportante: {
+    color: Theme.texte.principal,
   },
 });

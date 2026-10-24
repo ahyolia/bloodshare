@@ -13,7 +13,8 @@ const apiPut = api.put as jest.Mock;
 const apiDelete = api.delete as jest.Mock;
 
 // Réponse réelle de GET /me (ProfilController::formatUser) : elle contient `sexe`,
-// une donnée d'identité que CONTRIBUTING.md interdit de conserver.
+// une donnée d'identité que CONTRIBUTING.md interdit de conserver. `statut_donneur`
+// (retiré du backend) simule un ancien serveur : il ne doit pas passer non plus.
 const reponseApi = {
   data: {
     id: 12,
@@ -59,12 +60,13 @@ describe('getProfil', () => {
     expect(profil.niveau.niveau).toBe(3);
   });
 
-  it('écarte le sexe renvoyé par l’API (contrainte anonymat)', async () => {
+  it("écarte le sexe renvoyé par l'API (contrainte anonymat)", async () => {
     apiGet.mockResolvedValue(reponseApi);
 
     const profil = await getProfil();
 
     expect(profil).not.toHaveProperty('sexe');
+    expect(profil).not.toHaveProperty('statut_donneur');
   });
 
   // GET /me ne renvoie pas le nombre de parrainages validés : il vient de GET /parrainage/code.
@@ -98,7 +100,7 @@ describe('getProfil', () => {
 });
 
 describe('updateProfil', () => {
-  const payload = { pseudo: 'BloodHero42', avatar_id: 2, statut_donneur: 'quelques_dons' as const };
+  const payload = { pseudo: 'BloodHero42', avatar_id: 2 };
 
   it('envoie les modifications à PUT /me', async () => {
     apiPut.mockResolvedValue(reponseApi);
@@ -115,6 +117,7 @@ describe('updateProfil', () => {
 
     expect(profil.pseudo).toBe('BloodHero42');
     expect(profil).not.toHaveProperty('sexe');
+    expect(profil).not.toHaveProperty('statut_donneur');
   });
 
   it('met le nombre de parrainages à 0, absent de la réponse de PUT /me', async () => {
@@ -142,7 +145,7 @@ describe('supprimerCompte', () => {
     expect(apiDelete).toHaveBeenCalledWith('/me');
   });
 
-  it('propage l’erreur pour que l’écran ne déconnecte pas à tort', async () => {
+  it("propage l'erreur pour que l'écran ne déconnecte pas à tort", async () => {
     apiDelete.mockRejectedValue(new Error('Network Error'));
 
     await expect(supprimerCompte()).rejects.toThrow('Network Error');

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\ChampImage;
 use App\Filament\Resources\ContenuResource\Pages;
 use App\Models\Contenu;
 use Filament\Forms;
@@ -53,6 +54,9 @@ class ContenuResource extends Resource
 
                 Forms\Components\Textarea::make('contenu')
                     ->label('Contenu')
+                    // 📖 Limites des textes du BO : renvoyés tels quels à chaque appel de
+                    //    l'API, ils ne doivent pas pouvoir grossir sans borne (audit cybersécurité).
+                    ->maxLength(10000)
                     ->required()
                     ->rows(6)
                     ->columnSpanFull(),
@@ -68,15 +72,13 @@ class ContenuResource extends Resource
 
                 Forms\Components\Textarea::make('le_saviez_vous')
                     ->label('Le saviez-vous ?')
+                    ->maxLength(1000)
                     ->helperText('Facultatif : un fait court affiché en bas de la fiche.')
                     ->rows(3)
                     ->columnSpanFull()
                     ->visible(fn ($get) => $get('type') === 'fiche_info'),
 
-                Forms\Components\FileUpload::make('image_url')
-                    ->label('Image')
-                    ->image()
-                    ->directory('contenus')
+                ChampImage::make('image_url', 'contenus')
                     // 📖 image_url est exposé en URL absolue (accesseur, pour l'app mobile) ;
                     //    FileUpload attend le chemin relatif — sans ceci, l'image disparaît à
                     //    l'édition. Pas de ->formatStateUsing() ici : il écraserait l'hydratation

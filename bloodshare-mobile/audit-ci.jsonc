@@ -1,0 +1,19 @@
+// Audit des dépendances npm en CI (workflow « Sécurité »). Bloque toute faille haute ou
+// critique d'une dépendance livrée dans l'app, sauf celles analysées et acceptées ci-dessous.
+// Chaque exception doit être justifiée et revue quand Expo publie une version corrigée.
+{
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  "high": true,
+  "skip-dev": true,
+  "allowlist": [
+    // node-forge : utilisé par la CLI Expo (signature des mises à jour), jamais dans l'app.
+    "GHSA-86w9-cpqp-85rv",
+    // braces : recherche de fichiers des outils de build et de test (Metro, Jest).
+    "GHSA-vfj7-8cjw-p6xm"
+    // Moyennes, non bloquantes avec "high" (analysées, rapport d'audit US-29) :
+    // sprintf-js GHSA-hp3w-g68c-fv3c (outils, lecture YAML), uuid GHSA-w5hq-g745-h8pq
+    // (génération du projet iOS, option buf jamais utilisée), decode-uri-component
+    // GHSA-vcc3-ghjq-m6fr (expo-router : une URL piégée peut figer l'onglet de la victime,
+    // sans accès aux données ; correctif publié en ESM seulement).
+  ]
+}

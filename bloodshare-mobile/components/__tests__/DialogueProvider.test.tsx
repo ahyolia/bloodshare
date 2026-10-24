@@ -2,6 +2,10 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import { Bouton } from '../ui/Bouton';
 import { DialogueProvider, useDialogue } from '../DialogueProvider';
 
+// 📖 Le premier rendu de la modale, à froid, a dépassé les 5 s par défaut sur la machine de
+//    CI (6,7 s) alors qu'il passe en local : délai élargi pour ce fichier seulement.
+jest.setTimeout(15000);
+
 /** Petit écran de test qui ouvre une confirmation et transmet la réponse. */
 function Declencheur({ onReponse }: { onReponse: (ok: boolean) => void }) {
   const { confirmer } = useDialogue();
@@ -52,7 +56,7 @@ describe('DialogueProvider — confirmer', () => {
     await waitFor(() => expect(onReponse).toHaveBeenCalledWith(false));
   });
 
-  it('renvoie true quand on choisit l’action', async () => {
+  it("renvoie true quand on choisit l'action", async () => {
     const onReponse = await ouvrirConfirmation();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Supprimer définitivement' }));

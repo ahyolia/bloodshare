@@ -12,7 +12,7 @@
 
 ## 0. Pourquoi une AIPD
 
-Le traitement porte sur des **données de santé** (article 9 du RGPD) : le sexe associé aux dates de don, et le profil de donneur, révèlent qu'une personne donne son sang, quand, et à partir de quand elle peut de nouveau donner.
+Le traitement porte sur des **données de santé** (article 9 du RGPD) : le sexe associé aux dates de don révèle qu'une personne donne son sang, quand, et à partir de quand elle peut de nouveau donner.
 
 Le traitement est de petite échelle et ce n'est pas l'activité principale de l'association. L'AIPD n'est donc peut-être pas strictement obligatoire. Elle est réalisée **par précaution**, parce que des données de santé sont en jeu, et parce qu'elle sert de référence pour les choix d'hébergement à venir.
 
@@ -34,7 +34,6 @@ Le traitement est de petite échelle et ce n'est pas l'activité principale de l
 | --- | --- | --- | --- |
 | Sexe (homme / femme) | Saisi à l'inscription | Oui | Calcul du délai entre deux dons |
 | Dates des dons validés | Scan du QR code remis au centre de don | Automatique | Historique des dons, date du prochain don possible, rappel |
-| Profil de donneur (régulier / quelques dons / jamais) | Saisi à l'inscription ou dans le profil | Non | Affichage sur le profil, statistiques de l'association |
 | Preuve du consentement (dates, version des CGU) | Automatique | Oui | Preuve en cas de contrôle |
 
 Ces données sont rattachées à un compte **pseudonyme** : pseudo et adresse email. L'application ne collecte ni nom, ni prénom, ni date de naissance, ni téléphone, ni adresse, ni groupe sanguin. Les réponses au questionnaire d'éligibilité restent sur l'appareil.
@@ -51,7 +50,7 @@ Ces données sont rattachées à un compte **pseudonyme** : pseudo et adresse em
    - par l'utilisateur, à tout moment (*Profil > Paramètres > Supprimer mon compte*) ;
    - automatiquement après **3 ans sans connexion**.
 
-   Dans les deux cas, le sexe et le profil de donneur sont effacés, les tokens sont révoqués, et les dates de don restent uniquement rattachées à un compte anonymisé, pour les statistiques de l'association.
+   Dans les deux cas, le sexe est effacé, les tokens sont révoqués, et les dates de don restent uniquement rattachées à un compte anonymisé, pour les statistiques de l'association.
 
 ### 1.4 Supports
 
@@ -70,7 +69,7 @@ Ces données sont rattachées à un compte **pseudonyme** : pseudo et adresse em
 | --- | --- | --- |
 | Finalité déterminée et légitime | ✅ | Une seule finalité, décrite dans la politique de confidentialité. Aucune réutilisation commerciale ni transmission à des tiers |
 | Base légale | ✅ | Consentement explicite, distinct des CGU, avec date enregistrée. Point de vigilance : la case est obligatoire pour s'inscrire, justifiée parce que le suivi des dons est le cœur du service. En V2, on pourrait la rendre facultative |
-| Minimisation | ✅ | Seulement le sexe (indispensable au calcul du délai) et les dates. Profil de donneur facultatif. Pas de groupe sanguin, pas d'identité civile |
+| Minimisation | ✅ | Seulement le sexe (indispensable au calcul du délai) et les dates. Pas de profil de donneur (retiré en octobre 2026, il ne servait qu'à l'affichage). Pas de groupe sanguin, pas d'identité civile |
 | Exactitude | 🟡 | Les dates viennent d'un scan de QR code, pas d'une saisie libre. Le sexe est déclaratif. Il n'est pas modifiable dans l'application : correction par email |
 | Durée de conservation | ✅ | Vie du compte, puis suppression automatique après 3 ans d'inactivité. Historique anonymisé ensuite |
 | Information | ✅ | Section « Vos données de santé » de la politique de confidentialité, accessible avant l'inscription |
@@ -99,9 +98,9 @@ Ces données sont rattachées à un compte **pseudonyme** : pseudo et adresse em
 
 | | |
 | --- | --- |
-| **Sources de risque** | Utilisateur qui scanne le QR code du centre sans avoir donné, par exemple à partir d'une photo partagée : ce code est unique et fixe par centre, et un scan apporte une carte, des badges, la validation du parrainage et une contribution au défi (mais jamais de points) ; administrateur qui modifie une donnée par erreur |
+| **Sources de risque** | Utilisateur qui scanne le QR code du centre sans avoir donné, par exemple à partir d'une photo partagée : ce code était fixe jusqu'à l'US-29 (il change maintenant toutes les 30 secondes, une photo ne peut plus être relayée que pendant une minute au plus), et un scan apporte une carte, des badges, la validation du parrainage et une contribution au défi (mais jamais de points) ; administrateur qui modifie une donnée par erreur |
 | **Menaces** | Dates de don fausses, donc un historique inexact et un rappel « vous pouvez redonner » envoyé au mauvais moment |
-| **Mesures existantes** | Un seul scan de don par période d'éligibilité (8 ou 12 semaines), refusé sinon ; action « Régénérer le QR Code » dans le backoffice, qui désactive l'ancien code et en crée un nouveau ; le rappel est indicatif et l'entretien médical préalable au don reste obligatoire (rappelé dans les CGU et sur l'écran d'éligibilité) |
+| **Mesures existantes** | Un seul scan de don par période d'éligibilité (8 ou 12 semaines), refusé sinon ; QR code du centre tournant, affiché sur un écran du centre et renouvelé toutes les 30 secondes : une photo ne sert qu'une minute au plus (audit cybersécurité, US-29) ; action « Régénérer le QR Code » dans le backoffice, qui désactive l'ancien code et le lien de l'écran ; le rappel est indicatif et l'entretien médical préalable au don reste obligatoire (rappelé dans les CGU et sur l'écran d'éligibilité) |
 | **Mesures prévues** | Régénérer le code du centre à intervalles réguliers, et aussitôt s'il circule (procédure ADSB-NC, dès la V1) ; passer à un code à usage unique remis à chaque donneur (V2) |
 | **Gravité** | **Négligeable** : l'entretien médical empêche un don trop rapproché, et la triche ne nuit qu'à l'exactitude du jeu |
 | **Vraisemblance** | **Importante** : le code est fixe et facile à partager |
@@ -140,7 +139,7 @@ Ces données sont rattachées à un compte **pseudonyme** : pseudo et adresse em
 | 7 | Traçabilité des actions des administrateurs | R1, R2 | V2 | Équipe |
 | 8 | Export des données par l'utilisateur ; modification du sexe dans l'application | Droits | V2 | Équipe |
 | 9 | Consentement santé facultatif (application utilisable sans suivi des dons) | Base légale | V2 | Équipe |
-| 10 | Régénérer régulièrement le QR code de don du centre (action déjà disponible dans le BO), et aussitôt s'il circule | R2 | Dès la mise en ligne | ADSB-NC |
+| 10 | ✅ QR code de don du centre tournant (30 s), affiché sur un écran du centre. Régénérer le QR code dans le BO si le lien de l'écran a circulé | R2 | Fait (US-29) | Équipe |
 | 11 | Passer à un QR code de don à usage unique par donneur | R2 | V2 | Équipe |
 
 ## 5. Validation

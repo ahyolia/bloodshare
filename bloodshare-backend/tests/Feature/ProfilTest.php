@@ -38,6 +38,21 @@ class ProfilTest extends TestCase
         $reponse->assertJsonMissingPath('email')->assertJsonMissingPath('password');
     }
 
+    // Profil de donneur retiré (minimisation des données de santé) : il ne doit
+    // plus être ni renvoyé ni enregistré, même si un ancien client l'envoie encore.
+    public function test_le_profil_de_donneur_n_est_plus_ni_expose_ni_enregistre(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $this->putJson('/api/me', ['statut_donneur' => 'donneur_regulier'])
+            ->assertOk()
+            ->assertJsonMissingPath('statut_donneur');
+
+        $this->getJson('/api/me')->assertOk()->assertJsonMissingPath('statut_donneur');
+        $this->assertFalse(\Illuminate\Support\Facades\Schema::hasColumn('users', 'statut_donneur'));
+    }
+
     public function test_genere_un_code_de_parrainage_s_il_manque(): void
     {
         $user = User::factory()->create(['code_parrainage' => null]);
@@ -60,6 +75,23 @@ class ProfilTest extends TestCase
             ->assertJsonPath('pseudo', 'Nouveau');
 
         $this->assertDatabaseHas('users', ['id' => $user->id, 'pseudo' => 'Nouveau', 'avatar_id' => $avatar->id]);
+    }
+
+    // L'app déduit l'emoji de l'avatar de `avatar_id` : sans lui dans la réponse,
+    // le choix est bien enregistré mais l'écran retombe sur l'initiale du pseudo.
+    public function test_renvoie_l_avatar_choisi_apres_modification_et_a_la_lecture(): void
+    {
+        $user = User::factory()->create();
+        $avatar = Avatar::create(['nom' => 'Lune', 'image_url' => null]);
+        Sanctum::actingAs($user);
+
+        $this->putJson('/api/me', ['avatar_id' => $avatar->id])
+            ->assertOk()
+            ->assertJsonPath('avatar_id', $avatar->id);
+
+        $this->getJson('/api/me')
+            ->assertOk()
+            ->assertJsonPath('avatar_id', $avatar->id);
     }
 
     public function test_un_champ_absent_n_efface_pas_la_valeur_existante(): void
@@ -118,7 +150,6 @@ class ProfilTest extends TestCase
     {
         $user = User::factory()->create([
             'sexe' => 'femme',
-            'statut_donneur' => 'donneur_regulier',
             'derniere_connexion' => now(),
             'motif_suspension' => 'Pseudo injurieux',
         ]);
@@ -128,7 +159,6 @@ class ProfilTest extends TestCase
 
         $user->refresh();
         $this->assertNull($user->sexe);
-        $this->assertNull($user->statut_donneur);
         $this->assertNull($user->derniere_connexion);
         $this->assertNull($user->motif_suspension);
     }

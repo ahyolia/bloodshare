@@ -19,6 +19,8 @@ use Illuminate\Support\Str;
  *    Dokploy, APP_URL pointe vers un domaine sslip.io auto-généré qui n'est
  *    pas exposé publiquement (seul le tunnel ngrok l'est), donc une image
  *    construite avec APP_URL serait injoignable depuis le téléphone.
+ *    getBasePath() garde le sous-dossier quand Laravel n'est pas servi à la
+ *    racine (serveur de démo : https://sae203.hopto.org/~cameliaa/).
  */
 trait HasStorageImageUrl
 {
@@ -32,7 +34,7 @@ trait HasStorageImageUrl
             $chemin = Storage::disk('public')->url($value);
 
             if (Request::hasHeader('host')) {
-                $chemin = Request::getSchemeAndHttpHost() . '/storage/' . ltrim($value, '/');
+                $chemin = Request::getSchemeAndHttpHost() . Request::getBasePath() . '/storage/' . ltrim($value, '/');
             }
 
             return $chemin;
@@ -55,7 +57,8 @@ trait HasStorageImageUrl
             return $valeur;
         }
 
-        return preg_replace('#^https?://[^/]+/storage/#', '', $valeur) ?? $valeur;
+        // Le segment optionnel avant /storage/ couvre un sous-dossier (/~cameliaa).
+        return preg_replace('#^https?://[^/]+(?:/[^?\#]*?)?/storage/#', '', $valeur) ?? $valeur;
     }
 
     /**

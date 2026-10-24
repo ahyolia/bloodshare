@@ -41,7 +41,7 @@
 | DPO ou personne référente | 🟡 | DPO non obligatoire (petite échelle, pas l'activité principale de l'association). **Action** : désigner un référent RGPD au bureau. |
 | Coordonnées de l'hébergeur | ❌ | Hébergeur pas encore choisi. Champs `[À COMPLÉTER]` dans les mentions légales et la politique. |
 | Registre des activités de traitement | 🟡 | Le tableau « Traitements » du dossier juridique sert de base. **Action** : le reprendre dans un registre tenu par l'association. |
-| Analyse d'impact (AIPD) | 🟡 | Rédigée : `docs/AIPD - Suivi des dons.md`. Aucun risque de gravité importante. Le risque le plus vraisemblable est le partage du QR code fixe du centre (gravité négligeable). **Action** : faire valider par l'ADSB-NC, et mettre en place la régénération régulière du QR code. |
+| Analyse d'impact (AIPD) | 🟡 | Rédigée : `docs/AIPD - Suivi des dons.md`. Aucun risque de gravité importante. Le risque le plus vraisemblable est le partage du QR code fixe du centre (gravité négligeable). **Action** : faire valider par l'ADSB-NC. Le QR code du centre est désormais tournant (US-29). |
 
 ## 2. Information et transparence
 
@@ -75,7 +75,7 @@
 | Pas de données personnelles dans les logs locaux | ✅ | Corrigé : `login.tsx` et `register.tsx` affichaient l'erreur axios complète, qui contenait l'email et le mot de passe en clair. Ils n'affichent plus que le code HTTP, et seulement en mode développement. |
 | Journalisation des actions | 🟡 | Les erreurs sont journalisées (180 jours, PR purge). Les actions des admins sur les comptes (suspension, suppression, réinitialisation de mot de passe) ne sont pas tracées. **Action** : à prévoir en V2. |
 | Accès d'administration | 🟡 | Comptes nominatifs, deux rôles (super_admin, admin), modification des textes sensibles réservée au super_admin. Pas de double authentification. **Action** : à prévoir en V2. |
-| Secrets hors du code | ✅ | Seuls les `.env.example` sont versionnés, et les clés VAPID et `APP_KEY` y sont vides. **Action** : en production, ne pas reprendre les mots de passe de développement de `.env.example` (`DB_PASSWORD`, `SEED_ADMIN_PASSWORD`). |
+| Secrets hors du code | ✅ | Seuls les `.env.example` sont versionnés, et les clés VAPID et `APP_KEY` y sont vides. Corrigé (US-29) : `bloodshare_backup.sql`, qui contenait l'email et le mot de passe haché d'un compte, était aussi versionné ; il est retiré et gitleaks bloque désormais les secrets et les hashs à chaque PR. La production refuse de démarrer avec les mots de passe de `.env.example`. Voir l'[audit de cybersécurité](Audit%20cybers%C3%A9curit%C3%A9.md). |
 | Sauvegardes chiffrées et testées | 🔍 | Dépend de l'hébergement (plan d'action n°5). |
 
 ## 5. Durée de conservation

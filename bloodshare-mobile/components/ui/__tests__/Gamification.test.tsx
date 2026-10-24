@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react-native';
+import { Theme } from '../../../constants/colors';
 import { contraste } from '../../../utils/contraste';
 import { Badge } from '../Badge';
 import { BarreProgression } from '../BarreProgression';
@@ -35,7 +36,7 @@ describe('Badge', () => {
 });
 
 describe('BarreProgression', () => {
-  it('expose sa valeur aux lecteurs d’écran', async () => {
+  it("expose sa valeur aux lecteurs d'écran", async () => {
     await render(<BarreProgression titre="Collection 2026" valeur={4} max={12} detail="4 cartes sur 12" />);
 
     const barre = screen.getByRole('progressbar', { name: 'Collection 2026' });
@@ -48,7 +49,17 @@ describe('BarreProgression', () => {
     expect(screen.getByText('71 %')).toBeTruthy();
   });
 
-  it('ne déborde pas quand l’objectif est dépassé', async () => {
+  it('le bloc niveau met une barre crème sur fond bleu canard', async () => {
+    await render(<BarreProgression titre="Niveau 2 — Informé" valeur={8} max={100} variante="surPetrole" />);
+
+    const barre = screen.getByRole('progressbar', { name: 'Niveau 2 — Informé' });
+    expect(barre).toHaveStyle({ backgroundColor: Theme.info.icone });
+    expect(screen.getByText('8 %')).toHaveStyle({ color: Theme.texte.surAccent });
+    // Texte et remplissage crème sur le fond : 4,5:1 minimum (le remplissage n'en exige que 3).
+    expect(contraste(Theme.texte.surAccent, Theme.info.icone)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("ne déborde pas quand l'objectif est dépassé", async () => {
     await render(<BarreProgression titre="Défi du mois" valeur={310} max={300} />);
 
     expect(screen.getByText('100 %')).toBeTruthy();

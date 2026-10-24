@@ -28,7 +28,12 @@ export const Rayon = {
  *    crème paraît sale.
  */
 export const Ombre = {
-  /** Cartes, barre d'onglets : aubergine à 16 %. */
+  /**
+   * Éléments interactifs (ce qui se touche) et barre d'onglets : aubergine à 16 %.
+   * 📖 Règle de l'app : surélevé = interactif. Un bloc qui informe seulement reste
+   *    à plat (fond surface + contour `fond.bordure`, comme le Bloc du design system),
+   *    pour qu'on distingue d'un coup d'œil ce qui mène quelque part.
+   */
   flottante: { boxShadow: '0px 6px 16px rgba(62, 36, 48, 0.16)' },
   /** Modales : aubergine à 22 %. */
   modale: { boxShadow: '0px 12px 32px rgba(62, 36, 48, 0.22)' },

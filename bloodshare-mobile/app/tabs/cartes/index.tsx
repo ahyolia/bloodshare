@@ -73,6 +73,7 @@ export default function CartesScreen() {
           variante="page"
           titre="Cartes"
           initiale={initialePseudo(profil?.pseudo)}
+          avatarId={profil?.avatar_id}
           points={profil?.points_cumules ?? 0}
           profil={profil}
           notificationsNonLues={notificationsNonLues}

@@ -4,19 +4,20 @@ import {
   ActivityIndicator, ScrollView, SafeAreaView, GestureResponderEvent
 } from 'react-native';
 import { router } from 'expo-router';
+import { Avatar } from '../../components/ui/Avatar';
+import { Theme } from '../../constants/colors';
 import { register } from '../../services/auth.service';
+import { AVATARS } from '../../services/profil.service';
 import { saveToken, saveUser } from '../../stores/auth.store';
+import { motDePasseValide, REGLE_MOT_DE_PASSE } from '../../utils/motDePasse';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 const ETAPE_PAR_CHAMP: Record<string, number> = {
   pseudo: 1, email: 1, password: 1,
   sexe: 2, code_parrainage: 2,
   cgu_acceptees: 2, confidentialite_acceptee: 2, consentement_sante: 2, majeur: 2,
-  statut_donneur: 3,
-  avatar_id: 4,
+  avatar_id: 3,
 };
-const BOGUS_AVATARS = [1, 2, 3, 4, 5];
 export default function RegisterScreen() {
 
   // --- ÉTATS DU MULTI-STEP ---
@@ -33,7 +34,6 @@ export default function RegisterScreen() {
   const [cguAccepted, setCguAccepted] = useState(false);
   const [santeAccepted, setSanteAccepted] = useState(false);
   const [majeur, setMajeur] = useState(false);
-  const [statutDonneur, setStatutDonneur] = useState<'jamais_donne' | 'quelques_dons' | 'donneur_regulier' | null>(null);
   const [avatarId, setAvatarId] = useState<number | null>(null);
 
   // --- ÉTATS UI / ERREURS ---
@@ -48,10 +48,7 @@ export default function RegisterScreen() {
     if (step === 1) {
       if (!pseudo || !email || !password || !passwordConfirmation) return setLocalError('Tous les champs sont obligatoires.');
       if (!EMAIL_REGEX.test(email.trim())) return setLocalError('Adresse e-mail invalide.');
-      if (!PASSWORD_REGEX.test(password))
-        return setLocalError(
-          '8 caractères minimum, avec au moins une majuscule, une minuscule et un chiffre.'
-        );
+      if (!motDePasseValide(password)) return setLocalError(REGLE_MOT_DE_PASSE);
       if (password !== passwordConfirmation) return setLocalError('Les mots de passe ne correspondent pas.');
     }
     if (step === 2) {
@@ -59,9 +56,8 @@ export default function RegisterScreen() {
       if (!privacyAccepted || !cguAccepted || !santeAccepted) return setLocalError('Tu dois accepter les conditions pour continuer.');
       if (!majeur) return setLocalError("L'application est réservée aux personnes majeures.");
     }
-    // 📖 Étapes 3 (profil de donneur) et 4 (avatar) facultatives : l'API accepte ces
-    //    champs vides et la politique de confidentialité les annonce comme facultatifs
-    //    (audit RGPD, minimisation).
+    // 📖 Étape 3 (avatar) facultative : l'API accepte ce champ vide et la politique
+    //    de confidentialité l'annonce comme facultatif (audit RGPD, minimisation).
     setStep(step + 1);
   };
 
@@ -70,7 +66,7 @@ export default function RegisterScreen() {
     if (step > 1) setStep(step - 1);
   };
 
-  // --- SOUMISSION FINALE (Étape 4) ---
+  // --- SOUMISSION FINALE (Étape 3) ---
   const handleRegister = async () => {
     setLocalError('');
     setFieldErrors({});
@@ -83,7 +79,6 @@ export default function RegisterScreen() {
       password,
       password_confirmation: passwordConfirmation,
       sexe: sexe!,
-      statut_donneur: statutDonneur,
       avatar_id: avatarId,
       code_parrainage: codeParrainage.trim() || undefined,
       cgu_acceptees: cguAccepted,
@@ -107,7 +102,7 @@ export default function RegisterScreen() {
 
         // On renvoie l'utilisateur à la PREMIÈRE étape concernée, pas systématiquement
         // à l'étape 1 : sinon une erreur sur le code de parrainage (étape 2) ou sur
-        // l'avatar (étape 4) était invisible et l'inscription ne pouvait jamais aboutir.
+        // l'avatar (étape 3) était invisible et l'inscription ne pouvait jamais aboutir.
         const etapes = Object.keys(errors).map((champ) => ETAPE_PAR_CHAMP[champ] ?? 1);
         setStep(etapes.length ? Math.min(...etapes) : 1);
 
@@ -147,7 +142,7 @@ export default function RegisterScreen() {
           ) : <View style={styles.backButtonPlaceholder} />}
           
           <View style={styles.progressContainer}>
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3].map((i) => (
               <View key={i} style={[styles.progressDot, step === i && styles.progressDotActive]} />
             ))}
           </View>
@@ -222,7 +217,7 @@ export default function RegisterScreen() {
                   des CGU (voir docs/Dossier juridique). */}
               <Pressable style={styles.checkboxRow} onPress={() => setSanteAccepted(!santeAccepted)} accessibilityRole="checkbox" accessibilityState={{ checked: santeAccepted }}>
                 <Text style={styles.checkboxIcon}>{santeAccepted ? '☑' : '☐'}</Text>
-                <Text style={styles.checkboxText}>{"J'accepte que l'ADSB-NC enregistre mon sexe, les dates de mes dons de sang et, si je le renseigne, mon profil de donneur, qui sont des données de santé, pour suivre mes dons et me prévenir quand je peux de nouveau donner. Je pourrai retirer mon accord à tout moment en supprimant mon compte."}</Text>
+                <Text style={styles.checkboxText}>{"J'accepte que l'ADSB-NC enregistre mon sexe, les dates de mes dons de sang, qui sont des données de santé, pour suivre mes dons et me prévenir quand je peux de nouveau donner. Je pourrai retirer mon accord à tout moment en supprimant mon compte."}</Text>
               </Pressable>
               {renderFieldError('consentement_sante')}
               <Pressable style={styles.checkboxRow} onPress={() => setMajeur(!majeur)} accessibilityRole="checkbox" accessibilityState={{ checked: majeur }}>
@@ -238,43 +233,23 @@ export default function RegisterScreen() {
           </View>
         )}
 
-        {/* --- ÉTAPE 3 : DONNEUR --- */}
+        {/* --- ÉTAPE 3 : AVATAR --- */}
         {step === 3 && (
-          <View style={styles.stepContent}>
-            <Text style={styles.titleCenter}>As-tu déjà donné ton sang ?</Text>
-            <Text style={styles.hintCenter}>Facultatif : tu pourras le renseigner plus tard dans ton profil.</Text>
-
-            <View style={styles.radioContainer}>
-              {[
-                { id: 'donneur_regulier', label: "Oui, je suis donneur régulier." },
-                { id: 'quelques_dons', label: "J'ai déjà donné une ou deux fois." },
-                { id: 'jamais_donne', label: "Non, jamais." }
-              ].map((statut) => (
-                <Pressable key={statut.id} style={styles.radioRow} onPress={() => setStatutDonneur(statutDonneur === statut.id ? null : statut.id as any)} accessibilityRole="radio" accessibilityState={{ checked: statutDonneur === statut.id }}>
-                  <Text style={styles.radioIcon}>{statutDonneur === statut.id ? '◉' : '○'}</Text>
-                  <Text style={styles.radioText}>{statut.label}</Text>
-                </Pressable>
-              ))}
-            </View>
-            {renderFieldError('statut_donneur')}
-
-            <Pressable style={styles.primaryBtn} onPress={nextStep}>
-              <Text style={styles.primaryBtnText}>{statutDonneur ? 'Continuer' : 'Passer cette étape'}</Text>
-            </Pressable>
-          </View>
-        )}
-
-        {/* --- ÉTAPE 4 : AVATAR --- */}
-        {step === 4 && (
           <View style={styles.stepContent}>
             <Text style={styles.titleCenter}>Choisis ton avatar ^-^</Text>
             <Text style={styles.hintCenter}>Facultatif : tu pourras le choisir plus tard dans ton profil.</Text>
 
             <View style={styles.avatarGrid}>
-              {BOGUS_AVATARS.map((id) => (
-                <Pressable key={id} style={[styles.avatarCircle, avatarId === id && styles.avatarCircleActive]} onPress={() => setAvatarId(avatarId === id ? null : id)}>
-                  {/* Placeholder pour les silhouettes de la maquette */}
-                  <Text style={styles.avatarText}>{id}</Text>
+              {AVATARS.map((a) => (
+                <Pressable
+                  key={a.id}
+                  style={[styles.avatarCircle, avatarId === a.id && styles.avatarCircleActive]}
+                  onPress={() => setAvatarId(avatarId === a.id ? null : a.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={a.nom}
+                  accessibilityState={{ selected: avatarId === a.id }}
+                >
+                  <Avatar avatarId={a.id} taille={72} style={styles.avatarFond} />
                 </Pressable>
               ))}
             </View>
@@ -330,16 +305,13 @@ const styles = StyleSheet.create({
   checkboxRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   checkboxIcon: { fontSize: 20, color: '#333' },
   checkboxText: { flex: 1, fontSize: 14, color: '#555' },
-  radioContainer: { gap: 16, marginTop: 16, marginBottom: 32 },
-  radioRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  radioIcon: { fontSize: 24, color: '#333' },
-  radioText: { fontSize: 16, color: '#333' },
 
   // Avatars
   avatarGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16, marginBottom: 40 },
-  avatarCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#E0E0E0', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
-  avatarCircleActive: { borderColor: '#333' },
-  avatarText: { color: '#999', fontSize: 24 },
+  // 📖 Sélection = contour ET agrandissement, pas la couleur seule.
+  avatarCircle: { borderRadius: 40, borderWidth: 3, borderColor: 'transparent' },
+  avatarCircleActive: { borderColor: Theme.texte.principal, transform: [{ scale: 1.08 }] },
+  avatarFond: { backgroundColor: Theme.fond.surfaceEnfoncee },
 
   // Bouton d'action principal
   primaryBtn: { backgroundColor: '#333', padding: 16, borderRadius: 24, alignItems: 'center', marginTop: 'auto', marginBottom: 16 },

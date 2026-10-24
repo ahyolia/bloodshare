@@ -15,6 +15,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -26,6 +27,16 @@ class UserResource extends Resource
     protected static ?string $navigationGroup = 'Utilisateurs';
     protected static ?string $navigationLabel = 'Utilisateurs';
     protected static ?string $modelLabel = 'utilisateur';
+
+    // 📖 Donneurs uniquement : les comptes du BO se gèrent dans « Admins », réservé au
+    //    super_admin. Sans ce filtre, un admin pouvait suspendre ou supprimer le super_admin
+    //    depuis sa fiche utilisateur (audit cybersécurité). Le filtre s'applique aussi à
+    //    l'URL directe /admin/users/{id} (404).
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->whereDoesntHave('roles', fn ($q) => $q->whereIn('name', ['admin', 'super_admin']));
+    }
     protected static ?string $pluralModelLabel = 'Utilisateurs';
 
     public static function table(Table $table): Table
@@ -40,15 +51,6 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('pseudo')
                     ->label('Pseudo')
                     ->searchable(),
-
-                Tables\Columns\TextColumn::make('statut_donneur')
-                    ->label('Statut donneur')
-                    ->formatStateUsing(fn ($state) => match($state) {
-                        'donneur_regulier' => 'Donneur régulier',
-                        'quelques_dons'    => 'Quelques dons',
-                        'jamais_donne'     => 'Jamais donné',
-                        default            => '—'
-                    }),
 
                 Tables\Columns\TextColumn::make('points_cumules')
                     ->label('Points')
@@ -93,12 +95,6 @@ class UserResource extends Resource
                         'actif' => 'Actif',
                         'suspendu' => 'Suspendu',
                         'supprime' => 'Supprimé',
-                    ]),
-                Tables\Filters\SelectFilter::make('statut_donneur')
-                    ->options([
-                        'donneur_regulier' => 'Donneur régulier',
-                        'quelques_dons'    => 'Quelques dons',
-                        'jamais_donne'     => 'Jamais donné',
                     ]),
             ])
             ->actions([
@@ -149,14 +145,6 @@ class UserResource extends Resource
                 InfolistSection::make('Informations')
                     ->schema([
                         TextEntry::make('pseudo')->label('Pseudo'),
-                        TextEntry::make('statut_donneur')
-                            ->label('Statut donneur')
-                            ->formatStateUsing(fn ($state) => match($state) {
-                                'donneur_regulier' => '🩸 Donneur régulier',
-                                'quelques_dons'    => '💧 Quelques dons',
-                                'jamais_donne'     => '🆕 Jamais donné',
-                                default            => '—'
-                            }),
                         // 📖 Pas de sexe ici : donnée de santé (avec les dates de don) dont les
                         //    admins n'ont pas besoin (audit RGPD). Seul le calcul du délai entre
                         //    deux dons l'utilise.

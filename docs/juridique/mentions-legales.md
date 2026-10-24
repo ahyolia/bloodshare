@@ -2,20 +2,20 @@
 
 L'application Aïma est éditée par l'Association des Donneurs de Sang Bénévoles de Nouvelle-Calédonie (ADSB-NC), association régie par la loi du 1er juillet 1901 et le décret du 16 août 1901.
 
-- Numéro RID : 0 171 835
-- Numéro RIDET : 0 171 835.001
-- Adresse : 51 rue du Pasteur Marcel Ariège, Centre-Ville, Nouméa, Nouvelle-Calédonie
-- Adresse postale : BP 2440, Nouméa
-- Téléphone : 81 52 94
-- Email de l'association : adsbnc.98800@gmail.com
-- Contact pour l'application : aima.dondusang@outlook.fr
-- Site internet : www.adsbnc.org
+- **Numéro RID** : 0 171 835
+- **Numéro RIDET** : 0 171 835.001
+- **Adresse** : 51 rue du Pasteur Marcel Ariège, Centre-Ville, Nouméa, Nouvelle-Calédonie
+- **Adresse postale** : BP 2440, Nouméa
+- **Téléphone** : 81 52 94
+- **Email de l'association** : adsbnc.98800@gmail.com
+- **Contact pour l'application** : aima.dondusang@outlook.fr
+- **Site internet** : www.adsbnc.org
 
 ## Représentant légal et responsable de publication
 
-Représentant légal : Lilian MORER, président de l'ADSB-NC.
+**Représentant légal** : Lilian MORER, président de l'ADSB-NC.
 
-Responsable de publication : [À COMPLÉTER : nom et fonction]
+**Responsable de publication** : [À COMPLÉTER : nom et fonction]
 
 ## Conception et développement
 
@@ -40,4 +40,4 @@ Le traitement des données personnelles est décrit dans la Politique de confide
 
 ## Contact
 
-Pour toute question sur l'application : aima.dondusang@outlook.fr
+Pour toute question sur l'application : **aima.dondusang@outlook.fr**

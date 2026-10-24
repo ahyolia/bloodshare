@@ -33,3 +33,10 @@ export function criteresMotDePasse(motDePasse: string): CritereMotDePasse[] {
 export function estMotDePasseValide(motDePasse: string): boolean {
   return criteresMotDePasse(motDePasse).every((critere) => critere.valide);
 }
+
+// Compatibilité avec les écrans de dev (register, changer-mot-de-passe) :
+// même règle, une seule implémentation. Toujours revérifiée par l'API.
+export const REGLE_MOT_DE_PASSE =
+  `${LONGUEUR_MIN_MOT_DE_PASSE} caractères minimum, avec au moins une majuscule, une minuscule et un chiffre.`;
+
+export const motDePasseValide = estMotDePasseValide;

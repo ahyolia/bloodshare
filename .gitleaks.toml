@@ -1,0 +1,22 @@
+# Configuration de gitleaks (recherche de secrets), lancé par la CI sur chaque PR.
+# Règles par défaut de gitleaks, plus une règle Aïma pour les mots de passe hachés.
+
+[extend]
+useDefault = true
+
+# Les règles par défaut cherchent des clés d'API et des tokens, pas des mots de passe
+# hachés : elles n'ont pas vu bloodshare_backup.sql (email + hash bcrypt d'un vrai compte,
+# versionné de juin à octobre 2026 dans un dépôt public). Cette règle l'aurait bloqué.
+[[rules]]
+id = "hash-bcrypt"
+description = "Mot de passe haché (bcrypt) : sauvegarde de base ou export de comptes"
+regex = '''\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}'''
+tags = ["mot-de-passe", "base-de-donnees"]
+
+[allowlist]
+description = "Faux secrets des tests et exemples de la documentation"
+paths = [
+  '''bloodshare-backend/tests/''',
+  '''bloodshare-mobile/.*__tests__/''',
+  '''docs/contrat_API\.md''',
+]

@@ -31,7 +31,7 @@ describe('getActualites', () => {
 });
 
 describe('getBanniere', () => {
-  it('renvoie la bannière telle quelle, même inactive (c’est l’écran qui masque)', async () => {
+  it("renvoie la bannière telle quelle, même inactive (c'est l'écran qui masque)", async () => {
     apiGet.mockResolvedValue({ data: { active: false } });
 
     await expect(getBanniere()).resolves.toEqual({ active: false });

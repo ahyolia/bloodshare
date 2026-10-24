@@ -17,7 +17,11 @@ class EditAdmin extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            // 📖 Même règles que la fiche Admin (ViewAdmin) : anonymisation plutôt qu'effacement
+            //    de la ligne, et jamais sur son propre compte.
+            Actions\DeleteAction::make()
+                ->hidden(fn (): bool => $this->record->is(auth()->user()))
+                ->using(fn ($record) => $record->anonymiser()),
         ];
     }
 }

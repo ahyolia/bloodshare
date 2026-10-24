@@ -35,13 +35,14 @@ class DocumentJuridiqueResource extends Resource
                     ->maxLength(20)
                     ->helperText('À augmenter (ex. 1.0 → 1.1) à chaque modification importante.'),
 
-                // 📖 Même syntaxe simple que celle lue par l'app (components/DocumentTexte) :
+                // 📖 Même syntaxe simple que celle lue par l'app (utils/documentTexte.ts) :
                 //    pas d'éditeur riche, pour ne pas ajouter de dépendance de rendu HTML
                 //    côté mobile.
                 Forms\Components\Textarea::make('contenu')
                     ->label('Contenu')
+                    ->maxLength(50000)
                     ->rows(25)
-                    ->helperText('Mise en forme : « ## Titre » pour un titre de section, « - » en début de ligne pour une puce, une ligne vide entre deux paragraphes. Tant que le contenu est vide, l\'app affiche « bientôt disponible ».')
+                    ->helperText('Mise en forme : « ## Titre » pour un titre de section, « - » en début de ligne pour une puce, une ligne vide entre deux paragraphes, « **texte** » pour mettre un élément important en gras. Tant que le contenu est vide, l\'app affiche « bientôt disponible ».')
                     ->columnSpanFull(),
 
                 Forms\Components\Hidden::make('admin_id')

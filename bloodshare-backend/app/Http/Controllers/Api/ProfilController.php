@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class ProfilController extends Controller
 {
@@ -54,6 +55,15 @@ class ProfilController extends Controller
             'doit_changer_mdp' => false,
         ]);
 
+        // 📖 Déconnecte les autres appareils : changer de mot de passe après un vol de compte
+        //    ne servait à rien, le token volé restait valable (audit cybersécurité). La
+        //    session en cours est gardée, l'utilisateur n'a pas à se reconnecter.
+        $tokenEnCours = $user->currentAccessToken();
+
+        $user->tokens()
+            ->when($tokenEnCours instanceof PersonalAccessToken, fn ($q) => $q->whereKeyNot($tokenEnCours->getKey()))
+            ->delete();
+
         return response()->json([
             'message' => 'Mot de passe mis à jour.',
         ]);
@@ -73,8 +83,8 @@ class ProfilController extends Controller
         return [
             'id' => $user->id,
             'pseudo' => $user->pseudo,
+            'avatar_id' => $user->avatar_id,
             'avatar_url' => null,
-            'statut_donneur' => $user->statut_donneur,
             'sexe' => $user->sexe,
             'points_cumules' => $user->points_cumules,
             'niveau' => NiveauService::calculerNiveau($user->points_cumules ?? 0),

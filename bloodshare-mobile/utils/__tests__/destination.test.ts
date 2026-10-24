@@ -27,11 +27,11 @@ describe('choisirDestination', () => {
   });
 
   describe('utilisateur non connecté', () => {
-    it('envoie vers l’onboarding à la première ouverture', () => {
+    it("envoie vers l'onboarding à la première ouverture", () => {
       expect(choisirDestination(contexte({ onboardingVu: false }))).toBe('/auth/onboarding');
     });
 
-    it('envoie vers la connexion si l’onboarding a déjà été vu', () => {
+    it("envoie vers la connexion si l'onboarding a déjà été vu", () => {
       expect(choisirDestination(contexte({ onboardingVu: true }))).toBe('/auth/login');
     });
 
@@ -40,7 +40,7 @@ describe('choisirDestination', () => {
     it.each([
       ['onboarding pas encore vu', false],
       ['onboarding déjà vu', true],
-    ])('ne redirige pas s’il est déjà dans les écrans auth (%s)', (_cas, onboardingVu) => {
+    ])("ne redirige pas s'il est déjà dans les écrans auth (%s)", (_cas, onboardingVu) => {
       expect(choisirDestination(contexte({ inAuthGroup: true, onboardingVu }))).toBeNull();
     });
 
@@ -65,11 +65,11 @@ describe('choisirDestination', () => {
       expect(choisirDestination(connecte({ inAuthGroup: true }))).toBe('/tabs');
     });
 
-    it('ne redirige pas s’il est déjà dans la zone connectée', () => {
+    it("ne redirige pas s'il est déjà dans la zone connectée", () => {
       expect(choisirDestination(connecte({ inTabsGroup: true }))).toBeNull();
     });
 
-    it('ne montre jamais l’onboarding, même s’il n’a pas été vu sur cet appareil', () => {
+    it("ne montre jamais l'onboarding, même s'il n'a pas été vu sur cet appareil", () => {
       expect(choisirDestination(connecte({ onboardingVu: false }))).toBe('/tabs');
     });
   });
@@ -90,7 +90,7 @@ describe('choisirDestination', () => {
 
     // 📖 `_layout.tsx` compte l'écran de changement de mdp dans la zone connectée :
     //    les deux booléens sont donc vrais ensemble. Sans ce cas, redirection en boucle.
-    it('ne redirige pas s’il est déjà sur l’écran de changement', () => {
+    it("ne redirige pas s'il est déjà sur l'écran de changement", () => {
       expect(
         choisirDestination(doitChanger({ inChangerMdpGroup: true, inTabsGroup: true }))
       ).toBeNull();

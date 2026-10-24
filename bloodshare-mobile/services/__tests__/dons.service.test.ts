@@ -54,7 +54,7 @@ describe('getDons', () => {
     expect(dons[1].type).toBe('evenement');
   });
 
-  it('renvoie une liste vide quand il n’y a aucun don', async () => {
+  it("renvoie une liste vide quand il n'y a aucun don", async () => {
     apiGet.mockResolvedValue({ data: { data: [], total_dons: 0 } });
 
     const resultat = await getDons();

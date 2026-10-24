@@ -27,7 +27,7 @@ describe('préférences de notifications', () => {
     await expect(getPenurieActivee()).resolves.toBe(false);
   });
 
-  it('retiennent l’activation des notifications', async () => {
+  it("retiennent l'activation des notifications", async () => {
     await setNotificationsActivees(true);
 
     await expect(getNotificationsActivees()).resolves.toBe(true);
@@ -59,7 +59,7 @@ describe('onboarding vu', () => {
     await expect(getOnboardingVu()).resolves.toBe(false);
   });
 
-  it('vaut true une fois l’onboarding marqué comme vu', async () => {
+  it("vaut true une fois l'onboarding marqué comme vu", async () => {
     await setOnboardingVu();
 
     await expect(getOnboardingVu()).resolves.toBe(true);

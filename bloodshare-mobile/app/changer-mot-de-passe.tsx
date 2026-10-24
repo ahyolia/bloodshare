@@ -1,19 +1,21 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import Animated from "react-native-reanimated";
 import { router, useLocalSearchParams } from "expo-router";
-import { Colors } from "../constants/colors";
+import { useDialogue } from "../components/DialogueProvider";
+import { Bouton } from "../components/ui/Bouton";
+import { Champ } from "../components/ui/Champ";
+import { EnTeteSousPage } from "../components/ui/EnTeteSousPage";
+import { entreeSousPage } from "../constants/animations";
+import { Theme } from "../constants/colors";
+import { Espace, Rayon } from "../constants/spacing";
+import { Typo } from "../constants/typography";
 import { changerMotDePasse } from "../services/auth.service";
 import { getUser, saveUser } from "../stores/auth.store";
-import { useDialogue } from "../components/DialogueProvider";
+import { motDePasseValide, REGLE_MOT_DE_PASSE } from "../utils/motDePasse";
+
+type Erreurs = { actuel?: string; nouveau?: string; confirmation?: string; generale?: string };
 
 // 📖 Un seul écran pour les deux cas d'usage : changement volontaire (depuis
 //    Paramètres, `force` absent → bouton retour visible) et changement forcé
@@ -27,22 +29,35 @@ export default function ChangerMotDePasseScreen() {
   const [motDePasseActuel, setMotDePasseActuel] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
   const [confirmation, setConfirmation] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [enCours, setEnCours] = useState(false);
+  const [erreurs, setErreurs] = useState<Erreurs>({});
 
-  const handleSubmit = async () => {
-    setErrorMessage("");
+  // 📖 Chaque erreur s'affiche sous son champ, et s'efface dès qu'on le corrige.
+  const saisir = (champ: keyof Erreurs, setter: (v: string) => void) => (valeur: string) => {
+    setter(valeur);
+    if (erreurs[champ] || erreurs.generale) setErreurs((e) => ({ ...e, [champ]: undefined, generale: undefined }));
+  };
 
-    if (!motDePasseActuel || !motDePasse || !confirmation) {
-      setErrorMessage("Remplis tous les champs.");
+  const valider = async () => {
+    const locales: Erreurs = {
+      actuel: motDePasseActuel ? undefined : "Saisis ton mot de passe actuel.",
+      nouveau: !motDePasse
+        ? "Choisis un nouveau mot de passe."
+        : motDePasseValide(motDePasse)
+          ? undefined
+          : REGLE_MOT_DE_PASSE,
+      confirmation: !confirmation
+        ? "Confirme ton nouveau mot de passe."
+        : confirmation !== motDePasse
+          ? "Les deux mots de passe ne correspondent pas."
+          : undefined,
+    };
+    if (locales.actuel || locales.nouveau || locales.confirmation) {
+      setErreurs(locales);
       return;
     }
-    if (motDePasse !== confirmation) {
-      setErrorMessage("Les deux mots de passe ne correspondent pas.");
-      return;
-    }
 
-    setIsLoading(true);
+    setEnCours(true);
     try {
       await changerMotDePasse(motDePasseActuel, motDePasse, confirmation);
 
@@ -55,90 +70,103 @@ export default function ChangerMotDePasseScreen() {
       router.replace("/tabs");
     } catch (error: any) {
       if (error.response?.status === 422) {
-        setErrorMessage(
-          error.response.data?.message || "Mot de passe actuel incorrect ou nouveau mot de passe invalide."
-        );
+        // 📖 L'API renvoie l'erreur par champ : « mot_de_passe_actuel » ou « password ».
+        const champs = error.response.data?.errors ?? {};
+        setErreurs({
+          actuel: champs.mot_de_passe_actuel?.[0],
+          nouveau: champs.password?.[0],
+          generale:
+            champs.mot_de_passe_actuel || champs.password
+              ? undefined
+              : error.response.data?.message || "Mot de passe actuel incorrect ou nouveau mot de passe invalide.",
+        });
       } else if (error.request) {
-        setErrorMessage("Impossible de joindre le serveur. Vérifie ta connexion.");
+        setErreurs({ generale: "Impossible de joindre le serveur. Vérifie ta connexion." });
       } else {
-        setErrorMessage("Une erreur inattendue s'est produite.");
+        setErreurs({ generale: "Une erreur inattendue s'est produite." });
       }
     } finally {
-      setIsLoading(false);
+      setEnCours(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {!oblige && (
-          <TouchableOpacity onPress={() => router.back()} accessibilityRole="button">
-            <Text style={styles.retour}>← Retour</Text>
-          </TouchableOpacity>
-        )}
-
-        <Text style={styles.title}>Changer mon mot de passe</Text>
-        {oblige && (
-          <Text style={styles.subtitle}>
-            {"Ton mot de passe a été réinitialisé par l'association. Choisis-en " +
-              'un nouveau pour continuer.'}
+        {oblige ? (
+          // 📖 Changement imposé : pas de retour possible, le titre seul.
+          <Text style={[Typo.titre2, styles.titre]} accessibilityRole="header">
+            Choisis un nouveau mot de passe
           </Text>
+        ) : (
+          <EnTeteSousPage titre="Changer mon mot de passe" />
         )}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Mot de passe actuel (ou temporaire)"
-          placeholderTextColor={Colors.grisMoyen}
-          value={motDePasseActuel}
-          onChangeText={setMotDePasseActuel}
-          secureTextEntry
-          autoCapitalize="none"
-          editable={!isLoading}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Nouveau mot de passe"
-          placeholderTextColor={Colors.grisMoyen}
-          value={motDePasse}
-          onChangeText={setMotDePasse}
-          secureTextEntry
-          autoCapitalize="none"
-          editable={!isLoading}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirmer le nouveau mot de passe"
-          placeholderTextColor={Colors.grisMoyen}
-          value={confirmation}
-          onChangeText={setConfirmation}
-          secureTextEntry
-          autoCapitalize="none"
-          editable={!isLoading}
-          onSubmitEditing={handleSubmit}
-          returnKeyType="go"
-        />
-
-        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-
-        <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
-          onPress={handleSubmit}
-          disabled={isLoading}
-          accessibilityRole="button"
-        >
-          {isLoading ? (
-            <ActivityIndicator color={Colors.cremeClair} />
-          ) : (
-            <Text style={styles.buttonText}>Valider</Text>
+        <Animated.View entering={entreeSousPage} style={styles.formulaire}>
+          {oblige && (
+            <View style={styles.note}>
+              <Ionicons name="information-circle-outline" size={20} color={Theme.info.icone} />
+              <Text style={[Typo.legende, styles.noteTexte]}>
+                {"Ton mot de passe a été réinitialisé par l'association. Choisis-en un nouveau pour continuer."}
+              </Text>
+            </View>
           )}
-        </TouchableOpacity>
+
+          <Champ
+            libelle={oblige ? "Mot de passe temporaire" : "Mot de passe actuel"}
+            aide={oblige ? "Celui que l'association t'a envoyé par email." : undefined}
+            erreur={erreurs.actuel}
+            value={motDePasseActuel}
+            onChangeText={saisir("actuel", setMotDePasseActuel)}
+            motDePasse
+            autoCapitalize="none"
+            autoComplete="current-password"
+            editable={!enCours}
+          />
+          <Champ
+            libelle="Nouveau mot de passe"
+            aide={REGLE_MOT_DE_PASSE}
+            erreur={erreurs.nouveau}
+            value={motDePasse}
+            onChangeText={saisir("nouveau", setMotDePasse)}
+            motDePasse
+            autoCapitalize="none"
+            autoComplete="new-password"
+            editable={!enCours}
+          />
+          <Champ
+            libelle="Confirme le nouveau mot de passe"
+            erreur={erreurs.confirmation}
+            value={confirmation}
+            onChangeText={saisir("confirmation", setConfirmation)}
+            motDePasse
+            autoCapitalize="none"
+            autoComplete="new-password"
+            editable={!enCours}
+            onSubmitEditing={valider}
+            returnKeyType="go"
+          />
+
+          {erreurs.generale && (
+            <View style={styles.erreur} accessibilityLiveRegion="polite">
+              <Ionicons name="alert-circle-outline" size={18} color={Theme.feedback.erreurTexte} />
+              <Text style={[Typo.legendeForte, styles.erreurTexte]}>{erreurs.generale}</Text>
+            </View>
+          )}
+
+          <Bouton
+            variante="validation"
+            libelle="Enregistrer"
+            icone="checkmark"
+            onPress={valider}
+            chargement={enCours}
+            style={styles.bouton}
+          />
+        </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -147,65 +175,42 @@ export default function ChangerMotDePasseScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
+    backgroundColor: Theme.fond.page,
   },
   content: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 54,
+    paddingHorizontal: 18,
+    paddingTop: 54,
+    paddingBottom: Espace[12],
   },
-  retour: {
-    fontSize: 15,
-    color: Colors.petrole[500],
-    fontWeight: "600",
-    marginBottom: 24,
+  titre: {
+    color: Theme.texte.principal,
+    marginBottom: Espace[6],
   },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
-    textAlign: "center",
-    color: Colors.aubergine,
+  formulaire: {
+    gap: Espace[6] - Espace[1],
   },
-  subtitle: {
-    fontSize: 14,
-    color: Colors.grisMoyen,
-    textAlign: "center",
-    lineHeight: 20,
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  input: {
-    height: 52,
-    borderWidth: 1.5,
-    borderColor: "#D8D3CA",
-    paddingHorizontal: 16,
-    borderRadius: 18,
-    marginTop: 16,
-    fontSize: 15,
-    color: Colors.aubergine,
-    backgroundColor: Colors.cremeClair,
-  },
-  errorText: {
-    color: Colors.corail[600],
-    marginTop: 16,
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  button: {
-    height: 56,
-    borderRadius: 20,
-    backgroundColor: Colors.aubergine,
+  note: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginTop: 24,
+    gap: Espace[3],
+    padding: Espace[4],
+    borderRadius: Rayon.lg,
+    backgroundColor: Theme.info.fond,
   },
-  buttonDisabled: {
-    opacity: 0.5,
+  noteTexte: {
+    flex: 1,
+    color: Theme.texte.principal,
   },
-  buttonText: {
-    color: Colors.cremeClair,
-    fontSize: 17,
-    fontWeight: "700",
+  erreur: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Espace[2],
+  },
+  erreurTexte: {
+    flex: 1,
+    color: Theme.feedback.erreurTexte,
+  },
+  bouton: {
+    marginTop: Espace[2],
   },
 });
