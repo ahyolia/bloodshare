@@ -4,7 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\QuizResource\Pages;
 use App\Filament\Resources\QuizResource\RelationManagers;
+use App\Models\Contenu;
 use App\Models\Quiz;
+use Database\Seeders\QuizContenuSeeder;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -57,12 +59,14 @@ class QuizResource extends Resource
                 //    du BO (mêmes 3 vues sur les quiz existants) : évite les doublons du
                 //    style "Les bases du don" / "les bases du don" qui casseraient le
                 //    regroupement par catégorie côté mobile.
+                //    Ce sont les 3 catégories des quiz rédigés par Strat'Com (QuizContenuSeeder),
+                //    reprises côté mobile dans app/tabs/quiz/index.tsx (CATEGORIE_STYLE).
                 Forms\Components\Select::make('categorie')
                     ->label('Catégorie')
                     ->options([
-                        'Les bases du don' => 'Les bases du don',
-                        'Les groupes sanguins' => 'Les groupes sanguins',
-                        "L'association ADSB-NC" => "L'association ADSB-NC",
+                        QuizContenuSeeder::CATEGORIE_ELIGIBILITE => QuizContenuSeeder::CATEGORIE_ELIGIBILITE,
+                        QuizContenuSeeder::CATEGORIE_DON => QuizContenuSeeder::CATEGORIE_DON,
+                        QuizContenuSeeder::CATEGORIE_CENTRE => QuizContenuSeeder::CATEGORIE_CENTRE,
                     ]),
                 Forms\Components\Hidden::make('admin_id')
                     ->default(fn () => Auth::id()),
@@ -90,6 +94,21 @@ class QuizResource extends Resource
                             ->default('unique'),
                         Forms\Components\Toggle::make('aleatoire')
                             ->label('Réponses aléatoires'),
+                        // 📖 Montrée à l'utilisateur après validation, réponse juste ou fausse.
+                        Forms\Components\Textarea::make('explication')
+                            ->label('Explication')
+                            ->maxLength(1000)
+                            ->rows(3),
+                        // 📖 Seules les fiches publiées sont proposées : un lien vers un brouillon
+                        //    ouvrirait une fiche introuvable côté app.
+                        Forms\Components\Select::make('contenu_id')
+                            ->label('Fiche pratique liée')
+                            ->options(fn () => Contenu::where('type', 'fiche_info')
+                                ->where('statut', 'publie')
+                                ->orderBy('titre')
+                                ->pluck('titre', 'id'))
+                            ->searchable()
+                            ->placeholder('Aucune'),
                         Forms\Components\Repeater::make('reponses')
                             ->relationship('reponses')
                             ->label('Réponses')

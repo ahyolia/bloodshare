@@ -2,7 +2,10 @@ import { useFocusEffect } from 'expo-router';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors, Theme } from '../../../constants/colors';
+import type { Question } from '../../../services/quiz.service';
+import { recapDuQuiz } from '../../../stores/quizRecap.store';
 import { compter } from '../../../utils/pluriel';
 import { TAB_BAR_STYLE } from '../_layout';
 
@@ -56,6 +59,20 @@ export default function QuizScoreScreen() {
     }
   })();
 
+  // 📖 Récapitulatif complet (intitulés, réponses, explications), dans l'ordre où les
+  //    questions ont été jouées. Absent après un rechargement de la page : pastilles seules.
+  const recap = recapDuQuiz(Number(quiz_id));
+  const questionsCorrigees = (recap?.questions ?? []).flatMap((question) => {
+    const detail = recap?.details.find((d) => d.question_id === question.id);
+    return detail ? [{ question, detail }] : [];
+  });
+
+  const textesReponses = (question: Question, ids: number[]) =>
+    question.reponses
+      .filter((r) => ids.includes(r.id))
+      .map((r) => r.texte)
+      .join(', ');
+
   const message =
     scoreNum === totalNum
       ? { texte: 'Parfait ! 🎉', couleur: Colors.petrole[500] }
@@ -100,9 +117,11 @@ export default function QuizScoreScreen() {
         <View style={styles.pillsRow}>
           {Array.from({ length: totalNum }).map((_, index) => {
             const reussie =
-              detailsCorrection.length > 0
-                ? Boolean(detailsCorrection[index]?.correcte)
-                : index < scoreNum;
+              questionsCorrigees.length > 0
+                ? Boolean(questionsCorrigees[index]?.detail.correcte)
+                : detailsCorrection.length > 0
+                  ? Boolean(detailsCorrection[index]?.correcte)
+                  : index < scoreNum;
 
             return (
               <View
@@ -116,6 +135,64 @@ export default function QuizScoreScreen() {
             );
           })}
         </View>
+
+        {questionsCorrigees.length > 0 && (
+          <View style={styles.recap}>
+            <Text style={styles.recapTitre}>Récapitulatif</Text>
+
+            {questionsCorrigees.map(({ question, detail }, index) => (
+              <View key={question.id} style={styles.recapCard}>
+                <View style={styles.recapEntete}>
+                  <Ionicons
+                    name={detail.correcte ? 'checkmark-circle' : 'close-circle'}
+                    size={20}
+                    color={detail.correcte ? Theme.feedback.succesTexte : Theme.texte.secondaire}
+                  />
+                  <Text style={styles.recapIntitule}>
+                    {index + 1}. {question.intitule}
+                  </Text>
+                </View>
+
+                <Text style={styles.recapLigne}>
+                  <Text style={styles.recapLibelle}>Ta réponse : </Text>
+                  {textesReponses(question, detail.reponse_ids) || '—'}
+                </Text>
+
+                {!detail.correcte && (
+                  <Text style={styles.recapLigne}>
+                    <Text style={styles.recapLibelle}>Bonne réponse : </Text>
+                    {textesReponses(question, detail.reponses_correctes)}
+                  </Text>
+                )}
+
+                {!!detail.explication && (
+                  <Text style={styles.recapExplication}>{detail.explication}</Text>
+                )}
+
+                {detail.contenu && (
+                  <TouchableOpacity
+                    style={styles.recapFiche}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/tabs/quiz/fiche/[id]',
+                        params: { id: String(detail.contenu!.id) },
+                      })
+                    }
+                  >
+                    <Ionicons
+                      name="document-text-outline"
+                      size={16}
+                      color={Theme.action.secondaireTexte}
+                    />
+                    <Text style={styles.recapFicheTexte} numberOfLines={2}>
+                      Voir la fiche : {detail.contenu.titre}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
 
         <View style={styles.separateur} />
 
@@ -249,6 +326,63 @@ const styles = StyleSheet.create({
   },
   pillTextRatee: {
     color: Colors.corail[600],
+  },
+  recap: {
+    width: '100%',
+    marginTop: 24,
+    gap: 10,
+  },
+  recapTitre: {
+    color: Theme.texte.principal,
+    fontSize: 17,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  recapCard: {
+    backgroundColor: Theme.fond.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Theme.fond.bordure,
+    padding: 14,
+    gap: 6,
+  },
+  recapEntete: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  recapIntitule: {
+    flex: 1,
+    color: Theme.texte.principal,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  recapLigne: {
+    color: Theme.texte.principal,
+    fontSize: 14,
+  },
+  recapLibelle: {
+    color: Theme.texte.secondaire,
+    fontWeight: '700',
+  },
+  recapExplication: {
+    color: Theme.texte.principal,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 2,
+  },
+  recapFiche: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  recapFicheTexte: {
+    flexShrink: 1,
+    color: Theme.action.secondaireTexte,
+    fontSize: 14,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   rejoueText: {
     color: Colors.grisMoyen,

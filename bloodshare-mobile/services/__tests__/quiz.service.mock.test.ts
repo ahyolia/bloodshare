@@ -1,4 +1,4 @@
-import { getQuizDetail, saveProgression, submitQuiz } from '../quiz.service';
+import { getQuizDetail, submitQuiz, verifierQuestion } from '../quiz.service';
 
 // 📖 Mode maquette (USE_MOCK_DATA) : sans backend, le service corrige lui-même les
 //    réponses à partir des `correctes` du mock. On vérifie que cette correction locale
@@ -83,8 +83,27 @@ describe('submitQuiz (maquette)', () => {
   });
 });
 
-describe('saveProgression (maquette)', () => {
-  it('ne fait rien sans backend', async () => {
-    await expect(saveProgression(1, [])).resolves.toBeUndefined();
+describe('verifierQuestion (maquette)', () => {
+  it('corrige une bonne réponse', async () => {
+    // Quiz 1, question 1 : la bonne réponse est l'id 2.
+    const correction = await verifierQuestion(1, 1, [2]);
+
+    expect(correction).toMatchObject({
+      question_id: 1,
+      reponse_ids: [2],
+      correcte: true,
+      reponses_correctes: [2],
+    });
+  });
+
+  it('corrige une mauvaise réponse et donne la bonne', async () => {
+    const correction = await verifierQuestion(1, 1, [1]);
+
+    expect(correction.correcte).toBe(false);
+    expect(correction.reponses_correctes).toEqual([2]);
+  });
+
+  it('lève une erreur pour une question inconnue', async () => {
+    await expect(verifierQuestion(1, 9999, [1])).rejects.toThrow('Question introuvable');
   });
 });

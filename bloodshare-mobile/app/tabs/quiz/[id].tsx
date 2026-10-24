@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useNavigation, useRouter } from "expo-router";
 import { useLocalSearchParams } from "expo-router";
@@ -12,17 +13,20 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Colors } from "../../../constants/colors";
+import { Colors, Theme } from "../../../constants/colors";
 import { TAB_BAR_STYLE } from "../_layout";
 import {
+  Correction,
   getQuizDetail,
   Question,
   QuizDetail,
   ReponsePayload,
-  saveProgression,
   submitQuiz,
+  verifierQuestion,
 } from "../../../services/quiz.service";
 import { useDialogue } from "../../../components/DialogueProvider";
+import { memoriserRecapQuiz } from "../../../stores/quizRecap.store";
+import { EtatReponse, etatReponse } from "../../../utils/quizCorrection";
 
 export default function QuizDeroulementScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -43,11 +47,14 @@ export default function QuizDeroulementScreen() {
   //   retournent naturellement un nouvel objet immuable compatible avec setState
   const [reponses, setReponses] = useState<Map<number, number[]>>(new Map());
 
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  // 📖 Map<question_id, correction> des questions déjà validées. Une question présente ici
+  //    est verrouillée : on affiche sa correction et on ne peut plus changer sa réponse.
+  const [corrections, setCorrections] = useState<Map<number, Correction>>(
+    new Map(),
+  );
+  const [verification, setVerification] = useState(false);
 
-  // 📖 Timer d'auto-avance (questions à choix unique) : gardé dans un ref pour pouvoir
-  //    l'annuler si l'utilisateur re-tape une autre réponse ou quitte l'écran avant la fin du délai
-  const autoAvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progressAnim = useRef(new Animated.Value(0)).current;
 
   // 📖 Drapeau synchrone : passé à true AVANT le router.replace vers l'écran score. Le listener
   //    `beforeRemove` le lit tout de suite, alors que le state `submitting` ne serait committé
@@ -59,26 +66,13 @@ export default function QuizDeroulementScreen() {
   //    laisse passer le `navigation.dispatch` sans réafficher la modale (sinon 2 confirmations).
   const sortieConfirmee = useRef(false);
 
-  // 📖 Signature (JSON) des réponses déjà enregistrées côté serveur : évite de renvoyer la
-  //    même progression, notamment juste après la reprise d'un quiz commencé.
-  const derniereSauvegarde = useRef("[]");
-
   // 📖 Modale d'abandon custom (au lieu de Alert natif) : on met en attente l'action de sortie
   //    interceptée, la modale décide de la rejouer ou non.
   const [modaleAbandon, setModaleAbandon] = useState(false);
   const actionSortie = useRef<unknown>(null);
 
-  const annulerAutoAvance = () => {
-    if (autoAvanceTimer.current) {
-      clearTimeout(autoAvanceTimer.current);
-      autoAvanceTimer.current = null;
-    }
-  };
-
-  useEffect(() => annulerAutoAvance, []);
-
   // 📖 Pendant le déroulement du quiz, on masque la tab bar flottante : sinon elle recouvre
-  //    le footer (boutons Précédent / Suivant / Terminer). On la restaure en quittant l'écran.
+  //    le footer (boutons Précédent / Valider / Suivant). On la restaure en quittant l'écran.
   useFocusEffect(
     useCallback(() => {
       navigation.getParent()?.setOptions({ tabBarStyle: { display: "none" } });
@@ -97,15 +91,21 @@ export default function QuizDeroulementScreen() {
         if (cancelled) return;
         setQuiz(data);
 
-        // 📖 Reprise d'un quiz commencé : on restaure les réponses déjà données et on repart
-        //    de la première question sans réponse (l'ordre peut changer si le quiz est aléatoire,
-        //    d'où la recherche par id de question et non par position).
+        // 📖 Reprise d'un quiz commencé : on restaure les réponses déjà validées avec leur
+        //    correction, et on repart de la première question non validée (l'ordre peut
+        //    changer si le quiz est aléatoire, d'où la recherche par id et non par position).
         const donnees = data.reponses_donnees ?? [];
         if (donnees.length > 0) {
           setReponses(
             new Map(donnees.map((r) => [r.question_id, r.reponse_ids])),
           );
-          derniereSauvegarde.current = JSON.stringify(donnees);
+          setCorrections(
+            new Map(
+              donnees.flatMap((r) =>
+                r.correction ? [[r.question_id, r.correction] as const] : [],
+              ),
+            ),
+          );
 
           const premiereSansReponse = data.questions.findIndex(
             (q) => !donnees.some((r) => r.question_id === q.id),
@@ -156,35 +156,9 @@ export default function QuizDeroulementScreen() {
     return unsubscribe;
   }, [navigation]);
 
-  // 📖 Enregistre en arrière-plan les réponses données pour que le quiz apparaisse dans
-  //    "Quiz en cours" et puisse être repris. Un échec réseau ne doit jamais gêner le quiz :
-  //    on l'ignore et on retentera à la prochaine modification / à l'abandon.
-  const envoyerProgression = useCallback(() => {
-    if (!quiz || soumissionEnCours.current) return;
-
-    const payload: ReponsePayload[] = Array.from(reponses.entries())
-      .filter(([, reponseIds]) => reponseIds.length > 0)
-      .map(([question_id, reponse_ids]) => ({ question_id, reponse_ids }));
-
-    const signature = JSON.stringify(payload);
-    if (signature === derniereSauvegarde.current) return;
-
-    derniereSauvegarde.current = signature;
-    saveProgression(quiz.id, payload).catch(() => {
-      derniereSauvegarde.current = "";
-    });
-  }, [quiz, reponses]);
-
-  // 📖 Délai de 600 ms : regroupe les changements rapprochés (cases cochées à la suite)
-  //    en un seul appel réseau.
-  useEffect(() => {
-    const timer = setTimeout(envoyerProgression, 600);
-    return () => clearTimeout(timer);
-  }, [envoyerProgression]);
-
+  // 📖 Pas de sauvegarde à la sortie : chaque question validée est déjà enregistrée côté
+  //    serveur par verifierQuestion, et une sélection non validée n'a pas à être gardée.
   const confirmerAbandon = () => {
-    // Envoi immédiat : la sortie de l'écran ne doit pas perdre la dernière réponse donnée.
-    envoyerProgression();
     sortieConfirmee.current = true;
     setModaleAbandon(false);
     if (actionSortie.current)
@@ -197,6 +171,10 @@ export default function QuizDeroulementScreen() {
   };
 
   const toggleReponse = (question: Question, reponseId: number) => {
+    // 📖 Question validée → réponse verrouillée. Pendant la vérification aussi, pour que la
+    //    réponse affichée reste celle qui a été envoyée.
+    if (corrections.has(question.id) || verification) return;
+
     setReponses((prev) => {
       const next = new Map(prev);
 
@@ -215,25 +193,44 @@ export default function QuizDeroulementScreen() {
       );
       return next;
     });
+  };
 
-    // 📖 Auto-avance sur les questions à choix unique : la réponse suffit à valider, on
-    //    enchaîne après 350 ms pour laisser voir la sélection. Les questions 'multiple'
-    //    et la dernière question gardent la validation manuelle par bouton.
-    const estDerniere = quiz
-      ? questionIndex === quiz.questions.length - 1
-      : true;
-    if (question.type === "unique" && !estDerniere) {
-      annulerAutoAvance();
-      autoAvanceTimer.current = setTimeout(() => {
-        setQuestionIndex((prev) => prev + 1);
-      }, 350);
+  // 📖 Plus d'auto-avance au tap (retour des tests utilisateurs : on doit pouvoir hésiter).
+  //    C'est « Valider » qui fige la réponse et affiche la correction ; « Suivant » vient après.
+  const handleValider = async (question: Question) => {
+    if (!quiz || verification) return;
+
+    const selection = reponses.get(question.id) ?? [];
+    if (selection.length === 0) return;
+
+    setVerification(true);
+    try {
+      const resultat = await verifierQuestion(quiz.id, question.id, selection);
+      const { question_id, reponse_ids, ...correction } = resultat;
+
+      // 📖 On affiche les réponses retenues par le serveur : si la question avait déjà été
+      //    validée ailleurs (autre appareil), c'est cette première réponse qui compte.
+      setReponses((prev) => new Map(prev).set(question_id, reponse_ids));
+      setCorrections((prev) => new Map(prev).set(question_id, correction));
+    } catch {
+      await informer(
+        "Erreur",
+        "Impossible de vérifier ta réponse. Vérifie ta connexion.",
+      );
+    } finally {
+      setVerification(false);
     }
+  };
+
+  const ouvrirFiche = (ficheId: number) => {
+    router.push({
+      pathname: "/tabs/quiz/fiche/[id]",
+      params: { id: String(ficheId) },
+    });
   };
 
   const handleSuivant = () => {
     if (!quiz) return;
-
-    annulerAutoAvance();
 
     if (questionIndex < quiz.questions.length - 1) {
       setQuestionIndex((prev) => prev + 1);
@@ -245,7 +242,6 @@ export default function QuizDeroulementScreen() {
   const handleSoumettre = async () => {
     if (!quiz) return;
 
-    annulerAutoAvance();
     soumissionEnCours.current = true;
     setSubmitting(true);
 
@@ -257,6 +253,10 @@ export default function QuizDeroulementScreen() {
       ).map(([question_id, reponse_ids]) => ({ question_id, reponse_ids }));
 
       const resultat = await submitQuiz(quiz.id, reponsesPayload);
+      memoriserRecapQuiz(quiz.id, {
+        questions: quiz.questions,
+        details: resultat.details ?? [],
+      });
 
       // 📖 replace : on ne veut pas qu'un retour arrière depuis l'écran score ramène sur le
       //    quiz déjà soumis (même logique que resultat-scan → cartes/accueil)
@@ -269,9 +269,15 @@ export default function QuizDeroulementScreen() {
           total_questions: String(resultat.total_questions),
           points_gagnes: String(resultat.points_gagnes),
           premiere_completion: String(resultat.premiere_completion),
-          // 📖 Les params de navigation sont des chaînes : on sérialise le détail de la
-          //    correction, l'écran score le relit pour colorier chaque question.
-          details: JSON.stringify(resultat.details ?? []),
+          // 📖 Les params de navigation sont des chaînes : on sérialise le juste/faux de
+          //    chaque question pour les pastilles. Le détail complet (explications) passe
+          //    par memoriserRecapQuiz, trop long pour une URL.
+          details: JSON.stringify(
+            (resultat.details ?? []).map(({ question_id, correcte }) => ({
+              question_id,
+              correcte,
+            })),
+          ),
         },
       });
     } catch {
@@ -307,15 +313,8 @@ export default function QuizDeroulementScreen() {
   const question = quiz.questions[questionIndex];
   const reponsesSelectionnees = reponses.get(question.id) ?? [];
   const derniereQuestion = questionIndex === quiz.questions.length - 1;
-  const peutContinuer = reponsesSelectionnees.length > 0;
-
-  // 📖 Un seul mécanisme d'avancement par type de question :
-  //    - choix unique (hors dernière) → auto-avance à la sélection, PAS de bouton (sinon doublon)
-  //    - choix multiple → bouton « Suivant » manuel (on laisse cocher plusieurs cases avant de valider)
-  //    - dernière question (quel que soit le type) → bouton « Terminer ✓ » manuel
-  const afficherBoutonSuivant =
-    question.type === "multiple" || derniereQuestion;
-  const afficherFooter = questionIndex > 0 || afficherBoutonSuivant;
+  const correction = corrections.get(question.id);
+  const peutValider = reponsesSelectionnees.length > 0 && !verification;
 
   return (
     <View style={styles.screen}>
@@ -368,18 +367,40 @@ export default function QuizDeroulementScreen() {
 
         {question.reponses.map((reponse) => {
           const selectionnee = reponsesSelectionnees.includes(reponse.id);
+          const etat = etatReponse(
+            reponse.id,
+            reponsesSelectionnees,
+            correction,
+          );
 
           return (
             <TouchableOpacity
               key={reponse.id}
-              style={[
-                styles.reponseCard,
-                selectionnee && styles.reponseCardSelectionnee,
-              ]}
+              style={[styles.reponseCard, STYLE_CARTE[etat]]}
               onPress={() => toggleReponse(question, reponse.id)}
+              disabled={!!correction}
               activeOpacity={0.85}
+              accessibilityRole={
+                question.type === "unique" ? "radio" : "checkbox"
+              }
+              accessibilityState={{
+                checked: selectionnee,
+                disabled: !!correction,
+              }}
             >
-              {question.type === "unique" ? (
+              {etat === "correcte" || etat === "erreur" ? (
+                // 📖 Après validation, une icône dit juste/faux : la couleur seule ne suffit
+                //    pas (daltonisme), et le faux n'est volontairement pas en rouge.
+                <Ionicons
+                  name={etat === "correcte" ? "checkmark-circle" : "close-circle"}
+                  size={22}
+                  color={
+                    etat === "correcte"
+                      ? Theme.feedback.succesTexte
+                      : Theme.texte.secondaire
+                  }
+                />
+              ) : question.type === "unique" ? (
                 <View
                   style={[
                     styles.radio,
@@ -400,41 +421,91 @@ export default function QuizDeroulementScreen() {
               )}
 
               <Text style={styles.reponseTexte}>{reponse.texte}</Text>
+
+              {correction && selectionnee && (
+                <Text style={styles.taReponse}>Ta réponse</Text>
+              )}
             </TouchableOpacity>
           );
         })}
+
+        {correction && (
+          <View
+            style={[
+              styles.explicationCard,
+              correction.correcte && styles.explicationCardCorrecte,
+            ]}
+          >
+            <Text
+              style={[
+                styles.explicationTitre,
+                correction.correcte && styles.explicationTitreCorrecte,
+              ]}
+            >
+              {correction.correcte ? "Bonne réponse !" : "Pas tout à fait…"}
+            </Text>
+
+            {!!correction.explication && (
+              <Text style={styles.explicationTexte}>
+                {correction.explication}
+              </Text>
+            )}
+
+            {correction.contenu && (
+              <TouchableOpacity
+                style={styles.ficheButton}
+                onPress={() => ouvrirFiche(correction.contenu!.id)}
+                activeOpacity={0.85}
+              >
+                <Ionicons
+                  name="document-text-outline"
+                  size={18}
+                  color={Theme.action.secondaireTexte}
+                />
+                <Text style={styles.ficheButtonText} numberOfLines={2}>
+                  Voir la fiche : {correction.contenu.titre}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </ScrollView>
 
-      {afficherFooter && (
-        <View style={styles.footer}>
-          {questionIndex > 0 && (
-            <TouchableOpacity
-              style={styles.precedentButton}
-              onPress={() => {
-                annulerAutoAvance();
-                setQuestionIndex((prev) => prev - 1);
-              }}
-            >
-              <Text style={styles.precedentButtonText}>← Précédent</Text>
-            </TouchableOpacity>
-          )}
+      <View style={styles.footer}>
+        {questionIndex > 0 && (
+          <TouchableOpacity
+            style={styles.precedentButton}
+            onPress={() => setQuestionIndex((prev) => prev - 1)}
+          >
+            <Text style={styles.precedentButtonText}>← Précédent</Text>
+          </TouchableOpacity>
+        )}
 
-          {afficherBoutonSuivant && (
-            <TouchableOpacity
-              style={[
-                styles.suivantButton,
-                !peutContinuer && styles.suivantButtonDesactive,
-              ]}
-              onPress={handleSuivant}
-              disabled={!peutContinuer}
-            >
-              <Text style={styles.suivantButtonText}>
-                {derniereQuestion ? "Terminer ✓" : "Suivant →"}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
+        {/* 📖 Deux temps par question : « Valider » fige la réponse et montre la
+            correction, puis « Suivant » (ou « Voir mon score ») enchaîne. */}
+        {correction ? (
+          <TouchableOpacity style={styles.suivantButton} onPress={handleSuivant}>
+            <Text style={styles.suivantButtonText}>
+              {derniereQuestion ? "Voir mon score" : "Suivant →"}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[
+              styles.suivantButton,
+              !peutValider && styles.suivantButtonDesactive,
+            ]}
+            onPress={() => handleValider(question)}
+            disabled={!peutValider}
+          >
+            {verification ? (
+              <ActivityIndicator color={Colors.blanc} />
+            ) : (
+              <Text style={styles.suivantButtonText}>Valider</Text>
+            )}
+          </TouchableOpacity>
+        )}
+      </View>
 
       {submitting && (
         <View style={styles.submittingOverlay}>
@@ -457,7 +528,7 @@ export default function QuizDeroulementScreen() {
 
             <Text style={styles.modalTitre}>Quitter le quiz ?</Text>
             <Text style={styles.modalTexte}>
-              {"Pas d'inquiétude, ta progression est sauvegardée. Tu pourras reprendre ce quiz plus tard depuis « Quiz en cours »."}
+              {"Pas d'inquiétude, tes réponses validées sont sauvegardées. Tu pourras reprendre ce quiz plus tard depuis « Quiz en cours »."}
             </Text>
 
             <TouchableOpacity
@@ -573,9 +644,72 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.fondGris,
   },
+  // 📖 Sélection en aubergine (couleur de l'action principale) et plus en corail : avant
+  //    validation, une réponse cochée en rouge se lisait déjà comme une erreur.
   reponseCardSelectionnee: {
-    borderColor: Colors.corail[600],
-    backgroundColor: Colors.fondRose,
+    borderColor: Theme.action.primaire,
+    backgroundColor: Theme.fond.surfaceEnfoncee,
+  },
+  reponseCardCorrecte: {
+    borderColor: Theme.etat.bon.jauge,
+    backgroundColor: Theme.feedback.succesSurface,
+  },
+  reponseCardErreur: {
+    borderColor: Theme.texte.secondaire,
+    backgroundColor: Theme.fond.surfaceEnfoncee,
+  },
+  reponseCardAttenuee: {
+    opacity: 0.55,
+  },
+  taReponse: {
+    marginLeft: 8,
+    fontSize: 12,
+    fontWeight: "700",
+    color: Theme.texte.secondaire,
+  },
+  explicationCard: {
+    marginTop: 8,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: Theme.fond.surface,
+    borderWidth: 1,
+    borderColor: Theme.fond.bordure,
+  },
+  explicationCardCorrecte: {
+    backgroundColor: Theme.feedback.succesSurface,
+    borderColor: Theme.etat.bon.jauge,
+  },
+  explicationTitre: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: Theme.texte.principal,
+  },
+  explicationTitreCorrecte: {
+    color: Theme.feedback.succesTexte,
+  },
+  explicationTexte: {
+    marginTop: 8,
+    fontSize: 15,
+    lineHeight: 21,
+    color: Theme.texte.principal,
+  },
+  ficheButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: Theme.action.secondaireBordure,
+    alignSelf: "flex-start",
+  },
+  ficheButtonText: {
+    flexShrink: 1,
+    fontSize: 14,
+    fontWeight: "700",
+    color: Theme.action.secondaireTexte,
   },
   radio: {
     width: 20,
@@ -587,13 +721,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   radioSelectionne: {
-    borderColor: Colors.corail[600],
+    borderColor: Theme.action.primaire,
   },
   radioInterieur: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: Colors.corail[600],
+    backgroundColor: Theme.action.primaire,
   },
   checkbox: {
     width: 20,
@@ -606,8 +740,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   checkboxSelectionne: {
-    borderColor: Colors.corail[600],
-    backgroundColor: Colors.corail[600],
+    borderColor: Theme.action.primaire,
+    backgroundColor: Theme.action.primaire,
   },
   checkboxCheck: {
     color: Colors.blanc,
@@ -734,3 +868,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+
+const STYLE_CARTE: Record<EtatReponse, object | undefined> = {
+  neutre: undefined,
+  selectionnee: styles.reponseCardSelectionnee,
+  correcte: styles.reponseCardCorrecte,
+  erreur: styles.reponseCardErreur,
+  attenuee: styles.reponseCardAttenuee,
+};
