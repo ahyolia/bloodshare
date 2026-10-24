@@ -8,8 +8,12 @@
   "allowlist": [
     // node-forge : utilisé par la CLI Expo (signature des mises à jour), jamais dans l'app.
     "GHSA-86w9-cpqp-85rv",
-    // braces : recherche de fichiers des outils de build et de test (Metro, Jest).
-    "GHSA-vfj7-8cjw-p6xm"
+    // zod (expo > @expo/cli > zod 3.25) : saturation mémoire sur des collections énormes
+    // validées par la CLI Expo (Metro, builds), jamais dans l'app : aucun fichier du build
+    // web n'en contient. Corrigé en zod 4.6.6, une version majeure que la CLI n'accepte pas
+    // (^3.25) : attendre une version d'Expo qui l'embarque. Ajouté le 24/10/2026.
+    "GHSA-mrhx-c7xc-m3w5"
+    // braces GHSA-vfj7-8cjw-p6xm retiré le 24/10/2026 : plus présent dans les dépendances.
     // Moyennes, non bloquantes avec "high" (analysées, rapport d'audit US-29) :
     // sprintf-js GHSA-hp3w-g68c-fv3c (outils, lecture YAML), uuid GHSA-w5hq-g745-h8pq
     // (génération du projet iOS, option buf jamais utilisée), decode-uri-component
