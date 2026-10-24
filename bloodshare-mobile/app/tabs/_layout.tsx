@@ -2,7 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { PopupBadge } from '../../components/badges/PopupBadge';
 import { Theme } from '../../constants/colors';
+import { useBadgesAFeter } from '../../hooks/useBadgesAFeter';
 import { verifierAbonnement } from '../../services/notifications/webPush';
 
 /* -------------------------------------------------------------------------
@@ -207,90 +209,96 @@ export default function TabsLayout() {
     verifierAbonnement().catch(() => {});
   }, []);
 
+  // 📖 Popup de félicitations des badges : monté ici, il couvre tous les onglets.
+  const { badge, fermer } = useBadgesAFeter();
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        // 📖 Icônes et libellés sont rendus par nos propres `tabBarButton`
-        // (cf. BoutonOnglet), donc les options d'icône et de libellé de la
-        // barre ne servent plus à rien : ne pas essayer de régler l'apparence
-        // avec `tabBarIcon`, `tabBarLabelStyle` ou `tabBarActiveTintColor`.
-        tabBarShowLabel: false,
-        tabBarStyle: styles.tabBar,
-        tabBarItemStyle: styles.tabItem,
-        tabBarHideOnKeyboard: true,
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Accueil',
-          tabBarButton: (props) => (
-            <BoutonOnglet {...props} icone="home" label="Accueil" />
-          ),
+    <>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          // 📖 Icônes et libellés sont rendus par nos propres `tabBarButton`
+          // (cf. BoutonOnglet), donc les options d'icône et de libellé de la
+          // barre ne servent plus à rien : ne pas essayer de régler l'apparence
+          // avec `tabBarIcon`, `tabBarLabelStyle` ou `tabBarActiveTintColor`.
+          tabBarShowLabel: false,
+          tabBarStyle: styles.tabBar,
+          tabBarItemStyle: styles.tabItem,
+          tabBarHideOnKeyboard: true,
         }}
-      />
-      <Tabs.Screen
-        name="quiz"
-        options={{
-          title: 'Quiz',
-          tabBarButton: (props) => (
-            <BoutonOnglet {...props} icone="bulb" label="Quiz" />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="don"
-        options={{
-          title: 'Don',
-          tabBarButton: (props) => <BoutonDon {...props} />,
-        }}
-        // 📖 Chaque onglet garde son propre historique de navigation. Sans ce
-        // listener, revenir sur Don après un détour par Accueil réaffiche
-        // l'écran où on s'était arrêté (ex : le résultat du questionnaire) au
-        // lieu du hub Don. On force donc le retour à "index" à chaque appui.
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            navigation.navigate('don', { screen: 'index' });
-          },
-        })}
-      />
-      <Tabs.Screen
-        name="cartes"
-        options={{
-          title: 'Cartes',
-          tabBarButton: (props) => (
-            <BoutonOnglet {...props} icone="albums" label="Cartes" />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profil"
-        options={{
-          title: 'Profil',
-          // 📖 Chaque onglet garde son historique, donc revenir sur Profil
-          // réaffichait la dernière sous-page ouverte (ex. Mes badges). En quittant
-          // l'onglet (autre onglet, ou avatar de l'en-tête au retour), on referme
-          // ses sous-pages. Une page ouverte par-dessus les onglets (ex. changer de
-          // mot de passe) ne compte pas : son retour ramène où on était.
-          popToTopOnBlur: true,
-          tabBarButton: (props) => (
-            <BoutonOnglet {...props} icone="person-circle" label="Profil" />
-          ),
-        }}
-        // 📖 Appui sur Profil alors qu'on est DÉJÀ dans l'onglet (ex. sur Mes badges) :
-        // popToTopOnBlur ne joue pas (on ne quitte pas l'onglet), et le retour au
-        // début de la pile prévu par React Navigation ne se déclenche pas avec nos
-        // boutons personnalisés. Même solution que pour Don : on y va explicitement.
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            navigation.navigate('profil', { screen: 'index' });
-          },
-        })}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Accueil',
+            tabBarButton: (props) => (
+              <BoutonOnglet {...props} icone="home" label="Accueil" />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="quiz"
+          options={{
+            title: 'Quiz',
+            tabBarButton: (props) => (
+              <BoutonOnglet {...props} icone="bulb" label="Quiz" />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="don"
+          options={{
+            title: 'Don',
+            tabBarButton: (props) => <BoutonDon {...props} />,
+          }}
+          // 📖 Chaque onglet garde son propre historique de navigation. Sans ce
+          // listener, revenir sur Don après un détour par Accueil réaffiche
+          // l'écran où on s'était arrêté (ex : le résultat du questionnaire) au
+          // lieu du hub Don. On force donc le retour à "index" à chaque appui.
+          listeners={({ navigation }) => ({
+            tabPress: (e) => {
+              e.preventDefault();
+              navigation.navigate('don', { screen: 'index' });
+            },
+          })}
+        />
+        <Tabs.Screen
+          name="cartes"
+          options={{
+            title: 'Cartes',
+            tabBarButton: (props) => (
+              <BoutonOnglet {...props} icone="albums" label="Cartes" />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profil"
+          options={{
+            title: 'Profil',
+            // 📖 Chaque onglet garde son historique, donc revenir sur Profil
+            // réaffichait la dernière sous-page ouverte (ex. Mes badges). En quittant
+            // l'onglet (autre onglet, ou avatar de l'en-tête au retour), on referme
+            // ses sous-pages. Une page ouverte par-dessus les onglets (ex. changer de
+            // mot de passe) ne compte pas : son retour ramène où on était.
+            popToTopOnBlur: true,
+            tabBarButton: (props) => (
+              <BoutonOnglet {...props} icone="person-circle" label="Profil" />
+            ),
+          }}
+          // 📖 Appui sur Profil alors qu'on est DÉJÀ dans l'onglet (ex. sur Mes badges) :
+          // popToTopOnBlur ne joue pas (on ne quitte pas l'onglet), et le retour au
+          // début de la pile prévu par React Navigation ne se déclenche pas avec nos
+          // boutons personnalisés. Même solution que pour Don : on y va explicitement.
+          listeners={({ navigation }) => ({
+            tabPress: (e) => {
+              e.preventDefault();
+              navigation.navigate('profil', { screen: 'index' });
+            },
+          })}
+        />
+      </Tabs>
+      <PopupBadge badge={badge} onFermer={fermer} />
+    </>
   );
 }
 

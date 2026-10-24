@@ -122,3 +122,16 @@ export const CATEGORIE_LABEL: Record<CategorieBadge, string> = {
 };
 
 export const CATEGORIES_FILTRE: CategorieBadge[] = ['dons', 'cartes', 'quiz', 'parrainage', 'defis'];
+
+// 📖 Repli si un badge existe en base (BO) mais pas encore dans BADGES_INFO : les écrans
+//    affichent quand même quelque chose de cohérent plutôt qu'un `undefined` qui plante
+//    l'accès à `info.categorie`.
+const INFO_PAR_DEFAUT: BadgeInfo = {
+  emoji: '🏅',
+  categorie: 'dons',
+  description: 'Un nouveau badge à découvrir.',
+  condition: 'Continue à utiliser Aïma pour le débloquer.',
+};
+
+/** Infos locales d'un badge d'après son nom en base (écran Badges, popup de félicitations). */
+export const infoBadge = (nom: string): BadgeInfo => BADGES_INFO[nom] ?? INFO_PAR_DEFAUT;
