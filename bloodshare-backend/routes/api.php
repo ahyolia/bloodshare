@@ -58,6 +58,7 @@ Route::middleware(['auth:sanctum', RefuseCompteBloque::class, MetAJourDerniereAc
     Route::get('/dons', [DonController::class, 'index']);
     Route::get('/cartes', [CarteController::class, 'index']);
     Route::get('/badges', [BadgeController::class, 'index']);
+    Route::get('/badges/a-feter', [BadgeController::class, 'aFeter']);
     Route::get('/points/historique', [PointsController::class, 'index']);
     Route::get('/parrainage/code', [ParrainageController::class, 'index']);
 
