@@ -78,7 +78,7 @@ export default function RootLayout() {
       //    vers le login au lieu de rester bloqué sur l'écran de chargement.
       .catch((error) => {
         if (__DEV__)
-          console.warn("[auth] lecture du token impossible :", error);
+          console.warn("[auth] lecture du token impossible :", error);
         return null;
       })
       .then(async (token) => {

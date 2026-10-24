@@ -33,7 +33,7 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
           <Ionicons name="checkmark" size={30} color={Colors.aubergine} />
         </View>
 
-        <Text style={styles.titre}>Tu sembles éligible !</Text>
+        <Text style={styles.titre}>Tu sembles éligible !</Text>
         <Text style={styles.texte}>
           {"D'après tes réponses, rien ne semble t'empêcher de donner ton sang. Seul le " +
             'personnel du CHT peut confirmer ton éligibilité le jour du don.'}
@@ -72,7 +72,7 @@ export function ResultatView({ resultat, onRecommencer }: Props) {
 
         {dateFormatee && (
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Tu pourrais donner à partir du :</Text>
+            <Text style={styles.cardLabel}>Tu pourrais donner à partir du :</Text>
             <Text style={styles.cardDate}>{dateFormatee}</Text>
           </View>
         )}

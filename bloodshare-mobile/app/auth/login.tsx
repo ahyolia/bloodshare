@@ -46,7 +46,7 @@ export default function LoginScreen() {
     } catch (error: any) {
       // 📖 Jamais l'objet d'erreur entier : il contient la requête envoyée, donc l'email
       //    et le mot de passe en clair (audit RGPD). Le statut suffit pour déboguer.
-      if (__DEV__) console.warn('[auth] connexion échouée :', error.response?.status ?? error.message);
+      if (__DEV__) console.warn('[auth] connexion échouée :', error.response?.status ?? error.message);
 
       if (error.response) {
         // 📖 403 : compte suspendu, le message vient de l'API.
@@ -132,11 +132,11 @@ export default function LoginScreen() {
           onPress={() => router.push('/auth/mot-de-passe-oublie')}
           style={styles.linkContainer}
         >
-          <Text style={styles.linkText}>Mot de passe oublié ?</Text>
+          <Text style={styles.linkText}>Mot de passe oublié ?</Text>
         </Pressable>
 
         <Pressable onPress={() => router.push('/auth/register')} style={styles.linkContainerSecond}>
-          <Text style={styles.linkText}>{"Pas encore de compte ? S'inscrire"}</Text>
+          <Text style={styles.linkText}>{"Pas encore de compte ? S'inscrire"}</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>

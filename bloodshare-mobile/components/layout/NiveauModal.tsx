@@ -34,7 +34,7 @@ export function NiveauModal({ visible, onClose, profil }: NiveauModalProps) {
           <Text style={styles.progressionLabel}>
             {niveau.points_prochain_niveau !== null
               ? `${profil.points_cumules}/${niveau.points_prochain_niveau}`
-              : 'Niveau maximum atteint ! 🎉'}
+              : 'Niveau maximum atteint ! 🎉'}
           </Text>
 
           <View style={styles.progressTrack}>
@@ -42,7 +42,7 @@ export function NiveauModal({ visible, onClose, profil }: NiveauModalProps) {
           </View>
 
           <View style={styles.infoCard}>
-            <Text style={styles.infoTitre}>Comment gagner des points ?</Text>
+            <Text style={styles.infoTitre}>Comment gagner des points ?</Text>
             <Text style={styles.infoItem}>• Faire les quiz</Text>
             {/* 📖 Pas de « défi du mois » ici : y participer, c'est donner, et un don ne
                 rapporte jamais de points (règle éthique ADSB-NC). */}

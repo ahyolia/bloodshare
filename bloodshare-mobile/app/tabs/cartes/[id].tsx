@@ -105,7 +105,7 @@ export default function CarteDetailScreen() {
         {categorie === 'mois_don' && carte.obtenue && (
           <>
             <Text style={styles.donText}>Tu as donné ton sang ce mois-ci</Text>
-            <Text style={styles.merciText}>Merci beaucoup pour ton action !</Text>
+            <Text style={styles.merciText}>Merci beaucoup pour ton action !</Text>
           </>
         )}
 
