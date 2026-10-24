@@ -105,6 +105,48 @@ describe('client api', () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
+  // 📖 Le serveur de démo (Apache, dossier utilisateur) refuse PUT/PATCH/DELETE en 403
+  //    avant Laravel : ces requêtes partent en POST, la vraie méthode dans l'en-tête.
+  it.each([
+    ['put', 'PUT'],
+    ['patch', 'PATCH'],
+    ['delete', 'DELETE'],
+  ] as const)('envoie un %s en POST avec X-HTTP-Method-Override', async (methode, attendu) => {
+    mockGetToken.mockResolvedValue('token');
+    adaptateur.mockImplementation(repondre(200));
+
+    await api[methode]('/notifications/lues');
+
+    const config = adaptateur.mock.calls[0][0] as InternalAxiosRequestConfig;
+    expect(config.method).toBe('post');
+    expect((config.headers as AxiosHeaders).get('X-HTTP-Method-Override')).toBe(attendu);
+  });
+
+  it('garde le corps de la requête, y compris celui d’un DELETE', async () => {
+    mockGetToken.mockResolvedValue('token');
+    adaptateur.mockImplementation(repondre(200));
+
+    await api.put('/me', { pseudo: 'Lune' });
+    await api.delete('/notifications/subscription', { data: { endpoint: 'https://fcm.example/x' } });
+
+    const [put, del] = adaptateur.mock.calls.map((c) => c[0] as InternalAxiosRequestConfig);
+    expect(JSON.parse(put.data)).toEqual({ pseudo: 'Lune' });
+    expect(JSON.parse(del.data)).toEqual({ endpoint: 'https://fcm.example/x' });
+  });
+
+  it('laisse GET et POST tels quels', async () => {
+    mockGetToken.mockResolvedValue('token');
+    adaptateur.mockImplementation(repondre(200));
+
+    await api.get('/me');
+    await api.post('/scan', {});
+
+    for (const [config] of adaptateur.mock.calls as [InternalAxiosRequestConfig][]) {
+      expect((config.headers as AxiosHeaders).has('X-HTTP-Method-Override')).toBe(false);
+    }
+    expect(adaptateur.mock.calls.map((c) => c[0].method)).toEqual(['get', 'post']);
+  });
+
   it('garde la session sur une autre erreur (ex. 422)', async () => {
     mockGetToken.mockResolvedValue('token');
     adaptateur.mockImplementation(repondre(422));

@@ -21,6 +21,13 @@ const api = axios.create({
 //    elles reviennent toutes en 401. On ne redirige qu'une fois, jusqu'à la reconnexion.
 let redirectionVersLogin = false;
 
+// 📖 Le serveur de démo (Apache, dossier utilisateur sous Debian) n'autorise que GET,
+//    POST et OPTIONS : un PUT ou un DELETE y est refusé en 403 avant d'atteindre Laravel
+//    (profil, suppression de compte, notifications lues, progression des quiz). Ces
+//    requêtes partent donc en POST, la vraie méthode dans X-HTTP-Method-Override, que
+//    Laravel lit nativement : rien ne change côté routes, et ça marche partout.
+const METHODES_SURCHARGEES = ['put', 'patch', 'delete'];
+
 // Intercepteur requête : ajoute le token automatiquement
 api.interceptors.request.use(async (config) => {
   const token = await getToken();
@@ -28,6 +35,12 @@ api.interceptors.request.use(async (config) => {
     config.headers.Authorization = `Bearer ${token}`;
     // Une requête repart avec un token : l'utilisateur s'est reconnecté.
     redirectionVersLogin = false;
+  }
+
+  const methode = config.method?.toLowerCase();
+  if (methode && METHODES_SURCHARGEES.includes(methode)) {
+    config.headers['X-HTTP-Method-Override'] = methode.toUpperCase();
+    config.method = 'post';
   }
   return config;
 });

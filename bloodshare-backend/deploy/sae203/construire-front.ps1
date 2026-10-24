@@ -7,14 +7,23 @@
 # l'ANSI et affiche les accents de travers.
 #
 # Produit Téléchargements\aima-dist-sae203 (dossier) et aima-dist-sae203.zip. Voir DEVOPS.md, section 6.
+#
+# Avec -Secours : build du plan B, branché sur le backend de secours exposé par ngrok
+# (deploy/secours/), produit sous le nom aima-dist-secours pour ne pas le confondre.
+# L'adresse du tunnel est lue dans SECOURS_URL de .env.production (hors du dépôt) ;
+# -UrlSecours <adresse> la remplace pour un autre tunnel.
+param(
+    [switch] $Secours,
+    [string] $UrlSecours
+)
 $ErrorActionPreference = 'Stop'
 
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
 $mobile = Join-Path $repo 'bloodshare-mobile'
 $envProd = Join-Path $repo 'bloodshare-backend\.env.production'
-$sortie = Join-Path ([Environment]::GetFolderPath('UserProfile')) 'Downloads\aima-dist-sae203'
+$nom = if ($Secours) { 'aima-dist-secours' } else { 'aima-dist-sae203' }
+$sortie = Join-Path ([Environment]::GetFolderPath('UserProfile')) "Downloads\$nom"
 $zip = "$sortie.zip"
-$api = 'https://sae203.hopto.org/~cameliaa/api'
 
 function Lire-Variable($nom) {
     $ligne = Select-String -Path $envProd -Pattern "^$nom=(.+)$"
@@ -23,6 +32,11 @@ function Lire-Variable($nom) {
 }
 
 if (-not (Test-Path $envProd)) { throw "$envProd introuvable : la clé VAPID publique en vient." }
+
+if ($Secours -and -not $UrlSecours) { $UrlSecours = Lire-Variable 'SECOURS_URL' }
+$api = if ($Secours) { "$($UrlSecours.TrimEnd('/'))/api" } else { 'https://sae203.hopto.org/~cameliaa/api' }
+Write-Host "▶ Front branché sur $api"
+
 $vapidPublique = Lire-Variable 'VAPID_PUBLIC_KEY'
 $vapidPrivee = Lire-Variable 'VAPID_PRIVATE_KEY'
 
