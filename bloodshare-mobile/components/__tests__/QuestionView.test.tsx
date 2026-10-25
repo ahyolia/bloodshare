@@ -2,6 +2,13 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { QUESTIONS } from '../../constants/eligibilite';
 import { QuestionView } from '../eligibilite/QuestionView';
 
+// En-tête de sous-page et animations : simulés hors de l'app.
+jest.mock('expo-router', () => ({ useRouter: () => ({ back: jest.fn(), canGoBack: () => true }), usePathname: () => '/' }));
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
+
 const afficher = async (peutRevenirArriere: boolean) => {
   const actions = { onRepondre: jest.fn(), onRetour: jest.fn(), onQuitter: jest.fn() };
   await render(

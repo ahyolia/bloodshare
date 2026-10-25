@@ -38,12 +38,12 @@ describe('useEligibilite', () => {
     expect(result.current.resultat).toEqual({ statut: 'eligible' });
   });
 
-  it("s'arrête sur un délai avec le motif de la question, sans verdict définitif", async () => {
+  it("s'arrête sur la réponse bloquante, avec la question, sans verdict définitif", async () => {
     const { result } = await renderHook(() => useEligibilite());
 
     await act(() => result.current.repondre('non')); // moins de 18 ou plus de 70 ans
 
-    expect(result.current.resultat).toEqual({ statut: 'delai', motif: QUESTIONS[0].motif });
+    expect(result.current.resultat).toEqual({ statut: 'bloque', question: QUESTIONS[0], reponse: 'non' });
   });
 
   it('renvoie vers le Don du Sang sur « Je ne sais pas »', async () => {
@@ -52,7 +52,7 @@ describe('useEligibilite', () => {
 
     await act(() => result.current.repondre('ne_sait_pas'));
 
-    expect(result.current.resultat).toEqual({ statut: 'a_verifier', question: QUESTIONS[1].texte });
+    expect(result.current.resultat).toEqual({ statut: 'a_verifier', question: QUESTIONS[1] });
   });
 
   it("pose la question de l'alcool et de la drogue sur 72 heures, avec un délai et non un refus définitif", async () => {
@@ -64,7 +64,7 @@ describe('useEligibilite', () => {
     expect(result.current.questionActuelle.texte).toMatch(/alcool.*drogue.*72/);
     await act(() => result.current.repondre('oui'));
 
-    expect(result.current.resultat).toMatchObject({ statut: 'delai' });
+    expect(result.current.resultat).toMatchObject({ statut: 'bloque', question: { nature: 'delai' } });
   });
 
   it('revient à la question précédente', async () => {
@@ -120,6 +120,15 @@ describe('reprise du questionnaire', () => {
     await act(() => result.current.repondre('non'));
 
     expect(questionnaireEnCours()).toBeNull();
+  });
+
+  it('reste en cours après « Je ne sais pas », pour reprendre à cette question', async () => {
+    const { result } = await renderHook(() => useEligibilite());
+    await act(() => result.current.repondre(favorable(0)));
+
+    await act(() => result.current.repondre('ne_sait_pas'));
+
+    expect(questionnaireEnCours()).toEqual({ numero: 2, total: TOTAL_QUESTIONS });
   });
 
   it("n'est pas en cours tant qu'aucune question n'a été répondue", async () => {

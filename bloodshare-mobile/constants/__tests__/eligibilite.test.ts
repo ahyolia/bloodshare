@@ -26,11 +26,16 @@ describe('resultatPour', () => {
     expect(resultatPour(age, 'oui')).toBeNull();
   });
 
-  it('annonce un délai avec le motif sur la réponse bloquante', () => {
-    expect(resultatPour(age, 'non')).toEqual({ statut: 'delai', motif: age.motif });
+  it("s'arrête sur la réponse bloquante, avec la question (et donc son motif)", () => {
+    expect(resultatPour(age, 'non')).toEqual({ statut: 'bloque', question: age, reponse: 'non' });
   });
 
   it('renvoie vers le Don du Sang sur « Je ne sais pas »', () => {
-    expect(resultatPour(age, 'ne_sait_pas')).toEqual({ statut: 'a_verifier', question: age.texte });
+    expect(resultatPour(age, 'ne_sait_pas')).toEqual({ statut: 'a_verifier', question: age });
+  });
+
+  it('classe chaque question : délai, critère de base ou avis médical', () => {
+    expect(QUESTIONS.filter((q) => q.nature === 'critere').map((q) => q.id)).toEqual([1, 2]);
+    expect(QUESTIONS.filter((q) => q.nature === 'medecin').map((q) => q.id)).toEqual([7, 8, 9]);
   });
 });

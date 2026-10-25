@@ -22,9 +22,10 @@ export function useEligibilite() {
   const [resultat, setResultat] = useState<ResultatEligibilite | null>(null);
 
   // 📖 Un questionnaire terminé n'est plus « en cours » : la page Don proposera de le
-  //    refaire, pas de le reprendre.
+  //    refaire. Sauf après « Je ne sais pas » : on garde les réponses données, pour
+  //    reprendre à cette question une fois l'information vérifiée.
   useEffect(() => {
-    if (resultat) effacerQuestionnaire();
+    if (resultat && resultat.statut !== 'a_verifier') effacerQuestionnaire();
     else enregistrerQuestionnaire(reponses);
   }, [reponses, resultat]);
 
