@@ -60,6 +60,37 @@ class QuizContenuSeeder extends Seeder
         }
     }
 
+    /**
+     * Relie aux fiches les questions des quiz déjà en base : run() ne recrée jamais un
+     * quiz existant, donc ses liens ne bougeraient plus. Appelé par FichesPratiquesSeeder
+     * une fois les fiches publiées. Une question sans fiche prévue garde son lien actuel
+     * (il a pu être posé à la main dans le backoffice).
+     */
+    public static function relierFiches(): int
+    {
+        $relies = 0;
+
+        foreach (self::quiz() as $donnees) {
+            $quiz = Quiz::where('titre', $donnees['titre'])->first();
+            if (! $quiz) {
+                continue;
+            }
+
+            foreach ($donnees['questions'] as $donneesQuestion) {
+                $ficheId = self::ficheId($donneesQuestion['fiche'] ?? null);
+                if ($ficheId === null) {
+                    continue;
+                }
+
+                $relies += $quiz->questions()
+                    ->where('intitule', $donneesQuestion['intitule'])
+                    ->update(['contenu_id' => $ficheId]);
+            }
+        }
+
+        return $relies;
+    }
+
     // 📖 Fiche liée retrouvée par son titre (les ids diffèrent d'un environnement à
     //    l'autre). Absente ou non publiée → pas de lien, à faire dans le backoffice.
     private static function ficheId(?string $titre): ?int
@@ -102,6 +133,7 @@ class QuizContenuSeeder extends Seeder
                         'intitule' => "J'ai bu de l'alcool hier soir. Puis-je donner mon sang aujourd'hui ?",
                         'reponses' => ['Oui' => false, 'Non' => true],
                         'explication' => "Non. Le Centre de don du sang demande de ne pas boire d'alcool dans les 72 heures (3 jours) avant le don. Cela protège ta santé et celle de la personne qui recevra ton sang.",
+                        'fiche' => 'Les délais à respecter',
                     ],
                     [
                         'intitule' => 'Parmi ces situations, lesquelles empêchent de donner son sang pour le moment ?',
@@ -113,12 +145,13 @@ class QuizContenuSeeder extends Seeder
                             'Une vieille cicatrice, bien refermée' => false,
                         ],
                         'explication' => "Une plaie, un furoncle ou une infection de la peau doivent être complètement guéris avant le don, même s'ils sont petits (une égratignure qui suinte, une griffure qui s'infecte…). Une ancienne cicatrice bien refermée ne pose aucun problème.",
-                        'fiche' => 'Qui peut donner son sang ?',
+                        'fiche' => 'Les délais à respecter',
                     ],
                     [
                         'intitule' => 'Peut-on donner son sang pendant ses règles ?',
                         'reponses' => ['Oui' => true, 'Non' => false],
                         'explication' => "Oui, les règles n'empêchent pas de donner. Si elles sont abondantes ou te fatiguent, choisis plutôt un jour où tu te sens en forme.",
+                        'fiche' => 'Qui peut donner son sang ?',
                     ],
                     [
                         'intitule' => "Tu as de la fièvre et tu tousses depuis hier. Peux-tu donner ton sang aujourd'hui ?",
@@ -127,6 +160,7 @@ class QuizContenuSeeder extends Seeder
                             "Non, il faut attendre d'être complètement guéri" => true,
                         ],
                         'explication' => 'La fièvre montre que ton corps combat une infection. Après une fièvre, une grippe, une gastro-entérite ou une infection, il faut attendre 15 jours après la disparition complète des symptômes avant de donner.',
+                        'fiche' => 'Les délais à respecter',
                     ],
                 ],
             ],
@@ -139,21 +173,25 @@ class QuizContenuSeeder extends Seeder
                         'intitule' => 'Une personne qui a déjà reçu une transfusion sanguine peut-elle donner son sang ?',
                         'reponses' => ['Oui' => false, 'Non' => true],
                         'explication' => "Non. Les personnes qui ont reçu une transfusion ou une greffe ne peuvent pas donner leur sang. C'est une précaution pour ne pas transmettre, sans le savoir, une maladie qui n'aurait pas été détectée.",
+                        'fiche' => 'Qui peut donner son sang ?',
                     ],
                     [
                         'intitule' => 'Une femme enceinte peut donner son sang si elle se sent en forme.',
                         'reponses' => ['Vrai' => false, 'Faux' => true],
                         'explication' => "Faux. Pendant la grossesse, le corps a besoin de toutes ses réserves, notamment en fer, pour la mère et le bébé. Le don est impossible pendant la grossesse et dans les 6 mois qui suivent l'accouchement.",
+                        'fiche' => 'Les délais à respecter',
                     ],
                     [
                         'intitule' => 'Combien de temps faut-il attendre après un tatouage ou un piercing pour donner son sang ?',
                         'reponses' => ['15 jours' => false, '2 mois' => true, '6 mois' => false],
                         'explication' => "2 mois. Même dans un salon très propre, il existe un petit risque d'attraper un virus. Ce délai permet de vérifier que ce n'est pas le cas. Il peut évoluer avec les progrès des tests de dépistage.",
+                        'fiche' => 'Les délais à respecter',
                     ],
                     [
                         'intitule' => 'Après une opération chirurgicale, combien de temps faut-il attendre avant de donner ?',
                         'reponses' => ['1 mois' => false, '2 mois' => false, '4 mois' => true],
                         'explication' => "4 mois. Une opération peut laisser entrer des bactéries ou des virus dans le corps. Ce délai permet de vérifier qu'aucune infection ne s'est développée. Il peut évoluer avec les progrès des tests de dépistage.",
+                        'fiche' => 'Les délais à respecter',
                     ],
                     [
                         'intitule' => 'Parmi ces antécédents médicaux, lesquels empêchent de donner son sang ?',
@@ -165,6 +203,7 @@ class QuizContenuSeeder extends Seeder
                             'Une entorse de la cheville il y a 2 ans' => false,
                         ],
                         'explication' => "Les antécédents cardiaques ou neurologiques, comme l'infarctus, l'AVC ou les troubles du rythme cardiaque, empêchent le don : il pourrait être dangereux pour toi. Une ancienne entorse n'a aucun impact. En cas de doute, demande au personnel médical du Centre.",
+                        'fiche' => 'Qui peut donner son sang ?',
                     ],
                 ],
             ],
@@ -183,6 +222,7 @@ class QuizContenuSeeder extends Seeder
                         'intitule' => 'Être en surpoids empêche-t-il de donner son sang ?',
                         'reponses' => ['Oui, toujours' => false, 'Non, pas en soi' => true],
                         'explication' => "Non. Il y a un poids minimum (50 kg), mais pas de poids maximum. Le surpoids ou un cholestérol surveillé n'empêchent pas le don en eux-mêmes. Le jour du don, un entretien avec un médecin vérifie que tu peux donner en toute sécurité.",
+                        'fiche' => 'Qui peut donner son sang ?',
                     ],
                     [
                         'intitule' => "Ton retour d'un voyage dans une zone impaludée (une région où le paludisme est présent) date d'il y a 3 mois. Peux-tu donner ton sang aujourd'hui ?",
@@ -193,6 +233,7 @@ class QuizContenuSeeder extends Seeder
                             "Oui, si je n'ai eu aucun symptôme" => false,
                         ],
                         'explication' => "Il faut attendre 4 mois après le retour d'une zone impaludée. Le paludisme est une maladie transmise par certains moustiques. Elle peut passer par le sang, même sans symptômes.",
+                        'fiche' => 'Voyages et zones impaludées',
                     ],
                     [
                         'intitule' => "Avoir consommé de la drogue par injection, même une seule fois, empêche-t-il de donner son sang ?",
@@ -202,11 +243,13 @@ class QuizContenuSeeder extends Seeder
                             "Non, si c'était il y a longtemps" => false,
                         ],
                         'explication' => "Oui. Avoir consommé de la drogue par injection, même une seule fois, empêche définitivement de donner son sang, à cause du risque de maladies qui se transmettent par le sang (comme l'hépatite ou le VIH).",
+                        'fiche' => 'Qui peut donner son sang ?',
                     ],
                     [
                         'intitule' => 'Une personne qui a eu un seul partenaire sexuel au cours des 4 derniers mois peut donner son sang.',
                         'reponses' => ['Vrai' => true, 'Faux' => false],
                         'explication' => "Vrai. Ce qui empêche le don pendant 4 mois, c'est d'avoir eu plus d'un partenaire sexuel sur cette période, même avec des rapports protégés.",
+                        'fiche' => 'Les délais à respecter',
                     ],
                 ],
             ],
@@ -233,6 +276,7 @@ class QuizContenuSeeder extends Seeder
                         'intitule' => 'En Nouvelle-Calédonie, les réserves de sang sont largement suffisantes.',
                         'reponses' => ['Vrai' => false, 'Faux' => true],
                         'explication' => "Faux. Les besoins sont importants en Nouvelle-Calédonie, notamment à cause des nombreux accidents de la route. Il n'y a jamais trop de sang en réserve : chaque don compte.",
+                        'fiche' => 'Pourquoi donner régulièrement ?',
                     ],
                     [
                         'intitule' => 'Faut-il obligatoirement prendre rendez-vous pour donner son sang ?',
@@ -242,6 +286,7 @@ class QuizContenuSeeder extends Seeder
                             "Non, mais c'est conseillé" => true,
                         ],
                         'explication' => "Ce n'est pas obligatoire, mais c'est conseillé pour éviter d'attendre. Tu peux prendre rendez-vous sur le site internet du Centre de don du sang de Nouvelle-Calédonie.",
+                        'fiche' => 'Que faire avant de donner son sang ?',
                     ],
                     [
                         'intitule' => 'Quels sont les principaux composants du sang ?',
@@ -254,6 +299,7 @@ class QuizContenuSeeder extends Seeder
                             'Du sirop de grenadine' => false,
                         ],
                         'explication' => "Le sang est composé de plasma (la partie liquide), de globules rouges (qui transportent l'oxygène), de globules blancs (qui défendent le corps contre les infections) et de plaquettes (qui aident à arrêter les saignements).",
+                        'fiche' => 'Les différents groupes sanguins',
                     ],
                 ],
             ],
@@ -266,6 +312,7 @@ class QuizContenuSeeder extends Seeder
                         'intitule' => 'Combien de poches de sang sont utilisées chaque semaine en Nouvelle-Calédonie ?',
                         'reponses' => ['Entre 50 et 80' => false, 'Entre 80 et 130' => false, 'Entre 130 et 150' => true],
                         'explication' => "Entre 130 et 150 poches de sang sont utilisées chaque semaine, pour les naissances, les accidents ou les opérations. Pour suivre ce rythme, il faut des donneurs toute l'année.",
+                        'fiche' => 'Pourquoi donner régulièrement ?',
                     ],
                     [
                         'intitule' => "Quelle quantité de sang est prélevée lors d'un don ?",
@@ -287,6 +334,7 @@ class QuizContenuSeeder extends Seeder
                         'intitule' => 'Peux-tu savoir qui a reçu ton sang ?',
                         'reponses' => ['Oui' => false, 'Non' => true],
                         'explication' => "Non. Le don du sang est anonyme dans les deux sens : le receveur ne sait pas qui a donné, et le donneur ne sait pas qui a reçu. C'est l'un des grands principes du don, avec le bénévolat et la gratuité.",
+                        'fiche' => 'Comment se déroule un don de sang ?',
                     ],
                     [
                         'intitule' => 'Pourquoi le don du sang est-il important ?',
@@ -297,7 +345,7 @@ class QuizContenuSeeder extends Seeder
                             'Pour le biscuit offert après le don' => false,
                         ],
                         'explication' => "Les dons servent à soigner les patients qui ont besoin d'une transfusion : opérations, maladies, accidents, accouchements… Le biscuit, c'est juste un bonus !",
-                        'fiche' => 'Les bienfaits du don de sang',
+                        'fiche' => 'Pourquoi donner régulièrement ?',
                     ],
                 ],
             ],
@@ -337,6 +385,7 @@ class QuizContenuSeeder extends Seeder
                             'Seulement quand le sang est rare' => false,
                         ],
                         'explication' => 'Oui. Un don de sang est séparé en globules rouges, plasma et plaquettes. Un seul don peut ainsi aider plusieurs patients !',
+                        'fiche' => 'Comment se déroule un don de sang ?',
                     ],
                     [
                         'intitule' => 'Pourquoi faut-il donner son sang régulièrement ?',
@@ -347,6 +396,7 @@ class QuizContenuSeeder extends Seeder
                             'Pour toutes ces raisons' => true,
                         ],
                         'explication' => "Les besoins existent toute l'année, les produits sanguins ne se conservent que peu de temps (quelques jours pour les plaquettes, quelques semaines pour les globules rouges) et on ne sait pas fabriquer du sang artificiellement. Les dons réguliers sont donc indispensables.",
+                        'fiche' => 'Pourquoi donner régulièrement ?',
                     ],
                     [
                         'intitule' => 'Combien de temps dure le prélèvement lui-même ?',
@@ -371,6 +421,7 @@ class QuizContenuSeeder extends Seeder
                             'Réservé aux professionnels de santé' => false,
                         ],
                         'explication' => "Le don du sang est bénévole, gratuit et anonyme : personne n'est payé pour donner. C'est un geste solidaire !",
+                        'fiche' => 'Pourquoi donner régulièrement ?',
                     ],
                     [
                         'intitule' => 'Où peut-on aussi organiser des collectes de sang ?',
@@ -401,6 +452,7 @@ class QuizContenuSeeder extends Seeder
                             'Toute la région Pacifique' => false,
                         ],
                         'explication' => 'Le Centre de don du sang a pour mission de fournir assez de produits sanguins pour la Nouvelle-Calédonie et Wallis-et-Futuna.',
+                        'fiche' => 'Pourquoi donner régulièrement ?',
                     ],
                     [
                         'intitule' => "Parmi ces événements, lesquels sont organisés ou soutenus par l'ADSB-NC ?",
@@ -454,7 +506,7 @@ class QuizContenuSeeder extends Seeder
                             'Rien, tu repars aussitôt' => false,
                         ],
                         'explication' => "Après le prélèvement, tu te reposes une dizaine de minutes, puis une collation t'est offerte pour reprendre des forces.",
-                        'fiche' => 'Comment se déroule un don de sang ?',
+                        'fiche' => 'Après le don : bien récupérer',
                     ],
                     [
                         'intitule' => 'Quels établissements reçoivent les produits sanguins du service de transfusion ?',
@@ -465,6 +517,7 @@ class QuizContenuSeeder extends Seeder
                             'Uniquement les cliniques privées' => false,
                         ],
                         'explication' => 'Le service de transfusion sanguine approvisionne tous les établissements de soins, publics et privés, de Nouvelle-Calédonie et de Wallis-et-Futuna.',
+                        'fiche' => 'Pourquoi donner régulièrement ?',
                     ],
                 ],
             ],
