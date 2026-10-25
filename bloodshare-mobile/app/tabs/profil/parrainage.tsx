@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     marginTop: Espace[6],
     padding: Espace[4],
     borderRadius: Rayon.lg,
-    backgroundColor: Theme.info.fond,
+    backgroundColor: Theme.info.surface,
   },
   notePastille: {
     width: 36,

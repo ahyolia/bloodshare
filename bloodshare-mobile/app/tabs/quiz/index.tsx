@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EnTete } from '../../../components/EnTete';
 import { BandeauQuiz } from '../../../components/quiz/BandeauQuiz';
 import { LigneQuiz } from '../../../components/quiz/LigneQuiz';
-import { TuileCategorie } from '../../../components/quiz/TuileCategorie';
+import { TuileCategorie } from '../../../components/ui/TuileCategorie';
 import { Bouton } from '../../../components/ui/Bouton';
 import { CarteChiffre } from '../../../components/ui/CarteChiffre';
 import { Chargement } from '../../../components/ui/Chargement';
@@ -12,6 +12,7 @@ import { EtatErreur } from '../../../components/ui/EtatErreur';
 import { EtatVide } from '../../../components/ui/EtatVide';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { entree } from '../../../constants/animations';
+import { apparenceCategorie } from '../../../constants/quiz';
 import { Theme } from '../../../constants/colors';
 import { Espace } from '../../../constants/spacing';
 import { Typo } from '../../../constants/typography';
@@ -19,6 +20,7 @@ import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues'
 import { useProfil } from '../../../hooks/useProfil';
 import { useRelanceOnglet } from '../../../hooks/useRelanceOnglet';
 import { CategorieQuiz, getQuizCategories, QuizItem } from '../../../services/quiz.service';
+import { compter } from '../../../utils/pluriel';
 import { initialePseudo } from '../../../utils/profil';
 import { premierQuizAFaire, progressionQuiz, quizAReprendre } from '../../../utils/quizAccueil';
 
@@ -151,8 +153,9 @@ export default function QuizScreen() {
                 {categories.map((cat) => (
                   <TuileCategorie
                     key={cat.categorie}
-                    categorie={cat.categorie}
-                    nbQuiz={cat.quiz.length}
+                    titre={cat.categorie}
+                    sousTitre={compter(cat.quiz.length, 'quiz')}
+                    {...apparenceCategorie(cat.categorie)}
                     selectionnee={cat.categorie === categorieAffichee?.categorie}
                     onPress={() => setCategorieChoisie(cat.categorie)}
                   />

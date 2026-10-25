@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.feedback.succesSurface,
   },
   explicationCardInfo: {
-    backgroundColor: Theme.info.fond,
+    backgroundColor: Theme.info.surface,
   },
   explicationEntete: {
     flexDirection: "row",

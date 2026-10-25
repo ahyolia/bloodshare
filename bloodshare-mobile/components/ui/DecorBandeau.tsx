@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { AccessibilityInfo, StyleSheet, type ViewStyle } from 'react-native';
+import { AccessibilityInfo, StyleSheet, View, type ViewStyle } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -27,7 +27,16 @@ const CERCLES: Cercle[] = [
   { style: { width: 34, height: 34, left: '55%', bottom: 18 }, couleur: Palette.petrole[500], opacite: 0.45, dx: 10, dy: -14, duree: 2800 },
 ];
 
-function CercleFlottant({ cercle }: { cercle: Cercle }) {
+// Gouttes du bandeau Don (le sang, sujet de la page), sur pétrole foncé : toutes en
+// corail. Transparence légère seulement : plus transparent, le corail se mélange au
+// pétrole (couleurs opposées) et vire au gris.
+const GOUTTES: Cercle[] = [
+  { style: { width: 150, height: 150, right: -36, bottom: -50 }, couleur: Palette.corail[500], opacite: 0.85, dx: -12, dy: -10, duree: 4400 },
+  { style: { width: 60, height: 60, right: 92, top: -14 }, couleur: Palette.corail[500], opacite: 0.85, dx: 14, dy: 12, duree: 3500 },
+  { style: { width: 30, height: 30, left: '56%', bottom: 16 }, couleur: Palette.corail[500], opacite: 0.85, dx: 8, dy: -12, duree: 2900 },
+];
+
+function CercleFlottant({ cercle, goutte }: { cercle: Cercle; goutte: boolean }) {
   const avancement = useSharedValue(0);
 
   useEffect(() => {
@@ -55,28 +64,57 @@ function CercleFlottant({ cercle }: { cercle: Cercle }) {
     transform: [{ translateX: avancement.value * cercle.dx }, { translateY: avancement.value * cercle.dy }],
   }));
 
+  if (goutte) {
+    // 📖 Goutte dessinée (pas l'icône, dont le reflet intérieur ressortait mal) : un
+    //    carré arrondi sauf un coin, tourné à 45° dans une vue intérieure pour ne pas
+    //    écraser l'animation de la vue extérieure.
+    const taille = Number(cercle.style.width);
+    return (
+      <Animated.View style={[styles.forme, cercle.style, { opacity: cercle.opacite }, style]}>
+        <View
+          style={[
+            styles.goutte,
+            { width: taille * 0.72, height: taille * 0.72, backgroundColor: cercle.couleur },
+          ]}
+        />
+      </Animated.View>
+    );
+  }
+
   return (
     <Animated.View
-      style={[styles.cercle, cercle.style, { backgroundColor: cercle.couleur, opacity: cercle.opacite }, style]}
+      style={[styles.forme, styles.cercle, cercle.style, { backgroundColor: cercle.couleur, opacity: cercle.opacite }, style]}
     />
   );
 }
 
-// 📖 Cercles de couleur du bandeau Quiz, qui flottent doucement. Décoratifs : ignorés des
+// 📖 Formes de couleur des bandeaux, qui flottent doucement : des cercles (Quiz) ou des
+//    gouttes (Don), pour que chaque page ait son caractère. Décoratives : ignorées des
 //    lecteurs d'écran, et immobiles si « Réduire les animations » est activé.
-export function DecorBandeau() {
+export function DecorBandeau({ forme = 'cercle' }: { forme?: 'cercle' | 'goutte' }) {
+  const formes = forme === 'goutte' ? GOUTTES : CERCLES;
   return (
     <>
-      {CERCLES.map((cercle, index) => (
-        <CercleFlottant key={index} cercle={cercle} />
+      {formes.map((cercle, index) => (
+        <CercleFlottant key={index} cercle={cercle} goutte={forme === 'goutte'} />
       ))}
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  cercle: {
+  forme: {
     position: 'absolute',
+  },
+  cercle: {
     borderRadius: Rayon.plein,
+  },
+  // Pointe vers le haut : le coin non arrondi, une fois tourné de 45°.
+  goutte: {
+    alignSelf: 'center',
+    marginTop: '15%',
+    borderRadius: Rayon.plein,
+    borderTopLeftRadius: 0,
+    transform: [{ rotate: '45deg' }],
   },
 });

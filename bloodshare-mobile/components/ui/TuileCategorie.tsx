@@ -1,17 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect } from 'react';
+import { useEffect, type ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Theme } from '../../constants/colors';
-import { apparenceCategorie } from '../../constants/quiz';
 import { Espace, Ombre, Rayon } from '../../constants/spacing';
-import { TEINTES_PASTILLE } from '../../constants/teintes';
+import { TEINTES_PASTILLE, type TeintePastille } from '../../constants/teintes';
 import { Typo } from '../../constants/typography';
-import { compter } from '../../utils/pluriel';
 
 type Props = {
-  categorie: string;
-  nbQuiz: number;
+  titre: string;
+  /** Sous le titre, ex. « 3 quiz » ou « 2 fiches ». */
+  sousTitre: string;
+  icone: ComponentProps<typeof Ionicons>['name'];
+  teinte: TeintePastille;
   selectionnee: boolean;
   onPress: () => void;
 };
@@ -19,12 +20,12 @@ type Props = {
 // Inclinaison de la tuile choisie, comme les cartes chiffres du Profil (≤ 3°).
 const INCLINAISON = -3;
 
-// 📖 Tuile de catégorie, dans une rangée qui défile à l'horizontale. La grande icône en
-//    bas à droite tient lieu d'illustration, en attendant des dessins dédiés.
+// 📖 Tuile de catégorie (quiz, fiches pratiques), dans une rangée qui défile à
+//    l'horizontale. La grande icône en bas à droite tient lieu d'illustration, en
+//    attendant des dessins dédiés.
 //    Sélection sans encadré : la tuile choisie pivote légèrement et se soulève, avec un
 //    ressort qui la fait un peu balancer (withSpring suit « Réduire les animations »).
-export function TuileCategorie({ categorie, nbQuiz, selectionnee, onPress }: Props) {
-  const { icone, teinte } = apparenceCategorie(categorie);
+export function TuileCategorie({ titre, sousTitre, icone, teinte, selectionnee, onPress }: Props) {
   const couleurs = TEINTES_PASTILLE[teinte];
   const actif = useSharedValue(selectionnee ? 1 : 0);
 
@@ -41,14 +42,14 @@ export function TuileCategorie({ categorie, nbQuiz, selectionnee, onPress }: Pro
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={`${categorie}, ${compter(nbQuiz, 'quiz')}`}
+        accessibilityLabel={`${titre}, ${sousTitre}`}
         accessibilityState={{ selected: selectionnee }}
         style={({ pressed }) => [styles.tuile, { backgroundColor: couleurs.fond }, pressed && styles.presse]}
       >
         <Text style={[Typo.corpsFort, styles.titre]} numberOfLines={2}>
-          {categorie}
+          {titre}
         </Text>
-        <Text style={[Typo.legende, styles.nombre]}>{compter(nbQuiz, 'quiz')}</Text>
+        <Text style={[Typo.legende, styles.nombre]}>{sousTitre}</Text>
         <View style={styles.illustration} accessible={false}>
           <Ionicons name={icone} size={52} color={couleurs.icone} />
         </View>
