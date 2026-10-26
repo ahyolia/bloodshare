@@ -22,9 +22,14 @@ class CarteController extends Controller
         $moisDon = $cartes->where('categorie', 'mois_don')->values();
         $moisDonObtenues = $moisDon->filter(fn ($carte) => $userCartes->has($carte->id));
 
-        $carteEvenement = $cartes->firstWhere('categorie', 'evenement');
+        // 📖 Toutes les cartes Événement : la générique et celles propres à un événement
+        //    (forum IUT...). La générique en premier.
+        $cartesEvenement = $cartes->where('categorie', 'evenement')
+            ->sortBy([['generique', 'desc'], ['id', 'asc']])
+            ->values();
         $carteParrain = $cartes->firstWhere('categorie', 'parrain');
         $carteFilleul = $cartes->firstWhere('categorie', 'filleul');
+        $carteFidele = $cartes->firstWhere('categorie', 'fidele');
 
         return response()->json([
             'mois_don' => [
@@ -38,13 +43,13 @@ class CarteController extends Controller
                 ])->values(),
             ],
             'evenement' => [
-                'carte' => $carteEvenement ? [
-                    'id' => $carteEvenement->id,
-                    'titre' => $carteEvenement->titre,
-                    'image_url' => $carteEvenement->image_url,
-                    'obtenue' => $userCartes->has($carteEvenement->id),
-                    'quantite' => $userCartes->get($carteEvenement->id)?->quantite ?? 0,
-                ] : null,
+                'cartes' => $cartesEvenement->map(fn ($carte) => [
+                    'id' => $carte->id,
+                    'titre' => $carte->titre,
+                    'image_url' => $carte->image_url,
+                    'obtenue' => $userCartes->has($carte->id),
+                    'quantite' => $userCartes->get($carte->id)?->quantite ?? 0,
+                ])->values(),
             ],
             'parrainage' => [
                 'carte_parrain' => $carteParrain ? [
@@ -60,6 +65,15 @@ class CarteController extends Controller
                     'image_url' => $carteFilleul->image_url,
                     'obtenue' => $userCartes->has($carteFilleul->id),
                     'quantite' => $userCartes->get($carteFilleul->id)?->quantite ?? 0,
+                ] : null,
+            ],
+            'fidelite' => [
+                'carte' => $carteFidele ? [
+                    'id' => $carteFidele->id,
+                    'titre' => $carteFidele->titre,
+                    'image_url' => $carteFidele->image_url,
+                    'obtenue' => $userCartes->has($carteFidele->id),
+                    'quantite' => $userCartes->get($carteFidele->id)?->quantite ?? 0,
                 ] : null,
             ],
         ]);

@@ -100,6 +100,8 @@ export default function CartesScreen() {
               carteParrain={cartes.parrainage.carte_parrain}
               carteFilleul={cartes.parrainage.carte_filleul}
             />
+            {/* ?. : un backend pas encore migré ne renvoie pas `fidelite`. */}
+            {cartes.fidelite?.carte && <FideliteSection carte={cartes.fidelite.carte} />}
           </>
         )}
       </ScrollView>
@@ -262,6 +264,29 @@ function ParrainageSection({
           onPress={() =>
             carteFilleul.obtenue &&
             router.push({ pathname: '/tabs/cartes/[id]', params: { id: carteFilleul.id } })
+          }
+        />
+      </ScrollView>
+    </View>
+  );
+}
+
+function FideliteSection({ carte }: { carte: CarteParrainage }) {
+  const router = useRouter();
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Fidélité</Text>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
+        <CarteSquare
+          titre={carte.titre}
+          imageUrl={carte.image_url}
+          obtenue={carte.obtenue}
+          quantite={carte.quantite}
+          placeholderIcon="⏳"
+          onPress={() =>
+            carte.obtenue && router.push({ pathname: '/tabs/cartes/[id]', params: { id: carte.id } })
           }
         />
       </ScrollView>

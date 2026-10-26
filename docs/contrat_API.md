@@ -272,6 +272,7 @@ _Authentifié._ Endpoint central — appelé après le scan d'un QR Code (centre
     "image_url": "...",
     "deja_possedee": false
   },
+  "carte_fidele": null,
   "badges_debloques": [
     {
       "id": 2,
@@ -281,6 +282,8 @@ _Authentifié._ Endpoint central — appelé après le scan d'un QR Code (centre
   ]
 }
 ```
+
+> `carte_fidele` : la carte Fidèle (`{ id, titre, categorie, image_url }`), donnée **en plus** de la carte du mois au premier don validé au moins un an après le tout premier don validé. `null` avant, et à tous les dons suivants (elle ne s'obtient qu'une fois).
 
 **Réponse 200 — succès (événement) :**
 
@@ -299,7 +302,7 @@ _Authentifié._ Endpoint central — appelé après le scan d'un QR Code (centre
 }
 ```
 
-> `quantite` indique le nombre total d'exemplaires de cette carte après ce scan (la carte "Événement" est générique en V1, donc cumulable).
+> `carte_obtenue` est la carte propre à l'événement si le BO en a choisi une (et qu'elle est active), sinon la carte Événement générique. `quantite` indique le nombre total d'exemplaires de cette carte après ce scan (cumulable d'un événement à l'autre).
 **Réponse 422 — don refusé (délai non respecté) :**
 
 ```json
@@ -359,15 +362,22 @@ Alimente l'onglet Cartes — renvoie la collection organisée par catégorie (mo
     ]
   },
   "evenement": {
-    "carte": { "id": 13, "titre": "Carte Événement", "image_url": "...", "obtenue": true, "quantite": 3 }
+    "cartes": [
+      { "id": 13, "titre": "Carte Événement", "image_url": "...", "obtenue": true, "quantite": 3 },
+      { "id": 16, "titre": "Carte Forum IUT", "image_url": "...", "obtenue": false, "quantite": 0 }
+    ]
   },
   "parrainage": {
     "carte_parrain": { "id": 14, "titre": "Carte Parrain", "image_url": "...", "obtenue": true, "quantite": 1 },
     "carte_filleul": { "id": 15, "titre": "Carte Filleul", "image_url": "...", "obtenue": false }
+  },
+  "fidelite": {
+    "carte": { "id": 17, "titre": "Carte Fidèle", "image_url": "...", "obtenue": false, "quantite": 0 }
   }
 }
 ```
 
+> `evenement.cartes` liste toutes les cartes Événement actives : la carte générique en premier, puis celles propres à un événement (ex. forum IUT), choisies dans le BO sur la fiche de l'événement.
 > Pas de notion de rareté — toutes les cartes sont équivalentes, seule la catégorie les distingue. Le `pourcentage_complete` ne s'applique qu'à la collection "Mois du don" (12 cartes), qui est la seule pensée comme une vraie collection à compléter.
 # 6\. Badges
 ## `GET /badges`

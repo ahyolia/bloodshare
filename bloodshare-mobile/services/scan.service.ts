@@ -19,6 +19,9 @@ export type CarteObtenue = {
 export type ResultatScan = {
   type: 'don' | 'evenement';
   carte_obtenue: CarteObtenue | null;
+  // 📖 Don uniquement : la carte Fidèle, obtenue EN PLUS de la carte du mois au premier don
+  //    validé un an après le tout premier. Absente ou null le reste du temps.
+  carte_fidele?: { id: number; titre: string; categorie: string } | null;
   badges_debloques: BadgeDebloque[];
 };
 

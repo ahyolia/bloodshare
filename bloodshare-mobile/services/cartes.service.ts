@@ -44,6 +44,10 @@ export type Cartes = {
     carte_parrain: CarteParrainage;
     carte_filleul: CarteParrainage;
   };
+  // Carte unique, même forme que les cartes Parrain / Filleul. null : carte absente ou désactivée.
+  fidelite: {
+    carte: CarteParrainage | null;
+  };
 };
 
 // Cache mémoire simple : évite un nouvel appel réseau quand on navigue de
@@ -53,20 +57,21 @@ let cartesCache: Cartes | null = null;
 
 export const getCartesCache = (): Cartes | null => cartesCache;
 
-// Contrat réel de GET /cartes (docs/contrat_API.md § 5) : l'événement est UNE carte
-// générique (`evenement.carte`, nullable), pas une liste de catégories.
+// Contrat réel de GET /cartes (docs/contrat_API.md § 5) : l'événement est une liste
+// plate de cartes (la générique en premier, puis celles propres à un événement, ex.
+// forum IUT), pas une liste de catégories.
 type CartesApi = Omit<Cartes, 'evenement'> & {
-  evenement: { carte: CarteEvenementItem | null };
+  evenement: { cartes: CarteEvenementItem[] };
 };
 
-// Adaptateur : l'UI (et le mock) raisonnent en `categories` d'événements. On habille
-// l'unique carte événement de l'API en une catégorie, pour que l'écran reste
+// Adaptateur : l'UI (et le mock) raisonnent en `categories` d'événements. On regroupe
+// les cartes événement de l'API en une seule catégorie, pour que l'écran reste
 // indépendant du contrat backend.
 const adapterCartes = (data: CartesApi): Cartes => ({
   ...data,
   evenement: {
-    categories: data.evenement.carte
-      ? [{ id: 'evenement', titre: 'Événement', cartes: [data.evenement.carte] }]
+    categories: data.evenement.cartes.length
+      ? [{ id: 'evenement', titre: 'Événements', cartes: data.evenement.cartes }]
       : [],
   },
 });

@@ -171,6 +171,41 @@ class ScanEvenementTest extends TestCase
             ->assertJsonPath('badges_debloques.0.id', $badge->id);
     }
 
+    public function test_donne_la_carte_propre_a_l_evenement_quand_il_en_designe_une(): void
+    {
+        $this->creerCarteEvenement();
+        $carteForum = $this->creerCarteEvenement(['titre' => 'Carte Forum', 'generique' => false]);
+        $evenement = $this->creerEvenement(['carte_id' => $carteForum->id]);
+
+        $this->scanner($this->creerQrEvenement($evenement))
+            ->assertOk()
+            ->assertJsonPath('carte_obtenue.id', $carteForum->id)
+            ->assertJsonPath('carte_obtenue.titre', 'Carte Forum');
+    }
+
+    public function test_un_evenement_sans_carte_propre_ne_donne_jamais_une_carte_non_generique(): void
+    {
+        // 📖 Créée en premier et rattachée à aucun événement : sans le marqueur `generique`,
+        //    la carte du forum serait « la plus ancienne » et remise à tous les événements.
+        $this->creerCarteEvenement(['titre' => 'Carte Forum', 'generique' => false]);
+        $generique = $this->creerCarteEvenement();
+
+        $this->scanner($this->creerQrEvenement($this->creerEvenement()))
+            ->assertOk()
+            ->assertJsonPath('carte_obtenue.id', $generique->id);
+    }
+
+    public function test_retombe_sur_la_carte_generique_si_la_carte_propre_est_desactivee(): void
+    {
+        $generique = $this->creerCarteEvenement();
+        $carteForum = $this->creerCarteEvenement(['titre' => 'Carte Forum', 'generique' => false, 'statut' => 'desactivee']);
+        $evenement = $this->creerEvenement(['carte_id' => $carteForum->id]);
+
+        $this->scanner($this->creerQrEvenement($evenement))
+            ->assertOk()
+            ->assertJsonPath('carte_obtenue.id', $generique->id);
+    }
+
     private function creerEvenement(array $attributs = []): Evenement
     {
         return Evenement::create(array_merge([
@@ -192,13 +227,14 @@ class ScanEvenementTest extends TestCase
         ]);
     }
 
-    private function creerCarteEvenement(): Carte
+    private function creerCarteEvenement(array $attributs = []): Carte
     {
-        return Carte::create([
+        return Carte::create(array_merge([
             'titre' => 'Carte événement',
             'categorie' => 'evenement',
             'statut' => 'active',
-        ]);
+            'generique' => true,
+        ], $attributs));
     }
 
     private function scanner(QrCode $qr)

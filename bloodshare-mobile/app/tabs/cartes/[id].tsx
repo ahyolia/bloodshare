@@ -5,13 +5,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../../../constants/colors';
 import { getCartesCache } from '../../../services/cartes.service';
 
-type Categorie = 'mois_don' | 'evenement' | 'parrain' | 'filleul';
+type Categorie = 'mois_don' | 'evenement' | 'parrain' | 'filleul' | 'fidele';
 
 const CATEGORY_LABELS: Record<Categorie, string> = {
   mois_don: 'Don du sang',
   evenement: 'Événement',
   parrain: 'Parrainage',
   filleul: 'Parrainage',
+  fidele: 'Fidélité',
 };
 
 const CATEGORY_COLORS: Record<Categorie, string> = {
@@ -19,6 +20,7 @@ const CATEGORY_COLORS: Record<Categorie, string> = {
   evenement: Colors.corail[600],
   parrain: Colors.petrole[500],
   filleul: Colors.petrole[500],
+  fidele: Colors.aubergine,
 };
 
 const CATEGORY_ICONS: Record<Categorie, keyof typeof Ionicons.glyphMap> = {
@@ -26,6 +28,7 @@ const CATEGORY_ICONS: Record<Categorie, keyof typeof Ionicons.glyphMap> = {
   evenement: 'sparkles',
   parrain: 'people',
   filleul: 'heart',
+  fidele: 'hourglass',
 };
 
 function findCarte(id: number) {
@@ -50,6 +53,10 @@ function findCarte(id: number) {
 
   if (cartes.parrainage.carte_filleul.id === id) {
     return { categorie: 'filleul' as Categorie, carte: cartes.parrainage.carte_filleul };
+  }
+
+  if (cartes.fidelite?.carte?.id === id) {
+    return { categorie: 'fidele' as Categorie, carte: cartes.fidelite.carte };
   }
 
   return undefined;

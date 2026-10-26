@@ -36,6 +36,7 @@ class CarteResource extends Resource
                         'evenement' => '🎉 Événement',
                         'parrain'   => '🤝 Parrain',
                         'filleul'   => '🌱 Filleul',
+                        'fidele'    => '⏳ Fidèle',
                     ])
                     ->required()
                     ->live(),
@@ -81,6 +82,11 @@ class CarteResource extends Resource
                     ])
                     ->required()
                     ->default('active'),
+
+                Forms\Components\Toggle::make('generique')
+                    ->label('Carte générique')
+                    ->helperText('Remise par tout événement qui ne désigne pas sa propre carte. Désactivée : la carte n\'est remise que par l\'événement qui la choisit.')
+                    ->visible(fn ($get) => $get('categorie') === 'evenement'),
             ]);
     }
 
@@ -106,12 +112,14 @@ class CarteResource extends Resource
                         'success' => 'evenement',
                         'warning' => 'parrain',
                         'info'    => 'filleul',
+                        'primary' => 'fidele',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'mois_don'  => '🩸 Mois du don',
                         'evenement' => '🎉 Événement',
                         'parrain'   => '🤝 Parrain',
                         'filleul'   => '🌱 Filleul',
+                        'fidele'    => '⏳ Fidèle',
                         default     => $state,
                     }),
 
@@ -150,6 +158,7 @@ class CarteResource extends Resource
                         'evenement' => '🎉 Événement',
                         'parrain'   => '🤝 Parrain',
                         'filleul'   => '🌱 Filleul',
+                        'fidele'    => '⏳ Fidèle',
                     ]),
                 Tables\Filters\SelectFilter::make('statut')
                     ->label('Statut')

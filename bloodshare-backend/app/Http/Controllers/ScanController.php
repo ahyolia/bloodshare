@@ -8,6 +8,7 @@ use App\Models\QrCode;
 use App\Models\QrCodeScan;
 use App\Models\UserCarte;
 use App\Services\BadgeService;
+use App\Services\CarteFideleService;
 use App\Services\DefiService;
 use App\Services\ParrainageService;
 use App\Services\QrCentreTournant;
@@ -146,11 +147,21 @@ class ScanController extends Controller
         app(ParrainageService::class)->validerSiFilleul($user);
         app(DefiService::class)->enregistrerContribution($user);
 
+        $carteFidele = app(CarteFideleService::class)->attribuerSiEligible($user);
+
         $badges = app(BadgeService::class)->synchroniser($user);
 
         return response()->json([
             'type'             => 'don',
             'carte_obtenue'    => $carteObtenue,
+            // 📖 En plus de la carte du mois, pas à sa place : null tant qu'elle n'est pas
+            //    obtenue, et aux dons suivants.
+            'carte_fidele'     => $carteFidele ? [
+                'id'        => $carteFidele->id,
+                'titre'     => $carteFidele->titre,
+                'categorie' => $carteFidele->categorie,
+                'image_url' => $carteFidele->image_url,
+            ] : null,
             'badges_debloques' => $badges,
         ]);
     }
@@ -191,10 +202,11 @@ class ScanController extends Controller
 
         $this->enregistrerScan($user, $qrCode);
 
-        // Carte générique événement (la première active trouvée)
-        $carte = Carte::where('categorie', 'evenement')
-            ->where('statut', 'active')
-            ->first();
+        // 📖 La carte propre à l'événement si le BO en a choisi une (et qu'elle est active),
+        //    sinon la carte Événement générique.
+        $carte = $evenement?->carte?->statut === 'active'
+            ? $evenement->carte
+            : Carte::generiqueEvenement();
 
         $quantite = 1;
         if ($carte) {

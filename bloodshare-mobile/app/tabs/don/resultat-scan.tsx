@@ -10,6 +10,7 @@ const CATEGORIE_LABELS: Record<string, string> = {
   evenement: '🎪 Carte événement',
   parrain: '🤝 Carte Parrain',
   filleul: '🩸 Carte Filleul',
+  fidele: '⏳ Carte Fidèle',
 };
 
 export default function ResultatScanScreen() {
@@ -17,12 +18,13 @@ export default function ResultatScanScreen() {
 
   // 📖 Tous les params arrivent en string (ou string[] pour Expo Router), même carte_id qui était un number côté API
   // → Pourquoi : les params de navigation transitent comme une query string, qui ne connaît que le texte
-  const { type, carte_titre, carte_categorie, badges, deja_possedee } = useLocalSearchParams<{
+  const { type, carte_titre, carte_categorie, badges, deja_possedee, carte_fidele_titre } = useLocalSearchParams<{
     type: string;
     carte_titre: string;
     carte_categorie: string;
     badges: string;
     deja_possedee: string;
+    carte_fidele_titre?: string;
   }>();
 
   // 📖 Carte déjà possédée : le don est validé, mais pas de nouvelle carte-souvenir ni badge
@@ -57,6 +59,17 @@ export default function ResultatScanScreen() {
           </Text>
         )}
       </View>
+
+      {/* 📖 Hors de la condition dejaPossedee : la carte Fidèle peut tomber un an pile après le
+          premier don, donc avec une carte du mois déjà possédée. */}
+      {!!carte_fidele_titre && (
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>Nouvelle carte</Text>
+          <Text style={styles.cardTitre}>{carte_fidele_titre}</Text>
+          <Text style={styles.cardCategorie}>{CATEGORIE_LABELS.fidele}</Text>
+          <Text style={styles.dejaPossedeeNote}>{"Merci pour ta fidélité : un an de dons !"}</Text>
+        </View>
+      )}
 
       {!dejaPossedee && badgesList.length > 0 && (
         <View style={styles.card}>

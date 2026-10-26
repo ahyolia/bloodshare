@@ -202,6 +202,7 @@ export default function ScanScreen() {
           carte_titre: data.carte_obtenue?.titre,
           carte_categorie: data.carte_obtenue?.categorie,
           deja_possedee: String(data.carte_obtenue?.deja_possedee ?? false),
+          carte_fidele_titre: data.carte_fidele?.titre,
           badges: JSON.stringify(data.badges_debloques ?? []),
         },
       });

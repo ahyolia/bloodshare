@@ -311,6 +311,71 @@ class ScanDonTest extends TestCase
         $this->assertDatabaseMissing('points_historique', ['user_id' => $user->id]);
     }
 
+    // ── Carte Fidèle (ancienneté) ───────────────────────────────
+    // 📖 La carte Fidèle est créée par la migration add_carte_fidele.
+
+    public function test_donne_la_carte_fidele_au_premier_don_un_an_apres_le_premier(): void
+    {
+        $user = $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $this->creerDon($user, now()->subYear());
+
+        $this->scanner($this->creerQrCentre())
+            ->assertOk()
+            ->assertJsonPath('carte_fidele.categorie', 'fidele')
+            ->assertJsonPath('carte_obtenue.categorie', 'mois_don');
+
+        $this->assertTrue(UserCarte::where('user_id', $user->id)->where('carte_id', $this->carteFidele()->id)->exists());
+    }
+
+    public function test_pas_de_carte_fidele_avant_un_an_d_anciennete(): void
+    {
+        $user = $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $this->creerDon($user, now()->subYear()->addDay());
+
+        $this->scanner($this->creerQrCentre())->assertOk()->assertJsonPath('carte_fidele', null);
+    }
+
+    public function test_un_don_non_valide_ne_compte_pas_pour_l_anciennete(): void
+    {
+        $user = $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $this->creerDon($user, now()->subYears(2), 'en_attente');
+
+        $this->scanner($this->creerQrCentre())->assertOk()->assertJsonPath('carte_fidele', null);
+    }
+
+    public function test_la_carte_fidele_n_est_donnee_qu_une_fois(): void
+    {
+        $user = $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $this->creerDon($user, now()->subYears(2));
+        $qr = $this->creerQrCentre();
+        $this->scanner($qr)->assertJsonPath('carte_fidele.categorie', 'fidele');
+
+        // Un an plus tard : de nouveau octobre, la seule carte du mois créée ici.
+        $this->travel(1)->years();
+        $this->scanner($qr)->assertOk()->assertJsonPath('carte_fidele', null);
+
+        $this->assertSame(1, UserCarte::where('user_id', $user->id)->where('carte_id', $this->carteFidele()->id)->sole()->quantite);
+    }
+
+    public function test_pas_de_carte_fidele_si_elle_est_desactivee(): void
+    {
+        $user = $this->connecter('homme');
+        $this->creerCarteDuMois();
+        $this->creerDon($user, now()->subYears(2));
+        $this->carteFidele()->update(['statut' => 'desactivee']);
+
+        $this->scanner($this->creerQrCentre())->assertOk()->assertJsonPath('carte_fidele', null);
+    }
+
+    private function carteFidele(): Carte
+    {
+        return Carte::where('categorie', 'fidele')->sole();
+    }
+
     private function connecter(string $sexe): User
     {
         $user = User::factory()->create(['sexe' => $sexe]);

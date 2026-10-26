@@ -44,9 +44,10 @@ Des cartes-souvenirs à collectionner, attribuées **directement** par une actio
 | Catégorie | Nombre | Obtention | Cumulable |
 | ---| ---| ---| --- |
 | `mois_don` — Carte du mois | 12 (une par mois) | Don validé au centre : carte du mois en cours | Non |
-| `evenement` — Carte Événement | 1 (générique) | Présence validée à un événement (1 fois par événement) | Oui (`quantite`) |
+| `evenement` — Carte Événement | 1 générique + 1 par événement qui a sa propre carte (ex. forum IUT) | Présence validée à un événement (1 fois par événement) : la carte choisie sur la fiche de l'événement, sinon la générique | Oui (`quantite`) |
 | `parrain` — Carte Parrain | 1 | Premier parrainage validé | Non |
 | `filleul` — Carte Filleul | 1 | Validation de son parrainage (son 1er don) | Non |
+| `fidele` — Carte Fidèle | 1 | Premier don validé au moins **un an** après son tout premier don validé (ancienneté, pas nombre de dons : c'est le rôle du badge « Fidèle au Don ») — en plus de la carte du mois | Non |
 
 ## Carte déjà possédée
 *   **Carte du mois** : si l'utilisateur la possède déjà (2e don dans le même mois de l'année, l'année suivante...), le don est bien validé mais aucune carte n'est redonnée. La réponse du scan l'indique (`deja_possedee: true`) et l'écran de résultat affiche « Carte déjà obtenue ». **Rien n'est donné en échange**, ni points ni autre carte.
@@ -74,7 +75,17 @@ Parrainage validé si filleul, contribution au défi, synchronisation des badges
 ## Affichage
 *   Onglet **Cartes** de l'appli mobile
 *   Grille des 12 cartes du mois (non obtenues affichées en grisé) et pourcentage de complétion (sur 12)
-*   Carte Événement avec son nombre d'exemplaires, cartes Parrain / Filleul
+*   Cartes Événement (générique et propres à un événement) avec leur nombre d'exemplaires, cartes Parrain / Filleul
+
+## Carte propre à un événement
+*   Dans le BO, la fiche d'un événement a un champ « Carte remise aux participants » (`evenements.carte_id`). Vide : l'événement remet la carte générique.
+*   La carte générique est marquée explicitement (`cartes.generique`). Une carte Événement non générique n'est remise **que** par l'événement qui la désigne — jamais à sa place, même tant qu'elle n'est rattachée à aucun événement.
+*   Une carte désignée mais désactivée : l'événement retombe sur la carte générique.
+*   Le badge « Toujours partant » compte toutes les cartes Événement confondues.
+
+## Visuels par défaut
+*   Versionnés dans `bloodshare-backend/database/visuels/` (WebP : cartes 900 px de large, badges 512 px), posés par `VisuelsSeeder` (lancé par la migration `seed_visuels_cartes_et_badges` et par `DatabaseSeeder`).
+*   Seules les `image_url` vides sont remplies : une image envoyée depuis le BO n'est jamais écrasée.
 # 3\. Badges
 ## Principe
 Les badges récompensent des jalons importants. Ils sont attribués automatiquement par le système quand la condition est remplie, une seule fois chacun, et ne rapportent pas de points.

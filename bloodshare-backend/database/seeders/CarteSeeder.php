@@ -30,7 +30,6 @@ class CarteSeeder extends Seeder
                 [
                     'titre' => "Carte de {$nom}",
                     'description' => "Carte obtenue lors d'un don en {$nom}",
-                    'image_url' => null,
                     'statut' => 'active',
                 ]
             );
@@ -52,15 +51,26 @@ class CarteSeeder extends Seeder
                 'titre' => 'Carte Filleul',
                 'description' => 'Carte obtenue en étant parrainé',
             ],
+            [
+                'categorie' => 'fidele',
+                'titre' => 'Carte Fidèle',
+                'description' => 'Carte obtenue après un an de dons',
+            ],
         ];
 
         foreach ($cartesSpeciales as $carte) {
+            // 📖 Plusieurs cartes Événement peuvent exister (forum IUT...) : on ne retrouve
+            //    que la générique, sinon la carte d'un événement serait renommée ici.
+            $cle = ['categorie' => $carte['categorie'], 'mois_numero' => null];
+            if ($carte['categorie'] === 'evenement') {
+                $cle['generique'] = true;
+            }
+
             Carte::updateOrCreate(
-                ['categorie' => $carte['categorie'], 'mois_numero' => null],
+                $cle,
                 [
                     'titre' => $carte['titre'],
                     'description' => $carte['description'],
-                    'image_url' => null,
                     'statut' => 'active',
                 ]
             );

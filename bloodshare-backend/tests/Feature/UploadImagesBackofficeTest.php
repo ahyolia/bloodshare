@@ -48,7 +48,7 @@ class UploadImagesBackofficeTest extends TestCase
     {
         $this->creerCarte($this->image('photo.png', 3000, 2000))->assertHasNoFormErrors();
 
-        $chemin = Carte::first()->getRawOriginal('image_url');
+        $chemin = $this->carteCreee()->getRawOriginal('image_url');
         $this->assertStringEndsWith('.webp', $chemin);
 
         $image = new Imagick();
@@ -65,7 +65,7 @@ class UploadImagesBackofficeTest extends TestCase
 
         $this->creerCarte($fichier)->assertHasNoFormErrors();
 
-        $contenu = Storage::disk('public')->get(Carte::first()->getRawOriginal('image_url'));
+        $contenu = Storage::disk('public')->get($this->carteCreee()->getRawOriginal('image_url'));
         $this->assertStringNotContainsString('<?php', $contenu);
     }
 
@@ -111,7 +111,7 @@ class UploadImagesBackofficeTest extends TestCase
         // 📖 Régression déjà vue (PR #74) : le champ image donnait une 500 à l'édition.
         $this->creerCarte($this->image('photo.png', 300, 300))->assertHasNoFormErrors();
 
-        Livewire::test(EditCarte::class, ['record' => Carte::first()->getRouteKey()])
+        Livewire::test(EditCarte::class, ['record' => $this->carteCreee()->getRouteKey()])
             ->assertOk()
             ->assertFormSet(['titre' => 'Carte test']);
     }
@@ -125,6 +125,12 @@ class UploadImagesBackofficeTest extends TestCase
             ->set('data.statut', 'active')
             ->set('data.image_url', $fichier)
             ->call('create');
+    }
+
+    // 📖 Pas Carte::first() : les migrations créent déjà une carte (celle du forum IUT).
+    private function carteCreee(): Carte
+    {
+        return Carte::where('titre', 'Carte test')->sole();
     }
 
     private function image(string $nom, int $largeur, int $hauteur, string $format = 'png', ?string $commentaire = null, bool $bruit = false): UploadedFile
