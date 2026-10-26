@@ -55,11 +55,12 @@ class BadgesAFeterTest extends TestCase
         $this->getJson('/api/badges/a-feter')->assertOk()->assertJsonCount(0);
     }
 
-    public function test_retrouve_le_badge_par_son_nom_pour_les_anciennes_notifications(): void
+    public function test_ne_fete_pas_les_anciennes_notifications_sans_identifiant_de_badge(): void
     {
+        // Notification d'avant la mise en ligne du popup : pas de badge_id.
         $this->creerNotification(['body' => 'Tu as obtenu le badge « Premier Pas ».']);
 
-        $this->getJson('/api/badges/a-feter')->assertOk()->assertJsonPath('0.id', $this->badge->id);
+        $this->getJson('/api/badges/a-feter')->assertOk()->assertJsonCount(0);
     }
 
     public function test_ignore_les_autres_notifications_et_celles_des_autres(): void
