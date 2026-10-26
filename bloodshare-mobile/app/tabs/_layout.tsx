@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Theme } from '../../constants/colors';
+import { verifierAbonnement } from '../../services/notifications/webPush';
 
 /* -------------------------------------------------------------------------
  * Mesures partagées.
@@ -199,6 +201,12 @@ function BoutonDon({ onPress, ...props }: any) {
 }
 
 export default function TabsLayout() {
+  // 📖 Une fois connecté : si le navigateur garde un abonnement push créé avec une
+  //    ancienne clé VAPID, on le refait (sinon plus aucune notification n'arrive).
+  useEffect(() => {
+    verifierAbonnement().catch(() => {});
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
