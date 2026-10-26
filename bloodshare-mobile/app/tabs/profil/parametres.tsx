@@ -145,7 +145,7 @@ export default function ParametresScreen() {
 
     const etape2 = await confirmer({
       titre: "Dernière confirmation",
-      message: "Veux-tu vraiment tout supprimer ?",
+      message: "Veux-tu vraiment tout supprimer ?",
       libelleRester: "Garder mon compte",
       libelleAction: "Supprimer définitivement",
     });
@@ -271,7 +271,7 @@ export default function ParametresScreen() {
             Zone dangereuse
           </Text>
           <Text style={[Typo.legende, styles.avertissement]}>
-            La suppression est définitive : ton pseudo, tes points, tes badges et tes cartes disparaissent.
+            La suppression est définitive : ton pseudo, tes points, tes badges et tes cartes disparaissent.
           </Text>
           {/* 📖 Variante `destructif` : toujours derrière une confirmation (ici, double). */}
           <Bouton

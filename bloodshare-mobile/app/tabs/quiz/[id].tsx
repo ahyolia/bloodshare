@@ -5,15 +5,28 @@ import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Animated,
   Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Colors, Theme } from "../../../constants/colors";
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInLeft,
+  FadeInRight,
+  ZoomIn,
+} from "react-native-reanimated";
+import { Theme } from "../../../constants/colors";
+import { Espace, Ombre, Rayon } from "../../../constants/spacing";
+import { Typo } from "../../../constants/typography";
+import { BarreQuestions } from "../../../components/quiz/BarreQuestions";
+import { decouperIntitule } from "../../../utils/intituleQuestion";
+import { Bouton } from "../../../components/ui/Bouton";
+import { EnTeteSousPage } from "../../../components/ui/EnTeteSousPage";
 import { TAB_BAR_STYLE } from "../_layout";
 import {
   Correction,
@@ -53,8 +66,11 @@ export default function QuizDeroulementScreen() {
     new Map(),
   );
   const [verification, setVerification] = useState(false);
+  // 📖 Sens du dernier changement de question : la suivante entre par la droite, la
+  //    précédente par la gauche, comme on tourne des pages.
+  const [sens, setSens] = useState<"avant" | "arriere">("avant");
+  const scrollRef = useRef<ScrollView>(null);
 
-  const progressAnim = useRef(new Animated.Value(0)).current;
 
   // 📖 Drapeau synchrone : passé à true AVANT le router.replace vers l'écran score. Le listener
   //    `beforeRemove` le lit tout de suite, alors que le state `submitting` ne serait committé
@@ -129,18 +145,6 @@ export default function QuizDeroulementScreen() {
     };
   }, [id]);
 
-  useEffect(() => {
-    if (!quiz) return;
-
-    // 📖 timing (durée fixe, pas de rebond) convient à une barre de progression : elle doit
-    //    avancer de façon régulière et prévisible, contrairement à un effet "pop" (spring)
-    Animated.timing(progressAnim, {
-      toValue: (questionIndex + 1) / quiz.questions.length,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [questionIndex, quiz, progressAnim]);
-
   // 📖 Point d'interception UNIQUE pour toute sortie de l'écran (bouton back custom, geste natif
   //    Android, bouton matériel) : on ne montre la confirmation d'abandon qu'ici, une seule fois.
   useEffect(() => {
@@ -212,6 +216,9 @@ export default function QuizDeroulementScreen() {
       //    validée ailleurs (autre appareil), c'est cette première réponse qui compte.
       setReponses((prev) => new Map(prev).set(question_id, reponse_ids));
       setCorrections((prev) => new Map(prev).set(question_id, correction));
+      // 📖 L'explication arrive sous les réponses : on la fait venir à l'écran en douceur
+      //    (le délai laisse le temps au panneau d'être mis en page).
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
     } catch {
       await informer(
         "Erreur",
@@ -233,7 +240,9 @@ export default function QuizDeroulementScreen() {
     if (!quiz) return;
 
     if (questionIndex < quiz.questions.length - 1) {
+      setSens("avant");
       setQuestionIndex((prev) => prev + 1);
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
     } else {
       handleSoumettre();
     }
@@ -297,7 +306,7 @@ export default function QuizDeroulementScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={Colors.corail[600]} size="large" />
+        <ActivityIndicator color={Theme.marque.principal} size="large" />
       </View>
     );
   }
@@ -314,202 +323,228 @@ export default function QuizDeroulementScreen() {
   const reponsesSelectionnees = reponses.get(question.id) ?? [];
   const derniereQuestion = questionIndex === quiz.questions.length - 1;
   const correction = corrections.get(question.id);
-  const peutValider = reponsesSelectionnees.length > 0 && !verification;
+  const intitule = decouperIntitule(question.intitule);
 
   return (
     <View style={styles.screen}>
+      {/* 📖 Même en-tête que les sous-pages du Profil (bouton retour rond et flottant,
+          titre). Le retour passe par `beforeRemove` : la modale d'abandon s'affiche. */}
       <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {quiz.titre}
-          </Text>
-
-          <View style={styles.backButtonSpacer} />
-        </View>
-
-        <Text style={styles.progressLabel}>
-          Question {questionIndex + 1} sur {quiz.questions.length}
-        </Text>
-
-        <View style={styles.progressTrack}>
-          <Animated.View
-            style={[
-              styles.progressFill,
-              {
-                width: progressAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["0%", "100%"],
-                }),
-              },
-            ]}
-          />
-        </View>
+        <EnTeteSousPage titre={quiz.titre} />
+        <BarreQuestions numero={questionIndex + 1} total={quiz.questions.length} />
       </View>
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.intitule}>{question.intitule}</Text>
+        {/* 📖 Une clé par question : en changeant de question, le bloc entre en glissant
+            depuis la droite (Suivant) ou la gauche (Précédent), puis les réponses
+            arrivent une à une. Reanimated saute ces entrées si « Réduire les
+            animations » est activé. */}
+        <Animated.View
+          key={question.id}
+          entering={(sens === "arriere" ? FadeInLeft : FadeInRight).duration(280)}
+          style={styles.questionEtReponses}
+        >
+          {/* 📖 Question et réponses dans un même bloc blanc surélevé : on voit d'un coup
+              d'œil ce qui va ensemble. Pas de fond teinté : le corail et les couleurs
+              vives restent réservés à ce qui demande l'attention. */}
+          <View style={styles.questionBloc}>
+            <Text style={[Typo.legendeForte, styles.consigne]}>
+              Question {questionIndex + 1} sur {quiz.questions.length}
+            </Text>
+            {/* 📖 Une question avec une mise en situation se lit en deux temps : le
+                contexte en texte courant, puis la question elle-même en titre. */}
+            {intitule.contexte && (
+              <Text style={[Typo.corps, styles.contexte]}>{intitule.contexte}</Text>
+            )}
+            <Text style={[Typo.titre3, styles.intitule]} accessibilityRole="header">
+              {intitule.question}
+            </Text>
+            <Text style={[Typo.legende, styles.consigne]}>
+              {question.type === "multiple"
+                ? "Plusieurs réponses possibles"
+                : "Une seule réponse possible"}
+            </Text>
+          </View>
 
-        {question.type === "multiple" && (
-          <Text style={styles.multipleHint}>
-            (Plusieurs réponses possibles)
-          </Text>
-        )}
+          {question.reponses.map((reponse, index) => {
+            const selectionnee = reponsesSelectionnees.includes(reponse.id);
+            const etat = etatReponse(
+              reponse.id,
+              reponsesSelectionnees,
+              correction,
+            );
 
-        {question.reponses.map((reponse) => {
-          const selectionnee = reponsesSelectionnees.includes(reponse.id);
-          const etat = etatReponse(
-            reponse.id,
-            reponsesSelectionnees,
-            correction,
-          );
-
-          return (
-            <TouchableOpacity
-              key={reponse.id}
-              style={[styles.reponseCard, STYLE_CARTE[etat]]}
-              onPress={() => toggleReponse(question, reponse.id)}
-              disabled={!!correction}
-              activeOpacity={0.85}
-              accessibilityRole={
-                question.type === "unique" ? "radio" : "checkbox"
-              }
-              accessibilityState={{
-                checked: selectionnee,
-                disabled: !!correction,
-              }}
-            >
-              {etat === "correcte" || etat === "erreur" ? (
-                // 📖 Après validation, une icône dit juste/faux : la couleur seule ne suffit
-                //    pas (daltonisme), et le faux n'est volontairement pas en rouge.
-                <Ionicons
-                  name={etat === "correcte" ? "checkmark-circle" : "close-circle"}
-                  size={22}
-                  color={
-                    etat === "correcte"
-                      ? Theme.feedback.succesTexte
-                      : Theme.texte.secondaire
+            return (
+              <Animated.View
+                key={reponse.id}
+                entering={FadeInDown.delay(120 + index * 60).duration(260)}
+              >
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.reponseCard,
+                    STYLE_CARTE[etat],
+                    pressed && styles.reponsePressee,
+                  ]}
+                  onPress={() => toggleReponse(question, reponse.id)}
+                  disabled={!!correction}
+                  accessibilityRole={
+                    question.type === "unique" ? "radio" : "checkbox"
                   }
-                />
-              ) : question.type === "unique" ? (
-                <View
-                  style={[
-                    styles.radio,
-                    selectionnee && styles.radioSelectionne,
-                  ]}
+                  accessibilityState={{
+                    checked: selectionnee,
+                    disabled: !!correction,
+                  }}
                 >
-                  {selectionnee && <View style={styles.radioInterieur} />}
-                </View>
-              ) : (
-                <View
-                  style={[
-                    styles.checkbox,
-                    selectionnee && styles.checkboxSelectionne,
-                  ]}
-                >
-                  {selectionnee && <Text style={styles.checkboxCheck}>✓</Text>}
-                </View>
-              )}
+                  {etat === "correcte" || etat === "erreur" ? (
+                    // 📖 Après validation, une icône dit juste/faux : la couleur seule ne suffit
+                    //    pas (daltonisme), et le faux n'est volontairement pas en rouge.
+                    <Animated.View entering={ZoomIn.springify().damping(10)}>
+                      <Ionicons
+                        name={etat === "correcte" ? "checkmark-circle" : "close-circle"}
+                        size={22}
+                        color={
+                          etat === "correcte"
+                            ? Theme.feedback.succesTexte
+                            : Theme.texte.secondaire
+                        }
+                      />
+                    </Animated.View>
+                  ) : (
+                    // 📖 Pastille a, b, c, d : on peut dire « la réponse b », et elle se
+                    //    remplit (avec un petit rebond) quand la réponse est choisie.
+                    <Animated.View
+                      key={selectionnee ? "choisie" : "libre"}
+                      entering={selectionnee ? ZoomIn.springify().damping(9) : undefined}
+                      style={[
+                        styles.lettre,
+                        selectionnee && styles.lettreSelectionnee,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          Typo.legendeForte,
+                          styles.lettreTexte,
+                          selectionnee && styles.lettreTexteSelectionnee,
+                        ]}
+                      >
+                        {String.fromCharCode(97 + index)}
+                      </Text>
+                    </Animated.View>
+                  )}
 
-              <Text style={styles.reponseTexte}>{reponse.texte}</Text>
+                  <Text style={[Typo.corps, styles.reponseTexte]}>
+                    {reponse.texte}
+                  </Text>
 
-              {correction && selectionnee && (
-                <Text style={styles.taReponse}>Ta réponse</Text>
-              )}
-            </TouchableOpacity>
-          );
-        })}
+                  {correction && selectionnee && (
+                    <Animated.Text entering={FadeIn.duration(200)} style={styles.taReponse}>
+                      Ta réponse
+                    </Animated.Text>
+                  )}
+                </Pressable>
+              </Animated.View>
+            );
+          })}
+        </Animated.View>
 
+        {/* 📖 Explication : vert si la réponse est juste, pétrole pâle (la couleur des
+            informations) sinon. Une réponse fausse n'est pas une alerte : on apprend. */}
         {correction && (
-          <View
+          <Animated.View
+            key={`explication-${question.id}`}
+            entering={FadeInDown.springify().damping(16)}
             style={[
               styles.explicationCard,
-              correction.correcte && styles.explicationCardCorrecte,
+              correction.correcte
+                ? styles.explicationCardCorrecte
+                : styles.explicationCardInfo,
             ]}
           >
-            <Text
-              style={[
-                styles.explicationTitre,
-                correction.correcte && styles.explicationTitreCorrecte,
-              ]}
-            >
-              {correction.correcte ? "Bonne réponse !" : "Pas tout à fait…"}
-            </Text>
+            <View style={styles.explicationEntete}>
+              <Ionicons
+                name={
+                  correction.correcte
+                    ? "checkmark-circle"
+                    : "information-circle"
+                }
+                size={22}
+                color={
+                  correction.correcte
+                    ? Theme.feedback.succesTexte
+                    : Theme.info.icone
+                }
+              />
+              <Text
+                style={[
+                  Typo.corpsFort,
+                  styles.explicationTitre,
+                  correction.correcte && styles.explicationTitreCorrecte,
+                ]}
+              >
+                {correction.correcte ? "Bonne réponse !" : "Pas tout à fait…"}
+              </Text>
+            </View>
 
             {!!correction.explication && (
-              <Text style={styles.explicationTexte}>
+              <Text style={[Typo.corps, styles.explicationTexte]}>
                 {correction.explication}
               </Text>
             )}
 
             {correction.contenu && (
-              <TouchableOpacity
-                style={styles.ficheButton}
+              <Bouton
+                libelle="Lire la fiche pratique"
+                icone="document-text-outline"
+                // Plein pétrole : bien lisible sur le fond vert ou pétrole pâle (6,2:1).
+                variante="info"
+                accessibilityHint={`Ouvre la fiche « ${correction.contenu.titre} »`}
                 onPress={() => ouvrirFiche(correction.contenu!.id)}
-                activeOpacity={0.85}
-              >
-                <Ionicons
-                  name="document-text-outline"
-                  size={18}
-                  color={Theme.action.secondaireTexte}
-                />
-                <Text style={styles.ficheButtonText} numberOfLines={2}>
-                  Voir la fiche : {correction.contenu.titre}
-                </Text>
-              </TouchableOpacity>
+              />
             )}
-          </View>
+          </Animated.View>
         )}
       </ScrollView>
 
       <View style={styles.footer}>
         {questionIndex > 0 && (
-          <TouchableOpacity
+          <Bouton
+            libelle="Précédent"
+            icone="arrow-back"
+            variante="secondaire"
+            onPress={() => {
+              setSens("arriere");
+              setQuestionIndex((prev) => prev - 1);
+            }}
             style={styles.precedentButton}
-            onPress={() => setQuestionIndex((prev) => prev - 1)}
-          >
-            <Text style={styles.precedentButtonText}>← Précédent</Text>
-          </TouchableOpacity>
+          />
         )}
 
         {/* 📖 Deux temps par question : « Valider » fige la réponse et montre la
             correction, puis « Suivant » (ou « Voir mon score ») enchaîne. */}
         {correction ? (
-          <TouchableOpacity style={styles.suivantButton} onPress={handleSuivant}>
-            <Text style={styles.suivantButtonText}>
-              {derniereQuestion ? "Voir mon score" : "Suivant →"}
-            </Text>
-          </TouchableOpacity>
+          <Bouton
+            libelle={derniereQuestion ? "Voir mon score" : "Suivant"}
+            onPress={handleSuivant}
+            style={styles.suivantButton}
+          />
         ) : (
-          <TouchableOpacity
-            style={[
-              styles.suivantButton,
-              !peutValider && styles.suivantButtonDesactive,
-            ]}
+          <Bouton
+            libelle="Valider"
             onPress={() => handleValider(question)}
-            disabled={!peutValider}
-          >
-            {verification ? (
-              <ActivityIndicator color={Colors.blanc} />
-            ) : (
-              <Text style={styles.suivantButtonText}>Valider</Text>
-            )}
-          </TouchableOpacity>
+            desactive={reponsesSelectionnees.length === 0}
+            chargement={verification}
+            style={styles.suivantButton}
+          />
         )}
       </View>
 
       {submitting && (
         <View style={styles.submittingOverlay}>
-          <ActivityIndicator color={Colors.blanc} size="large" />
+          <ActivityIndicator color={Theme.texte.surAccent} size="large" />
           <Text style={styles.submittingText}>Envoi en cours...</Text>
         </View>
       )}
@@ -526,9 +561,9 @@ export default function QuizDeroulementScreen() {
               <Text style={styles.modalIcon}>🩸</Text>
             </View>
 
-            <Text style={styles.modalTitre}>Quitter le quiz ?</Text>
+            <Text style={styles.modalTitre}>Quitter le quiz ?</Text>
             <Text style={styles.modalTexte}>
-              {"Pas d'inquiétude, tes réponses validées sont sauvegardées. Tu pourras reprendre ce quiz plus tard depuis « Quiz en cours »."}
+              {"Pas d'inquiétude, tes réponses validées sont sauvegardées. Tu pourras reprendre ce quiz plus tard depuis « Quiz en cours »."}
             </Text>
 
             <TouchableOpacity
@@ -558,91 +593,89 @@ export default function QuizDeroulementScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
+    backgroundColor: Theme.fond.page,
   },
   centered: {
     flex: 1,
-    backgroundColor: Colors.creme,
+    backgroundColor: Theme.fond.page,
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
   },
   errorText: {
-    color: Colors.grisMoyen,
+    color: Theme.texte.secondaire,
     fontSize: 15,
     textAlign: "center",
   },
+  // Mêmes marges que les sous-pages du Profil (18 px sur les côtés, 54 px en haut).
   header: {
-    backgroundColor: Colors.creme,
-    padding: 16,
+    backgroundColor: Theme.fond.page,
+    paddingHorizontal: 18,
     paddingTop: 54,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  backButton: {
-    padding: 8,
-  },
-  backButtonText: {
-    color: Colors.aubergine,
-    fontSize: 24,
-  },
-  backButtonSpacer: {
-    width: 40,
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.aubergine,
-    textAlign: "center",
-  },
-  progressLabel: {
-    color: Colors.grisMoyen,
-    fontSize: 13,
-    textAlign: "center",
-    marginBottom: 6,
-  },
-  progressTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.fondGris,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.corail[600],
+    paddingBottom: Espace[2],
   },
   content: {
-    padding: 24,
-    paddingBottom: 40,
+    paddingHorizontal: 18,
+    paddingTop: Espace[4],
+    paddingBottom: Espace[8],
+    gap: Espace[3],
+  },
+  // 📖 Le bloc de la question, blanc et surélevé : il contient les réponses à toucher.
+  questionEtReponses: {
+    gap: Espace[3],
+    paddingHorizontal: 20,
+    paddingVertical: Espace[8],
+    borderRadius: Rayon.lg,
+    backgroundColor: Theme.fond.surface,
+    ...Ombre.flottante,
+  },
+  questionBloc: {
+    gap: Espace[2],
+    marginBottom: Espace[3],
+  },
+  contexte: {
+    color: Theme.texte.principal,
+  },
+  // La carte s'enfonce légèrement sous le doigt : on sent qu'on l'a touchée.
+  reponsePressee: {
+    transform: [{ scale: 0.98 }],
   },
   intitule: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: Colors.aubergine,
-    marginBottom: 8,
-    textAlign: "center",
+    color: Theme.texte.principal,
   },
-  multipleHint: {
-    color: Colors.grisMoyen,
-    fontSize: 13,
-    fontStyle: "italic",
-    textAlign: "center",
-    marginBottom: 16,
+  consigne: {
+    color: Theme.texte.secondaire,
   },
   reponseCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
+    gap: Espace[3],
+    minHeight: 56,
+    // Crème sur le bloc blanc : chaque réponse se détache sans ombre de plus.
+    backgroundColor: Theme.fond.page,
+    borderRadius: Rayon.md,
+    paddingVertical: Espace[3],
+    paddingHorizontal: Espace[4],
     borderWidth: 2,
-    borderColor: Colors.fondGris,
+    borderColor: Theme.fond.bordure,
+  },
+  lettre: {
+    width: 28,
+    height: 28,
+    borderRadius: Rayon.plein,
+    // Blanche sur la réponse crème : la lettre reste bien visible.
+    backgroundColor: Theme.fond.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lettreSelectionnee: {
+    backgroundColor: Theme.action.primaire,
+  },
+  lettreTexte: {
+    color: Theme.texte.principal,
+  },
+  lettreTexteSelectionnee: {
+    color: Theme.action.primaireTexte,
   },
   // 📖 Sélection en aubergine (couleur de l'action principale) et plus en corail : avant
   //    validation, une réponse cochée en rouge se lisait déjà comme une erreur.
@@ -668,125 +701,47 @@ const styles = StyleSheet.create({
     color: Theme.texte.secondaire,
   },
   explicationCard: {
-    marginTop: 8,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: Theme.fond.surface,
-    borderWidth: 1,
-    borderColor: Theme.fond.bordure,
+    marginTop: Espace[3],
+    padding: Espace[4],
+    gap: Espace[3],
+    borderRadius: Rayon.lg,
   },
   explicationCardCorrecte: {
     backgroundColor: Theme.feedback.succesSurface,
-    borderColor: Theme.etat.bon.jauge,
+  },
+  explicationCardInfo: {
+    backgroundColor: Theme.info.fond,
+  },
+  explicationEntete: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Espace[2],
   },
   explicationTitre: {
-    fontSize: 16,
-    fontWeight: "700",
     color: Theme.texte.principal,
   },
   explicationTitreCorrecte: {
     color: Theme.feedback.succesTexte,
   },
   explicationTexte: {
-    marginTop: 8,
-    fontSize: 15,
-    lineHeight: 21,
     color: Theme.texte.principal,
-  },
-  ficheButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: Theme.action.secondaireBordure,
-    alignSelf: "flex-start",
-  },
-  ficheButtonText: {
-    flexShrink: 1,
-    fontSize: 14,
-    fontWeight: "700",
-    color: Theme.action.secondaireTexte,
-  },
-  radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: Colors.grisMoyen,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  radioSelectionne: {
-    borderColor: Theme.action.primaire,
-  },
-  radioInterieur: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: Theme.action.primaire,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: Colors.grisMoyen,
-    backgroundColor: Colors.blanc,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkboxSelectionne: {
-    borderColor: Theme.action.primaire,
-    backgroundColor: Theme.action.primaire,
-  },
-  checkboxCheck: {
-    color: Colors.blanc,
-    fontSize: 13,
-    fontWeight: "700",
   },
   reponseTexte: {
     flex: 1,
-    marginLeft: 12,
-    fontSize: 15,
-    color: Colors.aubergine,
+    color: Theme.texte.principal,
   },
   footer: {
     flexDirection: "row",
-    padding: 16,
+    gap: Espace[3],
+    padding: Espace[4],
+    paddingBottom: Espace[6],
   },
   precedentButton: {
     flex: 1,
-    marginRight: 8,
-    borderWidth: 1.5,
-    borderColor: Colors.grisMoyen,
-    borderRadius: 12,
-    padding: 14,
-    alignItems: "center",
   },
-  precedentButtonText: {
-    color: Colors.grisMoyen,
-    fontSize: 15,
-    fontWeight: "700",
-  },
+  // 📖 Le bouton principal prend toute la place qui reste : pleine largeur à la 1re question.
   suivantButton: {
-    flex: 1,
-    backgroundColor: Colors.aubergine,
-    borderRadius: 12,
-    padding: 14,
-    alignItems: "center",
-  },
-  suivantButtonDesactive: {
-    backgroundColor: Colors.grisMoyen,
-    opacity: 0.4,
-  },
-  suivantButtonText: {
-    color: Colors.blanc,
-    fontSize: 15,
-    fontWeight: "700",
+    flex: 2,
   },
   submittingOverlay: {
     ...StyleSheet.absoluteFill,
@@ -795,7 +750,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   submittingText: {
-    color: Colors.blanc,
+    color: Theme.texte.surAccent,
     marginTop: 12,
   },
   modalBackdrop: {
@@ -810,7 +765,7 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     borderRadius: 20,
     padding: 24,
-    backgroundColor: Colors.blanc,
+    backgroundColor: Theme.fond.surface,
     alignItems: "center",
     shadowColor: "#000",
     shadowOpacity: 0.18,
@@ -822,7 +777,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.fondRose,
+    backgroundColor: Theme.marque.doux,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -833,12 +788,12 @@ const styles = StyleSheet.create({
   modalTitre: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.aubergine,
+    color: Theme.texte.principal,
     textAlign: "center",
   },
   modalTexte: {
     fontSize: 14,
-    color: Colors.grisMoyen,
+    color: Theme.texte.secondaire,
     textAlign: "center",
     lineHeight: 20,
     marginTop: 8,
@@ -846,13 +801,13 @@ const styles = StyleSheet.create({
   },
   modalBoutonPrincipal: {
     width: "100%",
-    backgroundColor: Colors.aubergine,
+    backgroundColor: Theme.action.primaire,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
   },
   modalBoutonPrincipalTexte: {
-    color: Colors.blanc,
+    color: Theme.action.primaireTexte,
     fontSize: 15,
     fontWeight: "700",
   },
@@ -863,7 +818,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   modalBoutonSecondaireTexte: {
-    color: Colors.corail[600],
+    color: Theme.action.discreteTexte,
     fontSize: 14,
     fontWeight: "700",
   },

@@ -246,7 +246,7 @@ function DetailBadge({ badge }: { badge: Badge }) {
       </View>
 
       <View style={styles.detailBloc}>
-        <Text style={[Typo.legendeForte, { color: Theme.texte.secondaire }]}>{"Comment l'obtenir ?"}</Text>
+        <Text style={[Typo.legendeForte, { color: Theme.texte.secondaire }]}>{"Comment l'obtenir ?"}</Text>
         <Text style={[Typo.corps, { color: Theme.texte.principal }]}>{info.condition}</Text>
         <Text style={[Typo.legende, styles.description]}>{info.description}</Text>
       </View>
@@ -262,7 +262,7 @@ function DetailBadge({ badge }: { badge: Badge }) {
         <View style={[styles.statut, { backgroundColor: Theme.fond.surfaceEnfoncee }]}>
           <Ionicons name="sparkles-outline" size={20} color={Theme.texte.secondaire} />
           <Text style={[Typo.legende, styles.encouragement]}>
-            Continue à participer pour débloquer ce badge !
+            Continue à participer pour débloquer ce badge !
           </Text>
         </View>
       )}

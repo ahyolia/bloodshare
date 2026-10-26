@@ -59,8 +59,8 @@ export default function ParrainageScreen() {
     try {
       await Share.share({
         message:
-          `Rejoins Aïma et donne ton sang ! 🩸\n` +
-          `Utilise mon code de parrainage : ${profil.code_parrainage}\n` +
+          `Rejoins Aïma et donne ton sang ! 🩸\n` +
+          `Utilise mon code de parrainage : ${profil.code_parrainage}\n` +
           `https://aima.nc`,
       });
     } catch {
