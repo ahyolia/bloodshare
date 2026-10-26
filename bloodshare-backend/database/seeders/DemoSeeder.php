@@ -269,25 +269,9 @@ class DemoSeeder extends Seeder
             ]);
         }
 
-        $fichesInfos = [
-            ['titre' => 'Qui peut donner son sang ?', 'categorie' => 'eligibilite'],
-            ['titre' => 'Comment se déroule un don de sang ?', 'categorie' => 'don'],
-            ['titre' => 'Que faire avant de donner son sang ?', 'categorie' => 'preparation'],
-            ['titre' => 'Les différents groupes sanguins', 'categorie' => 'sante'],
-            ['titre' => 'Les bienfaits du don de sang', 'categorie' => 'sante'],
-        ];
-
-        foreach ($fichesInfos as $fiche) {
-            Contenu::create([
-                'admin_id' => $admin?->id,
-                'type' => 'fiche_info',
-                'titre' => $fiche['titre'],
-                'contenu' => 'Lorem ipsum : contenu de démonstration pour illustrer cette fiche pratique.',
-                'categorie' => $fiche['categorie'],
-                'statut' => 'publie',
-                'published_at' => now()->subDays(rand(0, 10)),
-            ]);
-        }
+        // 📖 Les vraies fiches plutôt que du Lorem ipsum (les catégories de l'ancienne démo
+        //    n'existaient pas dans l'app : les fiches n'y apparaissaient pas).
+        $this->call(FichesPratiquesSeeder::class);
     }
 
     private function seedBannieres(?User $admin): void

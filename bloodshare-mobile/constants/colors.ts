@@ -67,6 +67,9 @@ export const Theme = {
   info: {
     icone: Palette.petrole[700], // sur `fond` : 5,6:1
     fond: Palette.petrole[100],
+    /** Encarts d'information (explication, note, « Le savais-tu ? ») : assez soutenu pour
+     *  se détacher du fond crème, là où `fond` s'y fondait. Icône dessus : 4,8:1. */
+    surface: Palette.petrole[200],
   },
 
   /** Couleur signature. Aplats et grandes surfaces uniquement. */

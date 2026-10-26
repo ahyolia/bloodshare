@@ -6,6 +6,7 @@ use App\Models\Banniere;
 use App\Models\Contenu;
 use App\Models\Evenement;
 use App\Models\QuestionEligibilite;
+use App\Models\Quiz;
 use App\Models\StockSang;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -38,7 +39,23 @@ class ContenuPublicTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1)
             ->assertJsonPath('0.titre', 'Qui peut donner ?')
-            ->assertJsonPath('0.quiz_cta', true);
+            ->assertJsonPath('0.quiz_cta', true)
+            ->assertJsonPath('0.quiz_lies', []);
+    }
+
+    public function test_donne_les_quiz_actifs_dont_une_question_renvoie_vers_la_fiche(): void
+    {
+        $fiche = Contenu::create(['type' => 'fiche_info', 'titre' => 'Groupes', 'contenu' => 'X', 'statut' => 'publie', 'published_at' => now()]);
+        $actif = Quiz::create(['titre' => 'Le parcours de ton sang', 'statut' => 'actif', 'points_attribues' => 20]);
+        $brouillon = Quiz::create(['titre' => 'Pas encore relu', 'statut' => 'brouillon', 'points_attribues' => 20]);
+        // Deux questions du même quiz vers la fiche : le quiz n'apparaît qu'une fois.
+        foreach ([$actif, $actif, $brouillon] as $i => $quiz) {
+            $quiz->questions()->create(['intitule' => "Question {$i}", 'type' => 'unique', 'ordre' => $i, 'contenu_id' => $fiche->id]);
+        }
+
+        $this->getJson('/api/fiches-infos')
+            ->assertOk()
+            ->assertJsonPath('0.quiz_lies', [['id' => $actif->id, 'titre' => 'Le parcours de ton sang']]);
     }
 
     public function test_renvoie_le_niveau_de_stock_par_groupe_sanguin(): void

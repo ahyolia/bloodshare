@@ -33,6 +33,8 @@ export const Palette = {
   /** Pétrole — couleur secondaire, informations calmes. */
   petrole: {
     100: '#E4F3F5',
+    // Pétrole 500 à 22 % sur du blanc : un pastel qui se détache du fond crème.
+    200: '#D1E7EA',
     500: '#2E93A0',
     700: '#136B7A',
   },
