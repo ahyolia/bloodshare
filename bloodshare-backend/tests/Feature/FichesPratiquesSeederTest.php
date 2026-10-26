@@ -41,7 +41,7 @@ class FichesPratiquesSeederTest extends TestCase
         }
     }
 
-    public function test_met_a_jour_une_fiche_existante_sans_la_dupliquer(): void
+    public function test_remplace_une_fiche_de_demo_sans_la_dupliquer(): void
     {
         Contenu::create([
             'type' => 'fiche_info',
@@ -56,6 +56,23 @@ class FichesPratiquesSeederTest extends TestCase
 
         $fiche = Contenu::where('titre', 'Qui peut donner son sang ?')->sole();
         $this->assertStringNotContainsString('Lorem', $fiche->contenu);
+    }
+
+    public function test_garde_une_fiche_modifiee_dans_le_bo_et_ne_remet_que_son_ordre(): void
+    {
+        $this->seed(FichesPratiquesSeeder::class);
+        Contenu::where('titre', 'Qui peut donner son sang ?')->update([
+            'contenu' => 'Texte relu par Strat\'Com.',
+            'statut' => 'brouillon',
+            'published_at' => null,
+        ]);
+
+        $this->seed(FichesPratiquesSeeder::class);
+
+        $fiche = Contenu::where('titre', 'Qui peut donner son sang ?')->sole();
+        $this->assertSame('Texte relu par Strat\'Com.', $fiche->contenu);
+        $this->assertSame('brouillon', $fiche->statut);
+        $this->assertNotNull($fiche->published_at);
     }
 
     public function test_retire_l_ancienne_fiche_de_demo_mais_pas_une_fiche_reecrite(): void

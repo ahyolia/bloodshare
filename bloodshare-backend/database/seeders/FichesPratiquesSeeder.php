@@ -8,8 +8,10 @@ use Illuminate\Database\Seeder;
 
 // 📖 Fiches pratiques de la page Don, rédigées à partir des critères officiels du Don du
 //    Sang et des informations déjà utilisées dans les quiz (QuizContenuSeeder) : à faire
-//    relire par Strat'Com. Une fiche existante est retrouvée par son titre et mise à jour ;
-//    ensuite le backoffice fait foi. Lancement :
+//    relire par Strat'Com. Une fiche absente est créée ; une fiche déjà en base n'est
+//    réécrite que si elle contient encore le texte de démo (« Lorem ipsum… »), sinon le
+//    backoffice fait foi et seul son ordre de lecture est remis. Lancé une fois par la
+//    migration 2026_10_27_000000_seed_fiches_pratiques_et_eligibilite, à la main ensuite :
 //    php artisan db:seed --class=FichesPratiquesSeeder
 //
 //    Syntaxe du contenu, la même que pour les documents juridiques : « ## Titre », « - »
@@ -26,19 +28,22 @@ class FichesPratiquesSeeder extends Seeder
         $admin = User::whereHas('roles', fn ($q) => $q->where('name', 'super_admin'))->first();
 
         foreach (self::fiches() as $ordre => $fiche) {
-            Contenu::updateOrCreate(
-                ['type' => 'fiche_info', 'titre' => $fiche['titre']],
-                [
+            $contenu = Contenu::firstOrNew(['type' => 'fiche_info', 'titre' => $fiche['titre']]);
+
+            if (! $contenu->exists || str_starts_with((string) $contenu->contenu, 'Lorem ipsum')) {
+                $contenu->fill([
                     'admin_id' => $admin?->id,
                     'categorie' => $fiche['categorie'],
                     'contenu' => trim($fiche['contenu']),
                     'le_saviez_vous' => $fiche['le_saviez_vous'],
                     'quiz_cta' => true,
                     'statut' => 'publie',
-                    // 📖 L'API trie les fiches par date de publication : on fixe l'ordre de lecture.
-                    'published_at' => now()->startOfDay()->addMinutes($ordre),
-                ]
-            );
+                ]);
+            }
+
+            // 📖 L'API trie les fiches par date de publication : on fixe l'ordre de lecture.
+            $contenu->published_at = now()->startOfDay()->addMinutes($ordre);
+            $contenu->save();
         }
 
         // L'ancienne fiche de démo n'est retirée que si personne ne l'a réécrite dans le BO.
