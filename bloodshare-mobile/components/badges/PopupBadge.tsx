@@ -26,6 +26,7 @@ import { useReduireAnimations } from '../../hooks/useReduireAnimations';
 import type { BadgeAFeter } from '../../services/badges.service';
 import { Bouton } from '../ui/Bouton';
 import { ConfettisSticker } from './ConfettisSticker';
+import { VisuelBadge } from './VisuelBadge';
 
 type Props = {
   badge: BadgeAFeter | null;
@@ -33,6 +34,8 @@ type Props = {
 };
 
 const STICKER = 150;
+// Bord blanc du sticker autour du disque.
+const BORD_STICKER = 10;
 const INCLINAISON = -6;
 
 // Textes : ils glissent en fondu l'un après l'autre, une fois le sticker collé.
@@ -42,7 +45,17 @@ const apparition = (rang: number) =>
 // 📖 Animation « sticker qu'on colle » : il arrive grand, penché et décollé (ombre
 //    large), se plaque d'un coup en s'écrasant un peu, se pose à sa place, puis un reflet
 //    le traverse comme sur un autocollant brillant.
-function Sticker({ emoji, couleur, nom }: { emoji: string; couleur: string; nom: string }) {
+function Sticker({
+  imageUrl,
+  emoji,
+  couleur,
+  nom,
+}: {
+  imageUrl: string | null;
+  emoji: string;
+  couleur: string;
+  nom: string;
+}) {
   const reduire = useReduireAnimations();
   const pose = useSharedValue(0);
   const ecrase = useSharedValue(1);
@@ -96,8 +109,9 @@ function Sticker({ emoji, couleur, nom }: { emoji: string; couleur: string; nom:
       <ConfettisSticker />
       <Animated.View style={[styles.ombre, styleOmbre]} />
       <Animated.View style={[styles.sticker, styleSticker]}>
-        <View style={[styles.disque, { backgroundColor: `${couleur}2E` }]}>
-          <Text style={styles.emoji}>{emoji}</Text>
+        {/* Disque teinté seulement sous l'emoji : l'illustration a déjà son propre fond. */}
+        <View style={[styles.disque, !imageUrl && { backgroundColor: `${couleur}2E` }]}>
+          <VisuelBadge imageUrl={imageUrl} emoji={emoji} taille={STICKER - 2 * BORD_STICKER} />
           <Animated.View style={[styles.reflet, styleReflet]} />
         </View>
       </Animated.View>
@@ -150,7 +164,7 @@ export function PopupBadge({ badge, onFermer }: Props) {
             accessibilityRole="alert"
             accessibilityLabel={`Nouveau badge débloqué : ${badge.nom}. ${info.description}`}
           >
-            <Sticker emoji={info.emoji} couleur={couleur} nom={badge.nom} />
+            <Sticker imageUrl={badge.image_url} emoji={info.emoji} couleur={couleur} nom={badge.nom} />
 
             {/* 📖 Ordre de lecture : le badge (sticker et son nom), puis la félicitation,
                 puis le détail. « Bravo ! » en Nunito gras : la police de titre est
@@ -215,7 +229,7 @@ const styles = StyleSheet.create({
     width: STICKER,
     height: STICKER,
     borderRadius: Rayon.plein,
-    padding: 10,
+    padding: BORD_STICKER,
     backgroundColor: Palette.neutre.blanc,
     ...Ombre.flottante,
   },
@@ -225,10 +239,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-  },
-  emoji: {
-    fontSize: 66,
-    lineHeight: 82,
   },
   reflet: {
     position: 'absolute',

@@ -113,12 +113,13 @@ export const CATEGORIE_COLOR: Record<CategorieBadge, string> = {
   defis: '#F0A03C', // orange
 };
 
+// Libellés seuls, comme les autres filtres de l'app (composant Filtres) : pas d'emoji.
 export const CATEGORIE_LABEL: Record<CategorieBadge, string> = {
-  dons: '🩸 Dons',
-  cartes: '🃏 Collection',
-  quiz: '📚 Quiz',
-  parrainage: '🤝 Parrainage',
-  defis: '🏆 Défis',
+  dons: 'Dons',
+  cartes: 'Collection',
+  quiz: 'Quiz',
+  parrainage: 'Parrainage',
+  defis: 'Défis',
 };
 
 export const CATEGORIES_FILTRE: CategorieBadge[] = ['dons', 'cartes', 'quiz', 'parrainage', 'defis'];
