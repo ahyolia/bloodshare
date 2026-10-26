@@ -48,14 +48,24 @@ describe('quizAReprendre', () => {
 });
 
 describe('progressionQuiz', () => {
-  it('ramène chaque score sur 5 avant la moyenne des 5 derniers', () => {
-    const termine = (id: number, score: number, nb: number) =>
-      quiz(id, { complete: true, score, nb_questions: nb });
+  const termine = (id: number, score: number, nb: number) =>
+    quiz(id, { complete: true, score, nb_questions: nb });
 
+  it('ramène chaque score sur 5 avant la moyenne', () => {
     const { moyenne, totalTermines } = progressionQuiz(categories(termine(1, 10, 10), termine(2, 2, 4)));
 
     expect(moyenne).toBeCloseTo((5 + 2.5) / 2);
     expect(totalTermines).toBe(2);
+  });
+
+  it('fait la moyenne de tous les quiz terminés, toutes catégories confondues', () => {
+    const { moyenne, totalTermines } = progressionQuiz([
+      { categorie: 'Le don du sang', quiz: [1, 2, 3, 4].map((id) => termine(id, 5, 5)) },
+      { categorie: 'Après le don', quiz: [termine(5, 0, 5), termine(6, 0, 5), quiz(7)] },
+    ]);
+
+    expect(moyenne).toBeCloseTo((4 * 5) / 6);
+    expect(totalTermines).toBe(6);
   });
 
   it("n'a pas de moyenne sans quiz terminé", () => {

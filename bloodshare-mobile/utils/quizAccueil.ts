@@ -28,8 +28,9 @@ export const premierQuizAFaire = (categories: CategorieQuiz[]): QuizItem | null 
   categories.flatMap((c) => c.quiz).find((q) => etatQuiz(q).statut === 'a_faire') ?? null;
 
 /**
- * Moyenne sur 5 des 5 derniers quiz terminés (les derniers de la liste sont les plus
- * récents), et nombre total de quiz terminés.
+ * Moyenne sur 5 de tous les quiz terminés, et nombre de quiz terminés.
+ * 📖 Pas de « moyenne récente » : GET /quiz regroupe les quiz par catégorie et ne donne
+ *    aucune date de fin, l'ordre de la liste ne dit donc pas lesquels sont les derniers faits.
  * 📖 Le score compte les bonnes réponses sur nb_questions, variable d'un quiz à l'autre :
  *    chaque quiz est ramené sur 5 avant la moyenne.
  */
@@ -37,11 +38,10 @@ export const progressionQuiz = (categories: CategorieQuiz[]) => {
   const termines = categories
     .flatMap((c) => c.quiz)
     .filter((q): q is QuizItem & { score: number } => q.complete && q.score !== null);
-  const cinqDerniers = termines.slice(-5);
   const surCinq = (q: QuizItem & { score: number }) => (q.nb_questions > 0 ? (q.score / q.nb_questions) * 5 : 0);
 
   return {
-    moyenne: cinqDerniers.length > 0 ? cinqDerniers.reduce((s, q) => s + surCinq(q), 0) / cinqDerniers.length : null,
+    moyenne: termines.length > 0 ? termines.reduce((s, q) => s + surCinq(q), 0) / termines.length : null,
     totalTermines: termines.length,
   };
 };

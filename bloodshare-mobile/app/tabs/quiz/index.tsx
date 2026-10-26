@@ -182,7 +182,7 @@ export default function QuizScreen() {
               <View style={styles.chiffres}>
                 <CarteChiffre
                   valeur={moyenne !== null ? `${moyenne.toFixed(1).replace('.', ',')}/5` : '–'}
-                  libelle="Moyenne récente"
+                  libelle="Moyenne"
                   icone="stats-chart-outline"
                   teinte="petrole"
                   inclinaison="-2deg"

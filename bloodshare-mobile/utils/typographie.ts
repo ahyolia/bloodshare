@@ -9,13 +9,18 @@ export const avecEspacesInsecables = (texte: string): string =>
     .replace(/ +([?!:;»])/g, `${ESPACE_INSECABLE}$1`)
     .replace(/« +/g, `«${ESPACE_INSECABLE}`);
 
-/** Applique `avecEspacesInsecables` à toutes les chaînes d'une réponse de l'API. */
+// 📖 Champs saisis par l'utilisateur : rendus tels quels. Le formulaire de profil
+//    préremplit le pseudo depuis l'API, une version corrigée serait renvoyée et
+//    enregistrée en base avec des espaces insécables qu'il n'a jamais tapées.
+const CHAMPS_SAISIS = new Set(['pseudo', 'email']);
+
+/** Applique `avecEspacesInsecables` à toutes les chaînes d'une réponse de l'API, sauf aux champs saisis. */
 export const espacesInsecablesPartout = <T>(valeur: T): T => {
   if (typeof valeur === 'string') return avecEspacesInsecables(valeur) as T;
   if (Array.isArray(valeur)) return valeur.map(espacesInsecablesPartout) as T;
   if (valeur && typeof valeur === 'object') {
     return Object.fromEntries(
-      Object.entries(valeur).map(([cle, v]) => [cle, espacesInsecablesPartout(v)])
+      Object.entries(valeur).map(([cle, v]) => [cle, CHAMPS_SAISIS.has(cle) ? v : espacesInsecablesPartout(v)])
     ) as T;
   }
   return valeur;

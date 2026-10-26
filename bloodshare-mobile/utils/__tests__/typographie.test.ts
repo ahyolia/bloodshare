@@ -24,4 +24,10 @@ describe('espacesInsecablesPartout', () => {
       espacesInsecablesPartout({ id: 3, titre: 'Prêt ?', actif: true, vide: null, liste: ['Oui !'] })
     ).toEqual({ id: 3, titre: `Prêt${NBSP}?`, actif: true, vide: null, liste: [`Oui${NBSP}!`] });
   });
+
+  it('laisse tels quels les champs saisis par l’utilisateur, même imbriqués', () => {
+    expect(
+      espacesInsecablesPartout({ user: { pseudo: 'Toto !', email: 'a@b.nc' }, classement: [{ pseudo: 'Lou ?' }] })
+    ).toEqual({ user: { pseudo: 'Toto !', email: 'a@b.nc' }, classement: [{ pseudo: 'Lou ?' }] });
+  });
 });
