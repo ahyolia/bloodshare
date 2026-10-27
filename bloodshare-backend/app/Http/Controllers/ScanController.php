@@ -79,12 +79,8 @@ class ScanController extends Controller
             ], 422);
         }
 
-        // Carte du mois courant
-        $moisNumero = (int) now()->format('n');
-        $carte      = Carte::where('categorie', 'mois_don')
-            ->where('mois_numero', $moisNumero)
-            ->where('statut', 'active')
-            ->first();
+        // Carte du mois courant, dans la collection de l'année en cours
+        $carte = Carte::carteDuMois(now());
 
         if (! $carte) {
             return response()->json([
@@ -139,6 +135,7 @@ class ScanController extends Controller
                 'titre'        => $carte->titre,
                 'categorie'    => $carte->categorie,
                 'mois_numero'  => $carte->mois_numero,
+                'annee'        => $carte->annee,
                 'image_url'    => $carte->image_url,
                 'deja_possedee' => $dejaPossedee,
             ];

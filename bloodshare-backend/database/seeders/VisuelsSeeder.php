@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Badge;
 use App\Models\Carte;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -13,20 +14,31 @@ use Illuminate\Support\Facades\Storage;
  *    Chaque fichier est copié sur le disque `public`, là où Filament range ses uploads :
  *    l'image s'affiche et se remplace ensuite normalement depuis le backoffice.
  *
- *    On ne remplit que les `image_url` vides : une image déjà envoyée depuis le BO n'est
- *    jamais écrasée. Lancé par la migration seed_visuels_cartes_et_badges (Dokploy et
- *    sae203 ne lancent pas les seeders) et par DatabaseSeeder, après CarteSeeder et
- *    BadgeSeeder, pour une base recréée de zéro.
+ *    On ne touche qu'aux `image_url` vides ou encore sur un visuel par défaut (`visuels/…`) :
+ *    une image envoyée depuis le BO n'est jamais écrasée. Le nom publié porte l'empreinte
+ *    du fichier : un visuel redessiné change d'URL et le cache de la PWA ne sert pas
+ *    l'ancien. Lancé par les migrations seed_visuels_cartes_et_badges et
+ *    maj_visuels_cartes (Dokploy et sae203 ne lancent pas les seeders) et par
+ *    DatabaseSeeder, après CarteSeeder et BadgeSeeder, pour une base recréée de zéro.
  */
 class VisuelsSeeder extends Seeder
 {
     public const TITRE_CARTE_FORUM = 'Carte Forum IUT';
 
-    /** Carte de mois (mois_numero) => fichier dans database/visuels/cartes. */
+    /**
+     * Collection (année) => carte de mois (mois_numero) => fichier dans database/visuels/cartes.
+     * 📖 Pour une nouvelle collection : ses fichiers (ex. 2027/mois-01.webp), une entrée
+     *    ici, et une migration qui relance ce seeder.
+     */
     private const CARTES_MOIS = [
-        10 => 'mois-10.webp',
-        11 => 'mois-11.webp',
-        12 => 'mois-12.webp',
+        2026 => [
+            1 => 'mois-01.webp',
+            2 => 'mois-02.webp',
+            3 => 'mois-03.webp',
+            10 => 'mois-10.webp',
+            11 => 'mois-11.webp',
+            12 => 'mois-12.webp',
+        ],
     ];
 
     /** Catégorie de carte unique => fichier. Parrain et filleul partagent le même visuel. */
@@ -69,9 +81,16 @@ class VisuelsSeeder extends Seeder
         );
         $this->attribuer($carteForum, 'cartes/forum-iut.webp');
 
-        foreach (self::CARTES_MOIS as $mois => $fichier) {
-            Carte::where('categorie', 'mois_don')->where('mois_numero', $mois)->get()
-                ->each(fn (Carte $carte) => $this->attribuer($carte, "cartes/{$fichier}"));
+        // 📖 Les migrations du 26 octobre lancent ce seeder avant que cartes.annee existe :
+        //    il n'y avait alors qu'une collection, on ne filtre pas sur l'année.
+        $parAnnee = Schema::hasColumn('cartes', 'annee');
+        foreach (self::CARTES_MOIS as $annee => $fichiers) {
+            foreach ($fichiers as $mois => $fichier) {
+                Carte::where('categorie', 'mois_don')->where('mois_numero', $mois)
+                    ->when($parAnnee, fn ($q) => $q->where('annee', $annee))
+                    ->get()
+                    ->each(fn (Carte $carte) => $this->attribuer($carte, "cartes/{$fichier}"));
+            }
         }
 
         foreach (self::CARTES_CATEGORIE as $categorie => $fichier) {
@@ -88,13 +107,25 @@ class VisuelsSeeder extends Seeder
     private function attribuer(Carte|Badge $modele, string $fichier): void
     {
         // getRawOriginal : l'accesseur image_url renvoie une URL absolue, pas la valeur en base.
-        if ($modele->getRawOriginal('image_url')) {
+        $actuel = $modele->getRawOriginal('image_url');
+        if ($actuel && ! str_starts_with($actuel, 'visuels/')) {
             return;
         }
 
-        $chemin = "visuels/{$fichier}";
-        Storage::disk('public')->put($chemin, file_get_contents(database_path("visuels/{$fichier}")));
+        $contenu = file_get_contents(database_path("visuels/{$fichier}"));
+        $empreinte = substr(md5($contenu), 0, 8);
+        $chemin = 'visuels/' . preg_replace('/\.webp$/', "-{$empreinte}.webp", $fichier);
+        if ($actuel === $chemin) {
+            return;
+        }
 
+        $disque = Storage::disk('public');
+        $disque->put($chemin, $contenu);
         $modele->forceFill(['image_url' => $chemin])->save();
+
+        // L'ancien visuel par défaut, s'il n'est plus utilisé (parrain et filleul le partagent).
+        if ($actuel && ! Carte::where('image_url', $actuel)->exists() && ! Badge::where('image_url', $actuel)->exists()) {
+            $disque->delete($actuel);
+        }
     }
 }

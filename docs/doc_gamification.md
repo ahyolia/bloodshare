@@ -63,7 +63,7 @@ Contrôle d'éligibilité (56 j homme / 84 j femme depuis le dernier don validé
         ↓
 Don enregistré (statut: valide) — aucun point
         ↓
-Carte du mois en cours :
+Carte du mois en cours, dans la collection de l'année en cours :
 ├── pas encore possédée → ajout dans user_cartes
 └── déjà possédée       → rien (deja_possedee: true)
         ↓
@@ -77,6 +77,13 @@ Parrainage validé si filleul, contribution au défi, synchronisation des badges
 *   Grille des 12 cartes du mois (non obtenues affichées en grisé) et pourcentage de complétion (sur 12)
 *   Cartes Événement (générique et propres à un événement) avec leur nombre d'exemplaires, cartes Parrain / Filleul
 
+## Collections par année
+*   Les cartes du mois forment **une collection par année** (`cartes.annee`, une seule carte par mois et par année) : la carte de novembre 2027 est une autre carte que celle de novembre 2026, avec son propre dessin. La collection 2026 est la première.
+*   Le scan donne la carte du mois **de l'année en cours** : un donneur qui a novembre 2026 obtient novembre 2027 l'année suivante.
+*   La collection de l'année suivante est créée le 1er décembre (`cartes:creer-collection`, planifiée ; se lance aussi à la main avec une année), sans visuel : le BO a décembre pour y poser les dessins. Si elle manque au moment d'un scan, elle est créée à ce moment-là, le don n'est jamais bloqué.
+*   Page Cartes : la collection de l'année en cours par défaut, avec des pastilles pour revoir les années passées où le donneur a au moins une carte. Une collection future reste cachée.
+*   Avec 56 à 84 jours entre deux dons, une collection d'une année ne peut pas être complète (6 cartes au plus). Les badges de cartes du mois comptent donc les **mois différents, toutes années confondues**.
+
 ## Carte propre à un événement
 *   Dans le BO, la fiche d'un événement a un champ « Carte remise aux participants » (`evenements.carte_id`). Vide : l'événement remet la carte générique.
 *   La carte générique est marquée explicitement (`cartes.generique`). Une carte Événement non générique n'est remise **que** par l'événement qui la désigne — jamais à sa place, même tant qu'elle n'est rattachée à aucun événement.
@@ -84,8 +91,10 @@ Parrainage validé si filleul, contribution au défi, synchronisation des badges
 *   Le badge « Toujours partant » compte toutes les cartes Événement confondues.
 
 ## Visuels par défaut
-*   Versionnés dans `bloodshare-backend/database/visuels/` (WebP : cartes 900 px de large, badges 512 px), posés par `VisuelsSeeder` (lancé par la migration `seed_visuels_cartes_et_badges` et par `DatabaseSeeder`).
-*   Seules les `image_url` vides sont remplies : une image envoyée depuis le BO n'est jamais écrasée.
+*   Versionnés dans `bloodshare-backend/database/visuels/` (WebP : cartes 900 px de large, badges 512 px), posés par `VisuelsSeeder` (lancé par les migrations `seed_visuels_cartes_et_badges` et `maj_visuels_cartes`, et par `DatabaseSeeder`).
+*   Cartes illustrées (collection 2026) : janvier à mars, octobre à décembre, Parrain et Filleul (même visuel), Forum IUT, Fidèle. Les autres mois et la carte Événement générique gardent le placeholder.
+*   Seules les `image_url` vides ou encore sur un visuel par défaut (`visuels/…`) sont remplies : une image envoyée depuis le BO n'est jamais écrasée.
+*   Le fichier publié porte l'empreinte de son contenu (`mois-11-ed8b2457.webp`) : un visuel redessiné change d'URL, le cache de la PWA ne garde pas l'ancien. Pour remplacer un visuel, on remplace le WebP dans `database/visuels/` et on ajoute une migration qui relance `VisuelsSeeder`.
 # 3\. Badges
 ## Principe
 Les badges récompensent des jalons importants. Ils sont attribués automatiquement par le système quand la condition est remplie, une seule fois chacun, et ne rapportent pas de points.
@@ -104,8 +113,8 @@ Créés par `BadgeSeeder` (et les migrations `seed_cartes_et_quiz_badges` / `see
 | Parrainage | Ambassadeur | 1er parrainage validé (parrain) | action\_specifique : `premier_parrainage` |
 | Parrainage | Bien entouré | 3 parrainages validés (parrain) | action\_specifique : `trois_parrainages` |
 | Parrainage | Bien accueilli | Inscription avec un code de parrainage (filleul) | action\_specifique : `inscrit_avec_code` |
-| Cartes | Belle collection | 6 cartes du mois différentes | action\_specifique : `six_cartes_mois` |
-| Cartes | Année complète | Les 12 cartes du mois | action\_specifique : `douze_cartes_mois` |
+| Cartes | Belle collection | Cartes du mois de 6 mois différents, toutes années confondues | action\_specifique : `six_cartes_mois` |
+| Cartes | Année complète | Une carte de chacun des 12 mois, toutes années confondues | action\_specifique : `douze_cartes_mois` |
 | Cartes | Toujours partant | 3 cartes Événement (3 événements) | action\_specifique : `trois_cartes_evenement` |
 | Défi | Esprit d'équipe | Avoir contribué à un défi (au moins 1 don compté) | action\_specifique : `defi_contribue` |
 | Défi | Objectif atteint | Avoir contribué à un défi dont l'objectif a été atteint | action\_specifique : `defi_remporte` |

@@ -35,6 +35,61 @@ class CartesApiTest extends TestCase
             ->assertJsonPath('evenement.cartes.1.quantite', 1);
     }
 
+    public function test_les_cartes_de_mois_sont_triees_de_janvier_a_decembre(): void
+    {
+        // 📖 Une carte modifiée (image posée) change de place physique dans PostgreSQL :
+        //    on les crée dans le désordre pour ne pas dépendre de l'ordre d'insertion.
+        foreach ([10, 1, 12, 2, 11, 3, 9, 4, 8, 5, 7, 6] as $mois) {
+            Carte::create(['titre' => "Carte {$mois}", 'categorie' => 'mois_don', 'mois_numero' => $mois, 'statut' => 'active']);
+        }
+        Sanctum::actingAs(User::factory()->create());
+
+        $mois = collect($this->getJson('/api/cartes')->assertOk()->json('mois_don.cartes'))->pluck('mois_numero')->all();
+
+        $this->assertSame(range(1, 12), $mois);
+    }
+
+    public function test_une_collection_par_annee_la_plus_recente_d_abord(): void
+    {
+        $this->travelTo(now()->setDate(2027, 3, 10));
+        $novembre2026 = Carte::create(['titre' => 'Novembre 2026', 'categorie' => 'mois_don', 'mois_numero' => 11, 'annee' => 2026, 'statut' => 'active']);
+        Carte::create(['titre' => 'Décembre 2026', 'categorie' => 'mois_don', 'mois_numero' => 12, 'annee' => 2026, 'statut' => 'active']);
+        $janvier2027 = Carte::create(['titre' => 'Janvier 2027', 'categorie' => 'mois_don', 'mois_numero' => 1, 'annee' => 2027, 'statut' => 'active']);
+        $user = User::factory()->create();
+        UserCarte::create(['user_id' => $user->id, 'carte_id' => $novembre2026->id, 'quantite' => 1, 'obtenue_at' => '2026-11-12']);
+        UserCarte::create(['user_id' => $user->id, 'carte_id' => $janvier2027->id, 'quantite' => 1, 'obtenue_at' => '2027-01-15']);
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/cartes')
+            ->assertOk()
+            ->assertJsonPath('mois_don.annee', 2027)
+            // Champs de l'année en cours, pour une app pas encore à jour.
+            ->assertJsonPath('mois_don.cartes.0.id', $janvier2027->id)
+            ->assertJsonPath('mois_don.pourcentage_complete', 8.3)
+            ->assertJsonCount(2, 'mois_don.collections')
+            ->assertJsonPath('mois_don.collections.0.annee', 2027)
+            ->assertJsonPath('mois_don.collections.1.annee', 2026)
+            ->assertJsonPath('mois_don.collections.1.cartes.0.id', $novembre2026->id)
+            ->assertJsonPath('mois_don.collections.1.cartes.0.annee', 2026)
+            ->assertJsonPath('mois_don.collections.1.cartes.0.obtenue', true)
+            ->assertJsonPath('mois_don.collections.1.cartes.1.obtenue', false);
+    }
+
+    public function test_une_annee_passee_sans_carte_et_une_collection_future_restent_cachees(): void
+    {
+        $this->travelTo(now()->setDate(2027, 12, 5));
+        Carte::create(['titre' => 'Novembre 2026', 'categorie' => 'mois_don', 'mois_numero' => 11, 'annee' => 2026, 'statut' => 'active']);
+        Carte::create(['titre' => 'Décembre 2027', 'categorie' => 'mois_don', 'mois_numero' => 12, 'annee' => 2027, 'statut' => 'active']);
+        // 📖 Créée en décembre pour que le BO y pose les dessins : pas encore visible.
+        Carte::create(['titre' => 'Janvier 2028', 'categorie' => 'mois_don', 'mois_numero' => 1, 'annee' => 2028, 'statut' => 'active']);
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->getJson('/api/cartes')
+            ->assertOk()
+            ->assertJsonCount(1, 'mois_don.collections')
+            ->assertJsonPath('mois_don.collections.0.annee', 2027);
+    }
+
     public function test_renvoie_la_description_et_la_date_d_obtention(): void
     {
         Carte::query()->delete();

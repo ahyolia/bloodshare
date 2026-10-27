@@ -33,12 +33,16 @@ function trouverCarte(id: number) {
   const cartes = getCartesCache();
   if (!cartes) return undefined;
 
-  const carteMois = cartes.mois_don.cartes.find((carte) => carte.id === id);
+  // Toutes les collections (années), pas seulement celle de l'année en cours.
+  const carteMois = cartes.mois_don.collections
+    .flatMap((collection) => collection.cartes)
+    .find((carte) => carte.id === id);
   if (carteMois) {
     return {
       categorie: 'mois_don' as Categorie,
       carte: carteMois,
       mois: carteMois.mois_numero,
+      annee: carteMois.annee,
     };
   }
 
@@ -115,7 +119,11 @@ export default function CarteDetailScreen() {
             <CarteRevelee
               imageUrl={resultat.carte.image_url}
               titre={resultat.carte.titre}
-              sticker={resultat.mois ? (getNomMois(resultat.mois) ?? '') : nomCourt(resultat.carte.titre)}
+              sticker={
+                'mois' in resultat && resultat.mois
+                  ? [getNomMois(resultat.mois), resultat.annee].filter(Boolean).join(' ')
+                  : nomCourt(resultat.carte.titre)
+              }
               largeur={largeur}
               delai={DELAI_RETOURNEMENT}
             />

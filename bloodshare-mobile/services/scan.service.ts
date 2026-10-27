@@ -15,6 +15,8 @@ export type CarteObtenue = {
   image_url?: string | null;
   // Carte du mois uniquement : le numéro du mois (1 à 12).
   mois_numero?: number | null;
+  // Carte du mois uniquement : sa collection (année).
+  annee?: number | null;
   // 📖 true = l'utilisateur possédait déjà cette carte. Le don est bien validé, mais aucune
   //    nouvelle carte-souvenir ni badge n'est accordé (cartes du mois uniques, don gratuit).
   deja_possedee: boolean;

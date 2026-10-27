@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Validation\Rules\Unique;
 
 class CarteResource extends Resource
 {
@@ -57,6 +58,21 @@ class CarteResource extends Resource
                         11 => 'Novembre',
                         12 => 'Décembre',
                     ])
+                    ->visible(fn ($get) => $get('categorie') === 'mois_don')
+                    ->required(fn ($get) => $get('categorie') === 'mois_don'),
+
+                // 📖 Une collection par année : la carte de novembre 2027 a son propre dessin,
+                //    celle de novembre 2026 garde le sien.
+                Forms\Components\TextInput::make('annee')
+                    ->label('Collection (année)')
+                    ->numeric()
+                    ->minValue(Carte::PREMIERE_COLLECTION)
+                    ->maxValue(2100)
+                    ->default(fn () => now()->year)
+                    ->unique(ignoreRecord: true, modifyRuleUsing: fn (Unique $rule, $get) => $rule
+                        ->where('categorie', 'mois_don')
+                        ->where('mois_numero', $get('mois_numero')))
+                    ->validationMessages(['unique' => 'Cette collection a déjà une carte pour ce mois.'])
                     ->visible(fn ($get) => $get('categorie') === 'mois_don')
                     ->required(fn ($get) => $get('categorie') === 'mois_don'),
 
@@ -132,6 +148,11 @@ class CarteResource extends Resource
                     ][$state] ?? '—' : '—')
                     ->default('—'),
 
+                Tables\Columns\TextColumn::make('annee')
+                    ->label('Collection')
+                    ->sortable()
+                    ->default('—'),
+
                 Tables\Columns\BadgeColumn::make('statut')
                     ->label('Statut')
                     ->colors([
@@ -160,6 +181,10 @@ class CarteResource extends Resource
                         'filleul'   => '🌱 Filleul',
                         'fidele'    => '⏳ Fidèle',
                     ]),
+                Tables\Filters\SelectFilter::make('annee')
+                    ->label('Collection')
+                    ->options(fn () => Carte::where('categorie', 'mois_don')->whereNotNull('annee')
+                        ->distinct()->orderByDesc('annee')->pluck('annee', 'annee')->all()),
                 Tables\Filters\SelectFilter::make('statut')
                     ->label('Statut')
                     ->options([

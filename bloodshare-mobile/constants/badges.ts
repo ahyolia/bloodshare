@@ -41,13 +41,13 @@ export const BADGES_INFO: Record<string, BadgeInfo> = {
     emoji: '🗓️',
     categorie: 'cartes',
     description: 'Ta collection de cartes prend forme !',
-    condition: 'Obtenir 6 cartes Mois du don',
+    condition: 'Obtenir les cartes de 6 mois différents, toutes années confondues',
   },
   'Année complète': {
     emoji: '🌟',
     categorie: 'cartes',
-    description: "12 mois, 12 dons, 12 cartes. L'année parfaite du donneur.",
-    condition: 'Obtenir les 12 cartes Mois du don',
+    description: 'Un don dans chacun des 12 mois du calendrier, au fil des années.',
+    condition: 'Obtenir la carte de chaque mois, toutes années confondues',
   },
   'Toujours partant': {
     emoji: '🎪',

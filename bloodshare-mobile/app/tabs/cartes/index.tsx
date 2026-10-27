@@ -14,6 +14,7 @@ import { GrilleCartes } from '../../../components/cartes/GrilleCartes';
 import { EnTete } from '../../../components/EnTete';
 import { Chargement } from '../../../components/ui/Chargement';
 import { EtatErreur } from '../../../components/ui/EtatErreur';
+import { Filtres } from '../../../components/ui/Filtres';
 import { entree } from '../../../constants/animations';
 import { Theme } from '../../../constants/colors';
 import { Espace, Ombre, Rayon } from '../../../constants/spacing';
@@ -69,7 +70,13 @@ export default function CartesScreen() {
   useFocusEffect(charger);
 
   const ouvrirCarte = (id: number) => router.push({ pathname: '/tabs/cartes/[id]', params: { id } });
-  const annee = new Date().getFullYear();
+  // 📖 Une collection de cartes du mois par année. Par défaut l'année en cours (la
+  //    première de la liste) ; les années passées n'apparaissent que si le donneur y a
+  //    au moins une carte.
+  const [anneeChoisie, setAnneeChoisie] = useState<number | null>(null);
+  const collectionsMois = cartes?.mois_don.collections ?? [];
+  const collectionMois =
+    collectionsMois.find((collection) => collection.annee === anneeChoisie) ?? collectionsMois[0];
   const cartesEvenement = cartes?.evenement.categories.flatMap((categorie) => categorie.cartes) ?? [];
   const cartesUniques = cartes
     ? [
@@ -119,20 +126,39 @@ export default function CartesScreen() {
               <RaccourciScan onPress={() => router.push('/tabs/don/scan')} />
             </Animated.View>
 
-            <Animated.View entering={entree(1)}>
-              <Collection
-                titre="Cartes du mois"
-                precision={`Collection ${annee}`}
-                icone="calendar"
-                cartes={cartes.mois_don.cartes}
-              >
-                <GrilleCartes
-                  delaiDepart={100}
-                  cartes={cartes.mois_don.cartes.map((carte) => ({ ...carte, legende: getNomMois(carte.mois_numero) }))}
-                  onOuvrir={ouvrirCarte}
-                />
-              </Collection>
-            </Animated.View>
+            {collectionMois && (
+              <Animated.View entering={entree(1)}>
+                <Collection
+                  titre="Cartes du mois"
+                  precision={`Collection ${collectionMois.annee}`}
+                  icone="calendar"
+                  cartes={collectionMois.cartes}
+                >
+                  {collectionsMois.length > 1 && (
+                    <Filtres
+                      marge={MARGE}
+                      actif={String(collectionMois.annee)}
+                      onChoisir={(cle) => setAnneeChoisie(Number(cle))}
+                      filtres={collectionsMois.map((collection) => ({
+                        cle: String(collection.annee),
+                        libelle: String(collection.annee),
+                        detail: `collection ${collection.annee}, ${compter(
+                          collection.cartes.filter((carte) => carte.obtenue).length,
+                          'carte'
+                        )}`,
+                      }))}
+                    />
+                  )}
+                  <GrilleCartes
+                    // key : changer d'année rejoue l'arrivée des cartes.
+                    key={collectionMois.annee}
+                    delaiDepart={100}
+                    cartes={collectionMois.cartes.map((carte) => ({ ...carte, legende: getNomMois(carte.mois_numero) }))}
+                    onOuvrir={ouvrirCarte}
+                  />
+                </Collection>
+              </Animated.View>
+            )}
 
             <Animated.View entering={entree(2)}>
               <Collection

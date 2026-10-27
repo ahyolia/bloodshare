@@ -259,13 +259,44 @@ class ScanDonTest extends TestCase
         $this->assertSame(1, Don::where('user_id', $user->id)->count());
     }
 
-    public function test_n_enregistre_pas_le_don_si_la_carte_du_mois_manque(): void
+    public function test_n_enregistre_pas_le_don_si_la_carte_du_mois_est_desactivee(): void
     {
         $user = $this->connecter('homme');
+        $this->creerCarteDuMois()->update(['statut' => 'desactivee']);
 
         $this->scanner($this->creerQrCentre())->assertStatus(503);
 
         $this->assertDatabaseMissing('dons', ['user_id' => $user->id]);
+    }
+
+    public function test_cree_la_collection_de_l_annee_si_personne_ne_l_a_preparee(): void
+    {
+        // 📖 1er janvier : la collection 2027 n'existe pas encore, le don passe quand même.
+        $this->travelTo(now()->setDate(2027, 1, 1)->setTime(10, 0));
+        $this->connecter('homme');
+
+        $this->scanner($this->creerQrCentre())
+            ->assertOk()
+            ->assertJsonPath('carte_obtenue.mois_numero', 1)
+            ->assertJsonPath('carte_obtenue.annee', 2027)
+            ->assertJsonPath('carte_obtenue.titre', 'Carte de Janvier 2027');
+
+        $this->assertSame(12, Carte::where('categorie', 'mois_don')->where('annee', 2027)->count());
+    }
+
+    public function test_donne_la_carte_de_la_collection_de_l_annee_en_cours(): void
+    {
+        $user = $this->connecter('homme');
+        $octobre2026 = $this->creerCarteDuMois();
+        $octobre2027 = Carte::create(['titre' => 'Octobre 2027', 'categorie' => 'mois_don', 'mois_numero' => 10, 'annee' => 2027, 'statut' => 'active']);
+        UserCarte::create(['user_id' => $user->id, 'carte_id' => $octobre2026->id, 'quantite' => 1, 'obtenue_at' => now()]);
+
+        $this->travel(1)->years();
+
+        $this->scanner($this->creerQrCentre())
+            ->assertOk()
+            ->assertJsonPath('carte_obtenue.id', $octobre2027->id)
+            ->assertJsonPath('carte_obtenue.deja_possedee', false);
     }
 
     public function test_signale_une_carte_du_mois_deja_possedee_sans_la_dupliquer(): void

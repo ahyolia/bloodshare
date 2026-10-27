@@ -20,8 +20,20 @@ class CarteController extends Controller
             ->get()
             ->keyBy('carte_id');
 
-        $moisDon = $cartes->where('categorie', 'mois_don')->values();
-        $moisDonObtenues = $moisDon->filter(fn ($carte) => $userCartes->has($carte->id));
+        // 📖 Une collection de cartes de mois par année : celle de l'année en cours, plus les
+        //    années passées où le donneur a au moins une carte (une collection future, créée
+        //    en décembre pour y poser les dessins, reste cachée). La plus récente d'abord.
+        $anneeCourante = now()->year;
+        $collections = $cartes->where('categorie', 'mois_don')
+            ->where('annee', '<=', $anneeCourante)
+            ->groupBy('annee')
+            ->filter(fn (Collection $cartesAnnee, $annee) => (int) $annee === $anneeCourante
+                || $cartesAnnee->contains(fn (Carte $carte) => $userCartes->has($carte->id)))
+            ->sortKeysDesc()
+            ->map(fn (Collection $cartesAnnee, $annee) => $this->collectionMois((int) $annee, $cartesAnnee, $userCartes))
+            ->values();
+        $collectionCourante = $collections->firstWhere('annee', $anneeCourante)
+            ?? ['pourcentage_complete' => 0, 'cartes' => collect()];
 
         // 📖 Toutes les cartes Événement : la générique et celles propres à un événement
         //    (forum IUT...). La générique en premier.
@@ -38,11 +50,13 @@ class CarteController extends Controller
         ];
 
         return response()->json([
+            // 📖 `cartes` et `pourcentage_complete` : la collection de l'année en cours, comme
+            //    avant les collections par année (une app pas encore à jour reste correcte).
             'mois_don' => [
-                'pourcentage_complete' => round($moisDonObtenues->count() / 12 * 100, 1),
-                'cartes' => $moisDon->map(fn ($carte) => $this->carte($carte, $userCartes) + [
-                    'mois_numero' => $carte->mois_numero,
-                ])->values(),
+                'annee' => $anneeCourante,
+                'pourcentage_complete' => $collectionCourante['pourcentage_complete'],
+                'cartes' => $collectionCourante['cartes'],
+                'collections' => $collections,
             ],
             'evenement' => [
                 'cartes' => $cartesEvenement->map($avecQuantite)->values(),
@@ -55,6 +69,26 @@ class CarteController extends Controller
                 'carte' => $carteFidele ? $avecQuantite($carteFidele) : null,
             ],
         ]);
+    }
+
+    /**
+     * 📖 Janvier → décembre : sans tri, PostgreSQL renvoie l'ordre physique des lignes, qui
+     *    change dès qu'une carte est modifiée (image posée depuis le BO...).
+     */
+    private function collectionMois(int $annee, Collection $cartes, Collection $userCartes): array
+    {
+        $obtenues = $cartes->filter(fn (Carte $carte) => $userCartes->has($carte->id))->count();
+
+        return [
+            'annee' => $annee,
+            'pourcentage_complete' => round($obtenues / 12 * 100, 1),
+            'cartes' => $cartes->sortBy('mois_numero')
+                ->map(fn (Carte $carte) => $this->carte($carte, $userCartes) + [
+                    'mois_numero' => $carte->mois_numero,
+                    'annee' => $carte->annee,
+                ])
+                ->values(),
+        ];
     }
 
     /**

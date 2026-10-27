@@ -65,6 +65,44 @@ describe('getCartes', () => {
     expect(cartes.mois_don.cartes[0].titre).toBe('Octobre');
   });
 
+  it('garde les collections par année renvoyées par l’API', async () => {
+    const octobre2026 = { id: 10, titre: 'Octobre', mois_numero: 10, annee: 2026, image_url: null, obtenue: true };
+    const janvier2027 = { id: 20, titre: 'Janvier', mois_numero: 1, annee: 2027, image_url: null, obtenue: false };
+    apiGet.mockResolvedValue({
+      data: {
+        ...reponseApi().data,
+        mois_don: {
+          annee: 2027,
+          pourcentage_complete: 0,
+          cartes: [janvier2027],
+          collections: [
+            { annee: 2027, pourcentage_complete: 0, cartes: [janvier2027] },
+            { annee: 2026, pourcentage_complete: 8.3, cartes: [octobre2026] },
+          ],
+        },
+      },
+    });
+
+    const cartes = await getCartes();
+
+    expect(cartes.mois_don.annee).toBe(2027);
+    expect(cartes.mois_don.collections.map((collection) => collection.annee)).toEqual([2027, 2026]);
+  });
+
+  it('fait une seule collection d’un backend sans collections par année', async () => {
+    apiGet.mockResolvedValue(reponseApi());
+
+    const cartes = await getCartes();
+
+    expect(cartes.mois_don.collections).toEqual([
+      {
+        annee: new Date().getFullYear(),
+        pourcentage_complete: 8.3,
+        cartes: [expect.objectContaining({ id: 10 })],
+      },
+    ]);
+  });
+
   it('met les cartes en cache pour les écrans suivants', async () => {
     apiGet.mockResolvedValue(reponseApi());
 

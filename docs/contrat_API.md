@@ -266,9 +266,10 @@ _Authentifié._ Endpoint central — appelé après le scan d'un QR Code (centre
   "type": "don",
   "carte_obtenue": {
     "id": 6,
-    "titre": "Carte de Juin",
+    "titre": "Carte de Juin 2026",
     "categorie": "mois_don",
     "mois_numero": 6,
+    "annee": 2026,
     "image_url": "...",
     "deja_possedee": false
   },
@@ -283,6 +284,7 @@ _Authentifié._ Endpoint central — appelé après le scan d'un QR Code (centre
 }
 ```
 
+> `carte_obtenue` : la carte du mois en cours **dans la collection de l'année en cours** (`annee`). Si personne n'a préparé cette collection (1er janvier), ses 12 cartes sont créées sans visuel et le don passe quand même. 503 seulement si la carte du mois a été désactivée dans le BO.
 > `carte_fidele` : la carte Fidèle (`{ id, titre, categorie, image_url }`), donnée **en plus** de la carte du mois au premier don validé au moins un an après le tout premier don validé. `null` avant, et à tous les dons suivants (elle ne s'obtient qu'une fois).
 
 **Réponse 200 — succès (événement) :**
@@ -355,10 +357,26 @@ Alimente l'onglet Cartes — renvoie la collection organisée par catégorie (mo
 ```json
 {
   "mois_don": {
-    "pourcentage_complete": 41.7,
+    "annee": 2027,
+    "pourcentage_complete": 8.3,
     "cartes": [
-      { "id": 1, "titre": "Carte de Janvier", "description": "...", "mois_numero": 1, "image_url": "...", "obtenue": false, "obtenue_le": null },
-      { "id": 6, "titre": "Carte de Juin", "description": "...", "mois_numero": 6, "image_url": "...", "obtenue": true, "obtenue_le": "2026-06-14" }
+      { "id": 30, "titre": "Carte de Janvier 2027", "description": "...", "mois_numero": 1, "annee": 2027, "image_url": "...", "obtenue": true, "obtenue_le": "2027-01-15" }
+    ],
+    "collections": [
+      {
+        "annee": 2027,
+        "pourcentage_complete": 8.3,
+        "cartes": [
+          { "id": 30, "titre": "Carte de Janvier 2027", "description": "...", "mois_numero": 1, "annee": 2027, "image_url": "...", "obtenue": true, "obtenue_le": "2027-01-15" }
+        ]
+      },
+      {
+        "annee": 2026,
+        "pourcentage_complete": 8.3,
+        "cartes": [
+          { "id": 6, "titre": "Carte de Juin 2026", "description": "...", "mois_numero": 6, "annee": 2026, "image_url": "...", "obtenue": true, "obtenue_le": "2026-06-14" }
+        ]
+      }
     ]
   },
   "evenement": {
@@ -377,9 +395,10 @@ Alimente l'onglet Cartes — renvoie la collection organisée par catégorie (mo
 }
 ```
 
+> **Une collection de cartes du mois par année.** `mois_don.collections` contient la collection de l'année en cours, puis celles des années passées où l'utilisateur a au moins une carte, de la plus récente à la plus ancienne, chacune avec ses 12 cartes de janvier à décembre (exemple abrégé ci-dessus). Une collection future (créée en décembre pour que le BO y pose les dessins) n'est pas renvoyée. `mois_don.annee`, `mois_don.cartes` et `mois_don.pourcentage_complete` reprennent la collection de l'année en cours, pour les apps pas encore à jour.
 > `evenement.cartes` liste toutes les cartes Événement actives : la carte générique en premier, puis celles propres à un événement (ex. forum IUT), choisies dans le BO sur la fiche de l'événement.
 > Chaque carte porte aussi sa `description` (saisie dans le BO, peut être `null`) et `obtenue_le` (jour d'obtention au format `AAAA-MM-JJ`, `null` si pas obtenue), affichés sur la carte en grand.
-> Pas de notion de rareté — toutes les cartes sont équivalentes, seule la catégorie les distingue. Le `pourcentage_complete` ne s'applique qu'à la collection "Mois du don" (12 cartes), qui est la seule pensée comme une vraie collection à compléter.
+> Pas de notion de rareté — toutes les cartes sont équivalentes, seule la catégorie les distingue. Le `pourcentage_complete` ne s'applique qu'aux collections "Mois du don" (12 cartes par année), les seules pensées comme de vraies collections à compléter.
 # 6\. Badges
 ## `GET /badges`
 Alimente la section Badges du profil — liste tous les badges existants, obtenus ou non. _Authentifié._
