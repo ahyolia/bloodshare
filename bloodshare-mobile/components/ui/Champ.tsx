@@ -13,12 +13,19 @@ import { Typo } from '../../constants/typography';
  * 📖 Anonymat : ce composant ne doit jamais servir à demander un nom, une date
  *    de naissance ou un groupe sanguin (règle du Figma et du projet).
  * 📖 `motDePasse` : saisie masquée par défaut + bouton œil pour l'afficher.
+ * 📖 `editable={false}` (envoi en cours) : champ atténué, comme sur le Figma.
  */
 type Props = Omit<TextInputProps, 'style' | 'placeholderTextColor' | 'secureTextEntry'> & {
   libelle: string;
   aide?: string;
   /** Message d'erreur : sa présence met le champ en état d'erreur. */
   erreur?: string;
+  /**
+   * Contour d'erreur SANS message : quand une seule erreur concerne plusieurs
+   * champs (connexion : « l'e-mail ou le mot de passe »), le message n'est
+   * affiché qu'une fois, sous le dernier champ.
+   */
+  invalide?: boolean;
   motDePasse?: boolean;
 };
 
@@ -26,12 +33,23 @@ const BORDURE_REPOS = 1.5;
 const BORDURE_ACTIVE = 2;
 const CIBLE_MIN = 48;
 
-export function Champ({ libelle, aide, erreur, motDePasse = false, onFocus, onBlur, ...props }: Props) {
+export function Champ({
+  libelle,
+  aide,
+  erreur,
+  invalide = false,
+  motDePasse = false,
+  onFocus,
+  onBlur,
+  ...props
+}: Props) {
   const [focus, setFocus] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  const bordure = erreur || focus ? BORDURE_ACTIVE : BORDURE_REPOS;
-  const couleurBordure = erreur
+  const enErreur = !!erreur || invalide;
+  const inactif = props.editable === false;
+  const bordure = enErreur || focus ? BORDURE_ACTIVE : BORDURE_REPOS;
+  const couleurBordure = enErreur
     ? Theme.feedback.erreurTexte
     : focus
       ? Theme.formulaire.focus
@@ -54,6 +72,7 @@ export function Champ({ libelle, aide, erreur, motDePasse = false, onFocus, onBl
             // 📖 Avec l'œil, c'est le bouton (48 px) qui fait la marge droite.
             paddingRight: motDePasse ? 0 : Espace[4] - compensation,
           },
+          inactif && styles.inactif,
         ]}
       >
         <TextInput
@@ -62,7 +81,7 @@ export function Champ({ libelle, aide, erreur, motDePasse = false, onFocus, onBl
           //    d'écran : on le lui donne explicitement, avec l'aide ou l'erreur en indice.
           accessibilityLabel={libelle}
           accessibilityHint={erreur ?? aide}
-          aria-invalid={!!erreur}
+          aria-invalid={enErreur}
           secureTextEntry={motDePasse && !visible}
           autoCapitalize={motDePasse ? 'none' : props.autoCapitalize}
           autoCorrect={motDePasse ? false : props.autoCorrect}
@@ -81,9 +100,11 @@ export function Champ({ libelle, aide, erreur, motDePasse = false, onFocus, onBl
         {motDePasse && (
           <Pressable
             onPress={() => setVisible((v) => !v)}
+            disabled={inactif}
             style={styles.oeil}
             accessibilityRole="button"
             accessibilityLabel={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+            accessibilityState={{ disabled: inactif }}
           >
             <Ionicons
               name={visible ? 'eye-off-outline' : 'eye-outline'}
@@ -120,6 +141,7 @@ const styles = StyleSheet.create({
     borderRadius: Rayon.lg,
     backgroundColor: Theme.fond.surface,
   },
+  inactif: { opacity: 0.7 },
   saisie: {
     flex: 1,
     paddingVertical: Espace[3],

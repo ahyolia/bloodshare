@@ -25,10 +25,24 @@ describe('Champ', () => {
     expect(screen.queryByText('8 caractères minimum.')).toBeNull();
   });
 
-    it('transmet les props du TextInput', async () => {
+  it('transmet les props du TextInput', async () => {
     await render(<Champ libelle="Adresse e-mail" keyboardType="email-address" />);
 
     expect(screen.getByLabelText('Adresse e-mail').props.keyboardType).toBe('email-address');
+  });
+
+  it('invalide : signalé comme invalide, sans message ajouté', async () => {
+    await render(<Champ libelle="Adresse e-mail" aide="Celle de ton inscription." invalide />);
+
+    expect(screen.getByLabelText('Adresse e-mail').props['aria-invalid']).toBe(true);
+    // L'aide reste : `invalide` ne remplace pas le texte sous le champ.
+    expect(screen.getByText('Celle de ton inscription.')).toBeTruthy();
+  });
+
+  it("n'est pas signalé invalide par défaut", async () => {
+    await render(<Champ libelle="Adresse e-mail" />);
+
+    expect(screen.getByLabelText('Adresse e-mail').props['aria-invalid']).toBe(false);
   });
 });
 
@@ -46,6 +60,15 @@ describe('Champ — mot de passe', () => {
     expect(screen.getByLabelText('Mot de passe').props.secureTextEntry).toBe(false);
 
     await fireEvent.press(screen.getByRole('button', { name: 'Masquer le mot de passe' }));
+    expect(screen.getByLabelText('Mot de passe').props.secureTextEntry).toBe(true);
+  });
+
+  it('non modifiable (envoi en cours) : le bouton œil est désactivé aussi', async () => {
+    await render(<Champ libelle="Mot de passe" motDePasse editable={false} />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Afficher le mot de passe' }));
+
+    expect(screen.getByRole('button', { name: 'Afficher le mot de passe' })).toBeDisabled();
     expect(screen.getByLabelText('Mot de passe').props.secureTextEntry).toBe(true);
   });
 
