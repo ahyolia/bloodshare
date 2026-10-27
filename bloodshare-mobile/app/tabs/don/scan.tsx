@@ -200,10 +200,12 @@ export default function ScanScreen() {
           type: data.type,
           carte_id: data.carte_obtenue?.id,
           carte_titre: data.carte_obtenue?.titre,
+          carte_image_url: data.carte_obtenue?.image_url ?? undefined,
+          carte_mois: data.carte_obtenue?.mois_numero ?? undefined,
           carte_categorie: data.carte_obtenue?.categorie,
           deja_possedee: String(data.carte_obtenue?.deja_possedee ?? false),
           carte_fidele_titre: data.carte_fidele?.titre,
-          badges: JSON.stringify(data.badges_debloques ?? []),
+          carte_fidele_image_url: data.carte_fidele?.image_url ?? undefined,
         },
       });
     }

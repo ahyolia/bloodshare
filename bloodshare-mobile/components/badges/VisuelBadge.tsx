@@ -41,5 +41,6 @@ export function VisuelBadge({ imageUrl, emoji, taille, verrouille = false }: Pro
 const styles = StyleSheet.create({
   estompe: { opacity: 0.35 },
   // 📖 filter grayscale : Android et web ; iOS l'ignore et garde l'opacité seule.
-  verrouille: { opacity: 0.4, filter: [{ grayscale: 1 }] },
+  //    Forme texte (CSS) : la forme objet [{ grayscale: 1 }] n'était pas appliquée sur le web.
+  verrouille: { opacity: 0.4, filter: 'grayscale(1)' },
 });

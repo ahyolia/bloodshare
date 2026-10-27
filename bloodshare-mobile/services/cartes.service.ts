@@ -8,6 +8,10 @@ export type CarteMois = {
   mois_numero: number;
   image_url: string | null;
   obtenue: boolean;
+  /** Saisie dans le BO ; absente d'un backend pas encore migré. */
+  description?: string | null;
+  /** Jour d'obtention (AAAA-MM-JJ), null tant que la carte n'est pas obtenue. */
+  obtenue_le?: string | null;
 };
 
 export type CarteEvenementItem = {
@@ -15,6 +19,10 @@ export type CarteEvenementItem = {
   titre: string;
   image_url: string | null;
   obtenue: boolean;
+  /** Saisie dans le BO ; absente d'un backend pas encore migré. */
+  description?: string | null;
+  /** Jour d'obtention (AAAA-MM-JJ), null tant que la carte n'est pas obtenue. */
+  obtenue_le?: string | null;
   quantite?: number;
 };
 
@@ -29,6 +37,10 @@ export type CarteParrainage = {
   titre: string;
   image_url: string | null;
   obtenue: boolean;
+  /** Saisie dans le BO ; absente d'un backend pas encore migré. */
+  description?: string | null;
+  /** Jour d'obtention (AAAA-MM-JJ), null tant que la carte n'est pas obtenue. */
+  obtenue_le?: string | null;
   quantite?: number;
 };
 
