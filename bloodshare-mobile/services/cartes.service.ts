@@ -88,10 +88,15 @@ export const getCartesCache = (): Cartes | null => cartesCache;
 type MoisDonApi = Pick<Cartes['mois_don'], 'pourcentage_complete' | 'cartes'> &
   Partial<Pick<Cartes['mois_don'], 'annee' | 'collections'>>;
 
+// 📖 `cartes` absent : backend pas encore à jour, qui ne renvoyait que la carte
+//    générique (`carte`, nullable). L'app peut être publiée avant lui.
 type CartesApi = Omit<Cartes, 'evenement' | 'mois_don'> & {
   mois_don: MoisDonApi;
-  evenement: { cartes: CarteEvenementItem[] };
+  evenement: { cartes?: CarteEvenementItem[]; carte?: CarteEvenementItem | null };
 };
+
+const cartesEvenementApi = ({ cartes, carte }: CartesApi['evenement']): CarteEvenementItem[] =>
+  cartes ?? (carte ? [carte] : []);
 
 // 📖 Un backend sans collections par année (ou le mock) ne renvoie que la collection de
 //    l'année : on en fait une liste d'une seule collection, pour que l'écran n'ait qu'un cas.
@@ -109,15 +114,18 @@ const adapterMois = (mois: MoisDonApi): Cartes['mois_don'] => {
 // Adaptateur : l'UI (et le mock) raisonnent en `categories` d'événements. On regroupe
 // les cartes événement de l'API en une seule catégorie, pour que l'écran reste
 // indépendant du contrat backend.
-const adapterCartes = (data: CartesApi): Cartes => ({
-  ...data,
-  mois_don: adapterMois(data.mois_don),
-  evenement: {
-    categories: data.evenement.cartes.length
-      ? [{ id: 'evenement', titre: 'Événements', cartes: data.evenement.cartes }]
-      : [],
-  },
-});
+const adapterCartes = (data: CartesApi): Cartes => {
+  const cartesEvenement = cartesEvenementApi(data.evenement);
+  return {
+    ...data,
+    mois_don: adapterMois(data.mois_don),
+    evenement: {
+      categories: cartesEvenement.length
+        ? [{ id: 'evenement', titre: 'Événements', cartes: cartesEvenement }]
+        : [],
+    },
+  };
+};
 
 type CartesMock = Omit<Cartes, 'mois_don'> & { mois_don: MoisDonApi };
 

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Carte;
+use App\Models\Evenement;
 use App\Models\User;
 use App\Models\UserCarte;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,6 +34,43 @@ class CartesApiTest extends TestCase
             ->assertJsonPath('evenement.cartes.1.id', $forum->id)
             ->assertJsonPath('evenement.cartes.1.obtenue', true)
             ->assertJsonPath('evenement.cartes.1.quantite', 1);
+    }
+
+    public function test_une_carte_propre_a_un_evenement_n_apparait_que_si_on_peut_encore_l_obtenir_ou_qu_on_l_a(): void
+    {
+        Carte::query()->delete();
+        Carte::create(['titre' => 'Carte Événement', 'categorie' => 'evenement', 'statut' => 'active', 'generique' => true]);
+        $aVenir = Carte::create(['titre' => 'À venir', 'categorie' => 'evenement', 'statut' => 'active']);
+        $passeeObtenue = Carte::create(['titre' => 'Passée, obtenue', 'categorie' => 'evenement', 'statut' => 'active']);
+        $passee = Carte::create(['titre' => 'Passée', 'categorie' => 'evenement', 'statut' => 'active']);
+        $brouillon = Carte::create(['titre' => 'Brouillon', 'categorie' => 'evenement', 'statut' => 'active']);
+        Carte::create(['titre' => 'Sans événement', 'categorie' => 'evenement', 'statut' => 'active']);
+
+        $this->creerEvenement($aVenir, now()->addDays(10));
+        $this->creerEvenement($passeeObtenue, now()->subDays(10));
+        $this->creerEvenement($passee, now()->subDays(10));
+        $this->creerEvenement($brouillon, now()->addDays(10), 'brouillon');
+
+        $user = User::factory()->create();
+        UserCarte::create(['user_id' => $user->id, 'carte_id' => $passeeObtenue->id, 'quantite' => 1, 'obtenue_at' => now()->subDays(10)]);
+        Sanctum::actingAs($user);
+
+        $titres = collect($this->getJson('/api/cartes')->assertOk()->json('evenement.cartes'))->pluck('titre')->all();
+
+        $this->assertSame(['Carte Événement', 'À venir', 'Passée, obtenue'], $titres);
+    }
+
+    public function test_une_carte_reste_visible_pendant_l_evenement_jusqu_a_sa_fin(): void
+    {
+        Carte::query()->delete();
+        $forum = Carte::create(['titre' => 'Carte Forum', 'categorie' => 'evenement', 'statut' => 'active']);
+        $this->creerEvenement($forum, now()->subHours(2), 'publie', now()->addHour());
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->getJson('/api/cartes')->assertJsonPath('evenement.cartes.0.id', $forum->id);
+
+        $this->travel(2)->hours();
+        $this->getJson('/api/cartes')->assertJsonCount(0, 'evenement.cartes');
     }
 
     public function test_les_cartes_de_mois_sont_triees_de_janvier_a_decembre(): void
@@ -125,5 +163,17 @@ class CartesApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('fidelite.carte.id', $carte->id)
             ->assertJsonPath('fidelite.carte.obtenue', false);
+    }
+
+    private function creerEvenement(Carte $carte, $debut, string $statut = 'publie', $fin = null): Evenement
+    {
+        return Evenement::create([
+            'titre' => "Événement {$carte->titre}",
+            'lieu' => 'Nouméa',
+            'date_heure' => $debut,
+            'horaire_fin' => $fin ?? $debut->copy()->addHours(3),
+            'statut' => $statut,
+            'carte_id' => $carte->id,
+        ]);
     }
 }

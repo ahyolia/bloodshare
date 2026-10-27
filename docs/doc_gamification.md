@@ -88,6 +88,7 @@ Parrainage validé si filleul, contribution au défi, synchronisation des badges
 *   Dans le BO, la fiche d'un événement a un champ « Carte remise aux participants » (`evenements.carte_id`). Vide : l'événement remet la carte générique.
 *   La carte générique est marquée explicitement (`cartes.generique`). Une carte Événement non générique n'est remise **que** par l'événement qui la désigne — jamais à sa place, même tant qu'elle n'est rattachée à aucun événement.
 *   Une carte désignée mais désactivée : l'événement retombe sur la carte générique.
+*   Page Cartes : une carte propre à un événement n'apparaît que si le donneur l'a obtenue, ou tant qu'un événement publié qui la remet n'est pas terminé (`horaire_fin`). Après, elle disparaît pour ceux qui ne l'ont pas : elle ne s'obtient plus, la laisser verrouillée rendrait la collection impossible à compléter.
 *   Le badge « Toujours partant » compte toutes les cartes Événement confondues.
 
 ## Visuels par défaut

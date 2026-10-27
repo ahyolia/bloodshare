@@ -65,6 +65,23 @@ describe('getCartes', () => {
     expect(cartes.mois_don.cartes[0].titre).toBe('Octobre');
   });
 
+  it('accepte un backend pas encore à jour, qui ne renvoie que la carte générique', async () => {
+    const generique = { id: 13, titre: 'Carte Événement', image_url: null, obtenue: true, quantite: 2 };
+    apiGet.mockResolvedValue({ data: { ...reponseApi().data, evenement: { carte: generique } } });
+
+    const cartes = await getCartes();
+
+    expect(cartes.evenement.categories[0].cartes).toEqual([generique]);
+  });
+
+  it('ne plante pas si le backend ne renvoie aucune carte Événement', async () => {
+    apiGet.mockResolvedValue({ data: { ...reponseApi().data, evenement: {} } });
+
+    const cartes = await getCartes();
+
+    expect(cartes.evenement.categories).toEqual([]);
+  });
+
   it('garde les collections par année renvoyées par l’API', async () => {
     const octobre2026 = { id: 10, titre: 'Octobre', mois_numero: 10, annee: 2026, image_url: null, obtenue: true };
     const janvier2027 = { id: 20, titre: 'Janvier', mois_numero: 1, annee: 2027, image_url: null, obtenue: false };

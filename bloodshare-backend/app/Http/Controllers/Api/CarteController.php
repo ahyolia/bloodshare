@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Carte;
+use App\Models\Evenement;
 use App\Models\UserCarte;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -35,9 +36,15 @@ class CarteController extends Controller
         $collectionCourante = $collections->firstWhere('annee', $anneeCourante)
             ?? ['pourcentage_complete' => 0, 'cartes' => collect()];
 
-        // 📖 Toutes les cartes Événement : la générique et celles propres à un événement
-        //    (forum IUT...). La générique en premier.
+        // 📖 La carte générique, toujours ; une carte propre à un événement (forum IUT...)
+        //    seulement si on l'a obtenue ou si un événement à venir la remet : passé
+        //    l'événement, elle ne s'obtient plus et resterait verrouillée pour toujours.
+        //    La générique en premier.
+        $cartesAVenir = $this->cartesDesEvenementsAVenir();
         $cartesEvenement = $cartes->where('categorie', 'evenement')
+            ->filter(fn (Carte $carte) => $carte->generique
+                || $userCartes->has($carte->id)
+                || $cartesAVenir->contains($carte->id))
             ->sortBy([['generique', 'desc'], ['id', 'asc']])
             ->values();
         $carteParrain = $cartes->firstWhere('categorie', 'parrain');
@@ -69,6 +76,20 @@ class CarteController extends Controller
                 'carte' => $carteFidele ? $avecQuantite($carteFidele) : null,
             ],
         ]);
+    }
+
+    /**
+     * Cartes remises par un événement publié pas encore terminé (fin non atteinte ; sans
+     * heure de fin, jusqu'à la fin de son jour).
+     */
+    private function cartesDesEvenementsAVenir(): Collection
+    {
+        return Evenement::where('statut', 'publie')
+            ->whereNotNull('carte_id')
+            ->where(fn ($q) => $q->where('horaire_fin', '>=', now())
+                ->orWhere(fn ($q) => $q->whereNull('horaire_fin')->where('date_heure', '>=', today())))
+            ->pluck('carte_id')
+            ->unique();
     }
 
     /**
