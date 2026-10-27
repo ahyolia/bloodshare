@@ -109,7 +109,6 @@ class BadgeSeeder extends Seeder
                     'condition_type' => $badge['condition_type'],
                     'condition_valeur' => $badge['condition_valeur'],
                     'action_specifique' => $badge['action_specifique'],
-                    'image_url' => null,
                     'statut' => 'actif',
                 ]
             );

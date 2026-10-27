@@ -192,13 +192,34 @@ class BadgeServiceTest extends TestCase
 
     // ── Cartes ──────────────────────────────────────────────────
 
-    public function test_six_cartes_mois_compte_les_cartes_distinctes(): void
+    public function test_six_cartes_mois_compte_les_mois_distincts(): void
     {
         $this->badgeAction('six_cartes_mois');
-        $this->donnerCartes('mois_don', 5);
+        $this->donnerCartesMois(2026, [1, 3, 5, 7, 9]);
         $this->assertSame([], $this->synchroniser());
 
-        $this->donnerCartes('mois_don', 1);
+        $this->donnerCartesMois(2026, [11]);
+        $this->assertCount(1, $this->synchroniser());
+    }
+
+    public function test_le_meme_mois_de_deux_collections_ne_compte_qu_une_fois(): void
+    {
+        $this->badgeAction('six_cartes_mois');
+        $this->donnerCartesMois(2026, [1, 3, 5, 7, 9]);
+        $this->donnerCartesMois(2027, [1, 3, 5, 7, 9]);
+
+        $this->assertSame([], $this->synchroniser());
+    }
+
+    public function test_douze_cartes_mois_se_complete_sur_plusieurs_annees(): void
+    {
+        // 📖 56 à 84 jours entre deux dons : les 12 mois ne tiennent pas dans une seule année.
+        $this->badgeAction('douze_cartes_mois');
+        $this->donnerCartesMois(2026, [1, 3, 5, 7, 9, 11]);
+        $this->donnerCartesMois(2027, [2, 4, 6, 8, 10]);
+        $this->assertSame([], $this->synchroniser());
+
+        $this->donnerCartesMois(2028, [12]);
         $this->assertCount(1, $this->synchroniser());
     }
 
@@ -292,10 +313,10 @@ class BadgeServiceTest extends TestCase
         return $quiz;
     }
 
-    private function donnerCartes(string $categorie, int $nombre): void
+    private function donnerCartesMois(int $annee, array $mois): void
     {
-        for ($i = 0; $i < $nombre; $i++) {
-            $carte = Carte::create(['titre' => "Carte {$i}", 'categorie' => $categorie, 'statut' => 'active']);
+        foreach ($mois as $numero) {
+            $carte = Carte::create(['titre' => "Carte {$numero} {$annee}", 'categorie' => 'mois_don', 'mois_numero' => $numero, 'annee' => $annee, 'statut' => 'active']);
             UserCarte::create(['user_id' => $this->user->id, 'carte_id' => $carte->id, 'quantite' => 1, 'obtenue_at' => now()]);
         }
     }

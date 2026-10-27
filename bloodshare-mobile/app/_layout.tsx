@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useFonts } from "expo-font";
+import { StyleSheet, View } from "react-native";
 import {
   Stack,
   usePathname,
@@ -9,6 +10,8 @@ import {
 } from "expo-router";
 import { getToken, getUser } from "../stores/auth.store";
 import { DialogueProvider } from "../components/DialogueProvider";
+import { Theme } from "../constants/colors";
+import { LARGEUR_MAX_APP } from "../constants/spacing";
 import { choisirDestination } from "../utils/destination";
 import { getOnboardingVu } from "../utils/preferences";
 
@@ -78,7 +81,7 @@ export default function RootLayout() {
       //    vers le login au lieu de rester bloqué sur l'écran de chargement.
       .catch((error) => {
         if (__DEV__)
-          console.warn("[auth] lecture du token impossible :", error);
+          console.warn("[auth] lecture du token impossible :", error);
         return null;
       })
       .then(async (token) => {
@@ -133,7 +136,29 @@ export default function RootLayout() {
 
   return (
     <DialogueProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      {/* 📖 Sur tablette et ordinateur (PWA), l'app reste une colonne de téléphone centrée
+          au lieu de s'étirer sur toute la largeur : cartes géantes, lignes de texte
+          interminables. Sur téléphone, la colonne fait toute la largeur : rien ne change. */}
+      <View style={styles.fond}>
+        <View style={styles.colonne}>
+          <Stack screenOptions={{ headerShown: false }} />
+        </View>
+      </View>
     </DialogueProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  fond: {
+    flex: 1,
+    alignItems: "center",
+    backgroundColor: Theme.fond.page,
+  },
+  colonne: {
+    flex: 1,
+    width: "100%",
+    maxWidth: LARGEUR_MAX_APP,
+    // Rogne ce qui dépasse (décors, éclat de l'obtention) au bord de la colonne.
+    overflow: "hidden",
+  },
+});

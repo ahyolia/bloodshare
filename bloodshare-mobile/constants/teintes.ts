@@ -16,3 +16,14 @@ export const TEINTES_PASTILLE: Record<TeintePastille, { fond: string; icone: str
   mousse: { fond: Theme.fond.pastilleMousse, icone: Theme.texte.principal },
   orange: { fond: Palette.orange[100], icone: Theme.texte.principal },
 };
+
+/**
+ * Couleur vive de chaque teinte, pour les formes décoratives (jamais pour du texte ni
+ * une icône seule : elles n'ont pas le contraste suffisant sur fond clair).
+ */
+export const TEINTES_VIVES: Record<TeintePastille, string> = {
+  petrole: Palette.petrole[500],
+  corail: Palette.corail[500],
+  mousse: Palette.mousse[500],
+  orange: Palette.orange[500],
+};

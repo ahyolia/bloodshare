@@ -82,9 +82,11 @@ class DonneesPersonnellesTest extends TestCase
         $carte = Carte::create(['titre' => 'Événement', 'categorie' => 'evenement', 'statut' => 'active']);
         UserCarte::create(['user_id' => $this->user->id, 'carte_id' => $carte->id, 'quantite' => 3, 'obtenue_at' => now()]);
 
-        $this->getJson('/api/cartes')
-            ->assertJsonPath('evenement.carte.quantite', 3)
+        $reponse = $this->getJson('/api/cartes')
             ->assertJsonPath('parrainage.carte_parrain', null);
+
+        $cartesEvenement = collect($reponse->json('evenement.cartes'))->keyBy('id');
+        $this->assertSame(3, $cartesEvenement[$carte->id]['quantite']);
     }
 
     // ── Badges ──────────────────────────────────────────────────

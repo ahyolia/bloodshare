@@ -129,18 +129,18 @@ export default function ScanScreen() {
               <View style={styles.aideNavigateur}>
                 <Text style={styles.aideTitre}>Sur iPhone</Text>
                 <Text style={styles.aideTexte}>
-                  {"Ouvre les Réglages du téléphone › « Apps » › « Safari » › « Appareil photo » › « Autoriser »."}
+                  {"Ouvre les Réglages du téléphone › « Apps » › « Safari » › « Appareil photo » › « Autoriser »."}
                 </Text>
                 <Text style={styles.aideTitre}>Sur Android</Text>
                 <Text style={styles.aideTexte}>
-                  {"Ouvre les Paramètres du téléphone › « Applications » › « Aïma » (ou ton navigateur) › « Autorisations » › « Appareil photo » › « Autoriser »."}
+                  {"Ouvre les Paramètres du téléphone › « Applications » › « Aïma » (ou ton navigateur) › « Autorisations » › « Appareil photo » › « Autoriser »."}
                 </Text>
               </View>
             ) : (
               <View style={styles.aideNavigateur}>
                 <Text style={styles.aideTitre}>Sur iPhone (Safari)</Text>
                 <Text style={styles.aideTexte}>
-                  {"Touche l'icône à gauche de l'adresse (souvent « aA »), puis « Réglages du site web » › « Appareil photo » › « Autoriser »."}
+                  {"Touche l'icône à gauche de l'adresse (souvent « aA »), puis « Réglages du site web » › « Appareil photo » › « Autoriser »."}
                 </Text>
                 <Text style={styles.aideTitre}>Sur Android ou ordinateur (Chrome, Edge, Firefox…)</Text>
                 <Text style={styles.aideTexte}>
@@ -148,7 +148,7 @@ export default function ScanScreen() {
                 </Text>
               </View>
             )}
-            <Text style={styles.permissionText}>{"Reviens ensuite ici et touche « Réessayer »."}</Text>
+            <Text style={styles.permissionText}>{"Reviens ensuite ici et touche « Réessayer »."}</Text>
             {/* 📖 Recharger la page relance la demande d'accès à la caméra. Indispensable en
                 app installée, qui n'a pas de bouton « recharger » du navigateur. */}
             <TouchableOpacity style={styles.outlineButton} onPress={() => window.location.reload()}>
@@ -200,9 +200,12 @@ export default function ScanScreen() {
           type: data.type,
           carte_id: data.carte_obtenue?.id,
           carte_titre: data.carte_obtenue?.titre,
+          carte_image_url: data.carte_obtenue?.image_url ?? undefined,
+          carte_mois: data.carte_obtenue?.mois_numero ?? undefined,
           carte_categorie: data.carte_obtenue?.categorie,
           deja_possedee: String(data.carte_obtenue?.deja_possedee ?? false),
-          badges: JSON.stringify(data.badges_debloques ?? []),
+          carte_fidele_titre: data.carte_fidele?.titre,
+          carte_fidele_image_url: data.carte_fidele?.image_url ?? undefined,
         },
       });
     }

@@ -1,5 +1,6 @@
 import api from '../api';
-import { getBadges, getBadgesResume } from '../badges.service';
+import { getBadges, getBadgesAFeter, getBadgesResume, marquerBadgeFete, simulerBadgeAFeter } from '../badges.service';
+import { marquerNotificationLue } from '../notifications.service';
 
 jest.mock('../../constants/config', () => ({ USE_MOCK_DATA: false }));
 
@@ -7,6 +8,8 @@ jest.mock('../api', () => ({
   __esModule: true,
   default: { get: jest.fn() },
 }));
+
+jest.mock('../notifications.service', () => ({ marquerNotificationLue: jest.fn(() => Promise.resolve()) }));
 
 const apiGet = api.get as jest.Mock;
 
@@ -42,5 +45,32 @@ describe('getBadges', () => {
 
     expect(await getBadges()).toEqual(badges);
     expect(apiGet).toHaveBeenCalledWith('/badges');
+  });
+});
+
+describe('getBadgesAFeter', () => {
+  it('appelle GET /badges/a-feter et renomme notification_id', async () => {
+    apiGet.mockResolvedValue({
+      data: [{ notification_id: 'abc', id: 7, nom: 'Premier Pas', image_url: null }],
+    });
+
+    expect(await getBadgesAFeter()).toEqual([
+      { notificationId: 'abc', id: 7, nom: 'Premier Pas', image_url: null },
+    ]);
+    expect(apiGet).toHaveBeenCalledWith('/badges/a-feter');
+  });
+});
+
+describe('badges simulés (mock du scan)', () => {
+  it("s'ajoutent aux badges à fêter, puis disparaissent sans appel au serveur", async () => {
+    apiGet.mockResolvedValue({ data: [] });
+    const simule = { notificationId: 'mock-qr', id: 1, nom: 'Premier don', image_url: null };
+    simulerBadgeAFeter(simule);
+
+    expect(await getBadgesAFeter()).toEqual([simule]);
+
+    await marquerBadgeFete(simule);
+    expect(marquerNotificationLue).not.toHaveBeenCalled();
+    expect(await getBadgesAFeter()).toEqual([]);
   });
 });

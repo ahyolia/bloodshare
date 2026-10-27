@@ -58,6 +58,7 @@ Route::middleware(['auth:sanctum', RefuseCompteBloque::class, MetAJourDerniereAc
     Route::get('/dons', [DonController::class, 'index']);
     Route::get('/cartes', [CarteController::class, 'index']);
     Route::get('/badges', [BadgeController::class, 'index']);
+    Route::get('/badges/a-feter', [BadgeController::class, 'aFeter']);
     Route::get('/points/historique', [PointsController::class, 'index']);
     Route::get('/parrainage/code', [ParrainageController::class, 'index']);
 
@@ -65,6 +66,8 @@ Route::middleware(['auth:sanctum', RefuseCompteBloque::class, MetAJourDerniereAc
     Route::get('/quiz', [QuizController::class, 'index']);
     Route::get('/quiz/{id}', [QuizController::class, 'show']);
     Route::put('/quiz/{id}/progression', [QuizController::class, 'progression']);
+    Route::post('/quiz/{id}/questions/{questionId}/verifier', [QuizController::class, 'verifier'])
+        ->whereNumber(['id', 'questionId']);
     Route::post('/quiz/{id}/soumettre', [QuizController::class, 'soumettre']);
     Route::get('/defis/actuel', [DefiController::class, 'actuel']);
 

@@ -31,6 +31,7 @@ import { Espace, Ombre, Rayon } from "../../../constants/spacing";
 import { Typo } from "../../../constants/typography";
 import { useNotificationsNonLues } from "../../../hooks/useNotificationsNonLues";
 import { useProfilComplet } from "../../../hooks/useProfilComplet";
+import { useRelanceOnglet } from "../../../hooks/useRelanceOnglet";
 import { logout } from "../../../services/auth.service";
 import { unsubscribe as seDesabonnerNotifsWeb } from "../../../services/notifications/webPush";
 import { removeToken } from "../../../stores/auth.store";
@@ -51,6 +52,8 @@ const AVATAR = 128;
 const BOUTON_MODIFIER = 44;
 
 export default function ProfilScreen() {
+  // Appui sur l'onglet : retour en haut de la page et animations d'entrée rejouées.
+  const cleOnglet = useRelanceOnglet("profil");
   const router = useRouter();
   const { confirmer } = useDialogue();
   const [modaleNiveau, setModaleNiveau] = useState(false);
@@ -70,7 +73,7 @@ export default function ProfilScreen() {
   const handleLogout = async () => {
     const ok = await confirmer({
       titre: "Se déconnecter",
-      message: "Veux-tu vraiment te déconnecter ?",
+      message: "Veux-tu vraiment te déconnecter ?",
       libelleRester: "Non, je reste",
       libelleAction: "Me déconnecter",
     });
@@ -111,12 +114,13 @@ export default function ProfilScreen() {
   // 📖 GET /dons renvoie les dons du plus récent au plus ancien.
   const dernierDon = dons?.dons[0]?.date_don;
   const sousTitreDons = dernierDon
-    ? `Dernier : ${formaterDateHeureLongue(dernierDon)}`
+    ? `Dernier : ${formaterDateHeureLongue(dernierDon)}`
     : "Tes dons et cartes-souvenirs";
 
   return (
     <View style={styles.screen}>
       <ScrollView
+        key={cleOnglet}
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}

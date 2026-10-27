@@ -25,10 +25,7 @@ class NotifierCarteDuMois extends Command
             return self::SUCCESS;
         }
 
-        $carteDuMois = Carte::where('categorie', 'mois_don')
-            ->where('mois_numero', (int) now()->format('n'))
-            ->where('statut', 'active')
-            ->first();
+        $carteDuMois = Carte::carteDuMois(now());
 
         if (! $carteDuMois) {
             $this->info('Pas de carte du mois active.');

@@ -146,6 +146,13 @@ class User extends Authenticatable implements FilamentUser, HasName
         return in_array($this->statut, ['suspendu', 'supprime'], true);
     }
 
+    // 📖 Compte qui gère l'association depuis le backoffice : il n'a pas accès à l'app
+    //    mobile, réservée aux donneurs (AuthController::login, RefuseCompteBloque).
+    public function estCompteBackoffice(): bool
+    {
+        return $this->hasRole('super_admin') || $this->hasRole('admin');
+    }
+
     public function scopeNonSupprimes($query)
     {
         return $query->where('statut', '!=', 'supprime');
@@ -212,7 +219,7 @@ class User extends Authenticatable implements FilamentUser, HasName
     {
         // 📖 Vérifié par Filament à chaque requête : un admin suspendu perd l'accès au BO même
         //    avec une session déjà ouverte.
-        return ($this->hasRole('super_admin') || $this->hasRole('admin')) && ! $this->estBloque();
+        return $this->estCompteBackoffice() && ! $this->estBloque();
     }
 
     

@@ -46,10 +46,20 @@ SSH=(ssh -o ControlMaster=auto -o ControlPath="$SOCKET" -o ControlPersist=120)
 trap 'rm -rf "$BUILD"; "${SSH[@]}" -O exit "$SERVEUR" 2>/dev/null || true' EXIT
 
 echo "▶ Envoi sur $SERVEUR"
-# vendor/ est vidé avant l'extraction pour ne pas garder d'anciens fichiers.
+# 📖 vendor/ arrive sous le nom vendor.nouveau, à côté de l'ancien, puis les deux sont
+#    échangés par deux renommages. Avant, vendor/ était supprimé puis recopié : pendant
+#    ces secondes, le cron (schedule:run chaque minute) et les visiteurs tombaient sur
+#    des classes introuvables (erreur constatée dans les logs du 23/10).
+#    Repartir d'un vendor.nouveau vide évite aussi de garder d'anciens fichiers.
 # --no-overwrite-dir : les dossiers existants gardent leurs droits et leurs ACL.
-tar -cz -C "$BUILD" . | "${SSH[@]}" "$SERVEUR" \
-    'mkdir -p ~/aima/backend && rm -rf ~/aima/backend/vendor && tar -xz --no-overwrite-dir -C ~/aima/backend'
+EXTRAIRE='set -e
+mkdir -p ~/aima/backend && cd ~/aima/backend
+rm -rf vendor.nouveau vendor.ancien
+tar -xz --no-overwrite-dir
+if [ -d vendor ]; then mv vendor vendor.ancien; fi
+mv vendor.nouveau vendor
+rm -rf vendor.ancien'
+tar -cz -C "$BUILD" --transform 's,^\./vendor,./vendor.nouveau,' . | "${SSH[@]}" "$SERVEUR" "$EXTRAIRE"
 "${SSH[@]}" "$SERVEUR" 'umask 077 && cat > ~/aima/backend/.env' < "$ENV_PROD"
 
 echo "▶ Installation sur le serveur"

@@ -19,6 +19,8 @@ type Props = {
   titre: string;
   /** Remplace le simple « écran précédent » (ex. lien direct sans historique). */
   onRetour?: () => void;
+  /** Libellé du bouton retour pour les lecteurs d'écran, si « Retour » ne suffit pas. */
+  libelleRetour?: string;
 };
 
 const BOUTON = 44;
@@ -26,7 +28,7 @@ const BOUTON = 44;
 /** « /tabs/profil/points » → « /tabs/profil » ; « /notifications » → « / ». */
 export const pageParente = (chemin: string) => chemin.replace(/\/[^/]+\/?$/, '') || '/';
 
-export function EnTeteSousPage({ titre, onRetour }: Props) {
+export function EnTeteSousPage({ titre, onRetour, libelleRetour = 'Retour' }: Props) {
   const router = useRouter();
   const chemin = usePathname();
 
@@ -40,7 +42,7 @@ export function EnTeteSousPage({ titre, onRetour }: Props) {
         onPress={onRetour ?? retour}
         hitSlop={2}
         accessibilityRole="button"
-        accessibilityLabel="Retour"
+        accessibilityLabel={libelleRetour}
         style={({ pressed }) => [styles.retour, pressed && styles.presse]}
       >
         <Ionicons name="chevron-back" size={22} color={Theme.texte.principal} />

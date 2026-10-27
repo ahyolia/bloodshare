@@ -346,7 +346,7 @@ tourne sur le serveur d'un enseignant, le front web est sur Netlify.
 | `publier.sh` | Lancé depuis WSL : exporte le code commité, construit `vendor/` dans Docker, envoie le tout et lance `installer.sh` |
 | `installer.sh` | Lancé sur le Pi : vérifie les extensions, `.htaccess`, `storage:link`, permissions, lien `public_html`, migrations, cache, cron, puis teste l'API et le backoffice |
 | `.htaccess` | Remplace `public/.htaccess` : ajoute `RewriteBase /~cameliaa/` et retire `Options`, interdit dans un `.htaccess` par la config UserDir par défaut (erreur 500 sinon) |
-| `construire-front.ps1` | Lancé depuis PowerShell 7 : construit le front web branché sur sae203 (dossier + zip dans Téléchargements), à glisser dans Netlify |
+| `construire-front.ps1` | Lancé depuis PowerShell 7 : construit le front web branché sur sae203 (dossier + zip dans Téléchargements), à glisser dans Netlify. Avec `-Secours`, le front du plan B (section 7) |
 
 ### Prérequis (une seule fois)
 
@@ -392,7 +392,9 @@ bash bloodshare-backend/deploy/sae203/publier.sh
 Le script se termine par `✅ Déploiement terminé.` si l'API et la page de connexion du backoffice
 répondent 200. Il peut être relancé sans risque, par exemple après l'installation des extensions.
 Les images envoyées depuis le backoffice (`storage/app/public`) sont conservées d'une publication à
-l'autre.
+l'autre. `vendor/` est remplacé d'un coup (envoyé en `vendor.nouveau`, puis échangé par deux
+renommages) : le site et le cron ne restent pas sans dépendances pendant l'envoi. Le code, lui,
+est réécrit fichier par fichier pendant quelques secondes : éviter de publier en pleine démo.
 
 `.env.production` (en local) fait référence : il est renvoyé à chaque publication, donc une
 modification faite directement dans le `.env` du serveur sera écrasée.
@@ -441,6 +443,7 @@ F12 → *Application* → *Service workers* → *Unregister*.
 | Erreur CORS dans la console du navigateur | `CORS_ALLOWED_ORIGINS` ne correspond pas exactement à l'URL Netlify, puis republier |
 | Changement de `.env` sans effet | La config est en cache : republier, ou `php artisan optimize` sur le Pi |
 | Notifications planifiées absentes | `crontab -l` doit contenir la ligne `schedule:run` ; `php artisan schedule:list` |
+| Une modification semble enregistrée puis revient (notif lue, profil, progression de quiz) | La config UserDir de Debian n'autorise que GET, POST et OPTIONS : un `PUT`/`DELETE` reçoit un 403 HTML d'Apache, avant Laravel. L'app les envoie en POST avec `X-HTTP-Method-Override` (`bloodshare-mobile/services/api.ts`) : vérifier que le front publié est récent, et ne jamais appeler `axios.put`/`delete` en dehors de ce client |
 
 ### Limites connues
 
@@ -454,6 +457,95 @@ F12 → *Application* → *Service workers* → *Unregister*.
   sans ACL, ces fichiers seraient lisibles par les autres comptes.
 - **RGPD** : base hébergée en Australie, donc hors UE. Réservé à la démo, avec des comptes de test,
   jamais de vrais utilisateurs.
+- **Charge** (mesurée en lecture, 0 erreur) : moins d'1 s jusqu'à 10 requêtes simultanées, 2 à 4 s
+  à 20-30. L'accueil de l'app lance 5 à 6 requêtes : 5 personnes qui l'ouvrent au même instant
+  attendent quelques secondes. Le jour d'une démo, garder Neon éveillé avec une ligne de cron
+  temporaire sur le Pi : `*/4 * * * * curl -s -o /dev/null https://sae203.hopto.org/~cameliaa/api/stock-sang`.
+- **Limites anti-abus par IP** (US-29) : sur un Wi-Fi partagé, toute la salle sort avec la même
+  IP. Inscription 15/min, connexion 30/min, pages publiques 300/min pour toute la salle ; une fois
+  connecté, chacun a sa propre limite.
+
+---
+
+## 7. Plan B : backend de secours si sae203 tombe
+
+Si le Pi ne répond plus pendant une démo, un backend de secours tourne sur un PC de l'équipe et
+remplace sae203 en quelques minutes. Il utilise **la même base Neon** et les mêmes clés (`APP_KEY`,
+VAPID) : comptes, contenus et abonnements push restent les mêmes, et on rebascule sur sae203
+sans rien perdre une fois le Pi revenu.
+
+| Élément | Valeur |
+| --- | --- |
+| Backend de secours | conteneur `aima-secours`, `http://localhost:8002`, dossier `~/aima-secours` |
+| Adresse publique | tunnel ngrok à URL fixe, dans `SECOURS_URL` de `bloodshare-backend/.env.production` (hors du dépôt, à demander à l'équipe) |
+| Front de secours | `Téléchargements\aima-dist-secours` (`construire-front.ps1 -Secours`) |
+| Scripts | `bloodshare-backend/deploy/secours/` |
+
+### À préparer avant chaque démo (sae203 en marche)
+
+1. `bash bloodshare-backend/deploy/secours/preparer-secours.sh` (WSL, sur `dev` à jour) :
+   exporte `dev`, construit `vendor/`, crée un `.env` à partir de `.env.production` (seuls
+   `APP_URL` et `SESSION_PATH` changent) et **copie les images du Pi**, qui ne sont nulle part
+   ailleurs. Si le Pi ne répond pas, il reprend les images de la préparation précédente.
+2. `pwsh -ExecutionPolicy Bypass -File bloodshare-backend\deploy\sae203\construire-front.ps1 -Secours`
+   (PowerShell 7) : build du front branché sur l'URL ngrok, à garder sous la main.
+3. Si une image a été ajoutée dans le BO depuis : relancer l'étape 1.
+
+### Basculer le jour d'une panne
+
+1. `bash bloodshare-backend/deploy/secours/lancer-secours.sh` : démarre le secours et vérifie
+   l'API. Il ne lance **ni migration ni seeder** : la base reste celle de sae203. Le secours
+   ne redémarre **pas** tout seul avec le PC : après un redémarrage, relancer ce script.
+2. Arrêter le tunnel ngrok en cours (il sert le backend de dev, port 8000), puis
+   `ngrok http --url=<SECOURS_URL sans https://> 8002` (le script affiche la commande exacte).
+3. Glisser `aima-dist-secours` dans Netlify (site **aima-nc** → *Deploys*). L'URL du front ne
+   change pas : le CORS (`aima-nc.netlify.app`) reste valable.
+4. Retour à la normale : glisser de nouveau `aima-dist-sae203`, puis
+   `lancer-secours.sh arreter` et relancer le tunnel de dev.
+
+### Sauvegarder la base Neon (avant chaque démo)
+
+Le plan gratuit de Neon garde peu d'historique : une sauvegarde locale avant chaque démo.
+
+```bash
+bash bloodshare-backend/deploy/secours/sauvegarder-neon.sh
+```
+
+Lecture seule sur Neon. Le fichier (`~/sauvegardes-aima/neon-<date>.dump`, format `pg_dump -Fc`)
+est vérifié, et les 10 plus récents sont gardés. ⚠️ Il contient des données personnelles
+(emails, mots de passe hachés) : hors du repo, lisible par son seul propriétaire (`600`), à ne
+jamais commiter (`*.dump` est ignoré par git) ni partager.
+
+**Restaurer** (remplace le contenu de la base visée : vérifier deux fois `DB_HOST`) :
+
+```bash
+docker run --rm -e PGPASSWORD=... -v ~/sauvegardes-aima:/s postgres:18-alpine \
+    pg_restore --clean --if-exists --no-owner --no-acl \
+    -d "host=<DB_HOST> port=5432 dbname=<DB_DATABASE> user=<DB_USERNAME> sslmode=require" \
+    /s/neon-<date>.dump
+```
+
+Pour vérifier une sauvegarde sans risque, la restaurer dans un Postgres 18 jetable
+(`docker run -d -e POSTGRES_PASSWORD=x postgres:18-alpine`) et y compter les lignes.
+
+### Limites du plan B
+
+- **Images absentes dans l'app** (vérifié) : sur le plan gratuit, ngrok répond à toute requête
+  de navigateur sans l'en-tête `ngrok-skip-browser-warning` par son message d'avertissement
+  (236 octets en `text/plain`) au lieu du fichier. L'app envoie cet en-tête pour l'API, mais une
+  balise image ne le peut pas : actualités, événements, cartes et badges illustrés s'affichent
+  sans image. Les avatars (emojis) ne sont pas touchés. Le BO demande un clic sur « Visit Site »
+  la première fois.
+- **Plus lent** : 2 à 3,5 s par appel d'API via ngrok (contre ~0,5 s sur sae203).
+- Alternative sans page d'avertissement : un tunnel Cloudflare gratuit (`cloudflared tunnel
+  --url http://localhost:8002`), mais son adresse change à chaque lancement : il faudrait
+  reconstruire le front (`construire-front.ps1 -Secours -UrlSecours <adresse>`) au moment de la
+  panne, et mettre l'adresse dans `APP_URL` du secours.
+- **Images** : seules celles copiées à la dernière préparation. Une image envoyée depuis le BO
+  pendant la panne reste sur le PC et devra être renvoyée sur sae203.
+- **Pas de tâches planifiées** sur le secours (pas de cron) : notifications du matin absentes
+  tant qu'il sert. Le push déclenché depuis le BO (bannière d'urgence) fonctionne.
+- Le PC qui sert le secours doit rester allumé, connecté, et ne pas se mettre en veille.
 
 ---
 

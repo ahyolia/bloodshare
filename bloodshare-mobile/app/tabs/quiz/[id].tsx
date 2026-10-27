@@ -1,28 +1,45 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useNavigation, useRouter } from "expo-router";
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Animated,
   Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Colors } from "../../../constants/colors";
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInLeft,
+  FadeInRight,
+  ZoomIn,
+} from "react-native-reanimated";
+import { Theme } from "../../../constants/colors";
+import { Espace, Ombre, Rayon } from "../../../constants/spacing";
+import { Typo } from "../../../constants/typography";
+import { BarreQuestions } from "../../../components/quiz/BarreQuestions";
+import { decouperIntitule } from "../../../utils/intituleQuestion";
+import { Bouton } from "../../../components/ui/Bouton";
+import { EnTeteSousPage } from "../../../components/ui/EnTeteSousPage";
 import { TAB_BAR_STYLE } from "../_layout";
 import {
+  Correction,
   getQuizDetail,
   Question,
   QuizDetail,
   ReponsePayload,
-  saveProgression,
   submitQuiz,
+  verifierQuestion,
 } from "../../../services/quiz.service";
 import { useDialogue } from "../../../components/DialogueProvider";
+import { memoriserRecapQuiz } from "../../../stores/quizRecap.store";
+import { EtatReponse, etatReponse } from "../../../utils/quizCorrection";
 
 export default function QuizDeroulementScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -43,11 +60,17 @@ export default function QuizDeroulementScreen() {
   //   retournent naturellement un nouvel objet immuable compatible avec setState
   const [reponses, setReponses] = useState<Map<number, number[]>>(new Map());
 
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  // 📖 Map<question_id, correction> des questions déjà validées. Une question présente ici
+  //    est verrouillée : on affiche sa correction et on ne peut plus changer sa réponse.
+  const [corrections, setCorrections] = useState<Map<number, Correction>>(
+    new Map(),
+  );
+  const [verification, setVerification] = useState(false);
+  // 📖 Sens du dernier changement de question : la suivante entre par la droite, la
+  //    précédente par la gauche, comme on tourne des pages.
+  const [sens, setSens] = useState<"avant" | "arriere">("avant");
+  const scrollRef = useRef<ScrollView>(null);
 
-  // 📖 Timer d'auto-avance (questions à choix unique) : gardé dans un ref pour pouvoir
-  //    l'annuler si l'utilisateur re-tape une autre réponse ou quitte l'écran avant la fin du délai
-  const autoAvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 📖 Drapeau synchrone : passé à true AVANT le router.replace vers l'écran score. Le listener
   //    `beforeRemove` le lit tout de suite, alors que le state `submitting` ne serait committé
@@ -59,26 +82,13 @@ export default function QuizDeroulementScreen() {
   //    laisse passer le `navigation.dispatch` sans réafficher la modale (sinon 2 confirmations).
   const sortieConfirmee = useRef(false);
 
-  // 📖 Signature (JSON) des réponses déjà enregistrées côté serveur : évite de renvoyer la
-  //    même progression, notamment juste après la reprise d'un quiz commencé.
-  const derniereSauvegarde = useRef("[]");
-
   // 📖 Modale d'abandon custom (au lieu de Alert natif) : on met en attente l'action de sortie
   //    interceptée, la modale décide de la rejouer ou non.
   const [modaleAbandon, setModaleAbandon] = useState(false);
   const actionSortie = useRef<unknown>(null);
 
-  const annulerAutoAvance = () => {
-    if (autoAvanceTimer.current) {
-      clearTimeout(autoAvanceTimer.current);
-      autoAvanceTimer.current = null;
-    }
-  };
-
-  useEffect(() => annulerAutoAvance, []);
-
   // 📖 Pendant le déroulement du quiz, on masque la tab bar flottante : sinon elle recouvre
-  //    le footer (boutons Précédent / Suivant / Terminer). On la restaure en quittant l'écran.
+  //    le footer (boutons Précédent / Valider / Suivant). On la restaure en quittant l'écran.
   useFocusEffect(
     useCallback(() => {
       navigation.getParent()?.setOptions({ tabBarStyle: { display: "none" } });
@@ -97,15 +107,21 @@ export default function QuizDeroulementScreen() {
         if (cancelled) return;
         setQuiz(data);
 
-        // 📖 Reprise d'un quiz commencé : on restaure les réponses déjà données et on repart
-        //    de la première question sans réponse (l'ordre peut changer si le quiz est aléatoire,
-        //    d'où la recherche par id de question et non par position).
+        // 📖 Reprise d'un quiz commencé : on restaure les réponses déjà validées avec leur
+        //    correction, et on repart de la première question non validée (l'ordre peut
+        //    changer si le quiz est aléatoire, d'où la recherche par id et non par position).
         const donnees = data.reponses_donnees ?? [];
         if (donnees.length > 0) {
           setReponses(
             new Map(donnees.map((r) => [r.question_id, r.reponse_ids])),
           );
-          derniereSauvegarde.current = JSON.stringify(donnees);
+          setCorrections(
+            new Map(
+              donnees.flatMap((r) =>
+                r.correction ? [[r.question_id, r.correction] as const] : [],
+              ),
+            ),
+          );
 
           const premiereSansReponse = data.questions.findIndex(
             (q) => !donnees.some((r) => r.question_id === q.id),
@@ -129,18 +145,6 @@ export default function QuizDeroulementScreen() {
     };
   }, [id]);
 
-  useEffect(() => {
-    if (!quiz) return;
-
-    // 📖 timing (durée fixe, pas de rebond) convient à une barre de progression : elle doit
-    //    avancer de façon régulière et prévisible, contrairement à un effet "pop" (spring)
-    Animated.timing(progressAnim, {
-      toValue: (questionIndex + 1) / quiz.questions.length,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [questionIndex, quiz, progressAnim]);
-
   // 📖 Point d'interception UNIQUE pour toute sortie de l'écran (bouton back custom, geste natif
   //    Android, bouton matériel) : on ne montre la confirmation d'abandon qu'ici, une seule fois.
   useEffect(() => {
@@ -156,35 +160,9 @@ export default function QuizDeroulementScreen() {
     return unsubscribe;
   }, [navigation]);
 
-  // 📖 Enregistre en arrière-plan les réponses données pour que le quiz apparaisse dans
-  //    "Quiz en cours" et puisse être repris. Un échec réseau ne doit jamais gêner le quiz :
-  //    on l'ignore et on retentera à la prochaine modification / à l'abandon.
-  const envoyerProgression = useCallback(() => {
-    if (!quiz || soumissionEnCours.current) return;
-
-    const payload: ReponsePayload[] = Array.from(reponses.entries())
-      .filter(([, reponseIds]) => reponseIds.length > 0)
-      .map(([question_id, reponse_ids]) => ({ question_id, reponse_ids }));
-
-    const signature = JSON.stringify(payload);
-    if (signature === derniereSauvegarde.current) return;
-
-    derniereSauvegarde.current = signature;
-    saveProgression(quiz.id, payload).catch(() => {
-      derniereSauvegarde.current = "";
-    });
-  }, [quiz, reponses]);
-
-  // 📖 Délai de 600 ms : regroupe les changements rapprochés (cases cochées à la suite)
-  //    en un seul appel réseau.
-  useEffect(() => {
-    const timer = setTimeout(envoyerProgression, 600);
-    return () => clearTimeout(timer);
-  }, [envoyerProgression]);
-
+  // 📖 Pas de sauvegarde à la sortie : chaque question validée est déjà enregistrée côté
+  //    serveur par verifierQuestion, et une sélection non validée n'a pas à être gardée.
   const confirmerAbandon = () => {
-    // Envoi immédiat : la sortie de l'écran ne doit pas perdre la dernière réponse donnée.
-    envoyerProgression();
     sortieConfirmee.current = true;
     setModaleAbandon(false);
     if (actionSortie.current)
@@ -197,6 +175,10 @@ export default function QuizDeroulementScreen() {
   };
 
   const toggleReponse = (question: Question, reponseId: number) => {
+    // 📖 Question validée → réponse verrouillée. Pendant la vérification aussi, pour que la
+    //    réponse affichée reste celle qui a été envoyée.
+    if (corrections.has(question.id) || verification) return;
+
     setReponses((prev) => {
       const next = new Map(prev);
 
@@ -215,28 +197,52 @@ export default function QuizDeroulementScreen() {
       );
       return next;
     });
+  };
 
-    // 📖 Auto-avance sur les questions à choix unique : la réponse suffit à valider, on
-    //    enchaîne après 350 ms pour laisser voir la sélection. Les questions 'multiple'
-    //    et la dernière question gardent la validation manuelle par bouton.
-    const estDerniere = quiz
-      ? questionIndex === quiz.questions.length - 1
-      : true;
-    if (question.type === "unique" && !estDerniere) {
-      annulerAutoAvance();
-      autoAvanceTimer.current = setTimeout(() => {
-        setQuestionIndex((prev) => prev + 1);
-      }, 350);
+  // 📖 Plus d'auto-avance au tap (retour des tests utilisateurs : on doit pouvoir hésiter).
+  //    C'est « Valider » qui fige la réponse et affiche la correction ; « Suivant » vient après.
+  const handleValider = async (question: Question) => {
+    if (!quiz || verification) return;
+
+    const selection = reponses.get(question.id) ?? [];
+    if (selection.length === 0) return;
+
+    setVerification(true);
+    try {
+      const resultat = await verifierQuestion(quiz.id, question.id, selection);
+      const { question_id, reponse_ids, ...correction } = resultat;
+
+      // 📖 On affiche les réponses retenues par le serveur : si la question avait déjà été
+      //    validée ailleurs (autre appareil), c'est cette première réponse qui compte.
+      setReponses((prev) => new Map(prev).set(question_id, reponse_ids));
+      setCorrections((prev) => new Map(prev).set(question_id, correction));
+      // 📖 L'explication arrive sous les réponses : on la fait venir à l'écran en douceur
+      //    (le délai laisse le temps au panneau d'être mis en page).
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
+    } catch {
+      await informer(
+        "Erreur",
+        "Impossible de vérifier ta réponse. Vérifie ta connexion.",
+      );
+    } finally {
+      setVerification(false);
     }
+  };
+
+  const ouvrirFiche = (ficheId: number) => {
+    router.push({
+      pathname: "/tabs/quiz/fiche/[id]",
+      params: { id: String(ficheId) },
+    });
   };
 
   const handleSuivant = () => {
     if (!quiz) return;
 
-    annulerAutoAvance();
-
     if (questionIndex < quiz.questions.length - 1) {
+      setSens("avant");
       setQuestionIndex((prev) => prev + 1);
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
     } else {
       handleSoumettre();
     }
@@ -245,7 +251,6 @@ export default function QuizDeroulementScreen() {
   const handleSoumettre = async () => {
     if (!quiz) return;
 
-    annulerAutoAvance();
     soumissionEnCours.current = true;
     setSubmitting(true);
 
@@ -257,6 +262,10 @@ export default function QuizDeroulementScreen() {
       ).map(([question_id, reponse_ids]) => ({ question_id, reponse_ids }));
 
       const resultat = await submitQuiz(quiz.id, reponsesPayload);
+      memoriserRecapQuiz(quiz.id, {
+        questions: quiz.questions,
+        details: resultat.details ?? [],
+      });
 
       // 📖 replace : on ne veut pas qu'un retour arrière depuis l'écran score ramène sur le
       //    quiz déjà soumis (même logique que resultat-scan → cartes/accueil)
@@ -269,9 +278,15 @@ export default function QuizDeroulementScreen() {
           total_questions: String(resultat.total_questions),
           points_gagnes: String(resultat.points_gagnes),
           premiere_completion: String(resultat.premiere_completion),
-          // 📖 Les params de navigation sont des chaînes : on sérialise le détail de la
-          //    correction, l'écran score le relit pour colorier chaque question.
-          details: JSON.stringify(resultat.details ?? []),
+          // 📖 Les params de navigation sont des chaînes : on sérialise le juste/faux de
+          //    chaque question pour les pastilles. Le détail complet (explications) passe
+          //    par memoriserRecapQuiz, trop long pour une URL.
+          details: JSON.stringify(
+            (resultat.details ?? []).map(({ question_id, correcte }) => ({
+              question_id,
+              correcte,
+            })),
+          ),
         },
       });
     } catch {
@@ -291,7 +306,7 @@ export default function QuizDeroulementScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={Colors.corail[600]} size="large" />
+        <ActivityIndicator color={Theme.marque.principal} size="large" />
       </View>
     );
   }
@@ -307,138 +322,229 @@ export default function QuizDeroulementScreen() {
   const question = quiz.questions[questionIndex];
   const reponsesSelectionnees = reponses.get(question.id) ?? [];
   const derniereQuestion = questionIndex === quiz.questions.length - 1;
-  const peutContinuer = reponsesSelectionnees.length > 0;
-
-  // 📖 Un seul mécanisme d'avancement par type de question :
-  //    - choix unique (hors dernière) → auto-avance à la sélection, PAS de bouton (sinon doublon)
-  //    - choix multiple → bouton « Suivant » manuel (on laisse cocher plusieurs cases avant de valider)
-  //    - dernière question (quel que soit le type) → bouton « Terminer ✓ » manuel
-  const afficherBoutonSuivant =
-    question.type === "multiple" || derniereQuestion;
-  const afficherFooter = questionIndex > 0 || afficherBoutonSuivant;
+  const correction = corrections.get(question.id);
+  const intitule = decouperIntitule(question.intitule);
 
   return (
     <View style={styles.screen}>
+      {/* 📖 Même en-tête que les sous-pages du Profil (bouton retour rond et flottant,
+          titre). Le retour passe par `beforeRemove` : la modale d'abandon s'affiche. */}
       <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {quiz.titre}
-          </Text>
-
-          <View style={styles.backButtonSpacer} />
-        </View>
-
-        <Text style={styles.progressLabel}>
-          Question {questionIndex + 1} sur {quiz.questions.length}
-        </Text>
-
-        <View style={styles.progressTrack}>
-          <Animated.View
-            style={[
-              styles.progressFill,
-              {
-                width: progressAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ["0%", "100%"],
-                }),
-              },
-            ]}
-          />
-        </View>
+        <EnTeteSousPage titre={quiz.titre} />
+        <BarreQuestions numero={questionIndex + 1} total={quiz.questions.length} />
       </View>
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.intitule}>{question.intitule}</Text>
+        {/* 📖 Une clé par question : en changeant de question, le bloc entre en glissant
+            depuis la droite (Suivant) ou la gauche (Précédent), puis les réponses
+            arrivent une à une. Reanimated saute ces entrées si « Réduire les
+            animations » est activé. */}
+        <Animated.View
+          key={question.id}
+          entering={(sens === "arriere" ? FadeInLeft : FadeInRight).duration(280)}
+          style={styles.questionEtReponses}
+        >
+          {/* 📖 Question et réponses dans un même bloc blanc surélevé : on voit d'un coup
+              d'œil ce qui va ensemble. Pas de fond teinté : le corail et les couleurs
+              vives restent réservés à ce qui demande l'attention. */}
+          <View style={styles.questionBloc}>
+            <Text style={[Typo.legendeForte, styles.consigne]}>
+              Question {questionIndex + 1} sur {quiz.questions.length}
+            </Text>
+            {/* 📖 Une question avec une mise en situation se lit en deux temps : le
+                contexte en texte courant, puis la question elle-même en titre. */}
+            {intitule.contexte && (
+              <Text style={[Typo.corps, styles.contexte]}>{intitule.contexte}</Text>
+            )}
+            <Text style={[Typo.titre3, styles.intitule]} accessibilityRole="header">
+              {intitule.question}
+            </Text>
+            <Text style={[Typo.legende, styles.consigne]}>
+              {question.type === "multiple"
+                ? "Plusieurs réponses possibles"
+                : "Une seule réponse possible"}
+            </Text>
+          </View>
 
-        {question.type === "multiple" && (
-          <Text style={styles.multipleHint}>
-            (Plusieurs réponses possibles)
-          </Text>
+          {question.reponses.map((reponse, index) => {
+            const selectionnee = reponsesSelectionnees.includes(reponse.id);
+            const etat = etatReponse(
+              reponse.id,
+              reponsesSelectionnees,
+              correction,
+            );
+
+            return (
+              <Animated.View
+                key={reponse.id}
+                entering={FadeInDown.delay(120 + index * 60).duration(260)}
+              >
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.reponseCard,
+                    STYLE_CARTE[etat],
+                    pressed && styles.reponsePressee,
+                  ]}
+                  onPress={() => toggleReponse(question, reponse.id)}
+                  disabled={!!correction}
+                  accessibilityRole={
+                    question.type === "unique" ? "radio" : "checkbox"
+                  }
+                  accessibilityState={{
+                    checked: selectionnee,
+                    disabled: !!correction,
+                  }}
+                >
+                  {etat === "correcte" || etat === "erreur" ? (
+                    // 📖 Après validation, une icône dit juste/faux : la couleur seule ne suffit
+                    //    pas (daltonisme), et le faux n'est volontairement pas en rouge.
+                    <Animated.View entering={ZoomIn.springify().damping(10)}>
+                      <Ionicons
+                        name={etat === "correcte" ? "checkmark-circle" : "close-circle"}
+                        size={22}
+                        color={
+                          etat === "correcte"
+                            ? Theme.feedback.succesTexte
+                            : Theme.texte.secondaire
+                        }
+                      />
+                    </Animated.View>
+                  ) : (
+                    // 📖 Pastille a, b, c, d : on peut dire « la réponse b », et elle se
+                    //    remplit (avec un petit rebond) quand la réponse est choisie.
+                    <Animated.View
+                      key={selectionnee ? "choisie" : "libre"}
+                      entering={selectionnee ? ZoomIn.springify().damping(9) : undefined}
+                      style={[
+                        styles.lettre,
+                        selectionnee && styles.lettreSelectionnee,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          Typo.legendeForte,
+                          styles.lettreTexte,
+                          selectionnee && styles.lettreTexteSelectionnee,
+                        ]}
+                      >
+                        {String.fromCharCode(97 + index)}
+                      </Text>
+                    </Animated.View>
+                  )}
+
+                  <Text style={[Typo.corps, styles.reponseTexte]}>
+                    {reponse.texte}
+                  </Text>
+
+                  {correction && selectionnee && (
+                    <Animated.Text entering={FadeIn.duration(200)} style={styles.taReponse}>
+                      Ta réponse
+                    </Animated.Text>
+                  )}
+                </Pressable>
+              </Animated.View>
+            );
+          })}
+        </Animated.View>
+
+        {/* 📖 Explication : vert si la réponse est juste, pétrole pâle (la couleur des
+            informations) sinon. Une réponse fausse n'est pas une alerte : on apprend. */}
+        {correction && (
+          <Animated.View
+            key={`explication-${question.id}`}
+            entering={FadeInDown.springify().damping(16)}
+            style={[
+              styles.explicationCard,
+              correction.correcte
+                ? styles.explicationCardCorrecte
+                : styles.explicationCardInfo,
+            ]}
+          >
+            <View style={styles.explicationEntete}>
+              <Ionicons
+                name={
+                  correction.correcte
+                    ? "checkmark-circle"
+                    : "information-circle"
+                }
+                size={22}
+                color={
+                  correction.correcte
+                    ? Theme.feedback.succesTexte
+                    : Theme.info.icone
+                }
+              />
+              <Text
+                style={[
+                  Typo.corpsFort,
+                  styles.explicationTitre,
+                  correction.correcte && styles.explicationTitreCorrecte,
+                ]}
+              >
+                {correction.correcte ? "Bonne réponse !" : "Pas tout à fait…"}
+              </Text>
+            </View>
+
+            {!!correction.explication && (
+              <Text style={[Typo.corps, styles.explicationTexte]}>
+                {correction.explication}
+              </Text>
+            )}
+
+            {correction.contenu && (
+              <Bouton
+                libelle="Lire la fiche pratique"
+                icone="document-text-outline"
+                // Plein pétrole : bien lisible sur le fond vert ou pétrole pâle (6,2:1).
+                variante="info"
+                accessibilityHint={`Ouvre la fiche « ${correction.contenu.titre} »`}
+                onPress={() => ouvrirFiche(correction.contenu!.id)}
+              />
+            )}
+          </Animated.View>
         )}
-
-        {question.reponses.map((reponse) => {
-          const selectionnee = reponsesSelectionnees.includes(reponse.id);
-
-          return (
-            <TouchableOpacity
-              key={reponse.id}
-              style={[
-                styles.reponseCard,
-                selectionnee && styles.reponseCardSelectionnee,
-              ]}
-              onPress={() => toggleReponse(question, reponse.id)}
-              activeOpacity={0.85}
-            >
-              {question.type === "unique" ? (
-                <View
-                  style={[
-                    styles.radio,
-                    selectionnee && styles.radioSelectionne,
-                  ]}
-                >
-                  {selectionnee && <View style={styles.radioInterieur} />}
-                </View>
-              ) : (
-                <View
-                  style={[
-                    styles.checkbox,
-                    selectionnee && styles.checkboxSelectionne,
-                  ]}
-                >
-                  {selectionnee && <Text style={styles.checkboxCheck}>✓</Text>}
-                </View>
-              )}
-
-              <Text style={styles.reponseTexte}>{reponse.texte}</Text>
-            </TouchableOpacity>
-          );
-        })}
       </ScrollView>
 
-      {afficherFooter && (
-        <View style={styles.footer}>
-          {questionIndex > 0 && (
-            <TouchableOpacity
-              style={styles.precedentButton}
-              onPress={() => {
-                annulerAutoAvance();
-                setQuestionIndex((prev) => prev - 1);
-              }}
-            >
-              <Text style={styles.precedentButtonText}>← Précédent</Text>
-            </TouchableOpacity>
-          )}
+      <View style={styles.footer}>
+        {questionIndex > 0 && (
+          <Bouton
+            libelle="Précédent"
+            icone="arrow-back"
+            variante="secondaire"
+            onPress={() => {
+              setSens("arriere");
+              setQuestionIndex((prev) => prev - 1);
+            }}
+            style={styles.precedentButton}
+          />
+        )}
 
-          {afficherBoutonSuivant && (
-            <TouchableOpacity
-              style={[
-                styles.suivantButton,
-                !peutContinuer && styles.suivantButtonDesactive,
-              ]}
-              onPress={handleSuivant}
-              disabled={!peutContinuer}
-            >
-              <Text style={styles.suivantButtonText}>
-                {derniereQuestion ? "Terminer ✓" : "Suivant →"}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
+        {/* 📖 Deux temps par question : « Valider » fige la réponse et montre la
+            correction, puis « Suivant » (ou « Voir mon score ») enchaîne. */}
+        {correction ? (
+          <Bouton
+            libelle={derniereQuestion ? "Voir mon score" : "Suivant"}
+            onPress={handleSuivant}
+            style={styles.suivantButton}
+          />
+        ) : (
+          <Bouton
+            libelle="Valider"
+            onPress={() => handleValider(question)}
+            desactive={reponsesSelectionnees.length === 0}
+            chargement={verification}
+            style={styles.suivantButton}
+          />
+        )}
+      </View>
 
       {submitting && (
         <View style={styles.submittingOverlay}>
-          <ActivityIndicator color={Colors.blanc} size="large" />
+          <ActivityIndicator color={Theme.texte.surAccent} size="large" />
           <Text style={styles.submittingText}>Envoi en cours...</Text>
         </View>
       )}
@@ -455,9 +561,9 @@ export default function QuizDeroulementScreen() {
               <Text style={styles.modalIcon}>🩸</Text>
             </View>
 
-            <Text style={styles.modalTitre}>Quitter le quiz ?</Text>
+            <Text style={styles.modalTitre}>Quitter le quiz ?</Text>
             <Text style={styles.modalTexte}>
-              {"Pas d'inquiétude, ta progression est sauvegardée. Tu pourras reprendre ce quiz plus tard depuis « Quiz en cours »."}
+              {"Pas d'inquiétude, tes réponses validées sont sauvegardées. Tu pourras reprendre ce quiz plus tard depuis « Quiz en cours »."}
             </Text>
 
             <TouchableOpacity
@@ -487,172 +593,155 @@ export default function QuizDeroulementScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
+    backgroundColor: Theme.fond.page,
   },
   centered: {
     flex: 1,
-    backgroundColor: Colors.creme,
+    backgroundColor: Theme.fond.page,
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
   },
   errorText: {
-    color: Colors.grisMoyen,
+    color: Theme.texte.secondaire,
     fontSize: 15,
     textAlign: "center",
   },
+  // Mêmes marges que les sous-pages du Profil (18 px sur les côtés, 54 px en haut).
   header: {
-    backgroundColor: Colors.creme,
-    padding: 16,
+    backgroundColor: Theme.fond.page,
+    paddingHorizontal: 18,
     paddingTop: 54,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  backButton: {
-    padding: 8,
-  },
-  backButtonText: {
-    color: Colors.aubergine,
-    fontSize: 24,
-  },
-  backButtonSpacer: {
-    width: 40,
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.aubergine,
-    textAlign: "center",
-  },
-  progressLabel: {
-    color: Colors.grisMoyen,
-    fontSize: 13,
-    textAlign: "center",
-    marginBottom: 6,
-  },
-  progressTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.fondGris,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.corail[600],
+    paddingBottom: Espace[2],
   },
   content: {
-    padding: 24,
-    paddingBottom: 40,
+    paddingHorizontal: 18,
+    paddingTop: Espace[4],
+    paddingBottom: Espace[8],
+    gap: Espace[3],
+  },
+  // 📖 Le bloc de la question, blanc et surélevé : il contient les réponses à toucher.
+  questionEtReponses: {
+    gap: Espace[3],
+    paddingHorizontal: 20,
+    paddingVertical: Espace[8],
+    borderRadius: Rayon.lg,
+    backgroundColor: Theme.fond.surface,
+    ...Ombre.flottante,
+  },
+  questionBloc: {
+    gap: Espace[2],
+    marginBottom: Espace[3],
+  },
+  contexte: {
+    color: Theme.texte.principal,
+  },
+  // La carte s'enfonce légèrement sous le doigt : on sent qu'on l'a touchée.
+  reponsePressee: {
+    transform: [{ scale: 0.98 }],
   },
   intitule: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: Colors.aubergine,
-    marginBottom: 8,
-    textAlign: "center",
+    color: Theme.texte.principal,
   },
-  multipleHint: {
-    color: Colors.grisMoyen,
-    fontSize: 13,
-    fontStyle: "italic",
-    textAlign: "center",
-    marginBottom: 16,
+  consigne: {
+    color: Theme.texte.secondaire,
   },
   reponseCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
+    gap: Espace[3],
+    minHeight: 56,
+    // Crème sur le bloc blanc : chaque réponse se détache sans ombre de plus.
+    backgroundColor: Theme.fond.page,
+    borderRadius: Rayon.md,
+    paddingVertical: Espace[3],
+    paddingHorizontal: Espace[4],
     borderWidth: 2,
-    borderColor: Colors.fondGris,
+    borderColor: Theme.fond.bordure,
   },
+  lettre: {
+    width: 28,
+    height: 28,
+    borderRadius: Rayon.plein,
+    // Blanche sur la réponse crème : la lettre reste bien visible.
+    backgroundColor: Theme.fond.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lettreSelectionnee: {
+    backgroundColor: Theme.action.primaire,
+  },
+  lettreTexte: {
+    color: Theme.texte.principal,
+  },
+  lettreTexteSelectionnee: {
+    color: Theme.action.primaireTexte,
+  },
+  // 📖 Sélection en aubergine (couleur de l'action principale) et plus en corail : avant
+  //    validation, une réponse cochée en rouge se lisait déjà comme une erreur.
   reponseCardSelectionnee: {
-    borderColor: Colors.corail[600],
-    backgroundColor: Colors.fondRose,
+    borderColor: Theme.action.primaire,
+    backgroundColor: Theme.fond.surfaceEnfoncee,
   },
-  radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: Colors.grisMoyen,
-    alignItems: "center",
-    justifyContent: "center",
+  reponseCardCorrecte: {
+    borderColor: Theme.etat.bon.jauge,
+    backgroundColor: Theme.feedback.succesSurface,
   },
-  radioSelectionne: {
-    borderColor: Colors.corail[600],
+  reponseCardErreur: {
+    borderColor: Theme.texte.secondaire,
+    backgroundColor: Theme.fond.surfaceEnfoncee,
   },
-  radioInterieur: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: Colors.corail[600],
+  reponseCardAttenuee: {
+    opacity: 0.55,
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: Colors.grisMoyen,
-    backgroundColor: Colors.blanc,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkboxSelectionne: {
-    borderColor: Colors.corail[600],
-    backgroundColor: Colors.corail[600],
-  },
-  checkboxCheck: {
-    color: Colors.blanc,
-    fontSize: 13,
+  taReponse: {
+    marginLeft: 8,
+    fontSize: 12,
     fontWeight: "700",
+    color: Theme.texte.secondaire,
+  },
+  explicationCard: {
+    marginTop: Espace[3],
+    padding: Espace[4],
+    gap: Espace[3],
+    borderRadius: Rayon.lg,
+  },
+  explicationCardCorrecte: {
+    backgroundColor: Theme.feedback.succesSurface,
+  },
+  explicationCardInfo: {
+    backgroundColor: Theme.info.surface,
+  },
+  explicationEntete: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Espace[2],
+  },
+  explicationTitre: {
+    color: Theme.texte.principal,
+  },
+  explicationTitreCorrecte: {
+    color: Theme.feedback.succesTexte,
+  },
+  explicationTexte: {
+    color: Theme.texte.principal,
   },
   reponseTexte: {
     flex: 1,
-    marginLeft: 12,
-    fontSize: 15,
-    color: Colors.aubergine,
+    color: Theme.texte.principal,
   },
   footer: {
     flexDirection: "row",
-    padding: 16,
+    gap: Espace[3],
+    padding: Espace[4],
+    paddingBottom: Espace[6],
   },
   precedentButton: {
     flex: 1,
-    marginRight: 8,
-    borderWidth: 1.5,
-    borderColor: Colors.grisMoyen,
-    borderRadius: 12,
-    padding: 14,
-    alignItems: "center",
   },
-  precedentButtonText: {
-    color: Colors.grisMoyen,
-    fontSize: 15,
-    fontWeight: "700",
-  },
+  // 📖 Le bouton principal prend toute la place qui reste : pleine largeur à la 1re question.
   suivantButton: {
-    flex: 1,
-    backgroundColor: Colors.aubergine,
-    borderRadius: 12,
-    padding: 14,
-    alignItems: "center",
-  },
-  suivantButtonDesactive: {
-    backgroundColor: Colors.grisMoyen,
-    opacity: 0.4,
-  },
-  suivantButtonText: {
-    color: Colors.blanc,
-    fontSize: 15,
-    fontWeight: "700",
+    flex: 2,
   },
   submittingOverlay: {
     ...StyleSheet.absoluteFill,
@@ -661,7 +750,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   submittingText: {
-    color: Colors.blanc,
+    color: Theme.texte.surAccent,
     marginTop: 12,
   },
   modalBackdrop: {
@@ -676,7 +765,7 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     borderRadius: 20,
     padding: 24,
-    backgroundColor: Colors.blanc,
+    backgroundColor: Theme.fond.surface,
     alignItems: "center",
     shadowColor: "#000",
     shadowOpacity: 0.18,
@@ -688,7 +777,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.fondRose,
+    backgroundColor: Theme.marque.doux,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -699,12 +788,12 @@ const styles = StyleSheet.create({
   modalTitre: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.aubergine,
+    color: Theme.texte.principal,
     textAlign: "center",
   },
   modalTexte: {
     fontSize: 14,
-    color: Colors.grisMoyen,
+    color: Theme.texte.secondaire,
     textAlign: "center",
     lineHeight: 20,
     marginTop: 8,
@@ -712,13 +801,13 @@ const styles = StyleSheet.create({
   },
   modalBoutonPrincipal: {
     width: "100%",
-    backgroundColor: Colors.aubergine,
+    backgroundColor: Theme.action.primaire,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
   },
   modalBoutonPrincipalTexte: {
-    color: Colors.blanc,
+    color: Theme.action.primaireTexte,
     fontSize: 15,
     fontWeight: "700",
   },
@@ -729,8 +818,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   modalBoutonSecondaireTexte: {
-    color: Colors.corail[600],
+    color: Theme.action.discreteTexte,
     fontSize: 14,
     fontWeight: "700",
   },
 });
+
+const STYLE_CARTE: Record<EtatReponse, object | undefined> = {
+  neutre: undefined,
+  selectionnee: styles.reponseCardSelectionnee,
+  correcte: styles.reponseCardCorrecte,
+  erreur: styles.reponseCardErreur,
+  attenuee: styles.reponseCardAttenuee,
+};

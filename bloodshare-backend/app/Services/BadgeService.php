@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Badge;
+use App\Models\Carte;
 use App\Notifications\BadgeDebloqueNotification;
 use App\Models\Don;
 use App\Models\Parrainage;
@@ -52,14 +53,13 @@ class BadgeService
 
         $nbQuizActifs = Quiz::where('statut', 'actif')->count();
 
-        // 📖 « Cartes Mois du don obtenues » = nombre de cartes DISTINCTES pour la catégorie
-        //    mois_don. user_cartes n'a pas de contrainte d'unicité sur (user_id, carte_id)
-        //    (seulement sa clé primaire) : un simple count() gonflerait le total au moindre
-        //    doublon. distinct('carte_id') s'en protège même si un doublon apparaissait.
-        $nbCartesMoisDon = UserCarte::where('user_id', $user->id)
-            ->whereHas('carte', fn ($q) => $q->where('categorie', 'mois_don'))
-            ->distinct('carte_id')
-            ->count('carte_id');
+        // 📖 « Cartes Mois du don obtenues » = nombre de MOIS distincts, toutes collections
+        //    (années) confondues : 56 à 84 jours entre deux dons, 12 mois dans une même
+        //    année est impossible. Novembre 2026 et novembre 2027 comptent pour un seul mois.
+        $nbCartesMoisDon = Carte::where('categorie', 'mois_don')
+            ->whereHas('userCartes', fn ($q) => $q->where('user_id', $user->id))
+            ->distinct()
+            ->count('mois_numero');
 
         $nbCartesEvenement = (int) UserCarte::where('user_id', $user->id)
             ->whereHas('carte', fn ($q) => $q->where('categorie', 'evenement'))

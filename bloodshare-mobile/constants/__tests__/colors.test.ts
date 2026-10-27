@@ -17,6 +17,8 @@ describe('contrastes du thème (WCAG AA)', () => {
     ['erreur sur la surface', Theme.feedback.erreurTexte, Theme.fond.surface],
     ["initiale de l'avatar", Theme.marque.principal, Theme.marque.doux],
     ['texte sur la couleur signature', Theme.accent.signatureTexte, Theme.accent.signatureAplat],
+    ["texte sur un encart d'information", Theme.texte.principal, Theme.info.surface],
+    ["titre pétrole sur un encart d'information", Theme.info.icone, Theme.info.surface],
   ])('texte — %s ≥ 4,5:1', (_nom, texte, fond) => {
     expect(contraste(texte, fond)).toBeGreaterThanOrEqual(TEXTE);
   });
@@ -27,6 +29,7 @@ describe('contrastes du thème (WCAG AA)', () => {
     ['contour du bouton secondaire', Theme.action.secondaireBordure, Theme.fond.surface],
     ['jauge « critique »', Theme.etat.critique.jauge, Theme.fond.surface],
     ["icône d'information", Theme.info.icone, Theme.info.fond],
+    ["icône d'information sur un encart", Theme.info.icone, Theme.info.surface],
   ])('contour — %s ≥ 3:1', (_nom, contour, fond) => {
     expect(contraste(contour, fond)).toBeGreaterThanOrEqual(CONTOUR);
   });

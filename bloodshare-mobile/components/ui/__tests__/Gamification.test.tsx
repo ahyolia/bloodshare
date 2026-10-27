@@ -5,6 +5,12 @@ import { Badge } from '../Badge';
 import { BarreProgression } from '../BarreProgression';
 import { NIVEAUX, PastilleStock } from '../PastilleStock';
 
+// BarreProgression anime son remplissage avec Reanimated.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
+
 describe('PastilleStock', () => {
   it.each(Object.keys(NIVEAUX) as (keyof typeof NIVEAUX)[])(
     '%s : libellé visible et annoncé, jamais la couleur seule',

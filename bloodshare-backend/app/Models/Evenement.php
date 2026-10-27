@@ -12,6 +12,7 @@ class Evenement extends Model
     protected $fillable = [
         'admin_id',
         'qr_code_id',
+        'carte_id',
         'titre',
         'description',
         'lieu',
@@ -44,5 +45,11 @@ class Evenement extends Model
     public function qrCode()
     {
         return $this->belongsTo(QrCode::class);
+    }
+
+    // Carte remise aux participants ; null → carte Événement générique (voir Carte::generiqueEvenement()).
+    public function carte()
+    {
+        return $this->belongsTo(Carte::class);
     }
 }

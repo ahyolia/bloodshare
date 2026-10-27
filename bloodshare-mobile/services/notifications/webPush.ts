@@ -8,3 +8,5 @@ export async function subscribe(): Promise<boolean> {
 }
 
 export async function unsubscribe(): Promise<void> {}
+
+export async function verifierAbonnement(): Promise<void> {}

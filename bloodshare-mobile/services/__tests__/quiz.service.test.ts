@@ -1,5 +1,5 @@
 import api from '../api';
-import { getQuizCategories, getQuizDetail, saveProgression, submitQuiz } from '../quiz.service';
+import { getQuizCategories, getQuizDetail, submitQuiz, verifierQuestion } from '../quiz.service';
 
 jest.mock('../../constants/config', () => ({ USE_MOCK_DATA: false }));
 
@@ -9,7 +9,6 @@ jest.mock('../api', () => ({
 }));
 
 const apiGet = api.get as jest.Mock;
-const apiPut = api.put as jest.Mock;
 const apiPost = api.post as jest.Mock;
 
 beforeEach(() => {
@@ -44,14 +43,27 @@ describe('getQuizDetail', () => {
   });
 });
 
-describe('saveProgression', () => {
-  it('envoie les réponses déjà données à PUT /quiz/:id/progression', async () => {
-    apiPut.mockResolvedValue({ data: { enregistree: true } });
-    const reponses = [{ question_id: 1, reponse_ids: [2] }];
+describe('verifierQuestion', () => {
+  it('envoie la réponse à POST /quiz/:id/questions/:questionId/verifier et renvoie la correction', async () => {
+    const correction = {
+      question_id: 5,
+      reponse_ids: [2],
+      correcte: false,
+      reponses_correctes: [3],
+      explication: 'Parce que.',
+      contenu: { id: 8, titre: 'Le paludisme' },
+    };
+    apiPost.mockResolvedValue({ data: correction });
 
-    await saveProgression(3, reponses);
+    await expect(verifierQuestion(3, 5, [2])).resolves.toEqual(correction);
+    expect(apiPost).toHaveBeenCalledWith('/quiz/3/questions/5/verifier', { reponse_ids: [2] });
+  });
 
-    expect(apiPut).toHaveBeenCalledWith('/quiz/3/progression', { reponses });
+  it("propage l'erreur réseau (l'écran affiche un message)", async () => {
+    const erreur = new Error('Network Error');
+    apiPost.mockRejectedValue(erreur);
+
+    await expect(verifierQuestion(3, 5, [2])).rejects.toBe(erreur);
   });
 });
 

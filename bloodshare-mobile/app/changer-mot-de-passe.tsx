@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     gap: Espace[3],
     padding: Espace[4],
     borderRadius: Rayon.lg,
-    backgroundColor: Theme.info.fond,
+    backgroundColor: Theme.info.surface,
   },
   noteTexte: {
     flex: 1,

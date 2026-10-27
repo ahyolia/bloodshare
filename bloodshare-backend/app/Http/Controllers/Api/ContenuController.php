@@ -7,6 +7,7 @@ use App\Models\Banniere;
 use App\Models\Contenu;
 use App\Models\DocumentJuridique;
 use App\Models\Evenement;
+use App\Models\Question;
 use App\Models\QuestionEligibilite;
 use App\Models\StockSang;
 
@@ -28,11 +29,28 @@ class ContenuController extends Controller
 
     public function fichesInfos()
     {
+        $fiches = Contenu::where('type', 'fiche_info')
+            ->where('statut', 'publie')
+            ->orderBy('published_at', 'asc')
+            ->get(['id', 'titre', 'categorie', 'contenu', 'image_url', 'quiz_cta', 'le_saviez_vous', 'published_at']);
+
+        // 📖 Quiz liés à chaque fiche : ceux dont au moins une question renvoie vers elle
+        //    (questions.contenu_id, posé dans le BO ou par QuizContenuSeeder). La fiche peut
+        //    ainsi proposer « Teste-toi » sur le bon quiz, sans lien à maintenir en double.
+        //    Seuls les quiz actifs comptent : un brouillon n'est pas jouable dans l'app.
+        $quizParFiche = Question::whereIn('contenu_id', $fiches->pluck('id'))
+            ->whereHas('quiz', fn ($q) => $q->where('statut', 'actif'))
+            ->with('quiz:id,titre')
+            ->get(['quiz_id', 'contenu_id'])
+            ->groupBy('contenu_id')
+            ->map(fn ($questions) => $questions->pluck('quiz')->unique('id')->sortBy('id')
+                ->map(fn ($quiz) => ['id' => $quiz->id, 'titre' => $quiz->titre])
+                ->values());
+
         return response()->json(
-            Contenu::where('type', 'fiche_info')
-                ->where('statut', 'publie')
-                ->orderBy('published_at', 'asc')
-                ->get(['id', 'titre', 'categorie', 'contenu', 'image_url', 'quiz_cta', 'le_saviez_vous', 'published_at'])
+            $fiches->map(fn (Contenu $fiche) => $fiche->toArray() + [
+                'quiz_lies' => $quizParFiche->get($fiche->id, collect()),
+            ])
         );
     }
 

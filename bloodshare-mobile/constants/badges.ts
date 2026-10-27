@@ -40,19 +40,19 @@ export const BADGES_INFO: Record<string, BadgeInfo> = {
   'Belle collection': {
     emoji: '🗓️',
     categorie: 'cartes',
-    description: 'Ta collection de cartes prend forme !',
-    condition: 'Obtenir 6 cartes Mois du don',
+    description: 'Ta collection de cartes prend forme !',
+    condition: 'Obtenir les cartes de 6 mois différents, toutes années confondues',
   },
   'Année complète': {
     emoji: '🌟',
     categorie: 'cartes',
-    description: "12 mois, 12 dons, 12 cartes. L'année parfaite du donneur.",
-    condition: 'Obtenir les 12 cartes Mois du don',
+    description: 'Un don dans chacun des 12 mois du calendrier, au fil des années.',
+    condition: 'Obtenir la carte de chaque mois, toutes années confondues',
   },
   'Toujours partant': {
     emoji: '🎪',
     categorie: 'cartes',
-    description: 'Les événements de collecte te connaissent bien !',
+    description: 'Les événements de collecte te connaissent bien !',
     condition: 'Obtenir 3 cartes Événement',
   },
   'Grain de curiosité': {
@@ -70,7 +70,7 @@ export const BADGES_INFO: Record<string, BadgeInfo> = {
   Incollable: {
     emoji: '🏆',
     categorie: 'quiz',
-    description: 'Tu as tout appris sur le don de sang. Impressionnant !',
+    description: 'Tu as tout appris sur le don de sang. Impressionnant !',
     condition: 'Compléter tous les quiz de toutes les catégories',
   },
   Ambassadeur: {
@@ -82,7 +82,7 @@ export const BADGES_INFO: Record<string, BadgeInfo> = {
   'Bien entouré': {
     emoji: '👥',
     categorie: 'parrainage',
-    description: 'Ton réseau de donneurs s\'agrandit !',
+    description: 'Ton réseau de donneurs s\'agrandit !',
     condition: 'Valider 3 parrainages',
   },
   'Bien accueilli': {
@@ -113,12 +113,26 @@ export const CATEGORIE_COLOR: Record<CategorieBadge, string> = {
   defis: '#F0A03C', // orange
 };
 
+// Libellés seuls, comme les autres filtres de l'app (composant Filtres) : pas d'emoji.
 export const CATEGORIE_LABEL: Record<CategorieBadge, string> = {
-  dons: '🩸 Dons',
-  cartes: '🃏 Collection',
-  quiz: '📚 Quiz',
-  parrainage: '🤝 Parrainage',
-  defis: '🏆 Défis',
+  dons: 'Dons',
+  cartes: 'Collection',
+  quiz: 'Quiz',
+  parrainage: 'Parrainage',
+  defis: 'Défis',
 };
 
 export const CATEGORIES_FILTRE: CategorieBadge[] = ['dons', 'cartes', 'quiz', 'parrainage', 'defis'];
+
+// 📖 Repli si un badge existe en base (BO) mais pas encore dans BADGES_INFO : les écrans
+//    affichent quand même quelque chose de cohérent plutôt qu'un `undefined` qui plante
+//    l'accès à `info.categorie`.
+const INFO_PAR_DEFAUT: BadgeInfo = {
+  emoji: '🏅',
+  categorie: 'dons',
+  description: 'Un nouveau badge à découvrir.',
+  condition: 'Continue à utiliser Aïma pour le débloquer.',
+};
+
+/** Infos locales d'un badge d'après son nom en base (écran Badges, popup de félicitations). */
+export const infoBadge = (nom: string): BadgeInfo => BADGES_INFO[nom] ?? INFO_PAR_DEFAUT;

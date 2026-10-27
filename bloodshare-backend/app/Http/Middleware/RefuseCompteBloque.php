@@ -21,6 +21,14 @@ class RefuseCompteBloque
             ], 403);
         }
 
+        // 📖 Même barrière pour un compte du backoffice qui aurait obtenu un token mobile
+        //    avant que la connexion ne le refuse (AuthController::login).
+        if ($request->user()?->estCompteBackoffice()) {
+            return response()->json([
+                'message' => "Ce compte sert au backoffice : l'app est réservée aux donneurs.",
+            ], 403);
+        }
+
         return $next($request);
     }
 }

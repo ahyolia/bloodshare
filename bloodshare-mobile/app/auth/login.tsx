@@ -76,7 +76,7 @@ export default function LoginScreen() {
     } catch (error: any) {
       // 📖 Jamais l'objet d'erreur entier : il contient la requête envoyée, donc l'email
       //    et le mot de passe en clair (audit RGPD). Le statut suffit pour déboguer.
-      if (__DEV__) console.warn('[auth] connexion échouée :', error.response?.status ?? error.message);
+      if (__DEV__) console.warn('[auth] connexion échouée :', error.response?.status ?? error.message);
 
       const statut = error.response?.status;
       if (statut === 401) {

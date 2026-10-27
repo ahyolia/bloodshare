@@ -2,8 +2,18 @@ import { useFocusEffect } from 'expo-router';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../../constants/colors';
-import { compter } from '../../../utils/pluriel';
+import { Ionicons } from '@expo/vector-icons';
+import { IllustrationScore } from '../../../components/quiz/IllustrationScore';
+import { Bouton } from '../../../components/ui/Bouton';
+import { EnTeteSousPage } from '../../../components/ui/EnTeteSousPage';
+import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
+import { useCompteur } from '../../../hooks/useCompteur';
+import { Theme } from '../../../constants/colors';
+import { Espace, Ombre, Rayon } from '../../../constants/spacing';
+import { Police, Typo } from '../../../constants/typography';
+import type { Question } from '../../../services/quiz.service';
+import { recapDuQuiz } from '../../../stores/quizRecap.store';
+import { accorder, compter } from '../../../utils/pluriel';
 import { TAB_BAR_STYLE } from '../_layout';
 
 export default function QuizScoreScreen() {
@@ -56,101 +66,247 @@ export default function QuizScoreScreen() {
     }
   })();
 
+  // 📖 Récapitulatif complet (intitulés, réponses, explications), dans l'ordre où les
+  //    questions ont été jouées. Absent après un rechargement de la page : pastilles seules.
+  const recap = recapDuQuiz(Number(quiz_id));
+  const questionsCorrigees = (recap?.questions ?? []).flatMap((question) => {
+    const detail = recap?.details.find((d) => d.question_id === question.id);
+    return detail ? [{ question, detail }] : [];
+  });
+
+  const textesReponses = (question: Question, ids: number[]) =>
+    question.reponses
+      .filter((r) => ids.includes(r.id))
+      .map((r) => r.texte)
+      .join(', ');
+
+  // Le score monte de 0 à sa valeur, après l'apparition du médaillon.
+  const scoreAffiche = useCompteur(scoreNum, 700, 350);
+
   const message =
     scoreNum === totalNum
-      ? { texte: 'Parfait ! 🎉', couleur: Colors.petrole[500] }
+      ? {
+          titre: 'Parfait !',
+          texte: 'Tu connais le don du sang sur le bout des doigts.',
+          icone: 'trophy-outline' as const,
+        }
       : scoreNum >= totalNum / 2
-        ? { texte: 'Bravo !', couleur: Colors.aubergine }
-        : { texte: 'Continue tes efforts !', couleur: Colors.grisMoyen };
+        ? {
+            titre: 'Bravo !',
+            texte: 'Encore quelques notions et ce sera parfait.',
+            icone: 'ribbon-outline' as const,
+          }
+        : {
+            titre: 'Bien essayé !',
+            texte: 'Relis les explications ci-dessous, puis retente ta chance.',
+            icone: 'heart-outline' as const,
+          };
 
   return (
     <View style={styles.screen}>
+      {/* 📖 Même en-tête que les sous-pages du Profil. Le retour mène à la liste des quiz :
+          le quiz terminé a été remplacé par cet écran, il n'y a rien à rouvrir. */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
+        <EnTeteSousPage titre={quiz_titre ?? 'Quiz'} onRetour={() => router.replace('/tabs/quiz')} />
       </View>
 
+      {/* 📖 Chorégraphie de fin : le bloc et son médaillon, le titre, le nombre de bonnes
+          réponses qui monte, les pastilles une à une, les points, puis le récapitulatif.
+          Tout arrive en moins de 1,5 s, et Reanimated saute ces entrées si « Réduire les
+          animations » est activé. */}
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.score}>
-          {scoreNum}/{totalNum}
-        </Text>
+        {/* 📖 Hiérarchie du bloc résultat : 1. le nombre de bonnes réponses, en très grand
+            et en pétrole (la couleur des bonnes réponses dans l'app) ; 2. le détail par
+            question ; 3. les points gagnés ; 4. l'encouragement. */}
+        <Animated.View entering={FadeInDown.duration(350)} style={styles.resultat}>
+          <IllustrationScore icone={message.icone} festif={scoreNum >= totalNum / 2} />
 
-        <Text style={[styles.message, { color: message.couleur }]}>{message.texte}</Text>
+          <Animated.Text
+            entering={FadeInDown.delay(250).duration(350)}
+            style={[Typo.titre1, styles.message]}
+            accessibilityRole="header"
+          >
+            {message.titre}
+          </Animated.Text>
 
-        <Text style={styles.sousMessage}>Tu as obtenu</Text>
+          <Animated.View
+            entering={FadeInDown.delay(400).duration(350)}
+            style={styles.scoreBloc}
+            accessible
+            accessibilityLabel={`${compter(scoreNum, 'bonne réponse')} sur ${totalNum}`}
+          >
+            <Text style={styles.score}>
+              <Text style={styles.scoreObtenu}>{scoreAffiche}</Text>
+              <Text style={styles.scoreTotal}> / {totalNum}</Text>
+            </Text>
+            <Text style={[Typo.corpsFort, styles.scoreLibelle]}>
+              {accorder(scoreNum, 'bonne réponse')}
+            </Text>
+          </Animated.View>
 
-        <View style={styles.pointsBadge}>
-          <Text style={styles.pointsBadgeText}>{pointsNum} ★</Text>
-        </View>
-
-        {!estPremiere && (
-          <Text style={styles.dejaCompleteText}>+0 ★ (déjà complété)</Text>
-        )}
-
-        <View style={styles.separateur} />
-
-        <Text style={styles.recapLabel}>
-          {compter(scoreNum, 'bonne réponse')} sur {totalNum}
-        </Text>
-
-        {/* 📖 Une pastille par question, colorée selon la correction réelle renvoyée par le
-            serveur (details). Vert = juste, corail = faux. Sans details : approximation
-            sur les `scoreNum` premières. */}
-        <View style={styles.pillsRow}>
+          {/* 📖 Une pastille par question, colorée selon la correction réelle renvoyée par le
+              serveur (details). Vert = juste, gris = faux (jamais de rouge). Sans details :
+              approximation sur les `scoreNum` premières. */}
+          <View style={styles.pillsRow}>
           {Array.from({ length: totalNum }).map((_, index) => {
             const reussie =
-              detailsCorrection.length > 0
-                ? Boolean(detailsCorrection[index]?.correcte)
-                : index < scoreNum;
+              questionsCorrigees.length > 0
+                ? Boolean(questionsCorrigees[index]?.detail.correcte)
+                : detailsCorrection.length > 0
+                  ? Boolean(detailsCorrection[index]?.correcte)
+                  : index < scoreNum;
 
             return (
-              <View
+              <Animated.View
                 key={index}
+                entering={ZoomIn.delay(650 + index * 70).springify().damping(12)}
                 style={[styles.pill, reussie ? styles.pillReussie : styles.pillRatee]}
               >
                 <Text style={[styles.pillText, reussie ? styles.pillTextReussie : styles.pillTextRatee]}>
                   {reussie ? '✓' : '✕'} {index + 1}
                 </Text>
-              </View>
+              </Animated.View>
             );
           })}
-        </View>
+          </View>
 
-        <View style={styles.separateur} />
+          {/* Séparation en pointillés, comme un ticket : en dessous, ce que le quiz rapporte. */}
+          <View style={styles.separateurTicket} />
+
+          <Animated.View
+            entering={ZoomIn.delay(1000).springify().damping(10)}
+            style={styles.pointsBadge}
+          >
+            <Ionicons name="star" size={16} color={Theme.accent.signatureTexte} />
+            <Text style={[Typo.corpsFort, styles.pointsBadgeText]}>
+              {estPremiere ? `+${compter(pointsNum, 'point')}` : '+0 point (déjà terminé)'}
+            </Text>
+          </Animated.View>
+
+          <Animated.Text
+            entering={FadeIn.delay(1100).duration(300)}
+            style={[Typo.corps, styles.sousMessage]}
+          >
+            {message.texte}
+          </Animated.Text>
+        </Animated.View>
+
+        {questionsCorrigees.length > 0 && (
+          <View style={styles.recap}>
+            <Text style={styles.recapTitre}>Récapitulatif</Text>
+
+            {questionsCorrigees.map(({ question, detail }, index) => (
+              <Animated.View
+                key={question.id}
+                // Rang plafonné : la 10e carte n'attend pas 1 s de plus que la première.
+                entering={FadeInDown.delay(1100 + Math.min(index, 5) * 60).duration(300)}
+                style={styles.recapCard}
+              >
+                {/* 📖 Trois niveaux de lecture : la question, puis les réponses (bonne réponse
+                    mise en avant), puis l'explication en retrait. La fiche reste une action
+                    secondaire, en fin de carte. */}
+                <Text style={[Typo.legendeForte, styles.recapNumero]}>
+                  Question {index + 1}
+                </Text>
+                <Text style={styles.recapIntitule}>{question.intitule}</Text>
+
+                <View style={styles.recapReponses}>
+                  <View
+                    style={[
+                      styles.recapReponse,
+                      detail.correcte ? styles.recapReponseBonne : styles.recapReponseFausse,
+                    ]}
+                  >
+                    <Ionicons
+                      name={detail.correcte ? 'checkmark-circle' : 'close-circle'}
+                      size={18}
+                      color={detail.correcte ? Theme.feedback.succesTexte : Theme.texte.secondaire}
+                    />
+                    <View style={styles.recapReponseTextes}>
+                      <Text style={[Typo.legende, styles.recapLibelle]}>Ta réponse</Text>
+                      <Text
+                        style={[
+                          Typo.legendeForte,
+                          detail.correcte ? styles.recapTexteBon : styles.recapTexteFaux,
+                        ]}
+                      >
+                        {textesReponses(question, detail.reponse_ids) || '—'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {!detail.correcte && (
+                    <View style={[styles.recapReponse, styles.recapReponseBonne]}>
+                      <Ionicons name="checkmark-circle" size={18} color={Theme.feedback.succesTexte} />
+                      <View style={styles.recapReponseTextes}>
+                        <Text style={[Typo.legende, styles.recapLibelle]}>Bonne réponse</Text>
+                        <Text style={[Typo.legendeForte, styles.recapTexteBon]}>
+                          {textesReponses(question, detail.reponses_correctes)}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
+
+                {!!detail.explication && (
+                  <Text style={[Typo.legende, styles.recapExplication]}>{detail.explication}</Text>
+                )}
+
+                {detail.contenu && (
+                  <TouchableOpacity
+                    style={styles.recapFiche}
+                    activeOpacity={0.6}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Lire la fiche : ${detail.contenu.titre}`}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/tabs/quiz/fiche/[id]',
+                        params: { id: String(detail.contenu!.id) },
+                      })
+                    }
+                  >
+                    <Ionicons name="document-text-outline" size={16} color={Theme.info.icone} />
+                    <Text style={[Typo.legendeForte, styles.recapFicheTexte]}>
+                      Lire la fiche
+                    </Text>
+                    <Ionicons name="arrow-forward" size={14} color={Theme.info.icone} />
+                  </TouchableOpacity>
+                )}
+              </Animated.View>
+            ))}
+          </View>
+        )}
 
         {!estPremiere && (
-          <Text style={styles.rejoueText}>
-            Tu as déjà complété ce quiz. Les points ont été attribués lors de ta première
+          <Text style={[Typo.legende, styles.rejoueText]}>
+            Tu avais déjà terminé ce quiz : les points ont été attribués lors de ta première
             tentative.
           </Text>
         )}
 
-        <Text style={styles.envieText}>{"Envie d'en apprendre plus ?"}</Text>
-
-        <TouchableOpacity
-          style={styles.fichesButton}
-          onPress={() => router.replace({ pathname: '/tabs/don', params: { section: 'fiches' } })}
-        >
-          <Text style={styles.fichesButtonText}>Lire les fiches pratiques</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.rejouerButton}
-          onPress={() =>
-            router.replace({ pathname: '/tabs/quiz/[id]', params: { id: quiz_id } })
-          }
-        >
-          <Text style={styles.rejouerButtonText}>Rejouer ce quiz</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.retourButton}
-          onPress={() => router.replace('/tabs/quiz')}
-        >
-          <Text style={styles.retourButtonText}>Retour aux quiz</Text>
-        </TouchableOpacity>
+        {/* 📖 Fiches en `info` (pétrole plein, comme sur la liste des quiz), rejouer en
+            `secondaire` : le bouton principal reste « Retour aux quiz », en bas. */}
+        <View style={styles.actionsSecondaires}>
+          <Bouton
+            libelle="Lire les fiches pratiques"
+            icone="document-text-outline"
+            variante="info"
+            onPress={() => router.replace({ pathname: '/tabs/don', params: { section: 'fiches' } })}
+          />
+          <Bouton
+            libelle="Rejouer ce quiz"
+            icone="refresh"
+            variante="secondaire"
+            onPress={() => router.replace({ pathname: '/tabs/quiz/[id]', params: { id: quiz_id } })}
+          />
+        </View>
       </ScrollView>
+
+      {/* 📖 Action principale toujours visible en bas, même pendant la lecture du récapitulatif. */}
+      <Animated.View entering={FadeInDown.delay(1000).duration(300)} style={styles.footer}>
+        <Bouton libelle="Retour aux quiz" onPress={() => router.replace('/tabs/quiz')} />
+      </Animated.View>
     </View>
   );
 }
@@ -158,70 +314,75 @@ export default function QuizScoreScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
+    backgroundColor: Theme.fond.page,
   },
   header: {
-    padding: 24,
-    paddingBottom: 0,
-  },
-  backButtonText: {
-    color: Colors.aubergine,
-    fontSize: 24,
+    paddingHorizontal: 18,
+    paddingTop: 54,
   },
   content: {
     flexGrow: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
-    paddingBottom: 126,
+    paddingHorizontal: 18,
+    paddingBottom: Espace[8],
+  },
+  // 📖 Bloc résultat blanc et surélevé, comme le bloc de la question : tout ce qui
+  //    concerne le résultat est regroupé, le récapitulatif vient après.
+  resultat: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    gap: Espace[3],
+    paddingHorizontal: 20,
+    paddingVertical: Espace[6],
+    borderRadius: Rayon.lg,
+    backgroundColor: Theme.fond.surface,
+    ...Ombre.flottante,
+  },
+  scoreBloc: {
+    alignItems: 'center',
   },
   score: {
+    fontFamily: Police.corpsGras,
+    color: Theme.feedback.succesTexte,
+  },
+  // 📖 L'information principale de l'écran : en très grand, en pétrole.
+  scoreObtenu: {
     fontSize: 64,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    textAlign: 'center',
+    lineHeight: 72,
+  },
+  scoreTotal: {
+    fontSize: 28,
+    color: Theme.texte.secondaire,
+  },
+  scoreLibelle: {
+    color: Theme.texte.principal,
   },
   message: {
-    fontSize: 20,
-    fontWeight: '700',
+    color: Theme.texte.principal,
     textAlign: 'center',
-    marginBottom: 4,
+  },
+  separateurTicket: {
+    alignSelf: 'stretch',
+    borderTopWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: Theme.fond.bordure,
+    marginVertical: Espace[2],
   },
   sousMessage: {
-    color: Colors.grisMoyen,
-    fontSize: 14,
+    color: Theme.texte.secondaire,
     textAlign: 'center',
-    marginBottom: 12,
   },
   pointsBadge: {
-    backgroundColor: Colors.fondNeutre,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Espace[2],
+    backgroundColor: Theme.accent.signatureAplat,
+    borderRadius: Rayon.plein,
+    paddingHorizontal: Espace[4],
+    paddingVertical: Espace[2],
   },
   pointsBadgeText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  dejaCompleteText: {
-    color: Colors.grisMoyen,
-    fontSize: 13,
-    fontStyle: 'italic',
-    marginTop: 4,
-  },
-  separateur: {
-    height: 1,
-    width: '100%',
-    backgroundColor: Colors.fondGris,
-    marginVertical: 20,
-  },
-  recapLabel: {
-    color: Colors.aubergine,
-    fontSize: 15,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 14,
+    color: Theme.accent.signatureTexte,
   },
   pillsRow: {
     flexDirection: 'row',
@@ -232,70 +393,112 @@ const styles = StyleSheet.create({
   pill: {
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: Rayon.plein,
   },
   pillReussie: {
-    backgroundColor: Colors.succes,
+    backgroundColor: Theme.feedback.succesSurface,
   },
   pillRatee: {
-    backgroundColor: Colors.fondRose,
+    backgroundColor: Theme.fond.surfaceEnfoncee,
   },
   pillText: {
     fontWeight: '700',
     fontSize: 13,
   },
   pillTextReussie: {
-    color: Colors.blanc,
+    color: Theme.feedback.succesTexte,
   },
   pillTextRatee: {
-    color: Colors.corail[600],
+    color: Theme.texte.secondaire,
+  },
+  recap: {
+    width: '100%',
+    marginTop: 24,
+    gap: 10,
+  },
+  recapTitre: {
+    color: Theme.texte.principal,
+    fontSize: 17,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  recapCard: {
+    backgroundColor: Theme.fond.surface,
+    borderRadius: Rayon.md,
+    borderWidth: 1,
+    borderColor: Theme.fond.bordure,
+    padding: 16,
+  },
+  recapNumero: {
+    color: Theme.texte.secondaire,
+  },
+  recapIntitule: {
+    ...Typo.corpsFort,
+    color: Theme.texte.principal,
+    marginTop: 2,
+  },
+  recapReponses: {
+    gap: 6,
+    marginTop: 12,
+  },
+  recapReponse: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: Rayon.sm,
+  },
+  recapReponseBonne: {
+    backgroundColor: Theme.feedback.succesSurface,
+  },
+  recapReponseFausse: {
+    backgroundColor: Theme.fond.surfaceEnfoncee,
+  },
+  recapReponseTextes: {
+    flex: 1,
+  },
+  recapLibelle: {
+    color: Theme.texte.secondaire,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  recapTexteBon: {
+    color: Theme.feedback.succesTexte,
+  },
+  recapTexteFaux: {
+    color: Theme.texte.principal,
+  },
+  recapExplication: {
+    color: Theme.texte.secondaire,
+    marginTop: 12,
+  },
+  recapFiche: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginTop: 12,
+  },
+  recapFicheTexte: {
+    color: Theme.info.icone,
   },
   rejoueText: {
-    color: Colors.grisMoyen,
-    fontSize: 12,
+    color: Theme.texte.secondaire,
     fontStyle: 'italic',
     textAlign: 'center',
-    marginBottom: 16,
+    marginTop: Espace[6],
   },
-  envieText: {
-    color: Colors.grisMoyen,
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 12,
+  actionsSecondaires: {
+    alignSelf: 'stretch',
+    gap: Espace[3],
+    marginTop: Espace[6],
   },
-  fichesButton: {
-    width: '100%',
-    backgroundColor: Colors.aubergine,
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-  },
-  fichesButtonText: {
-    color: Colors.blanc,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  rejouerButton: {
-    width: '100%',
-    borderWidth: 1.5,
-    borderColor: Colors.grisMoyen,
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  rejouerButtonText: {
-    color: Colors.grisMoyen,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  retourButton: {
-    marginTop: 8,
-    padding: 8,
-  },
-  retourButtonText: {
-    color: Colors.petrole[500],
-    fontSize: 14,
-    textAlign: 'center',
+  footer: {
+    padding: Espace[4],
+    paddingBottom: Espace[6],
+    backgroundColor: Theme.fond.page,
+    borderTopWidth: 1,
+    borderTopColor: Theme.fond.bordure,
   },
 });

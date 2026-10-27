@@ -2,6 +2,7 @@ import axios from 'axios';
 import { router } from 'expo-router';
 import { getToken, removeToken } from '../stores/auth.store';
 import { API_URL } from '../constants/api';
+import { espacesInsecablesPartout } from '../utils/typographie';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -21,6 +22,13 @@ const api = axios.create({
 //    elles reviennent toutes en 401. On ne redirige qu'une fois, jusqu'à la reconnexion.
 let redirectionVersLogin = false;
 
+// 📖 Le serveur de démo (Apache, dossier utilisateur sous Debian) n'autorise que GET,
+//    POST et OPTIONS : un PUT ou un DELETE y est refusé en 403 avant d'atteindre Laravel
+//    (profil, suppression de compte, notifications lues, progression des quiz). Ces
+//    requêtes partent donc en POST, la vraie méthode dans X-HTTP-Method-Override, que
+//    Laravel lit nativement : rien ne change côté routes, et ça marche partout.
+const METHODES_SURCHARGEES = ['put', 'patch', 'delete'];
+
 // Intercepteur requête : ajoute le token automatiquement
 api.interceptors.request.use(async (config) => {
   const token = await getToken();
@@ -29,12 +37,24 @@ api.interceptors.request.use(async (config) => {
     // Une requête repart avec un token : l'utilisateur s'est reconnecté.
     redirectionVersLogin = false;
   }
+
+  const methode = config.method?.toLowerCase();
+  if (methode && METHODES_SURCHARGEES.includes(methode)) {
+    config.headers['X-HTTP-Method-Override'] = methode.toUpperCase();
+    config.method = 'post';
+  }
   return config;
 });
 
-// Intercepteur réponse : gère les 401
+// Intercepteur réponse : espaces insécables dans les textes reçus, et gestion des 401.
+// 📖 Les textes du backoffice (catégories, quiz, fiches, notifications…) sont saisis avec
+//    des espaces normales avant « ? » ou « ! » : on les corrige ici, une fois pour toute
+//    l'app, plutôt que dans chaque écran.
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    response.data = espacesInsecablesPartout(response.data);
+    return response;
+  },
   async (error) => {
     if (error.response?.status === 401) {
       await removeToken();
