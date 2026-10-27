@@ -14,7 +14,7 @@ import { GrilleCartes } from '../../../components/cartes/GrilleCartes';
 import { EnTete } from '../../../components/EnTete';
 import { Chargement } from '../../../components/ui/Chargement';
 import { EtatErreur } from '../../../components/ui/EtatErreur';
-import { Filtres } from '../../../components/ui/Filtres';
+import { BlocCollection } from '../../../components/cartes/BlocCollection';
 import { entree } from '../../../constants/animations';
 import { Theme } from '../../../constants/colors';
 import { Espace, Ombre, Rayon } from '../../../constants/spacing';
@@ -24,7 +24,6 @@ import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues'
 import { useProfil } from '../../../hooks/useProfil';
 import { useRelanceOnglet } from '../../../hooks/useRelanceOnglet';
 import { Cartes, getCartes, getCartesCache } from '../../../services/cartes.service';
-import { getNomMois } from '../../../utils/mois';
 import { compter } from '../../../utils/pluriel';
 import { initialePseudo } from '../../../utils/profil';
 
@@ -70,13 +69,11 @@ export default function CartesScreen() {
   useFocusEffect(charger);
 
   const ouvrirCarte = (id: number) => router.push({ pathname: '/tabs/cartes/[id]', params: { id } });
-  // 📖 Une collection de cartes du mois par année. Par défaut l'année en cours (la
-  //    première de la liste) ; les années passées n'apparaissent que si le donneur y a
-  //    au moins une carte.
-  const [anneeChoisie, setAnneeChoisie] = useState<number | null>(null);
+  // 📖 Une collection de cartes du mois par année, la plus récente d'abord : l'année en
+  //    cours, puis les années passées où le donneur a au moins une carte.
   const collectionsMois = cartes?.mois_don.collections ?? [];
-  const collectionMois =
-    collectionsMois.find((collection) => collection.annee === anneeChoisie) ?? collectionsMois[0];
+  const ouvrirCollection = (annee: number) =>
+    router.push({ pathname: '/tabs/cartes/collection/[annee]', params: { annee } });
   const cartesEvenement = cartes?.evenement.categories.flatMap((categorie) => categorie.cartes) ?? [];
   const cartesUniques = cartes
     ? [
@@ -126,36 +123,20 @@ export default function CartesScreen() {
               <RaccourciScan onPress={() => router.push('/tabs/don/scan')} />
             </Animated.View>
 
-            {collectionMois && (
+            {collectionsMois.length > 0 && (
               <Animated.View entering={entree(1)}>
-                <Collection
-                  titre="Cartes du mois"
-                  precision={`Collection ${collectionMois.annee}`}
-                  icone="calendar"
-                  cartes={collectionMois.cartes}
-                >
-                  {collectionsMois.length > 1 && (
-                    <Filtres
-                      marge={MARGE}
-                      actif={String(collectionMois.annee)}
-                      onChoisir={(cle) => setAnneeChoisie(Number(cle))}
-                      filtres={collectionsMois.map((collection) => ({
-                        cle: String(collection.annee),
-                        libelle: String(collection.annee),
-                        detail: `collection ${collection.annee}, ${compter(
-                          collection.cartes.filter((carte) => carte.obtenue).length,
-                          'carte'
-                        )}`,
-                      }))}
-                    />
-                  )}
-                  <GrilleCartes
-                    // key : changer d'année rejoue l'arrivée des cartes.
-                    key={collectionMois.annee}
-                    delaiDepart={100}
-                    cartes={collectionMois.cartes.map((carte) => ({ ...carte, legende: getNomMois(carte.mois_numero) }))}
-                    onOuvrir={ouvrirCarte}
-                  />
+                {/* Pas de compteur dans l'en-tête : chaque bloc d'année a le sien. */}
+                <Collection titre="Cartes du mois" precision="Une collection par année" icone="calendar" cartes={[]}>
+                  <View style={styles.blocsCollections}>
+                    {collectionsMois.map((collection) => (
+                      <BlocCollection
+                        key={collection.annee}
+                        collection={collection}
+                        enCours={collection.annee === cartes.mois_don.annee}
+                        onPress={() => ouvrirCollection(collection.annee)}
+                      />
+                    ))}
+                  </View>
                 </Collection>
               </Animated.View>
             )}
@@ -398,6 +379,9 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: Espace[4],
+  },
+  blocsCollections: {
+    gap: Espace[3],
   },
   enTete: {
     gap: Espace[3],

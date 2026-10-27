@@ -81,7 +81,7 @@ Parrainage validé si filleul, contribution au défi, synchronisation des badges
 *   Les cartes du mois forment **une collection par année** (`cartes.annee`, une seule carte par mois et par année) : la carte de novembre 2027 est une autre carte que celle de novembre 2026, avec son propre dessin. La collection 2026 est la première.
 *   Le scan donne la carte du mois **de l'année en cours** : un donneur qui a novembre 2026 obtient novembre 2027 l'année suivante.
 *   La collection de l'année suivante est créée le 1er décembre (`cartes:creer-collection`, planifiée ; se lance aussi à la main avec une année), sans visuel : le BO a décembre pour y poser les dessins. Si elle manque au moment d'un scan, elle est créée à ce moment-là, le don n'est jamais bloqué.
-*   Page Cartes : la collection de l'année en cours par défaut, avec des pastilles pour revoir les années passées où le donneur a au moins une carte. Une collection future reste cachée.
+*   Page Cartes : un bloc par collection (l'année en cours, marquée « En cours », puis les années passées où le donneur a au moins une carte), avec ses dernières cartes en éventail et sa progression sur 12. Toucher un bloc ouvre la collection en entier (`tabs/cartes/collection/[annee]`). Une collection future reste cachée.
 *   Avec 56 à 84 jours entre deux dons, une collection d'une année ne peut pas être complète (6 cartes au plus). Les badges de cartes du mois comptent donc les **mois différents, toutes années confondues**.
 
 ## Carte propre à un événement
