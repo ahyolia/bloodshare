@@ -5,6 +5,7 @@ import { Palette } from '../../constants/palette';
 import { Theme } from '../../constants/colors';
 import { Espace, Ombre, Rayon } from '../../constants/spacing';
 import { Typo } from '../../constants/typography';
+import { Flottement } from '../ui/Flottement';
 import { PastilleStock } from '../ui/PastilleStock';
 
 /**
@@ -38,15 +39,19 @@ export function IllustrationDon() {
 export function IllustrationCartes() {
   return (
     <Decoratif>
-      <View style={styles.cercleCartes}>
+      <View style={styles.zoneCartes}>
         <CarteSouvenir mois="Septembre 2026" couleur={Palette.orange[100]} rotation={-8} />
         <CarteSouvenir mois="Octobre 2026" couleur={Palette.corail[500]} rotation={7} decalage />
-        <View style={[styles.etoile, styles.etoileHaut]}>
-          <Ionicons name="star-outline" size={22} color={Theme.texte.principal} />
-        </View>
-        <View style={[styles.etoile, styles.etoileBas]}>
-          <Ionicons name="star" size={18} color={Theme.texte.principal} />
-        </View>
+        <Flottement style={styles.etoileHaut} rang={1}>
+          <View style={styles.etoile}>
+            <Ionicons name="star-outline" size={22} color={Theme.texte.principal} />
+          </View>
+        </Flottement>
+        <Flottement style={styles.etoileBas} rang={3}>
+          <View style={[styles.etoile, styles.etoilePetite]}>
+            <Ionicons name="star" size={18} color={Theme.texte.principal} />
+          </View>
+        </Flottement>
       </View>
     </Decoratif>
   );
@@ -76,7 +81,7 @@ export function IllustrationInfos() {
   return (
     <Decoratif>
       <View style={styles.infos}>
-        <CarteInfo icone="water-outline" fondIcone={Theme.etat.bas.surface} rotation={-2}>
+        <CarteInfo icone="water-outline" fondIcone={Theme.etat.bas.surface} rotation={-2} rang={0}>
           <View style={styles.ligneStock}>
             <Text style={[Typo.corpsFort, { color: Theme.texte.principal }]}>O−</Text>
             <PastilleStock niveau="bas" />
@@ -85,11 +90,18 @@ export function IllustrationInfos() {
             Les réserves O− ont besoin de renfort cette semaine.
           </Text>
         </CarteInfo>
-        <CarteInfo icone="calendar-outline" fondIcone={Theme.info.fond} couleurIcone={Theme.info.icone} rotation={1.5} decalage>
+        <CarteInfo
+          icone="calendar-outline"
+          fondIcone={Theme.info.fond}
+          couleurIcone={Theme.info.icone}
+          rotation={1.5}
+          decalage
+          rang={1}
+        >
           <Text style={[Typo.legendeForte, { color: Theme.texte.principal }]}>Collecte mobile · Nouméa centre</Text>
           <Text style={[Typo.legende, { color: Theme.texte.secondaire }]}>Place des Cocotiers</Text>
         </CarteInfo>
-        <CarteInfo icone="heart-outline" fondIcone={Theme.etat.bon.surface} rotation={-1}>
+        <CarteInfo icone="heart-outline" fondIcone={Theme.etat.bon.surface} rotation={-1} rang={2}>
           <Text style={[Typo.legendeForte, { color: Theme.texte.principal }]}>Défi du mois : 212 dons sur 300</Text>
           <Text style={[Typo.legende, { color: Theme.texte.secondaire }]}>Merci à toutes et à tous !</Text>
         </CarteInfo>
@@ -104,6 +116,7 @@ function CarteInfo({
   couleurIcone = Theme.texte.principal,
   rotation,
   decalage,
+  rang,
   children,
 }: {
   icone: ComponentProps<typeof Ionicons>['name'];
@@ -111,15 +124,22 @@ function CarteInfo({
   couleurIcone?: string;
   rotation: number;
   decalage?: boolean;
+  /** Mouvement du flottement : un rang par bloc, pour qu'ils ne bougent pas pareil. */
+  rang: number;
   children: ReactNode;
 }) {
   return (
-    <View style={[styles.carteInfo, decalage && styles.carteInfoDecalee, { transform: [{ rotate: `${rotation}deg` }] }]}>
-      <View style={[styles.pastille, { backgroundColor: fondIcone }]}>
-        <Ionicons name={icone} size={20} color={couleurIcone} />
+    // 📖 Intensité réduite : un gros bloc qui bouge beaucoup deviendrait difficile à lire.
+    <Flottement rang={rang} intensite={0.4}>
+      <View
+        style={[styles.carteInfo, decalage && styles.carteInfoDecalee, { transform: [{ rotate: `${rotation}deg` }] }]}
+      >
+        <View style={[styles.pastille, { backgroundColor: fondIcone }]}>
+          <Ionicons name={icone} size={20} color={couleurIcone} />
+        </View>
+        <View style={styles.carteInfoTextes}>{children}</View>
       </View>
-      <View style={styles.carteInfoTextes}>{children}</View>
-    </View>
+    </Flottement>
   );
 }
 
@@ -138,18 +158,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cercleCartes: {
+  zoneCartes: {
     width: 300,
     height: 300,
-    borderRadius: Rayon.plein,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: Theme.texte.principal,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
   carte: {
+    // 📖 Ombre : les cartes semblent posées au-dessus du fond (effet surélevé).
+    ...Ombre.flottante,
     width: CARTE_L,
     height: CARTE_L * 1.35,
     padding: Espace[2],
@@ -162,7 +180,6 @@ const styles = StyleSheet.create({
   carteDecalee: { marginLeft: -Espace[6], marginTop: Espace[8] },
   carteVisuel: { flex: 1, borderRadius: Rayon.sm },
   etoile: {
-    position: 'absolute',
     width: 44,
     height: 44,
     borderRadius: Rayon.plein,
@@ -172,8 +189,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  etoileHaut: { top: 34, right: 20 },
-  etoileBas: { bottom: 40, left: 72, width: 34, height: 34 },
+  etoileHaut: { position: 'absolute', top: 34, right: 20 },
+  etoileBas: { position: 'absolute', bottom: 40, left: 72 },
+  etoilePetite: { width: 34, height: 34 },
   infos: { alignSelf: 'stretch', gap: Espace[3] },
   carteInfo: {
     ...Ombre.flottante,

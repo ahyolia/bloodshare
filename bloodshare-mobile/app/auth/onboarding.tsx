@@ -89,7 +89,7 @@ export default function Onboarding() {
   };
 
   return (
-    <FondDecoratif formes={formes}>
+    <FondDecoratif formes={formes} anime>
       <View style={styles.page}>
         <IndicateurEtapes
           etape={index + 1}
