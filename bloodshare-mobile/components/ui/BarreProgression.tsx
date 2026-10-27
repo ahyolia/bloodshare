@@ -25,6 +25,10 @@ type Props = {
   /** Texte à droite (ex. « 4 cartes sur 12 »). Par défaut : le pourcentage. */
   detail?: string;
   variante?: Variante;
+  /** Piste fine (6 px au lieu de 12), pour une barre secondaire dans un bloc. */
+  fine?: boolean;
+  /** Titre lu par les lecteurs d'écran seulement : le bloc autour le dit déjà à l'écran. */
+  titreMasque?: boolean;
   /** Ajustements de mise en page (marges, espacement intérieur du bloc vedette…). */
   style?: StyleProp<ViewStyle>;
 };
@@ -55,7 +59,16 @@ const COULEURS: Record<Variante, { fond?: string; titre: string; detail: string;
   },
 };
 
-export function BarreProgression({ titre, valeur, max, detail, variante = 'standard', style }: Props) {
+export function BarreProgression({
+  titre,
+  valeur,
+  max,
+  detail,
+  variante = 'standard',
+  fine = false,
+  titreMasque = false,
+  style,
+}: Props) {
   // 📖 Bornée entre 0 et 1 : un objectif dépassé (310 dons sur 300) ne doit pas
   //    faire déborder la barre, et un max à 0 ne doit pas diviser par zéro.
   const ratio = max > 0 ? Math.min(Math.max(valeur / max, 0), 1) : 0;
@@ -81,13 +94,15 @@ export function BarreProgression({ titre, valeur, max, detail, variante = 'stand
       accessibilityValue={{ min: 0, max, now: Math.min(valeur, max), text: texteDetail }}
     >
       <View style={styles.entete}>
-        <Text style={[Typo.corpsFort, { color: couleurs.titre }]} numberOfLines={1}>
-          {titre}
-        </Text>
+        {!titreMasque && (
+          <Text style={[Typo.corpsFort, { color: couleurs.titre }]} numberOfLines={1}>
+            {titre}
+          </Text>
+        )}
         <Text style={[vedette ? Typo.legendeForte : Typo.legende, { color: couleurs.detail }]}>{texteDetail}</Text>
       </View>
 
-      <View style={[styles.piste, { backgroundColor: couleurs.piste }]}>
+      <View style={[styles.piste, fine && styles.pisteFine, { backgroundColor: couleurs.piste }]}>
         <Animated.View style={[styles.remplissage, { backgroundColor: couleurs.remplissage }, styleRemplissage]} />
       </View>
     </View>
@@ -106,5 +121,6 @@ const styles = StyleSheet.create({
   },
   entete: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Espace[2] },
   piste: { height: PISTE, borderRadius: Rayon.plein, overflow: 'hidden' },
+  pisteFine: { height: PISTE / 2 },
   remplissage: { height: '100%', borderRadius: Rayon.plein },
 });

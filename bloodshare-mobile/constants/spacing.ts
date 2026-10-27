@@ -38,3 +38,8 @@ export const Ombre = {
   /** Modales : aubergine à 22 %. */
   modale: { boxShadow: '0px 12px 32px rgba(62, 36, 48, 0.22)' },
 } as const satisfies Record<string, ViewStyle>;
+/**
+ * Largeur maximale de l'app sur grand écran (tablette, PWA sur ordinateur) : celle d'un
+ * grand téléphone. Au-delà, l'app reste une colonne centrée (voir app/_layout).
+ */
+export const LARGEUR_MAX_APP = 520;

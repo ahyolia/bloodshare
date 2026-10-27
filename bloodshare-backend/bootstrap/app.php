@@ -36,6 +36,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('notifications:anniversaire-don')->dailyAt('09:30');
         $schedule->command('notifications:journee-mondiale')->dailyAt('09:40');
         $schedule->command('notifications:carte-du-mois')->dailyAt('09:50');
+        // 📖 La collection de l'année suivante, un mois à l'avance : le BO a décembre pour
+        //    y poser les nouveaux dessins.
+        $schedule->command('cartes:creer-collection')->yearlyOn(12, 1, '03:30');
         $schedule->command('notifications:progression-defi')->weeklyOn(1, '10:00');
 
         // 📖 Durées de conservation annoncées dans la politique de confidentialité.

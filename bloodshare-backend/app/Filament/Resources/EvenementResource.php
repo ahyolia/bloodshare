@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Forms\ChampImage;
 use App\Filament\Resources\EvenementResource\Pages;
+use App\Models\Carte;
 use App\Models\Evenement;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -69,6 +70,15 @@ class EvenementResource extends Resource
                     ->required()
                     ->default('brouillon'),
 
+                Forms\Components\Select::make('carte_id')
+                    ->label('Carte remise aux participants')
+                    ->options(fn () => Carte::where('categorie', 'evenement')
+                        ->where('statut', 'active')
+                        ->orderBy('titre')
+                        ->pluck('titre', 'id'))
+                    ->placeholder('Carte Événement générique')
+                    ->helperText('Laisser vide pour remettre la carte Événement générique. Les cartes se créent dans Gamification → Cartes, catégorie « Événement ».'),
+
                 Forms\Components\Hidden::make('admin_id')
                     ->default(fn () => Auth::id()),
             ]);
@@ -113,6 +123,10 @@ class EvenementResource extends Resource
                         'passe' => 'Passé',
                         default => $state,
                     }),
+
+                Tables\Columns\TextColumn::make('carte.titre')
+                    ->label('Carte remise')
+                    ->default('Générique'),
 
                 Tables\Columns\TextColumn::make('admin.pseudo')
                     ->label('Créé par')

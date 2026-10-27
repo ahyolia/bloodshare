@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     color: Colors.aubergine,
   },
   input: {
-    height: 52,
+    minHeight: 52,
     borderWidth: 1.5,
     borderColor: '#D8D3CA',
     paddingHorizontal: 16,
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   button: {
-    height: 56,
+    minHeight: 56,
     borderRadius: 20,
     backgroundColor: Colors.aubergine,
     alignItems: 'center',

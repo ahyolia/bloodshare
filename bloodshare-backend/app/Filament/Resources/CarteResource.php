@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Validation\Rules\Unique;
 
 class CarteResource extends Resource
 {
@@ -36,6 +37,7 @@ class CarteResource extends Resource
                         'evenement' => '🎉 Événement',
                         'parrain'   => '🤝 Parrain',
                         'filleul'   => '🌱 Filleul',
+                        'fidele'    => '⏳ Fidèle',
                     ])
                     ->required()
                     ->live(),
@@ -56,6 +58,21 @@ class CarteResource extends Resource
                         11 => 'Novembre',
                         12 => 'Décembre',
                     ])
+                    ->visible(fn ($get) => $get('categorie') === 'mois_don')
+                    ->required(fn ($get) => $get('categorie') === 'mois_don'),
+
+                // 📖 Une collection par année : la carte de novembre 2027 a son propre dessin,
+                //    celle de novembre 2026 garde le sien.
+                Forms\Components\TextInput::make('annee')
+                    ->label('Collection (année)')
+                    ->numeric()
+                    ->minValue(Carte::PREMIERE_COLLECTION)
+                    ->maxValue(2100)
+                    ->default(fn () => now()->year)
+                    ->unique(ignoreRecord: true, modifyRuleUsing: fn (Unique $rule, $get) => $rule
+                        ->where('categorie', 'mois_don')
+                        ->where('mois_numero', $get('mois_numero')))
+                    ->validationMessages(['unique' => 'Cette collection a déjà une carte pour ce mois.'])
                     ->visible(fn ($get) => $get('categorie') === 'mois_don')
                     ->required(fn ($get) => $get('categorie') === 'mois_don'),
 
@@ -81,6 +98,11 @@ class CarteResource extends Resource
                     ])
                     ->required()
                     ->default('active'),
+
+                Forms\Components\Toggle::make('generique')
+                    ->label('Carte générique')
+                    ->helperText('Remise par tout événement qui ne désigne pas sa propre carte. Désactivée : la carte n\'est remise que par l\'événement qui la choisit.')
+                    ->visible(fn ($get) => $get('categorie') === 'evenement'),
             ]);
     }
 
@@ -106,12 +128,14 @@ class CarteResource extends Resource
                         'success' => 'evenement',
                         'warning' => 'parrain',
                         'info'    => 'filleul',
+                        'primary' => 'fidele',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'mois_don'  => '🩸 Mois du don',
                         'evenement' => '🎉 Événement',
                         'parrain'   => '🤝 Parrain',
                         'filleul'   => '🌱 Filleul',
+                        'fidele'    => '⏳ Fidèle',
                         default     => $state,
                     }),
 
@@ -122,6 +146,11 @@ class CarteResource extends Resource
                         5 => 'Mai', 6 => 'Juin', 7 => 'Juillet', 8 => 'Août',
                         9 => 'Septembre', 10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre',
                     ][$state] ?? '—' : '—')
+                    ->default('—'),
+
+                Tables\Columns\TextColumn::make('annee')
+                    ->label('Collection')
+                    ->sortable()
                     ->default('—'),
 
                 Tables\Columns\BadgeColumn::make('statut')
@@ -150,7 +179,12 @@ class CarteResource extends Resource
                         'evenement' => '🎉 Événement',
                         'parrain'   => '🤝 Parrain',
                         'filleul'   => '🌱 Filleul',
+                        'fidele'    => '⏳ Fidèle',
                     ]),
+                Tables\Filters\SelectFilter::make('annee')
+                    ->label('Collection')
+                    ->options(fn () => Carte::where('categorie', 'mois_don')->whereNotNull('annee')
+                        ->distinct()->orderByDesc('annee')->pluck('annee', 'annee')->all()),
                 Tables\Filters\SelectFilter::make('statut')
                     ->label('Statut')
                     ->options([

@@ -59,12 +59,27 @@ type BadgeAFeterApi = Omit<BadgeAFeter, 'notificationId'> & { notification_id: s
 // 📖 GET /badges/a-feter : quel que soit l'endroit où le badge a été gagné (scan, quiz,
 //    parrainage d'un filleul, défi…), l'app le retrouve ici pour afficher le popup.
 export const getBadgesAFeter = async (): Promise<BadgeAFeter[]> => {
-  if (USE_MOCK_DATA) return [];
+  if (USE_MOCK_DATA) return [...badgesSimules];
 
   const response = await api.get<BadgeAFeterApi[]>('/badges/a-feter');
-  return response.data.map(({ notification_id, ...badge }) => ({ notificationId: notification_id, ...badge }));
+  const badges = response.data.map(({ notification_id, ...badge }) => ({ notificationId: notification_id, ...badge }));
+  return [...badges, ...badgesSimules];
 };
 
 /** Le popup a été vu : sa notification passe en lue, il ne revient plus. */
-export const marquerBadgeFete = (badge: BadgeAFeter): Promise<void> =>
-  marquerNotificationLue(badge.notificationId);
+export const marquerBadgeFete = async (badge: BadgeAFeter): Promise<void> => {
+  const simule = badgesSimules.findIndex((b) => b.notificationId === badge.notificationId);
+  if (simule >= 0) {
+    badgesSimules.splice(simule, 1);
+    return;
+  }
+  await marquerNotificationLue(badge.notificationId);
+};
+
+// 📖 Badges gagnés par un scan simulé (USE_MOCK_SCAN) : aucun serveur ne crée leur
+//    notification, on les garde ici pour que le popup s'affiche quand même. Vide hors mock.
+const badgesSimules: BadgeAFeter[] = [];
+
+export const simulerBadgeAFeter = (badge: BadgeAFeter) => {
+  badgesSimules.push(badge);
+};

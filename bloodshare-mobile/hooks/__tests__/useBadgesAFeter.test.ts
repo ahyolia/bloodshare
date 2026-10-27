@@ -51,6 +51,20 @@ describe('useBadgesAFeter', () => {
     expect(result.current.badge).toBeNull();
   });
 
+  it("attend la fin de l'animation d'obtention d'une carte pour afficher le badge", async () => {
+    mockGet.mockResolvedValue([badge(1)]);
+    mockPathname = '/tabs/don/resultat-scan';
+
+    const { result, rerender } = await renderHook(() => useBadgesAFeter());
+    await waitFor(() => expect(mockGet).toHaveBeenCalled(), { timeout: 2000 });
+    expect(result.current.badge).toBeNull();
+
+    // On quitte l'écran d'obtention : le badge gardé en file s'affiche.
+    mockPathname = '/tabs/cartes';
+    await rerender({});
+    await waitFor(() => expect(result.current.badge?.id).toBe(1), { timeout: 2000 });
+  });
+
   it("n'affiche rien si la vérification échoue", async () => {
     mockGet.mockRejectedValue(new Error('réseau'));
 

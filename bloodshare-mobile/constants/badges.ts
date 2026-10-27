@@ -41,13 +41,13 @@ export const BADGES_INFO: Record<string, BadgeInfo> = {
     emoji: '🗓️',
     categorie: 'cartes',
     description: 'Ta collection de cartes prend forme !',
-    condition: 'Obtenir 6 cartes Mois du don',
+    condition: 'Obtenir les cartes de 6 mois différents, toutes années confondues',
   },
   'Année complète': {
     emoji: '🌟',
     categorie: 'cartes',
-    description: "12 mois, 12 dons, 12 cartes. L'année parfaite du donneur.",
-    condition: 'Obtenir les 12 cartes Mois du don',
+    description: 'Un don dans chacun des 12 mois du calendrier, au fil des années.',
+    condition: 'Obtenir la carte de chaque mois, toutes années confondues',
   },
   'Toujours partant': {
     emoji: '🎪',
@@ -113,12 +113,13 @@ export const CATEGORIE_COLOR: Record<CategorieBadge, string> = {
   defis: '#F0A03C', // orange
 };
 
+// Libellés seuls, comme les autres filtres de l'app (composant Filtres) : pas d'emoji.
 export const CATEGORIE_LABEL: Record<CategorieBadge, string> = {
-  dons: '🩸 Dons',
-  cartes: '🃏 Collection',
-  quiz: '📚 Quiz',
-  parrainage: '🤝 Parrainage',
-  defis: '🏆 Défis',
+  dons: 'Dons',
+  cartes: 'Collection',
+  quiz: 'Quiz',
+  parrainage: 'Parrainage',
+  defis: 'Défis',
 };
 
 export const CATEGORIES_FILTRE: CategorieBadge[] = ['dons', 'cartes', 'quiz', 'parrainage', 'defis'];

@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             AvatarSeeder::class,
             CarteSeeder::class,
             BadgeSeeder::class,
+            // Après CarteSeeder et BadgeSeeder : il rattache leurs visuels.
+            VisuelsSeeder::class,
             QrCodeSeeder::class,
             QuestionEligibiliteSeeder::class,
         ]);

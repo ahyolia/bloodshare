@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { ReduceMotion, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, ReduceMotion, ZoomIn } from 'react-native-reanimated';
+import { VisuelBadge } from '../../../components/badges/VisuelBadge';
 import { BarreProgression } from '../../../components/ui/BarreProgression';
 import { Chargement } from '../../../components/ui/Chargement';
 import { EnTeteSousPage } from '../../../components/ui/EnTeteSousPage';
 import { EtatErreur } from '../../../components/ui/EtatErreur';
 import { FeuilleBas } from '../../../components/ui/FeuilleBas';
+import { Filtres } from '../../../components/ui/Filtres';
 import { entreeSousPage } from '../../../constants/animations';
 import {
   infoBadge,
@@ -16,10 +18,11 @@ import {
   CategorieBadge,
 } from '../../../constants/badges';
 import { Theme } from '../../../constants/colors';
-import { Espace, Rayon } from '../../../constants/spacing';
+import { Espace, Ombre, Rayon } from '../../../constants/spacing';
 import { Typo } from '../../../constants/typography';
 import { Badge, getBadges } from '../../../services/badges.service';
-import { formaterDateHeureLongue } from '../../../utils/dates';
+import { formaterDateHeureCourte, formaterDateHeureLongue } from '../../../utils/dates';
+import { compter } from '../../../utils/pluriel';
 import { CONTENU_MARGE_BASSE } from '../_layout';
 
 // 📖 « Révélation » du badge : le médaillon grandit avec un léger rebond, juste après
@@ -29,7 +32,13 @@ const REVELATION = ZoomIn.delay(180).springify().damping(12).stiffness(220).redu
 // 📖 Fond pâle de la catégorie : sa couleur à 15 % d'opacité (suffixe hexa « 26 »).
 const fondCategorie = (categorie: CategorieBadge) => `${CATEGORIE_COLOR[categorie]}26`;
 
+const TOUS = 'tous';
 const COLONNES = 3;
+const MARGE = 18;
+
+// 📖 Les badges obtenus sont des stickers « collés » : chacun penche un peu, pas tous du
+//    même côté. Faible (≤ 3°), comme les cartes chiffres : décoratif, jamais gênant.
+const INCLINAISONS = ['-3deg', '2deg', '-1deg', '3deg', '-2deg', '1deg'] as const;
 
 /** Découpe la liste en lignes de 3 : la dernière ligne garde des tuiles de même largeur. */
 const enLignes = <T,>(elements: T[]): T[][] =>
@@ -37,11 +46,17 @@ const enLignes = <T,>(elements: T[]): T[][] =>
     elements.slice(i * COLONNES, i * COLONNES + COLONNES),
   );
 
+/** Badges obtenus, le plus récent d'abord. */
+const parDateObtention = (badges: Badge[]) =>
+  badges
+    .filter((b) => b.obtenu)
+    .sort((a, b) => (b.obtenu_at ?? '').localeCompare(a.obtenu_at ?? ''));
+
 export default function BadgesScreen() {
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [filtreActif, setFiltreActif] = useState<'tous' | CategorieBadge>('tous');
+  const [filtreActif, setFiltreActif] = useState<string>(TOUS);
   const [badgeSelectionne, setBadgeSelectionne] = useState<Badge | null>(null);
 
   const charger = useCallback(() => {
@@ -49,10 +64,7 @@ export default function BadgesScreen() {
 
     getBadges()
       .then((data) => {
-        if (cancelled) return;
-        // Badges obtenus en premier : ce qu'on a déjà accompli passe avant ce qui reste à faire.
-        const tries = [...data.filter((b) => b.obtenu), ...data.filter((b) => !b.obtenu)];
-        setBadges(tries);
+        if (!cancelled) setBadges(data);
       })
       .catch(() => {
         if (!cancelled) setError(true);
@@ -77,71 +89,61 @@ export default function BadgesScreen() {
   };
 
   const badgesFiltres =
-    filtreActif === 'tous' ? badges : badges.filter((b) => infoBadge(b.nom).categorie === filtreActif);
-
+    filtreActif === TOUS ? badges : badges.filter((b) => infoBadge(b.nom).categorie === filtreActif);
+  const obtenus = parDateObtention(badgesFiltres);
+  const aDebloquer = badgesFiltres.filter((b) => !b.obtenu);
   const nbObtenus = badges.filter((b) => b.obtenu).length;
+  // Toutes catégories confondues : la carte vedette ne dépend pas du filtre.
+  const dernier = parDateObtention(badges)[0] ?? null;
   const pret = !loading && !error;
+
+  const filtres = [
+    { cle: TOUS, libelle: 'Tous', detail: compter(badges.length, 'badge') },
+    ...CATEGORIES_FILTRE.map((categorie) => ({
+      cle: categorie,
+      libelle: CATEGORIE_LABEL[categorie],
+      detail: compter(badges.filter((b) => infoBadge(b.nom).categorie === categorie).length, 'badge'),
+    })),
+  ];
 
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* 📖 Pas de sous-titre : la barre « Ma collection » donne déjà le décompte. */}
+        {/* 📖 Pas de sous-titre : la barre « Ma collection » donne déjà le décompte.
+            Pas de bandeau non plus : il est réservé aux pages principales (Quiz, Don). */}
         <EnTeteSousPage titre="Mes badges" />
 
         {loading && <Chargement message="On récupère tes badges…" />}
         {!loading && error && <EtatErreur onReessayer={reessayer} />}
 
         {pret && (
-          <>
-            <Animated.View entering={entreeSousPage}>
-              <BarreProgression
-                titre="Ma collection"
-                valeur={nbObtenus}
-                max={badges.length}
-                detail={`${nbObtenus} sur ${badges.length}`}
-              />
-            </Animated.View>
+          <Animated.View entering={entreeSousPage} style={styles.sections}>
+            <BarreProgression
+              titre="Ma collection"
+              valeur={nbObtenus}
+              max={badges.length}
+              detail={`${nbObtenus} sur ${badges.length}`}
+            />
 
-            {/* FILTRES — débordent volontairement jusqu'aux bords de l'écran */}
-            <Animated.View entering={entreeSousPage}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.filtresDefilement}
-                contentContainerStyle={styles.filtres}
-              >
-                <Puce libelle="Tous" active={filtreActif === 'tous'} onPress={() => setFiltreActif('tous')} />
-                {CATEGORIES_FILTRE.map((categorie) => (
-                  <Puce
-                    key={categorie}
-                    libelle={CATEGORIE_LABEL[categorie]}
-                    active={filtreActif === categorie}
-                    onPress={() => setFiltreActif(categorie)}
-                  />
-                ))}
-              </ScrollView>
-            </Animated.View>
+            {dernier && <CarteDernierBadge badge={dernier} onPress={() => setBadgeSelectionne(dernier)} />}
 
-            {badgesFiltres.length === 0 ? (
-              <Text style={[Typo.corps, styles.aucun]}>{"Aucun badge dans cette catégorie pour l'instant."}</Text>
-            ) : (
-              // 📖 La clé change avec le filtre : la grille est recréée et rejoue son
-              //    animation d'entrée, ce qui signale que la liste a changé.
-              <View key={filtreActif} style={styles.grille}>
-                {enLignes(badgesFiltres).map((ligne, i) => (
-                  <Animated.View key={i} entering={entreeSousPage} style={styles.ligne}>
-                    {ligne.map((badge) => (
-                      <TuileBadge key={badge.id} badge={badge} onPress={() => setBadgeSelectionne(badge)} />
-                    ))}
-                    {/* Cases vides : la dernière ligne garde des tuiles de même largeur. */}
-                    {Array.from({ length: COLONNES - ligne.length }, (_, j) => (
-                      <View key={`vide-${j}`} style={styles.tuileVide} />
-                    ))}
-                  </Animated.View>
-                ))}
-              </View>
-            )}
-          </>
+            <Filtres filtres={filtres} actif={filtreActif} onChoisir={setFiltreActif} marge={MARGE} />
+
+            {/* 📖 La clé change avec le filtre : les sections réapparaissent en fondu,
+                ce qui signale que la liste a changé. */}
+            <Animated.View key={filtreActif} entering={FadeIn.duration(220)} style={styles.sections}>
+              {badgesFiltres.length === 0 && (
+                <Text style={[Typo.corps, styles.aucun]}>{"Aucun badge dans cette catégorie pour l'instant."}</Text>
+              )}
+
+              {obtenus.length > 0 && (
+                <SectionBadges titre="Obtenus" badges={obtenus} onChoisir={setBadgeSelectionne} />
+              )}
+              {aDebloquer.length > 0 && (
+                <SectionBadges titre="À débloquer" badges={aDebloquer} onChoisir={setBadgeSelectionne} />
+              )}
+            </Animated.View>
+          </Animated.View>
         )}
       </ScrollView>
 
@@ -152,42 +154,80 @@ export default function BadgesScreen() {
   );
 }
 
-function Puce({ libelle, active, onPress }: { libelle: string; active: boolean; onPress: () => void }) {
+function SectionBadges({
+  titre,
+  badges,
+  onChoisir,
+}: {
+  titre: string;
+  badges: Badge[];
+  onChoisir: (badge: Badge) => void;
+}) {
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      style={({ pressed }) => [styles.puce, active ? styles.puceActive : styles.puceInactive, pressed && styles.presse]}
-    >
-      <Text style={[Typo.legendeForte, { color: active ? Theme.texte.surAccent : Theme.texte.secondaire }]}>
-        {libelle}
-      </Text>
-    </Pressable>
+    <View style={styles.section}>
+      <View style={styles.sectionEnTete}>
+        <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+          {titre}
+        </Text>
+        <View style={styles.compteur}>
+          <Text style={[Typo.legendeForte, styles.compteurTexte]}>{badges.length}</Text>
+        </View>
+      </View>
+
+      <View style={styles.grille}>
+        {enLignes(badges).map((ligne, i) => (
+          <View key={i} style={styles.ligne}>
+            {ligne.map((badge, j) => (
+              <TuileBadge
+                key={badge.id}
+                badge={badge}
+                inclinaison={INCLINAISONS[(i * COLONNES + j) % INCLINAISONS.length]}
+                onPress={() => onChoisir(badge)}
+              />
+            ))}
+            {/* Cases vides : la dernière ligne garde des tuiles de même largeur. */}
+            {Array.from({ length: COLONNES - ligne.length }, (_, k) => (
+              <View key={`vide-${k}`} style={styles.tuileVide} />
+            ))}
+          </View>
+        ))}
+      </View>
+    </View>
   );
 }
 
-function TuileBadge({ badge, onPress }: { badge: Badge; onPress: () => void }) {
+const HALO = 76;
+const STICKER = 80;
+
+// 📖 Vitrine : chaque badge obtenu est exposé sur une carte blanche surélevée (elle se
+//    touche), l'illustration posée sur un halo pâle de la couleur de sa catégorie et
+//    légèrement penchée. Un badge à débloquer est une carte vide en pointillé, à plat :
+//    visuel grisé, cadenas, et ce qu'il reste à faire écrit dessous.
+function TuileBadge({ badge, inclinaison, onPress }: { badge: Badge; inclinaison: string; onPress: () => void }) {
   const info = infoBadge(badge.nom);
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${badge.nom}, ${badge.obtenu ? 'badge obtenu' : 'badge à débloquer'}`}
-      accessibilityHint="Affiche comment l'obtenir"
-      style={({ pressed }) => [styles.tuile, pressed && styles.tuilePresse]}
+      accessibilityLabel={`${badge.nom}, ${badge.obtenu ? 'badge obtenu' : `à débloquer : ${info.condition}`}`}
+      accessibilityHint="Affiche le détail du badge"
+      style={({ pressed }) => [
+        styles.tuile,
+        badge.obtenu ? styles.tuileObtenue : styles.tuileVerrouillee,
+        pressed && styles.tuilePresse,
+      ]}
     >
-      <View
-        style={[
-          styles.medaille,
-          badge.obtenu
-            ? { backgroundColor: fondCategorie(info.categorie) }
-            : styles.medailleVerrouillee,
-        ]}
-      >
-        <Text style={[styles.emoji, !badge.obtenu && styles.emojiVerrouille]}>{info.emoji}</Text>
-        {/* 📖 Verrouillé = cadenas + médaillon pointillé + emoji estompé : pas la couleur seule. */}
+      <View style={[styles.halo, { backgroundColor: badge.obtenu ? fondCategorie(info.categorie) : 'transparent' }]}>
+        <View style={badge.obtenu && { transform: [{ rotate: inclinaison }] }}>
+          <VisuelBadge
+            imageUrl={badge.image_url}
+            emoji={info.emoji}
+            taille={badge.obtenu ? STICKER : HALO - Espace[2]}
+            verrouille={!badge.obtenu}
+          />
+        </View>
+        {/* 📖 Verrouillé = cadenas + pointillés + visuel grisé : pas la couleur seule. */}
         {!badge.obtenu && (
           <View style={styles.cadenas}>
             <Ionicons name="lock-closed" size={12} color={Theme.texte.secondaire} />
@@ -196,28 +236,81 @@ function TuileBadge({ badge, onPress }: { badge: Badge; onPress: () => void }) {
       </View>
 
       <Text
-        style={[Typo.legendeForte, styles.nom, { color: badge.obtenu ? Theme.texte.principal : Theme.texte.secondaire }]}
+        style={[Typo.legendeForte, badge.obtenu ? styles.nom : styles.nomVerrouille]}
         numberOfLines={2}
       >
         {badge.nom}
       </Text>
+      {badge.obtenu && badge.obtenu_at && (
+        <Text style={[Typo.legende, styles.condition]}>{formaterDateHeureCourte(badge.obtenu_at)}</Text>
+      )}
+      {/* Ce qu'il reste à faire, directement dans la grille : plus besoin d'ouvrir le badge. */}
+      {!badge.obtenu && (
+        <Text style={[Typo.legende, styles.condition]} numberOfLines={2}>
+          {info.condition}
+        </Text>
+      )}
     </Pressable>
   );
 }
+
+const VEDETTE = 104;
+
+// 📖 Le dernier badge obtenu, mis en avant en tête de la vitrine : grande illustration
+//    penchée qui déborde de son halo, et sa date. Toucher la carte ouvre son détail.
+function CarteDernierBadge({ badge, onPress }: { badge: Badge; onPress: () => void }) {
+  const info = infoBadge(badge.nom);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Dernier badge obtenu : ${badge.nom}`}
+      accessibilityHint="Affiche le détail du badge"
+      style={({ pressed }) => [styles.vedette, pressed && styles.tuilePresse]}
+    >
+      <View style={[styles.vedetteHalo, { backgroundColor: fondCategorie(info.categorie) }]}>
+        <View style={styles.vedetteIncline}>
+          <VisuelBadge imageUrl={badge.image_url} emoji={info.emoji} taille={VEDETTE} />
+        </View>
+      </View>
+      <View style={styles.vedetteTextes}>
+        <Text style={[Typo.legendeForte, styles.vedetteSurtitre]}>Dernier badge</Text>
+        <Text style={[Typo.titre3, styles.nom]} numberOfLines={2}>
+          {badge.nom}
+        </Text>
+        {badge.obtenu_at && (
+          <Text style={[Typo.legende, styles.condition]}>Débloqué le {formaterDateHeureLongue(badge.obtenu_at)}</Text>
+        )}
+      </View>
+      <Ionicons name="chevron-forward" size={20} color={Theme.texte.secondaire} />
+    </Pressable>
+  );
+}
+
+const DETAIL_STICKER = 136;
+// Retrait de l'illustration dans l'emplacement pointillé d'un badge à débloquer.
+const DETAIL_BORD = 8;
 
 function DetailBadge({ badge }: { badge: Badge }) {
   const info = infoBadge(badge.nom);
 
   return (
     <>
+      {/* Même langage que la grille, en grand : illustration penchée ou emplacement vide. */}
       <Animated.View
         entering={REVELATION}
         style={[
-          styles.detailMedaille,
-          { backgroundColor: badge.obtenu ? fondCategorie(info.categorie) : Theme.fond.surfaceEnfoncee },
+          badge.obtenu ? [styles.sticker, styles.detailSticker] : [styles.emplacement, styles.detailEmplacement],
+          badge.obtenu && !badge.image_url && { backgroundColor: fondCategorie(info.categorie) },
         ]}
       >
-        <Text style={[styles.detailEmoji, !badge.obtenu && styles.emojiVerrouille]}>{info.emoji}</Text>
+        <VisuelBadge
+          imageUrl={badge.image_url}
+          emoji={info.emoji}
+          taille={badge.obtenu ? DETAIL_STICKER : DETAIL_STICKER - 2 * DETAIL_BORD}
+          verrouille={!badge.obtenu}
+        />
         {!badge.obtenu && (
           <View style={styles.detailCadenas}>
             <Ionicons name="lock-closed" size={16} color={Theme.texte.principal} />
@@ -233,7 +326,7 @@ function DetailBadge({ badge }: { badge: Badge }) {
       </View>
 
       <View style={styles.detailBloc}>
-        <Text style={[Typo.legendeForte, { color: Theme.texte.secondaire }]}>{"Comment l'obtenir ?"}</Text>
+        <Text style={[Typo.legendeForte, { color: Theme.texte.secondaire }]}>{"Comment l'obtenir ?"}</Text>
         <Text style={[Typo.corps, { color: Theme.texte.principal }]}>{info.condition}</Text>
         <Text style={[Typo.legende, styles.description]}>{info.description}</Text>
       </View>
@@ -249,7 +342,7 @@ function DetailBadge({ badge }: { badge: Badge }) {
         <View style={[styles.statut, { backgroundColor: Theme.fond.surfaceEnfoncee }]}>
           <Ionicons name="sparkles-outline" size={20} color={Theme.texte.secondaire} />
           <Text style={[Typo.legende, styles.encouragement]}>
-            Continue à participer pour débloquer ce badge !
+            Continue à participer pour débloquer ce badge !
           </Text>
         </View>
       )}
@@ -257,86 +350,142 @@ function DetailBadge({ badge }: { badge: Badge }) {
   );
 }
 
-const MEDAILLE = 64;
-const DETAIL_MEDAILLE = 96;
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Theme.fond.page,
   },
   content: {
-    paddingHorizontal: 18,
+    paddingHorizontal: MARGE,
     paddingTop: 54,
     paddingBottom: CONTENU_MARGE_BASSE,
   },
-  filtresDefilement: {
-    marginHorizontal: -18,
-    marginTop: Espace[6],
+  sections: {
+    gap: Espace[6],
   },
-  filtres: {
-    paddingHorizontal: 18,
-    gap: Espace[2],
-  },
-  puce: {
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: Espace[4],
-    borderRadius: Rayon.plein,
-  },
-  puceActive: {
-    backgroundColor: Theme.action.primaire,
-  },
-  puceInactive: {
-    backgroundColor: Theme.fond.surface,
-    borderWidth: 1,
-    borderColor: Theme.fond.bordure,
-  },
-  presse: { opacity: 0.85 },
   aucun: {
     color: Theme.texte.secondaire,
     textAlign: 'center',
-    marginTop: Espace[8],
+    marginTop: Espace[4],
   },
+
+  section: {
+    gap: Espace[3],
+  },
+  sectionEnTete: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Espace[2],
+  },
+  sectionTitre: {
+    color: Theme.texte.principal,
+  },
+  compteur: {
+    minWidth: 28,
+    paddingHorizontal: Espace[2],
+    borderRadius: Rayon.plein,
+    backgroundColor: Theme.fond.surfaceEnfoncee,
+    alignItems: 'center',
+  },
+  compteurTexte: { color: Theme.texte.principal },
   grille: {
     gap: Espace[3],
-    marginTop: Espace[4],
   },
   ligne: {
     flexDirection: 'row',
     gap: Espace[3],
   },
-  // 📖 Exception assumée à « surélevé = interactif » : 15 cartes ombrées alourdissaient
-  //    la grille. Un badge reste un médaillon et son nom (comme le Badge du design
-  //    system) ; la grille se lit comme une collection, et l'appui assombrit le badge.
   tuile: {
     flex: 1,
     alignItems: 'center',
-    gap: Espace[2],
-    paddingVertical: Espace[2],
-    paddingHorizontal: Espace[1],
+    gap: 2,
+    paddingTop: Espace[3],
+    paddingBottom: Espace[3],
+    paddingHorizontal: Espace[2],
     borderRadius: Rayon.lg,
   },
+  // Surélevée : un badge obtenu se touche (« surélevé = interactif »).
+  tuileObtenue: {
+    backgroundColor: Theme.fond.surface,
+    ...Ombre.flottante,
+  },
+  // À plat et en pointillé : une place encore vide dans la vitrine.
+  tuileVerrouillee: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: Theme.formulaire.bordure,
+  },
   tuilePresse: {
-    backgroundColor: Theme.fond.surfaceEnfoncee,
+    opacity: 0.85,
   },
   tuileVide: { flex: 1 },
-  medaille: {
-    width: MEDAILLE,
-    height: MEDAILLE,
-    borderRadius: MEDAILLE / 2,
+  // 📖 L'illustration (80 px) déborde un peu de son halo (76 px) : elle a l'air posée
+  //    dessus plutôt qu'enfermée dedans.
+  halo: {
+    width: HALO,
+    height: HALO,
+    borderRadius: Rayon.plein,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Espace[2],
+  },
+
+  vedette: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Espace[4],
+    padding: Espace[4],
+    borderRadius: Rayon.lg,
+    backgroundColor: Theme.fond.surface,
+    ...Ombre.flottante,
+  },
+  vedetteHalo: {
+    width: VEDETTE - Espace[4],
+    height: VEDETTE - Espace[4],
+    borderRadius: Rayon.plein,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  medailleVerrouillee: {
+  vedetteIncline: {
+    transform: [{ rotate: '-6deg' }],
+  },
+  vedetteTextes: {
+    flex: 1,
+    gap: 2,
+  },
+  vedetteSurtitre: {
+    color: Theme.texte.secondaire,
+  },
+
+  sticker: {
+    width: STICKER,
+    height: STICKER,
+    borderRadius: Rayon.plein,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nom: {
+    color: Theme.texte.principal,
+    textAlign: 'center',
+  },
+  // Emplacement en pointillé du détail d'un badge à débloquer (taille dans detailEmplacement).
+  emplacement: {
+    borderRadius: Rayon.plein,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: Theme.fond.surfaceEnfoncee,
     borderWidth: 1.5,
     borderStyle: 'dashed',
     borderColor: Theme.formulaire.bordure,
   },
-  emoji: { fontSize: 32 },
-  emojiVerrouille: { opacity: 0.35 },
-  nom: { textAlign: 'center' },
+  nomVerrouille: {
+    color: Theme.texte.secondaire,
+    textAlign: 'center',
+  },
+  condition: {
+    color: Theme.texte.secondaire,
+    textAlign: 'center',
+  },
   cadenas: {
     position: 'absolute',
     right: -2,
@@ -351,18 +500,19 @@ const styles = StyleSheet.create({
     borderColor: Theme.fond.bordure,
   },
 
-  detailMedaille: {
-    width: DETAIL_MEDAILLE,
-    height: DETAIL_MEDAILLE,
-    borderRadius: DETAIL_MEDAILLE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+  detailSticker: {
+    width: DETAIL_STICKER,
+    height: DETAIL_STICKER,
+    transform: [{ rotate: '-4deg' }],
   },
-  detailEmoji: { fontSize: 48 },
+  detailEmplacement: {
+    width: DETAIL_STICKER,
+    height: DETAIL_STICKER,
+  },
   detailCadenas: {
     position: 'absolute',
-    right: 0,
-    bottom: 0,
+    right: Espace[1],
+    bottom: Espace[1],
     width: 32,
     height: 32,
     borderRadius: 16,

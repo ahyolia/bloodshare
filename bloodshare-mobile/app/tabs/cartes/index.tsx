@@ -1,28 +1,33 @@
-import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
+import { GrilleCartes } from '../../../components/cartes/GrilleCartes';
 import { EnTete } from '../../../components/EnTete';
-import { Colors } from '../../../constants/colors';
+import { Chargement } from '../../../components/ui/Chargement';
+import { EtatErreur } from '../../../components/ui/EtatErreur';
+import { BlocCollection } from '../../../components/cartes/BlocCollection';
+import { entree } from '../../../constants/animations';
+import { Theme } from '../../../constants/colors';
+import { Espace, Ombre, Rayon } from '../../../constants/spacing';
+import { Palette } from '../../../constants/palette';
+import { Typo } from '../../../constants/typography';
 import { useNotificationsNonLues } from '../../../hooks/useNotificationsNonLues';
 import { useProfil } from '../../../hooks/useProfil';
 import { useRelanceOnglet } from '../../../hooks/useRelanceOnglet';
-import {
-  Cartes,
-  CarteParrainage,
-  CategorieEvenement,
-  getCartes,
-  getCartesCache,
-} from '../../../services/cartes.service';
+import { Cartes, getCartes, getCartesCache } from '../../../services/cartes.service';
+import { compter } from '../../../utils/pluriel';
 import { initialePseudo } from '../../../utils/profil';
+
+const MARGE = Espace[4];
 
 export default function CartesScreen() {
   // Appui sur l'onglet : retour en haut de la page et animations d'entrée rejouées.
@@ -31,8 +36,8 @@ export default function CartesScreen() {
   // 📖 <EnTete /> ne charge rien : l'écran lui fournit pseudo + points.
   const { profil } = useProfil();
   const notificationsNonLues = useNotificationsNonLues();
-  const [cartes, setCartes] = useState<Cartes | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [cartes, setCartes] = useState<Cartes | null>(getCartesCache());
+  const [loading, setLoading] = useState(!getCartesCache());
   const [error, setError] = useState(false);
 
   // 📖 useFocusEffect et pas useEffect : l'onglet Cartes reste monté en arrière-plan, donc
@@ -40,39 +45,48 @@ export default function CartesScreen() {
   //    fraîchement obtenue n'apparaîtrait qu'après un rechargement de l'app.
   //    Au rechargement, on garde les données déjà affichées si le réseau échoue
   //    (getCartesCache() n'est renseigné que par un chargement réussi).
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
+  const charger = useCallback(() => {
+    let cancelled = false;
 
-      getCartes()
-        .then((data) => {
-          if (cancelled) return;
-          setCartes(data);
-          setError(false);
-        })
-        .catch(() => {
-          if (!cancelled && !getCartesCache()) setError(true);
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
-        });
+    getCartes()
+      .then((data) => {
+        if (cancelled) return;
+        setCartes(data);
+        setError(false);
+      })
+      .catch(() => {
+        if (!cancelled && !getCartesCache()) setError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-      return () => {
-        cancelled = true;
-      };
-    }, [])
-  );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const openScan = () => router.push('/tabs/don/scan');
+  useFocusEffect(charger);
+
+  const ouvrirCarte = (id: number) => router.push({ pathname: '/tabs/cartes/[id]', params: { id } });
+  // 📖 Une collection de cartes du mois par année, la plus récente d'abord : l'année en
+  //    cours, puis les années passées où le donneur a au moins une carte.
+  const collectionsMois = cartes?.mois_don.collections ?? [];
+  const ouvrirCollection = (annee: number) =>
+    router.push({ pathname: '/tabs/cartes/collection/[annee]', params: { annee } });
+  const cartesEvenement = cartes?.evenement.categories.flatMap((categorie) => categorie.cartes) ?? [];
+  const cartesUniques = cartes
+    ? [
+        cartes.parrainage.carte_parrain,
+        cartes.parrainage.carte_filleul,
+        // ?. : un backend pas encore migré ne renvoie pas `fidelite`.
+        cartes.fidelite?.carte ?? null,
+      ].filter((carte) => carte !== null)
+    : [];
 
   return (
     <View style={styles.screen}>
-      <ScrollView
-        key={cleOnglet}
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView key={cleOnglet} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <EnTete
           variante="page"
           titre="Cartes"
@@ -84,22 +98,76 @@ export default function CartesScreen() {
           onPressNotifications={() => router.push('/notifications')}
         />
 
-        {loading && (
-          <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />
+        {!cartes && (
+          <View style={styles.etat}>
+            {loading && <Chargement message="On ouvre ton classeur…" />}
+            {!loading && error && (
+              <EtatErreur
+                titre="Ton classeur est introuvable"
+                message="Vérifie ton réseau puis réessaie."
+                onReessayer={() => {
+                  setError(false);
+                  setLoading(true);
+                  charger();
+                }}
+              />
+            )}
+          </View>
         )}
 
-        {!loading && error && (
-          <Text style={styles.errorText}>Impossible de charger ta collection.</Text>
-        )}
-
-        {!loading && !error && cartes && (
+        {cartes && (
           <>
-            <CollectionsSection cartes={cartes} onOpenScan={openScan} />
-            <EvenementsSection categories={cartes.evenement.categories} />
-            <ParrainageSection
-              carteParrain={cartes.parrainage.carte_parrain}
-              carteFilleul={cartes.parrainage.carte_filleul}
-            />
+            {/* 📖 Pas de bandeau : ici, ce qui compte, ce sont les collections, affichées en
+                entier. Le scan, qui les fait avancer, n'est qu'un raccourci d'une ligne. */}
+            <Animated.View entering={entree(0)}>
+              <RaccourciScan onPress={() => router.push('/tabs/don/scan')} />
+            </Animated.View>
+
+            {collectionsMois.length > 0 && (
+              <Animated.View entering={entree(1)}>
+                {/* Pas de compteur dans l'en-tête : chaque bloc d'année a le sien. */}
+                <Collection titre="Cartes du mois" precision="Une collection par année" icone="calendar" cartes={[]}>
+                  <View style={styles.blocsCollections}>
+                    {collectionsMois.map((collection) => (
+                      <BlocCollection
+                        key={collection.annee}
+                        collection={collection}
+                        enCours={collection.annee === cartes.mois_don.annee}
+                        onPress={() => ouvrirCollection(collection.annee)}
+                      />
+                    ))}
+                  </View>
+                </Collection>
+              </Animated.View>
+            )}
+
+            <Animated.View entering={entree(2)}>
+              <Collection
+                titre="Événements"
+                precision="Collectes, forums, journées"
+                icone="sparkles"
+                cartes={cartesEvenement}
+              >
+                {cartesEvenement.length > 0 ? (
+                  <GrilleCartes cartes={cartesEvenement} onOuvrir={ouvrirCarte} delaiDepart={200} />
+                ) : (
+                  <Text style={[Typo.legende, styles.vide]}>
+                    Les cartes des prochains événements arriveront ici : collecte, forum, journée mondiale…
+                  </Text>
+                )}
+              </Collection>
+            </Animated.View>
+
+            <Animated.View entering={entree(3)}>
+              <Collection
+                titre="Parrainage et fidélité"
+                precision="Cartes uniques"
+                icone="people"
+                cartes={cartesUniques}
+              >
+                <GrilleCartes cartes={cartesUniques} onOuvrir={ouvrirCarte} delaiDepart={260} />
+              </Collection>
+            </Animated.View>
           </>
         )}
       </ScrollView>
@@ -107,359 +175,251 @@ export default function CartesScreen() {
   );
 }
 
-function ProgressCard({
-  titre,
-  obtenues,
-  total,
-  locked,
-  onPress,
-}: {
-  titre: string;
-  obtenues: number;
-  total: number;
-  locked: boolean;
-  onPress: () => void;
-}) {
+// 📖 Raccourci vers le scan d'un don : la seule action de la page, en pétrole foncé
+//    (texte crème ≈ 6:1) avec deux bulles décoratives, pour qu'il se remarque sans
+//    redevenir un grand bandeau. Les cartes restent le sujet de la page.
+//    Animé sans fin, en douceur : les bulles flottent et la flèche invite à toucher.
+function RaccourciScan({ onPress }: { onPress: () => void }) {
+  const corail = useFlottement(4200);
+  const lime = useFlottement(3200);
+  const fleche = useFlottement(900);
+  const styleCorail = useAnimatedStyle(() => ({
+    transform: [{ translateX: corail.value * -10 }, { translateY: corail.value * -8 }],
+  }));
+  const styleLime = useAnimatedStyle(() => ({
+    transform: [{ translateX: lime.value * 14 }, { translateY: lime.value * 8 }],
+  }));
+  const styleFleche = useAnimatedStyle(() => ({ transform: [{ translateX: fleche.value * 3 }] }));
+
   return (
-    <TouchableOpacity
-      style={styles.progressCard}
-      activeOpacity={locked ? 1 : 0.88}
+    <Pressable
       onPress={onPress}
-      disabled={locked}
+      accessibilityRole="button"
+      accessibilityLabel="Scanner un don, ta carte du mois arrive tout de suite"
+      style={({ pressed }) => [styles.raccourci, pressed && styles.presse]}
     >
-      <Text style={[styles.progressCardTitle, { color: locked ? Colors.grisMoyen : Colors.aubergine }]}>
-        {titre}
-      </Text>
+      <Animated.View style={[styles.bulle, styles.bulleCorail, styleCorail]} />
+      <Animated.View style={[styles.bulle, styles.bulleLime, styleLime]} />
 
-      <View style={styles.progressTrack}>
-        <View
-          style={[
-            styles.progressFill,
-            { width: total > 0 ? `${(obtenues / total) * 100}%` : '0%' },
-          ]}
-        />
+      <View style={styles.raccourciPastille}>
+        <Ionicons name="qr-code" size={22} color={Theme.info.icone} />
       </View>
-
-      {locked ? (
-        <View style={styles.rowCenter}>
-          <Ionicons name="lock-closed" size={12} color={Colors.grisMoyen} />
-          <Text style={styles.futureText}>Bientôt disponible</Text>
-        </View>
-      ) : (
-        <Text style={styles.progressCardCompteur}>
-          {obtenues}/{total}
-        </Text>
-      )}
-    </TouchableOpacity>
-  );
-}
-
-function CollectionsSection({
-  cartes,
-  onOpenScan,
-}: {
-  cartes: Cartes;
-  onOpenScan: () => void;
-}) {
-  const router = useRouter();
-  const anneeActuelle = new Date().getFullYear();
-  const cartesObtenues = cartes.mois_don.cartes.filter((carte) => carte.obtenue).length;
-
-  const annees = [
-    { annee: anneeActuelle, obtenues: cartesObtenues, future: false },
-    { annee: anneeActuelle + 1, obtenues: 0, future: true },
-  ];
-
-  return (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Collections</Text>
-        <TouchableOpacity onPress={onOpenScan} activeOpacity={0.8}>
-          <Ionicons name="qr-code-outline" size={22} color={Colors.aubergine} />
-        </TouchableOpacity>
+      <View style={styles.raccourciTextes}>
+        <Text style={[Typo.corpsFort, styles.texteSurPetrole]}>Scanner un don</Text>
+        <Text style={[Typo.legende, styles.texteSurPetrole]}>Ta carte du mois arrive tout de suite</Text>
       </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
-        {annees.map(({ annee, obtenues, future }) => (
-          <ProgressCard
-            key={annee}
-            titre={String(annee)}
-            obtenues={obtenues}
-            total={12}
-            locked={future}
-            onPress={() => router.push({ pathname: '/tabs/cartes/mois', params: { annee } })}
-          />
-        ))}
-      </ScrollView>
-    </View>
+      <View style={styles.raccourciFleche}>
+        <Animated.View style={styleFleche}>
+          <Ionicons name="arrow-forward" size={18} color={Theme.texte.principal} />
+        </Animated.View>
+      </View>
+    </Pressable>
   );
 }
 
-function EvenementsSection({ categories }: { categories: CategorieEvenement[] }) {
-  const router = useRouter();
+/**
+ * Valeur qui va et vient sans fin entre 0 et 1 (une « respiration »), pour les décors.
+ * 📖 Comme DecorBandeau : rien ne bouge si « Réduire les animations » est activé.
+ */
+function useFlottement(duree: number) {
+  const avancement = useSharedValue(0);
 
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Événements</Text>
+  useEffect(() => {
+    let actif = true;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((reduire) => {
+        if (!actif || reduire) return;
+        avancement.value = withRepeat(
+          withTiming(1, { duration: duree, easing: Easing.inOut(Easing.sin) }),
+          -1,
+          true
+        );
+      })
+      .catch(() => undefined);
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
-        {categories.length === 0 ? (
-          <ProgressCard titre="Événement" obtenues={0} total={0} locked onPress={() => {}} />
-        ) : (
-          categories.map((categorie) => {
-            const obtenues = categorie.cartes.filter((carte) => carte.obtenue).length;
+    return () => {
+      actif = false;
+      cancelAnimation(avancement);
+    };
+  }, [avancement, duree]);
 
-            return (
-              <ProgressCard
-                key={categorie.id}
-                titre={categorie.titre}
-                obtenues={obtenues}
-                total={categorie.cartes.length}
-                locked={categorie.cartes.length === 0}
-                onPress={() =>
-                  router.push({ pathname: '/tabs/cartes/evenement', params: { id: categorie.id } })
-                }
-              />
-            );
-          })
-        )}
-      </ScrollView>
-    </View>
-  );
+  return avancement;
 }
 
-function ParrainageSection({
-  carteParrain,
-  carteFilleul,
-}: {
-  carteParrain: CarteParrainage;
-  carteFilleul: CarteParrainage;
-}) {
-  const router = useRouter();
-
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Parrainage</Text>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
-        <CarteSquare
-          titre={carteParrain.titre}
-          imageUrl={carteParrain.image_url}
-          obtenue={carteParrain.obtenue}
-          quantite={carteParrain.quantite}
-          placeholderIcon="🤝"
-          onPress={() =>
-            carteParrain.obtenue &&
-            router.push({ pathname: '/tabs/cartes/[id]', params: { id: carteParrain.id } })
-          }
-        />
-        <CarteSquare
-          titre={carteFilleul.titre}
-          imageUrl={carteFilleul.image_url}
-          obtenue={carteFilleul.obtenue}
-          quantite={carteFilleul.quantite}
-          placeholderIcon="🩸"
-          onPress={() =>
-            carteFilleul.obtenue &&
-            router.push({ pathname: '/tabs/cartes/[id]', params: { id: carteFilleul.id } })
-          }
-        />
-      </ScrollView>
-    </View>
-  );
-}
-
-function CarteSquare({
+/**
+ * Section d'une collection : petite icône et titre, compteur « 5/12 » bien lisible,
+ * puis toutes ses cartes.
+ * 📖 L'icône, sans pastille et de la couleur du texte, est un simple repère : le titre
+ *    porte l'information.
+ */
+function Collection({
   titre,
-  imageUrl,
-  obtenue,
-  quantite,
-  placeholderIcon,
-  onPress,
+  precision,
+  icone,
+  cartes,
+  children,
 }: {
   titre: string;
-  imageUrl: string | null;
-  obtenue: boolean;
-  quantite?: number;
-  placeholderIcon: string;
-  onPress: () => void;
+  /** Petite ligne sous le titre (ex. l'année). */
+  precision?: string;
+  icone: keyof typeof Ionicons.glyphMap;
+  cartes: { obtenue: boolean }[];
+  children: ReactNode;
 }) {
+  const obtenues = cartes.filter((carte) => carte.obtenue).length;
+  const total = cartes.length;
+  const complete = total > 0 && obtenues === total;
+
   return (
-    <TouchableOpacity style={styles.squareCard} activeOpacity={obtenue ? 0.88 : 1} onPress={onPress}>
-      {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.squareImage} />
-      ) : (
-        <View style={styles.squarePlaceholder}>
-          <Text style={styles.squarePlaceholderIcon}>{placeholderIcon}</Text>
-        </View>
-      )}
+    <View style={styles.section}>
+      <View style={styles.enTete}>
+        <View style={styles.enTeteLigne}>
+          <View style={styles.enTeteTextes}>
+            <View style={styles.titreLigne}>
+              <Ionicons name={icone} size={18} color={Theme.texte.principal} />
+              <Text style={[Typo.titre3, styles.titre]} accessibilityRole="header">
+                {titre}
+              </Text>
+            </View>
+            {!!precision && <Text style={[Typo.legende, styles.sousTitre]}>{precision}</Text>}
+          </View>
 
-      <View style={styles.squareTitleScrim}>
-        <Text style={styles.squareTitle}>{titre}</Text>
+          {/* 📖 Collection complète : coche + texte, pas la couleur seule. */}
+          {total > 0 &&
+            (complete ? (
+              <View style={styles.complete}>
+                <Ionicons name="checkmark-circle" size={18} color={Theme.feedback.succesTexte} />
+                <Text style={[Typo.legendeForte, styles.completeTexte]}>Complète</Text>
+              </View>
+            ) : (
+              <Text
+                style={styles.compteur}
+                accessibilityLabel={`${compter(obtenues, 'carte')} sur ${total}`}
+              >
+                {obtenues}
+                <Text style={[Typo.legendeForte, styles.sousTitre]}>/{total}</Text>
+              </Text>
+            ))}
+        </View>
       </View>
-
-      {!!quantite && quantite > 1 && (
-        <View style={styles.quantiteBadge}>
-          <Text style={styles.quantiteBadgeText}>×{quantite}</Text>
-        </View>
-      )}
-
-      {!obtenue && (
-        <View style={styles.lockOverlay}>
-          <Ionicons name="lock-closed" size={22} color={Colors.blanc} />
-        </View>
-      )}
-    </TouchableOpacity>
+      {children}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
-  },
-  scroll: {
-    flex: 1,
+    backgroundColor: Theme.fond.page,
   },
   content: {
-    paddingHorizontal: 18,
+    // flexGrow : le contenu occupe au moins tout l'écran, pour pouvoir centrer un état.
+    flexGrow: 1,
+    padding: MARGE,
     paddingTop: 54,
     paddingBottom: 126,
+    gap: Espace[8],
   },
-  loader: {
-    marginTop: 40,
+  etat: {
+    flex: 1,
+    justifyContent: 'center',
   },
-  errorText: {
-    color: Colors.grisMoyen,
-    textAlign: 'center',
-    marginTop: 40,
+  presse: { opacity: 0.7 },
+  raccourci: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Espace[3],
+    padding: Espace[4],
+    borderRadius: Rayon.lg,
+    overflow: 'hidden',
+    backgroundColor: Theme.info.icone,
+    ...Ombre.flottante,
+  },
+  bulle: {
+    position: 'absolute',
+    borderRadius: Rayon.plein,
+  },
+  bulleCorail: {
+    width: 96,
+    height: 96,
+    right: -24,
+    bottom: -48,
+    backgroundColor: Palette.corail[500],
+    opacity: 0.85,
+  },
+  bulleLime: {
+    width: 36,
+    height: 36,
+    right: 64,
+    top: -14,
+    backgroundColor: Palette.lime[500],
+    opacity: 0.6,
+  },
+  raccourciPastille: {
+    width: 44,
+    height: 44,
+    borderRadius: Rayon.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Theme.fond.surface,
+  },
+  raccourciTextes: {
+    flex: 1,
+  },
+  texteSurPetrole: {
+    color: Theme.texte.surAccent,
+  },
+  raccourciFleche: {
+    width: 36,
+    height: 36,
+    borderRadius: Rayon.plein,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Theme.fond.surface,
   },
   section: {
-    marginBottom: 26,
+    gap: Espace[4],
   },
-  sectionHeader: {
+  blocsCollections: {
+    gap: Espace[3],
+  },
+  enTete: {
+    gap: Espace[3],
+  },
+  enTeteLigne: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+    gap: Espace[3],
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    marginBottom: 12,
+  enTeteTextes: {
+    flex: 1,
+    // Un peu d’air entre le titre et sa petite ligne.
+    gap: Espace[1],
   },
-  carousel: {
-    paddingRight: 8,
-    gap: 12,
-  },
-  rowCenter: {
+  titreLigne: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Espace[2],
   },
-  progressCard: {
-    width: 160,
-    minHeight: 100,
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    padding: 14,
-    justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
+  titre: {
+    color: Theme.texte.principal,
   },
-  progressCardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 10,
+  sousTitre: {
+    color: Theme.texte.secondaire,
   },
-  progressTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#E8E4E6',
-    overflow: 'hidden',
+  compteur: {
+    ...Typo.titre2,
+    color: Theme.texte.principal,
   },
-  progressFill: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.corail[600],
-  },
-  progressCardCompteur: {
-    color: Colors.grisMoyen,
-    fontSize: 13,
-    marginTop: 8,
-  },
-  futureText: {
-    color: Colors.grisMoyen,
-    fontSize: 12,
-    marginLeft: 4,
-    marginTop: 8,
-  },
-  squareCard: {
-    width: 150,
-    height: 150,
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
-  },
-  squareImage: {
-    width: '100%',
-    height: '100%',
-  },
-  squarePlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: Colors.creme,
+  complete: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: Espace[1],
   },
-  squarePlaceholderIcon: {
-    fontSize: 40,
+  completeTexte: {
+    color: Theme.feedback.succesTexte,
   },
-  squareTitleScrim: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 8,
-    paddingTop: 20,
-    paddingBottom: 8,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
-  squareTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.blanc,
-  },
-  quantiteBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: Colors.corail[600],
-    borderRadius: 10,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  quantiteBadgeText: {
-    color: Colors.blanc,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  lockOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  vide: {
+    color: Theme.texte.secondaire,
   },
 });
