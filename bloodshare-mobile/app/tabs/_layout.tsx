@@ -143,6 +143,9 @@ function BoutonOnglet({
       <Text
         style={[styles.label, { color: couleur }, focused && styles.labelActif]}
         numberOfLines={1}
+        // 📖 Barre de hauteur fixe : le libellé suit la taille de texte du système, mais
+        //    plafonnée à 1,3× pour ne pas être coupé (l’icône garde le repère).
+        maxFontSizeMultiplier={1.3}
       >
         {label}
       </Text>

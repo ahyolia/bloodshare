@@ -67,7 +67,8 @@ const styles = StyleSheet.create({
   },
   tuile: {
     width: 150,
-    height: 132,
+    // minHeight : la tuile s’agrandit si la taille de texte du système augmente.
+    minHeight: 132,
     borderRadius: Rayon.lg,
     padding: Espace[3],
     overflow: 'hidden',
