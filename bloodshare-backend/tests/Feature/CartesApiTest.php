@@ -35,6 +35,31 @@ class CartesApiTest extends TestCase
             ->assertJsonPath('evenement.cartes.1.quantite', 1);
     }
 
+    public function test_renvoie_la_description_et_la_date_d_obtention(): void
+    {
+        Carte::query()->delete();
+        $obtenue = Carte::create([
+            'titre' => 'Carte de Novembre',
+            'description' => 'Un arbre en feu.',
+            'categorie' => 'mois_don',
+            'mois_numero' => 11,
+            'statut' => 'active',
+        ]);
+        Carte::create(['titre' => 'Carte de Décembre', 'categorie' => 'mois_don', 'mois_numero' => 12, 'statut' => 'active']);
+
+        $user = User::factory()->create();
+        UserCarte::create(['user_id' => $user->id, 'carte_id' => $obtenue->id, 'quantite' => 1, 'obtenue_at' => '2026-11-12 09:30:00']);
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/cartes')
+            ->assertOk()
+            ->assertJsonPath('mois_don.cartes.0.description', 'Un arbre en feu.')
+            ->assertJsonPath('mois_don.cartes.0.obtenue_le', '2026-11-12')
+            ->assertJsonPath('mois_don.cartes.0.mois_numero', 11)
+            ->assertJsonPath('mois_don.cartes.1.obtenue', false)
+            ->assertJsonPath('mois_don.cartes.1.obtenue_le', null);
+    }
+
     public function test_renvoie_la_carte_fidele(): void
     {
         // 📖 Créée par la migration add_carte_fidele.

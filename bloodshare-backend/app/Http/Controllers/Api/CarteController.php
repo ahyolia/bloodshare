@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Carte;
 use App\Models\UserCarte;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class CarteController extends Controller
 {
@@ -31,51 +32,49 @@ class CarteController extends Controller
         $carteFilleul = $cartes->firstWhere('categorie', 'filleul');
         $carteFidele = $cartes->firstWhere('categorie', 'fidele');
 
+        // Cartes qu'on peut obtenir plusieurs fois : le nombre d'exemplaires en plus.
+        $avecQuantite = fn (Carte $carte) => $this->carte($carte, $userCartes) + [
+            'quantite' => $userCartes->get($carte->id)?->quantite ?? 0,
+        ];
+
         return response()->json([
             'mois_don' => [
                 'pourcentage_complete' => round($moisDonObtenues->count() / 12 * 100, 1),
-                'cartes' => $moisDon->map(fn ($carte) => [
-                    'id' => $carte->id,
-                    'titre' => $carte->titre,
+                'cartes' => $moisDon->map(fn ($carte) => $this->carte($carte, $userCartes) + [
                     'mois_numero' => $carte->mois_numero,
-                    'image_url' => $carte->image_url,
-                    'obtenue' => $userCartes->has($carte->id),
                 ])->values(),
             ],
             'evenement' => [
-                'cartes' => $cartesEvenement->map(fn ($carte) => [
-                    'id' => $carte->id,
-                    'titre' => $carte->titre,
-                    'image_url' => $carte->image_url,
-                    'obtenue' => $userCartes->has($carte->id),
-                    'quantite' => $userCartes->get($carte->id)?->quantite ?? 0,
-                ])->values(),
+                'cartes' => $cartesEvenement->map($avecQuantite)->values(),
             ],
             'parrainage' => [
-                'carte_parrain' => $carteParrain ? [
-                    'id' => $carteParrain->id,
-                    'titre' => $carteParrain->titre,
-                    'image_url' => $carteParrain->image_url,
-                    'obtenue' => $userCartes->has($carteParrain->id),
-                    'quantite' => $userCartes->get($carteParrain->id)?->quantite ?? 0,
-                ] : null,
-                'carte_filleul' => $carteFilleul ? [
-                    'id' => $carteFilleul->id,
-                    'titre' => $carteFilleul->titre,
-                    'image_url' => $carteFilleul->image_url,
-                    'obtenue' => $userCartes->has($carteFilleul->id),
-                    'quantite' => $userCartes->get($carteFilleul->id)?->quantite ?? 0,
-                ] : null,
+                'carte_parrain' => $carteParrain ? $avecQuantite($carteParrain) : null,
+                'carte_filleul' => $carteFilleul ? $avecQuantite($carteFilleul) : null,
             ],
             'fidelite' => [
-                'carte' => $carteFidele ? [
-                    'id' => $carteFidele->id,
-                    'titre' => $carteFidele->titre,
-                    'image_url' => $carteFidele->image_url,
-                    'obtenue' => $userCartes->has($carteFidele->id),
-                    'quantite' => $userCartes->get($carteFidele->id)?->quantite ?? 0,
-                ] : null,
+                'carte' => $carteFidele ? $avecQuantite($carteFidele) : null,
             ],
         ]);
+    }
+
+    /**
+     * Champs communs à toutes les cartes.
+     *
+     * 📖 `obtenue_le` : jour seulement (pas l'heure), affiché sur la carte en grand
+     *    (« Obtenue le 12 novembre 2026 »). Uniquement la date de sa propre carte, rien
+     *    sur le don lui-même. null tant que la carte n'est pas obtenue.
+     */
+    private function carte(Carte $carte, Collection $userCartes): array
+    {
+        $userCarte = $userCartes->get($carte->id);
+
+        return [
+            'id' => $carte->id,
+            'titre' => $carte->titre,
+            'description' => $carte->description,
+            'image_url' => $carte->image_url,
+            'obtenue' => $userCarte !== null,
+            'obtenue_le' => $userCarte?->obtenue_at?->toDateString(),
+        ];
     }
 }

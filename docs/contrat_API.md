@@ -357,8 +357,8 @@ Alimente l'onglet Cartes — renvoie la collection organisée par catégorie (mo
   "mois_don": {
     "pourcentage_complete": 41.7,
     "cartes": [
-      { "id": 1, "titre": "Carte de Janvier", "mois_numero": 1, "image_url": "...", "obtenue": false },
-      { "id": 6, "titre": "Carte de Juin", "mois_numero": 6, "image_url": "...", "obtenue": true }
+      { "id": 1, "titre": "Carte de Janvier", "description": "...", "mois_numero": 1, "image_url": "...", "obtenue": false, "obtenue_le": null },
+      { "id": 6, "titre": "Carte de Juin", "description": "...", "mois_numero": 6, "image_url": "...", "obtenue": true, "obtenue_le": "2026-06-14" }
     ]
   },
   "evenement": {
@@ -378,6 +378,7 @@ Alimente l'onglet Cartes — renvoie la collection organisée par catégorie (mo
 ```
 
 > `evenement.cartes` liste toutes les cartes Événement actives : la carte générique en premier, puis celles propres à un événement (ex. forum IUT), choisies dans le BO sur la fiche de l'événement.
+> Chaque carte porte aussi sa `description` (saisie dans le BO, peut être `null`) et `obtenue_le` (jour d'obtention au format `AAAA-MM-JJ`, `null` si pas obtenue), affichés sur la carte en grand.
 > Pas de notion de rareté — toutes les cartes sont équivalentes, seule la catégorie les distingue. Le `pourcentage_complete` ne s'applique qu'à la collection "Mois du don" (12 cartes), qui est la seule pensée comme une vraie collection à compléter.
 # 6\. Badges
 ## `GET /badges`
