@@ -72,6 +72,19 @@ export const Theme = {
     surface: Palette.petrole[200],
   },
 
+   /**
+   * Aplats décoratifs (FondDecoratif). Purement visuels : aucune exigence de
+   * contraste, donc JAMAIS pour du texte, une icône ou un état.
+   */
+  decor: {
+    rose: Palette.corail[100],
+    lime: Palette.lime[500],
+    corail: Palette.corail[500],
+    corailFonce: Palette.corail[700],
+    petrole: Palette.petrole[500],
+    aubergine: Palette.aubergine[900],
+  },
+
   /** Couleur signature. Aplats et grandes surfaces uniquement. */
   accent: {
     signatureAplat: Palette.lime[500],

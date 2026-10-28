@@ -13,7 +13,7 @@ import { Espace, Rayon } from "../constants/spacing";
 import { Typo } from "../constants/typography";
 import { changerMotDePasse } from "../services/auth.service";
 import { getUser, saveUser } from "../stores/auth.store";
-import { motDePasseValide, REGLE_MOT_DE_PASSE } from "../utils/motDePasse";
+import { estMotDePasseValide, REGLE_MOT_DE_PASSE } from "../utils/motDePasse";
 
 type Erreurs = { actuel?: string; nouveau?: string; confirmation?: string; generale?: string };
 
@@ -43,7 +43,7 @@ export default function ChangerMotDePasseScreen() {
       actuel: motDePasseActuel ? undefined : "Saisis ton mot de passe actuel.",
       nouveau: !motDePasse
         ? "Choisis un nouveau mot de passe."
-        : motDePasseValide(motDePasse)
+        : estMotDePasseValide(motDePasse)
           ? undefined
           : REGLE_MOT_DE_PASSE,
       confirmation: !confirmation
@@ -122,8 +122,7 @@ export default function ChangerMotDePasseScreen() {
             erreur={erreurs.actuel}
             value={motDePasseActuel}
             onChangeText={saisir("actuel", setMotDePasseActuel)}
-            secureTextEntry
-            autoCapitalize="none"
+            motDePasse
             autoComplete="current-password"
             editable={!enCours}
           />
@@ -133,8 +132,7 @@ export default function ChangerMotDePasseScreen() {
             erreur={erreurs.nouveau}
             value={motDePasse}
             onChangeText={saisir("nouveau", setMotDePasse)}
-            secureTextEntry
-            autoCapitalize="none"
+            motDePasse
             autoComplete="new-password"
             editable={!enCours}
           />
@@ -143,8 +141,7 @@ export default function ChangerMotDePasseScreen() {
             erreur={erreurs.confirmation}
             value={confirmation}
             onChangeText={saisir("confirmation", setConfirmation)}
-            secureTextEntry
-            autoCapitalize="none"
+            motDePasse
             autoComplete="new-password"
             editable={!enCours}
             onSubmitEditing={valider}

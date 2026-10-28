@@ -38,4 +38,21 @@ describe('Bouton', () => {
     expect(onPress).not.toHaveBeenCalled();
     expect(screen.getByRole('button')).toBeBusy();
   });
+
+  it('en chargement avec libelleChargement : affiche et annonce ce texte', async () => {
+    await render(
+      <Bouton libelle="Se connecter" libelleChargement="Connexion…" onPress={jest.fn()} chargement />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Connexion…' })).toBeBusy();
+    expect(screen.getByText('Connexion…')).toBeTruthy();
+    expect(screen.queryByText('Se connecter')).toBeNull();
+  });
+
+  it('libelleChargement est ignoré hors chargement', async () => {
+    await render(<Bouton libelle="Se connecter" libelleChargement="Connexion…" onPress={jest.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Se connecter' })).toBeTruthy();
+    expect(screen.queryByText('Connexion…')).toBeNull();
+  });
 });
