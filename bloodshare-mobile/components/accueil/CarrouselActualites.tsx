@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Theme } from '../../constants/colors';
 import { Espace, Ombre, Rayon } from '../../constants/spacing';
-import { TEINTES_PASTILLE, TEINTES_VIVES, type TeintePastille } from '../../constants/teintes';
+import { TEINTES_ORDRE, TEINTES_PASTILLE, TEINTES_VIVES, type TeintePastille } from '../../constants/teintes';
 import { Typo } from '../../constants/typography';
 import type { Actualite } from '../../services/actualites.service';
-import { dateActualite } from '../../utils/accueil';
+import { dateActualite, pageCarrousel } from '../../utils/accueil';
 
 type Props = {
   actualites: Actualite[];
@@ -20,9 +20,6 @@ const LARGEUR = 260;
 const ECART = Espace[3];
 const PAS = LARGEUR + ECART;
 const HAUTEUR_VISUEL = 128;
-
-// Sans image, chaque carte prend une teinte de la marque, à tour de rôle.
-const TEINTES: TeintePastille[] = ['corail', 'petrole', 'mousse', 'orange'];
 
 // 📖 Carrousel des actualités : des cartes surélevées (elles s'ouvrent), qui s'arrêtent
 //    chacune bien calée au début de la rangée, et des points qui suivent la carte vue.
@@ -39,14 +36,21 @@ export function CarrouselActualites({ actualites, onOuvrir, marge }: Props) {
         decelerationRate="fast"
         scrollEventThrottle={16}
         onScroll={(e) => {
-          const index = Math.round(e.nativeEvent.contentOffset.x / PAS);
-          setPage(Math.max(0, Math.min(index, actualites.length - 1)));
+          const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+          setPage(
+            pageCarrousel(
+              { decalage: contentOffset.x, largeurContenu: contentSize.width, largeurVisible: layoutMeasurement.width },
+              PAS,
+              actualites.length
+            )
+          );
         }}
         style={{ marginHorizontal: -marge }}
         contentContainerStyle={[styles.rangee, { paddingHorizontal: marge }]}
       >
         {actualites.map((actualite, index) => {
-          const teinte = TEINTES[index % TEINTES.length];
+          // Sans image, chaque carte prend une teinte de la marque, à tour de rôle.
+          const teinte = TEINTES_ORDRE[index % TEINTES_ORDRE.length];
           return (
             <CarteActualite
               key={actualite.id}

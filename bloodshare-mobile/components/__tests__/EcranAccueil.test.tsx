@@ -146,6 +146,18 @@ describe('écran Accueil', () => {
     await waitFor(() => expect(getStockSang).toHaveBeenCalledTimes(2));
   });
 
+  it('affiche les réserves sans attendre une requête lente', async () => {
+    reussir();
+    // Actualités qui ne répondent pas (réseau lent) : elles ne bloquent pas l'accueil.
+    (getActualites as jest.Mock).mockReturnValue(new Promise(() => {}));
+    await render(<AccueilScreen />);
+
+    expect(await screen.findByText('Réserves de sang', {}, { timeout: 3000 })).toBeTruthy();
+    expect(screen.getByText('500 dons pour la fin d’année')).toBeTruthy();
+    // Pas de faux « vide » pendant que les actualités arrivent.
+    expect(screen.queryByText('Pas encore d’actualité')).toBeNull();
+  });
+
   it('garde le reste de la page quand seuls les niveaux échouent', async () => {
     reussir();
     (getStockSang as jest.Mock).mockRejectedValue(new Error('réseau'));

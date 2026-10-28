@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import type { ComponentProps } from 'react';
+import { Fragment, type ComponentProps } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { EnTeteContenu } from '../../../components/accueil/EnTeteContenu';
@@ -31,11 +31,21 @@ export default function EvenementDetailScreen() {
   const router = useRouter();
 
   const bientot = date_heure ? etiquetteProchainement(date_heure) : null;
-  const horaire = date_heure
-    ? horaire_fin
-      ? horaireEvenement(date_heure, horaire_fin)
-      : `À partir de ${horaireEvenement(date_heure)}`
-    : '';
+
+  // 📖 Quand et où : seulement les lignes renseignées. Sur un lien direct ou un
+  //    rechargement de la page (web), la date peut manquer : pas de ligne vide.
+  const lignes: ComponentProps<typeof LigneInfo>[] = [];
+  if (date_heure) {
+    lignes.push(
+      { icone: 'calendar-outline', teinte: 'petrole', texte: dateEvenementLongue(date_heure) },
+      {
+        icone: 'time-outline',
+        teinte: 'orange',
+        texte: horaire_fin ? horaireEvenement(date_heure, horaire_fin) : `À partir de ${horaireEvenement(date_heure)}`,
+      }
+    );
+  }
+  if (lieu) lignes.push({ icone: 'location-outline', teinte: 'corail', texte: lieu });
 
   return (
     <View style={styles.screen}>
@@ -52,13 +62,16 @@ export default function EvenementDetailScreen() {
           />
 
           {/* 📖 Quand et où : une information, donc à plat (contour fin, sans ombre). */}
-          <View style={styles.infos}>
-            <LigneInfo icone="calendar-outline" teinte="petrole" texte={dateEvenementLongue(date_heure ?? '')} />
-            <View style={styles.filet} />
-            <LigneInfo icone="time-outline" teinte="orange" texte={horaire} />
-            <View style={styles.filet} />
-            <LigneInfo icone="location-outline" teinte="corail" texte={lieu ?? ''} />
-          </View>
+          {lignes.length > 0 && (
+            <View style={styles.infos}>
+              {lignes.map((ligne, i) => (
+                <Fragment key={ligne.icone}>
+                  {i > 0 && <View style={styles.filet} />}
+                  <LigneInfo {...ligne} />
+                </Fragment>
+              ))}
+            </View>
+          )}
 
           {!!lieu && (
             <Bouton

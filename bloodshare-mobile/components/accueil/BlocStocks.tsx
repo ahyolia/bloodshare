@@ -15,7 +15,7 @@ import { Espace, Rayon } from '../../constants/spacing';
 import { Typo } from '../../constants/typography';
 import { useReduireAnimations } from '../../hooks/useReduireAnimations';
 import { GROUPES_SANGUINS, type NiveauStock, type StockGroupe } from '../../services/stockSang.service';
-import { groupeAffiche, groupeLu, resumeStocks } from '../../utils/accueil';
+import { groupeAffiche, groupeLu, pageCarrousel, resumeStocks } from '../../utils/accueil';
 import { NIVEAUX } from '../ui/PastilleStock';
 
 type Props = {
@@ -66,8 +66,14 @@ export function BlocStocks({ stocks, onPrendreRendezVous }: Props) {
             showsHorizontalScrollIndicator={false}
             onLayout={(e) => setLargeur(e.nativeEvent.layout.width - 2 * Espace[4])}
             onScroll={(e) => {
-              const index = Math.round(e.nativeEvent.contentOffset.x / (PAS * parPage));
-              setPage(Math.max(0, Math.min(index, pages - 1)));
+              const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+              setPage(
+                pageCarrousel(
+                  { decalage: contentOffset.x, largeurContenu: contentSize.width, largeurVisible: layoutMeasurement.width },
+                  PAS * parPage,
+                  pages
+                )
+              );
             }}
             scrollEventThrottle={16}
             snapToInterval={PAS}
@@ -142,14 +148,22 @@ function GoutteStock({ groupe, niveau, rang }: { groupe: string; niveau: NiveauS
   }));
 
   // 📖 Un stock critique « bat » doucement, pour attirer l'œil sans affoler.
+  //    cancelAnimation fige la valeur là où elle en est : on la remet à 0, sinon la goutte
+  //    resterait à moitié agrandie (stock qui n'est plus critique après un rafraîchissement,
+  //    « Réduire les animations » activé pendant que l'écran est ouvert).
   const battement = useSharedValue(0);
   useEffect(() => {
+    const arreter = () => {
+      cancelAnimation(battement);
+      battement.value = 0;
+    };
+    arreter();
     if (niveau !== 'critique' || reduire !== false) return;
     battement.value = withDelay(
       1200,
       withRepeat(withTiming(1, { duration: 700, easing: Easing.inOut(Easing.sin) }), -1, true)
     );
-    return () => cancelAnimation(battement);
+    return arreter;
   }, [battement, niveau, reduire]);
   const styleBattement = useAnimatedStyle(() => ({ transform: [{ scale: 1 + battement.value * 0.1 }] }));
 

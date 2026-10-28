@@ -7,6 +7,7 @@ import {
   groupeAffiche,
   groupeLu,
   horaireEvenement,
+  pageCarrousel,
   resumeStocks,
 } from '../accueil';
 
@@ -75,7 +76,30 @@ describe('dates longues', () => {
 
   it('ajoute l’année à la date d’une actualité', () => {
     expect(dateActualiteLongue('2026-08-28')).toBe('28 août 2026');
+    expect(dateActualiteLongue('2026-07-01T10:00:00Z')).toBe('1er juillet 2026');
     expect(dateActualiteLongue('bientôt')).toBe('bientôt');
+    expect(dateActualiteLongue('')).toBe('');
+  });
+});
+
+describe('pageCarrousel', () => {
+  const position = (decalage: number) => ({ decalage, largeurContenu: 840, largeurVisible: 480 });
+
+  it('suit la page la plus proche pendant le défilement', () => {
+    expect(pageCarrousel(position(0), 272, 3)).toBe(0);
+    expect(pageCarrousel(position(250), 272, 3)).toBe(1);
+  });
+
+  it('allume le dernier point en fin de défilement, même avant son point d’accroche', () => {
+    // Zone visible plus large qu'une carte : le défilement s'arrête à 360 px, et
+    // round(360 / 272) = 1 ne désignerait jamais la 3ᵉ carte.
+    expect(pageCarrousel(position(360), 272, 3)).toBe(2);
+    // Réserves : 2 pages de 360 px, mais un défilement maximal de 150 px.
+    expect(pageCarrousel({ decalage: 150, largeurContenu: 630, largeurVisible: 480 }, 360, 2)).toBe(1);
+  });
+
+  it('reste sur la première page quand il n’y a qu’une page', () => {
+    expect(pageCarrousel(position(360), 272, 1)).toBe(0);
   });
 });
 

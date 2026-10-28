@@ -56,11 +56,19 @@ export function BanniereAccueil({ banniere }: { banniere: Banniere }) {
   const urgence = banniere.type === 'urgence';
   const reduire = useReduireAnimations();
 
+  // 📖 cancelAnimation fige la valeur là où elle en est : on la remet à 0, sinon un halo à
+  //    moitié visible resterait autour de l'icône (bannière qui n'est plus en urgence après
+  //    un rafraîchissement, « Réduire les animations » activé pendant que l'écran est ouvert).
   const halo = useSharedValue(0);
   useEffect(() => {
+    const arreter = () => {
+      cancelAnimation(halo);
+      halo.value = 0;
+    };
+    arreter();
     if (!urgence || reduire !== false) return;
     halo.value = withRepeat(withTiming(1, { duration: 1600, easing: Easing.out(Easing.quad) }), -1, false);
-    return () => cancelAnimation(halo);
+    return arreter;
   }, [halo, reduire, urgence]);
   const styleHalo = useAnimatedStyle(() => ({
     opacity: 0.5 * (1 - halo.value),

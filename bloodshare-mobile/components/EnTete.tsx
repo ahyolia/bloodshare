@@ -220,7 +220,8 @@ function BoutonAvatar({
       onPress={() => router.push('/tabs/profil')}
       hitSlop={hitSlopPour(taille)}
       accessibilityRole="button"
-      accessibilityLabel={niveau ? `Mon profil, niveau ${niveau}` : 'Mon profil'}
+      // Même condition que la pastille ci-dessous : un niveau 0 s'affiche, donc il s'annonce.
+      accessibilityLabel={niveau !== undefined ? `Mon profil, niveau ${niveau}` : 'Mon profil'}
       style={({ pressed }) => pressed && styles.avatarPresse}
     >
       {/* 📖 L'ombre sur une vue à part : Avatar découpe son cercle

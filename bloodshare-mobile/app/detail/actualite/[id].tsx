@@ -8,12 +8,10 @@ import { TexteDocument } from '../../../components/ui/TexteDocument';
 import { entreeSousPage } from '../../../constants/animations';
 import { Theme } from '../../../constants/colors';
 import { Espace, Rayon } from '../../../constants/spacing';
-import { TEINTES_VIVES, type TeintePastille } from '../../../constants/teintes';
+import { TEINTES_ORDRE, TEINTES_VIVES } from '../../../constants/teintes';
 import { Typo } from '../../../constants/typography';
 import { dateActualiteLongue } from '../../../utils/accueil';
 import { tempsLecture } from '../../../utils/tempsLecture';
-
-const TEINTES: TeintePastille[] = ['corail', 'petrole', 'mousse', 'orange'];
 
 export default function ActualiteDetailScreen() {
   // 📖 Params passés par router.push depuis le carrousel de l'accueil. TOUT est
@@ -29,11 +27,12 @@ export default function ActualiteDetailScreen() {
     image_url: string;
     teinte?: string;
   }>();
-  const couleur = TEINTES.find((t) => t === teinte) ?? 'corail';
+  const couleur = TEINTES_ORDRE.find((t) => t === teinte) ?? 'corail';
 
-  const pilules: ComponentProps<typeof EnTeteContenu>['pilules'] = [
-    { icone: 'calendar-outline', texte: dateActualiteLongue(published_at ?? '') },
-  ];
+  // 📖 Pas de date sur un lien direct ou un rechargement de la page (web) : pas de
+  //    pastille plutôt qu'une icône de calendrier sans texte.
+  const pilules: ComponentProps<typeof EnTeteContenu>['pilules'] = [];
+  if (published_at) pilules.push({ icone: 'calendar-outline', texte: dateActualiteLongue(published_at) });
   if (contenu) pilules.push({ icone: 'time-outline', texte: `${tempsLecture(contenu)} min de lecture` });
 
   return (

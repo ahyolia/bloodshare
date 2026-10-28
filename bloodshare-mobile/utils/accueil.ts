@@ -1,4 +1,5 @@
 import type { NiveauStock, StockGroupe } from '../services/stockSang.service';
+import { formaterDateLongue } from './dates';
 import { getNomMois } from './mois';
 
 /**
@@ -69,11 +70,16 @@ export function dateEvenementLongue(iso: string): string {
   return `${JOURS[date.getUTCDay()]} ${jour === 1 ? '1er' : jour} ${getNomMois(date.getUTCMonth() + 1).toLowerCase()} ${date.getUTCFullYear()}`;
 }
 
-/** Date de publication d'une actualité, avec l'année : « 28 août 2026 ». */
+/**
+ * Date de publication d'une actualité, avec l'année : « 2026-08-28 » → « 28 août 2026 ».
+ * 📖 Même formatage que le reste de l'app (`formaterDateLongue`), sur le seul jour : une
+ *    date-heure (« 2026-08-28T10:00:00Z ») est acceptée aussi. Format inattendu →
+ *    renvoyée telle quelle.
+ */
 export function dateActualiteLongue(iso: string): string {
-  const morceaux = /^(\d{4})-\d{2}-\d{2}/.exec(iso);
-  const courte = dateActualite(iso);
-  return morceaux && courte !== iso ? `${courte} ${morceaux[1]}` : iso;
+  const jour = iso.slice(0, 10);
+  const longue = formaterDateLongue(jour);
+  return longue === jour ? iso : longue;
 }
 
 /** « 09h00 → 17h00 », ou « 09h00 » sans heure de fin. */
@@ -83,6 +89,12 @@ export const horaireEvenement = (debut: string, fin?: string | null): string =>
 /**
  * « Aujourd'hui », « Demain », « Dans 3 jours »… pour un événement de la semaine à venir,
  * `null` au-delà. Compté en jours du calendrier, pas en tranches de 24 h.
+ *
+ * 📖 Le jour de l'événement est lu en UTC, celui d'aujourd'hui en heure locale : c'est
+ *    voulu. Les dates d'événement sont saisies en heure locale de Nouméa mais stockées
+ *    avec un « Z » (« 09:00Z » veut dire 9 h à Nouméa), et s'affichent partout avec
+ *    getUTC* (voir `heure`). Le jour UTC est donc le jour réel de l'événement, à comparer
+ *    au jour local du téléphone.
  */
 export function etiquetteProchainement(iso: string, maintenant: Date = new Date()): string | null {
   const date = new Date(iso);
@@ -96,16 +108,25 @@ export function etiquetteProchainement(iso: string, maintenant: Date = new Date(
   return `Dans ${jours} jours`;
 }
 
-/**
- * Date de publication d'une actualité : « 2026-08-28 » → « 28 août ».
- * 📖 Découpée à la main, sans `new Date`, pour qu'aucun fuseau ne décale le jour
- *    (voir `formaterDateLongue`). Format inattendu → renvoyée telle quelle.
- */
+/** Comme `dateActualiteLongue`, sans l'année : « 2026-08-28 » → « 28 août ». */
 export function dateActualite(iso: string): string {
-  const morceaux = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
-  const nomMois = morceaux ? getNomMois(Number(morceaux[2])) : '';
-  if (!morceaux || !nomMois) return iso;
+  const longue = dateActualiteLongue(iso);
+  return longue === iso ? iso : longue.replace(/ \d{4}$/, '');
+}
 
-  const jour = Number(morceaux[3]);
-  return `${jour === 1 ? '1er' : jour} ${nomMois.toLowerCase()}`;
+/**
+ * Page affichée par les points d'un carrousel horizontal, d'après sa position de défilement.
+ *
+ * 📖 En fin de défilement, c'est toujours la dernière page : quand la zone visible est plus
+ *    large qu'une page, le défilement s'arrête avant le point d'accroche de la dernière, et
+ *    l'arrondi seul ne l'atteindrait jamais (son point ne s'allumerait pas).
+ */
+export function pageCarrousel(
+  { decalage, largeurContenu, largeurVisible }: { decalage: number; largeurContenu: number; largeurVisible: number },
+  largeurPage: number,
+  nbPages: number
+): number {
+  if (nbPages <= 1 || largeurPage <= 0) return 0;
+  if (decalage >= largeurContenu - largeurVisible - 1) return nbPages - 1;
+  return Math.max(0, Math.min(Math.round(decalage / largeurPage), nbPages - 1));
 }

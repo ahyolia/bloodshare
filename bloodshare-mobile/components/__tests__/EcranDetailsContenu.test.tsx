@@ -45,6 +45,14 @@ describe('page Actualité', () => {
 
     expect(screen.getByText(/sera bientôt disponible/)).toBeTruthy();
   });
+
+  it('n’affiche pas de pastille de date vide quand la date manque (lien direct)', async () => {
+    mockParams = { id: '1', titre: 'Brève', chapo: '', contenu: 'Texte.', image_url: '' };
+    await render(<ActualiteDetailScreen />);
+
+    expect(screen.getByText('1 min de lecture')).toBeTruthy();
+    expect(screen.queryByText('')).toBeNull();
+  });
 });
 
 describe('page Événement', () => {
@@ -66,6 +74,15 @@ describe('page Événement', () => {
     expect(screen.getByText('Dimanche 20 septembre 2026')).toBeTruthy();
     expect(screen.getByText('09h00 → 17h00')).toBeTruthy();
     expect(screen.getByText('Place des Cocotiers, Nouméa')).toBeTruthy();
+  });
+
+  it('n’affiche que le lieu quand la date manque (lien direct)', async () => {
+    mockParams = { id: '1', titre: 'Collecte mobile', lieu: 'Place des Cocotiers, Nouméa' };
+    await render(<EvenementDetailScreen />);
+
+    expect(screen.getByText('Place des Cocotiers, Nouméa')).toBeTruthy();
+    expect(screen.queryByText(/À partir de/)).toBeNull();
+    expect(screen.queryByText('')).toBeNull();
   });
 
   it('ouvre le lieu sur une carte', async () => {

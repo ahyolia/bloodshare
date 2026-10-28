@@ -32,6 +32,10 @@ const RESERVATION_URL = 'https://www.dondusang.nc/reservation-en-ligne/';
 // 📖 Nombre d'événements affichés par défaut (les suivants derrière « Voir tous »).
 const EVENEMENTS_APERCU = 3;
 
+// 📖 Attente maximale des autres sections une fois les réserves arrivées : assez pour que
+//    tout arrive ensemble, en cascade, sur un réseau normal ; pas assez pour faire attendre.
+const DELAI_CASCADE_MS = 1500;
+
 export default function AccueilScreen() {
   // Appui sur l'onglet : retour en haut de la page et animations d'entrée rejouées.
   const cleOnglet = useRelanceOnglet('index');
@@ -39,17 +43,20 @@ export default function AccueilScreen() {
   const notificationsNonLues = useNotificationsNonLues();
 
   // 📖 Un state par section : chaque appel réseau retombe indépendamment, on ne
-  //    veut jamais qu'un échec masque les sections qui, elles, ont répondu.
+  //    veut jamais qu'un échec ou une lenteur masque les sections qui, elles, ont répondu.
   const [user, setUser] = useState<Profil | null>(null);
   const [banniere, setBanniere] = useState<Banniere | null>(null);
   // `null` : niveaux impossibles à charger (le bandeau le dit, sans disparaître).
   const [stocks, setStocks] = useState<StockGroupe[] | null>(null);
   const [defi, setDefi] = useState<DefiActuel | null>(null);
-  const [actualites, setActualites] = useState<Actualite[]>([]);
+  // `null` : pas encore reçues. La rubrique attend, au lieu d'annoncer « pas d'actualité ».
+  const [actualites, setActualites] = useState<Actualite[] | null>(null);
   const [evenements, setEvenements] = useState<Evenement[]>([]);
 
-  // 📖 Un seul indicateur : les six appels sont attendus ensemble (allSettled), les
-  //    sections arrivent donc toutes en même temps, en cascade.
+  // 📖 Chargement global, pour l'effet de cascade : on attend les réserves (l'information
+  //    principale), puis au plus DELAI_CASCADE_MS que le reste arrive. Une requête lente
+  //    (timeout axios : 10 s) ne cache donc plus les réserves derrière le chargement :
+  //    une section en retard s'ajoute dès qu'elle répond.
   const [chargement, setChargement] = useState(true);
   // Rien n'a jamais pu être chargé : on propose de réessayer plutôt qu'une page vide.
   const [erreurTotale, setErreurTotale] = useState(false);
@@ -67,78 +74,68 @@ export default function AccueilScreen() {
     };
   }, []);
 
-  // 📖 Sections dont au moins un chargement a réussi. Si un rafraîchissement échoue
-  //    ensuite (réseau coupé), on garde leurs dernières données au lieu de les remplacer
-  //    par une erreur ou un état vide.
-  const dejaCharge = useRef({
-    user: false,
-    banniere: false,
-    stocks: false,
-    defi: false,
-    actualites: false,
-    evenements: false,
-  });
+  // 📖 Vrai dès qu'un chargement a réussi au moins une fois. Si un rafraîchissement échoue
+  //    ensuite (réseau coupé), chaque section garde ses dernières données au lieu de les
+  //    remplacer par une erreur ou un état vide.
+  const aDejaCharge = useRef(false);
   // Vrai quand un rafraîchissement a échoué alors que des données sont affichées :
   // ce qu'on voit n'est peut-être plus à jour.
   const [horsLigne, setHorsLigne] = useState(false);
 
-  // 📖 Chaîne de promesses (pas async/await) : les setState vivent tous dans le
-  //    callback `.then`, jamais dans le corps synchrone d'un effet → pas de
+  // 📖 Chaîne de promesses (pas async/await) : les setState vivent tous dans des
+  //    callbacks `.then`, jamais dans le corps synchrone d'un effet → pas de
   //    « cascading renders ».
   const chargerDonnees = useCallback(() => {
+    const donneesAffichees = aDejaCharge.current;
+
+    // Chaque section prend ses données dès que sa requête répond. Un échec la laisse
+    // telle quelle : repli de l'en-tête, section masquée, ou dernières données connues.
+    const section = <T,>(requete: Promise<T>, appliquer: (valeur: T) => void) =>
+      requete.then((valeur) => {
+        if (!monte.current) return;
+        appliquer(valeur);
+        aDejaCharge.current = true;
+      });
+
+    const stocksR = section(getStockSang(), setStocks);
+    const requetes = [
+      section(getProfil(), setUser),
+      section(getBanniere(), setBanniere),
+      stocksR,
+      section(getDefiActuel(), setDefi),
+      section(getActualites(), setActualites),
+      section(getEvenements(), setEvenements),
+    ];
+
+    let minuteur: ReturnType<typeof setTimeout> | undefined;
+
     // 📖 allSettled : un rejet n'annule pas les autres résultats (contrairement à Promise.all).
-    return Promise.allSettled([
-      getProfil(),
-      getBanniere(),
-      getStockSang(),
-      getDefiActuel(),
-      getActualites(),
-      getEvenements(),
-    ]).then(([profilR, banniereR, stockR, defiR, actusR, eventsR]) => {
+    const toutes = Promise.allSettled(requetes).then((resultats) => {
+      clearTimeout(minuteur);
       if (!monte.current) return;
 
-      const charge = dejaCharge.current;
-      const donneesAffichees = Object.values(charge).some(Boolean);
-      const resultats = [profilR, banniereR, stockR, defiR, actusR, eventsR];
       const echec = resultats.some((r) => r.status === 'rejected');
-
-      // En-tête : pas de message d'erreur dédié, un simple repli visuel suffit.
-      if (profilR.status === 'fulfilled') {
-        setUser(profilR.value);
-        charge.user = true;
-      }
-
-      // 📖 Bannière, défi, événements : contenus non critiques, simplement masqués en erreur.
-      if (banniereR.status === 'fulfilled') {
-        setBanniere(banniereR.value);
-        charge.banniere = true;
-      }
-
-      if (stockR.status === 'fulfilled') {
-        setStocks(stockR.value);
-        charge.stocks = true;
-      }
-
-      if (defiR.status === 'fulfilled') {
-        setDefi(defiR.value);
-        charge.defi = true;
-      }
-
-      // 📖 Actualités : en erreur, l'état vide (rubrique censée toujours avoir du contenu).
-      if (actusR.status === 'fulfilled') {
-        setActualites(actusR.value);
-        charge.actualites = true;
-      }
-
-      if (eventsR.status === 'fulfilled') {
-        setEvenements(eventsR.value);
-        charge.evenements = true;
-      }
-
       setErreurTotale(resultats.every((r) => r.status === 'rejected') && !donneesAffichees);
       setHorsLigne(echec && donneesAffichees);
+      // 📖 Actualités en échec au premier chargement : l'état vide (rubrique censée
+      //    toujours avoir du contenu), plutôt qu'une rubrique qui attend pour toujours.
+      setActualites((actuelles) => actuelles ?? []);
       setChargement(false);
     });
+
+    // Fin du chargement global : les réserves sont arrivées et le délai est passé, sans
+    // attendre une requête plus lente. `toutes` le termine aussi, si tout répond avant.
+    // Réserves en échec : on attend `toutes`, qui saura s'il faut proposer de réessayer.
+    const delai = new Promise((fin) => {
+      minuteur = setTimeout(fin, DELAI_CASCADE_MS);
+    });
+    Promise.all([stocksR, delai])
+      .then(() => {
+        if (monte.current) setChargement(false);
+      })
+      .catch(() => {});
+
+    return toutes;
   }, []);
 
   useEffect(() => {
@@ -256,19 +253,22 @@ export default function AccueilScreen() {
               </Animated.View>
             )}
 
-            <Animated.View entering={entree(rangActualites)} style={styles.section}>
-              <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
-                Actualités
-              </Text>
-              {actualites.length > 0 ? (
-                <CarrouselActualites actualites={actualites} onOuvrir={ouvrirActualite} marge={MARGE} />
-              ) : (
-                <EtatVide
-                  titre="Pas encore d’actualité"
-                  message="Reviens bientôt pour les dernières nouvelles de l’association ADSB-NC."
-                />
-              )}
-            </Animated.View>
+            {/* 📖 Pas encore reçues (requête lente) : la rubrique arrive dès qu'elles répondent. */}
+            {actualites && (
+              <Animated.View entering={entree(rangActualites)} style={styles.section}>
+                <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+                  Actualités
+                </Text>
+                {actualites.length > 0 ? (
+                  <CarrouselActualites actualites={actualites} onOuvrir={ouvrirActualite} marge={MARGE} />
+                ) : (
+                  <EtatVide
+                    titre="Pas encore d’actualité"
+                    message="Reviens bientôt pour les dernières nouvelles de l’association ADSB-NC."
+                  />
+                )}
+              </Animated.View>
+            )}
 
             {/* 📖 Rien du tout si aucun événement : c'est l'état NORMAL la plupart du
                 temps (contenu épisodique) → pas d'état vide, qui serait du bruit. */}
