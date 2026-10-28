@@ -10,6 +10,13 @@ import { Theme } from './colors';
 
 export type TeintePastille = 'petrole' | 'corail' | 'mousse' | 'orange';
 
+/**
+ * Ordre de rotation des teintes, quand des éléments sans image en prennent une à tour de
+ * rôle (cartes d'actualité). 📖 Une seule liste : la page détail d'une actualité reconnaît
+ * la teinte reçue grâce à elle, et retomberait sinon en corail sans prévenir.
+ */
+export const TEINTES_ORDRE: readonly TeintePastille[] = ['corail', 'petrole', 'mousse', 'orange'];
+
 export const TEINTES_PASTILLE: Record<TeintePastille, { fond: string; icone: string }> = {
   petrole: { fond: Theme.info.fond, icone: Theme.info.icone },
   corail: { fond: Theme.marque.doux, icone: Theme.marque.principal },

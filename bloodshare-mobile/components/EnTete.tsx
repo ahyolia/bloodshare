@@ -3,6 +3,8 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Theme } from '../constants/colors';
+import { Ombre } from '../constants/spacing';
+import { Typo } from '../constants/typography';
 import { compter } from '../utils/pluriel';
 import type { Profil } from '../services/profil.service';
 import { NiveauModal } from './layout/NiveauModal';
@@ -68,6 +70,7 @@ const AVATAR_ACCUEIL = 46;
 const AVATAR_PAGE = 40;
 const CLOCHE = 40;
 const PASTILLE_HAUTEUR = 34;
+const NIVEAU = 22;
 
 export function EnTete(props: EnTeteProps) {
   const { initiale, avatarId, points, profil, notificationsNonLues, onPressNotifications } = props;
@@ -82,10 +85,15 @@ export function EnTete(props: EnTeteProps) {
     <View style={styles.enTete}>
       {props.variante === 'accueil' ? (
         <View style={styles.gauche}>
-          <BoutonAvatar initiale={initiale} avatarId={avatarId} taille={AVATAR_ACCUEIL} />
+          <BoutonAvatar
+            initiale={initiale}
+            avatarId={avatarId}
+            taille={AVATAR_ACCUEIL}
+            niveau={profil?.niveau?.niveau}
+          />
           <View style={styles.salutation}>
-            <Text style={styles.salut}>Salut,</Text>
-            <Text style={styles.pseudo} numberOfLines={1} ellipsizeMode="tail">
+            <Text style={[Typo.legende, styles.salut]}>Salut,</Text>
+            <Text style={[Typo.titre2, styles.pseudo]} numberOfLines={1} ellipsizeMode="tail">
               {props.pseudo}
             </Text>
           </View>
@@ -188,14 +196,22 @@ export function BoutonNotifications({
   );
 }
 
+/**
+ * Avatar qui ouvre le Profil, habillé comme sur la page Profil : posé sur un fond
+ * blanc, cerclé de blanc et surélevé (il se touche). Sur l'accueil, une pastille
+ * lime porte le niveau, aux couleurs de la pastille de points.
+ */
 function BoutonAvatar({
   initiale,
   avatarId,
   taille,
+  niveau,
 }: {
   initiale: string;
   avatarId?: number | null;
   taille: number;
+  /** Niveau du donneur ; absent → pas de pastille. */
+  niveau?: number;
 }) {
   const router = useRouter();
 
@@ -204,10 +220,21 @@ function BoutonAvatar({
       onPress={() => router.push('/tabs/profil')}
       hitSlop={hitSlopPour(taille)}
       accessibilityRole="button"
-      accessibilityLabel="Mon profil"
+      // Même condition que la pastille ci-dessous : un niveau 0 s'affiche, donc il s'annonce.
+      accessibilityLabel={niveau !== undefined ? `Mon profil, niveau ${niveau}` : 'Mon profil'}
+      style={({ pressed }) => pressed && styles.avatarPresse}
     >
-      {/* 📖 `pseudo={initiale}` : l'initiale d'une initiale est elle-même. */}
-      <Avatar avatarId={avatarId} pseudo={initiale} taille={taille} style={styles.avatar} />
+      {/* 📖 L'ombre sur une vue à part : Avatar découpe son cercle
+          (overflow: hidden), ce qui rognerait l'ombre sur iOS. */}
+      <View style={[styles.avatarOmbre, { borderRadius: taille / 2 }]}>
+        {/* 📖 `pseudo={initiale}` : l'initiale d'une initiale est elle-même. */}
+        <Avatar avatarId={avatarId} pseudo={initiale} taille={taille} style={styles.avatar} />
+      </View>
+      {niveau !== undefined && (
+        <View style={styles.niveau} pointerEvents="none">
+          <Text style={[Typo.onglet, styles.niveauTexte]}>{niveau}</Text>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -233,12 +260,9 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   salut: {
-    fontSize: 13,
     color: Theme.texte.secondaire,
   },
   pseudo: {
-    fontSize: 20,
-    fontWeight: '700',
     color: Theme.texte.principal,
   },
   titre: {
@@ -294,8 +318,30 @@ const styles = StyleSheet.create({
     borderColor: Theme.fond.page,
   },
 
-  avatar: {
-    borderWidth: 2,
-    borderColor: Theme.marque.principal,
+  avatarOmbre: {
+    ...Ombre.flottante,
   },
+  avatar: {
+    borderWidth: 3,
+    borderColor: Theme.fond.surface,
+    backgroundColor: Theme.fond.surface,
+  },
+  avatarPresse: { opacity: 0.85 },
+  // 📖 Lime et aubergine, comme la pastille de points (8,98:1). Contour couleur de page :
+  //    la pastille se détache de l'avatar qu'elle chevauche.
+  niveau: {
+    position: 'absolute',
+    right: -4,
+    bottom: -2,
+    minWidth: NIVEAU,
+    height: NIVEAU,
+    paddingHorizontal: 4,
+    borderRadius: NIVEAU / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Theme.accent.signatureAplat,
+    borderWidth: 2,
+    borderColor: Theme.fond.page,
+  },
+  niveauTexte: { color: Theme.accent.signatureTexte, lineHeight: 14 },
 });

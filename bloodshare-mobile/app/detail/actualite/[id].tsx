@@ -1,65 +1,67 @@
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Colors } from '../../../constants/colors';
-
-// 📖 "2026-06-01" → "1 juin 2026". timeZone UTC : la date affichée = la date
-//    stockée, sans décalage selon le fuseau de l'appareil.
-const formatDateLongue = (iso: string) =>
-  new Date(iso).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
+import { useLocalSearchParams } from 'expo-router';
+import type { ComponentProps } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { EnTeteContenu } from '../../../components/accueil/EnTeteContenu';
+import { EnTeteSousPage } from '../../../components/ui/EnTeteSousPage';
+import { TexteDocument } from '../../../components/ui/TexteDocument';
+import { entreeSousPage } from '../../../constants/animations';
+import { Theme } from '../../../constants/colors';
+import { Espace, Rayon } from '../../../constants/spacing';
+import { TEINTES_ORDRE, TEINTES_VIVES } from '../../../constants/teintes';
+import { Typo } from '../../../constants/typography';
+import { dateActualiteLongue } from '../../../utils/accueil';
+import { tempsLecture } from '../../../utils/tempsLecture';
 
 export default function ActualiteDetailScreen() {
-  // 📖 Params passés par router.push depuis le carousel de l'accueil. TOUT est
+  // 📖 Params passés par router.push depuis le carrousel de l'accueil. TOUT est
   //    string (sérialisé dans l'URL). En V1 il n'y a pas de GET /actualites/{id} :
   //    on se contente des champs déjà chargés dans la liste, transmis ici.
-  const { titre, chapo, contenu, published_at, image_url } = useLocalSearchParams<{
+  //    `teinte` : celle de la carte touchée, pour qu'on retrouve la même couleur.
+  const { titre, chapo, contenu, published_at, image_url, teinte } = useLocalSearchParams<{
     id: string;
     titre: string;
     chapo: string;
     contenu: string;
     published_at: string;
     image_url: string;
+    teinte?: string;
   }>();
-  const router = useRouter();
+  const couleur = TEINTES_ORDRE.find((t) => t === teinte) ?? 'corail';
 
+  // 📖 Pas de date sur un lien direct ou un rechargement de la page (web) : pas de
+  //    pastille plutôt qu'une icône de calendrier sans texte.
+  const pilules: ComponentProps<typeof EnTeteContenu>['pilules'] = [];
+  if (published_at) pilules.push({ icone: 'calendar-outline', texte: dateActualiteLongue(published_at) });
+  if (contenu) pilules.push({ icone: 'time-outline', texte: `${tempsLecture(contenu)} min de lecture` });
 
   return (
     <View style={styles.screen}>
-      {/* Header fixe */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={20} color={Colors.aubergine} />
-          <Text style={styles.backText}>Retour</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Bannière : image si dispo, sinon placeholder */}
-      {image_url ? (
-        <Image source={{ uri: image_url }} style={styles.banniere} resizeMode="cover" />
-      ) : (
-        <View style={styles.bannierePlaceholder}>
-          <Text style={styles.banniereEmoji}>📰</Text>
-        </View>
-      )}
-
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.date}>{formatDateLongue(published_at)}</Text>
-        <Text style={styles.titre}>{titre}</Text>
+        <EnTeteSousPage titre="Actualité" />
 
-        {chapo ? <Text style={styles.chapo}>{chapo}</Text> : null}
+        <Animated.View entering={entreeSousPage} style={styles.corps}>
+          <EnTeteContenu
+            titre={titre ?? ''}
+            teinte={couleur}
+            icone="newspaper"
+            pilules={pilules}
+            imageUrl={image_url || undefined}
+          />
 
-        {contenu ? (
-          <Text style={styles.contenu}>{contenu}</Text>
-        ) : (
-          <Text style={styles.contenuVide}>
-            Le contenu complet de cette actualité sera bientôt disponible.
-          </Text>
-        )}
+          {/* 📖 Le chapeau, comme l'introduction d'une fiche : plus grand, en couleur principale. */}
+          {!!chapo && <Text style={styles.chapo}>{chapo}</Text>}
+
+          {contenu ? (
+            <TexteDocument contenu={contenu} variante="fiche" accent={TEINTES_VIVES[couleur]} />
+          ) : (
+            <View style={styles.vide}>
+              <Text style={[Typo.corps, styles.secondaire]}>
+                Le contenu complet de cette actualité sera bientôt disponible.
+              </Text>
+            </View>
+          )}
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -68,69 +70,28 @@ export default function ActualiteDetailScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 54,
-    paddingHorizontal: 18,
-    paddingBottom: 12,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backText: {
-    color: Colors.aubergine,
-    fontSize: 14,
-    marginLeft: 4,
-  },
-  banniere: {
-    width: '100%',
-    height: 220,
-  },
-  bannierePlaceholder: {
-    width: '100%',
-    height: 220,
-    backgroundColor: Colors.creme,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  banniereEmoji: {
-    fontSize: 64,
+    backgroundColor: Theme.fond.page,
   },
   content: {
-    padding: 20,
-    paddingBottom: 60,
+    paddingHorizontal: 18,
+    paddingTop: 54,
+    paddingBottom: Espace[12],
   },
-  date: {
-    fontSize: 13,
-    color: Colors.grisMoyen,
-    textTransform: 'capitalize',
-    marginBottom: 6,
-  },
-  titre: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    marginBottom: 12,
+  corps: {
+    gap: Espace[6],
   },
   chapo: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    lineHeight: 22,
-    marginBottom: 12,
+    ...Typo.corpsFort,
+    fontSize: 18,
+    lineHeight: 26,
+    color: Theme.texte.principal,
   },
-  contenu: {
-    fontSize: 15,
-    color: Colors.grisMoyen,
-    lineHeight: 22,
+  vide: {
+    padding: Espace[4],
+    borderRadius: Rayon.lg,
+    backgroundColor: Theme.fond.surface,
+    borderWidth: 1,
+    borderColor: Theme.fond.bordure,
   },
-  contenuVide: {
-    fontSize: 15,
-    color: Colors.grisMoyen,
-    fontStyle: 'italic',
-  },
+  secondaire: { color: Theme.texte.secondaire },
 });

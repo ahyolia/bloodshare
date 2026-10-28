@@ -1,233 +1,179 @@
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Colors } from '../../../constants/colors';
-
-// 📖 "2026-07-02T09:00:00Z" → "09h00". timeZone UTC : on affiche l'heure telle
-//    qu'elle est stockée, sans décalage selon le fuseau de l'appareil.
-const formatHeure = (iso: string) =>
-  new Date(iso)
-    .toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
-    .replace(':', 'h');
-
-// 📖 Date complète en toutes lettres : "jeudi 2 juillet 2026".
-const formatDateLongue = (iso: string) =>
-  new Date(iso).toLocaleDateString('fr-FR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
+import { Fragment, type ComponentProps } from 'react';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { EnTeteContenu } from '../../../components/accueil/EnTeteContenu';
+import { Bandeau, BoutonBandeau } from '../../../components/ui/Bandeau';
+import { Bouton } from '../../../components/ui/Bouton';
+import { EnTeteSousPage } from '../../../components/ui/EnTeteSousPage';
+import { TexteDocument } from '../../../components/ui/TexteDocument';
+import { entreeSousPage } from '../../../constants/animations';
+import { Theme } from '../../../constants/colors';
+import { Espace, Rayon } from '../../../constants/spacing';
+import { TEINTES_PASTILLE, TEINTES_VIVES, type TeintePastille } from '../../../constants/teintes';
+import { Typo } from '../../../constants/typography';
+import { dateEvenementLongue, etiquetteProchainement, horaireEvenement } from '../../../utils/accueil';
 
 export default function EvenementDetailScreen() {
   // 📖 Params passés par router.push depuis l'accueil. TOUT est string (sérialisé
   //    dans l'URL). En V1 il n'y a pas de GET /evenements/{id} : on se contente
   //    des champs déjà chargés dans la liste, transmis ici.
-  const { titre, description, date_heure, horaire_fin, lieu, image_url } =
-    useLocalSearchParams<{
-      id: string;
-      titre: string;
-      description: string;
-      date_heure: string;
-      horaire_fin: string;
-      lieu: string;
-      image_url: string;
-    }>();
+  const { titre, description, date_heure, horaire_fin, lieu, image_url } = useLocalSearchParams<{
+    id: string;
+    titre: string;
+    description: string;
+    date_heure: string;
+    horaire_fin: string;
+    lieu: string;
+    image_url: string;
+  }>();
   const router = useRouter();
 
+  const bientot = date_heure ? etiquetteProchainement(date_heure) : null;
 
-  const horaires = horaire_fin
-    ? `${formatHeure(date_heure)} → ${formatHeure(horaire_fin)}`
-    : `À partir de ${formatHeure(date_heure)}`;
+  // 📖 Quand et où : seulement les lignes renseignées. Sur un lien direct ou un
+  //    rechargement de la page (web), la date peut manquer : pas de ligne vide.
+  const lignes: ComponentProps<typeof LigneInfo>[] = [];
+  if (date_heure) {
+    lignes.push(
+      { icone: 'calendar-outline', teinte: 'petrole', texte: dateEvenementLongue(date_heure) },
+      {
+        icone: 'time-outline',
+        teinte: 'orange',
+        texte: horaire_fin ? horaireEvenement(date_heure, horaire_fin) : `À partir de ${horaireEvenement(date_heure)}`,
+      }
+    );
+  }
+  if (lieu) lignes.push({ icone: 'location-outline', teinte: 'corail', texte: lieu });
 
   return (
     <View style={styles.screen}>
-      {/* Header fixe */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={20} color={Colors.aubergine} />
-          <Text style={styles.backText}>Retour</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Bannière : image si dispo, sinon placeholder */}
-      {image_url ? (
-        <Image source={{ uri: image_url }} style={styles.banniere} resizeMode="cover" />
-      ) : (
-        <View style={styles.bannierePlaceholder}>
-          <Text style={styles.banniereEmoji}>🎪</Text>
-        </View>
-      )}
-
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Bloc date / horaires / lieu */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoIcon}>📅</Text>
-            <Text style={styles.infoDate}>{formatDateLongue(date_heure)}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoIcon}>🕐</Text>
-            <Text style={styles.infoText}>{horaires}</Text>
-          </View>
-          <View style={styles.infoRowLast}>
-            <Text style={styles.infoIcon}>📍</Text>
-            <Text style={styles.infoText}>{lieu}</Text>
-          </View>
-        </View>
+        <EnTeteSousPage titre="Événement" />
 
-        <Text style={styles.titre}>{titre}</Text>
+        <Animated.View entering={entreeSousPage} style={styles.corps}>
+          <EnTeteContenu
+            titre={titre ?? ''}
+            teinte="petrole"
+            icone="calendar"
+            pilules={bientot ? [{ icone: 'sparkles-outline', texte: bientot }] : []}
+            imageUrl={image_url || undefined}
+          />
 
-        {description ? (
-          <Text style={styles.description}>{description}</Text>
-        ) : (
-          <Text style={styles.descriptionVide}>Aucune description disponible.</Text>
-        )}
+          {/* 📖 Quand et où : une information, donc à plat (contour fin, sans ombre). */}
+          {lignes.length > 0 && (
+            <View style={styles.infos}>
+              {lignes.map((ligne, i) => (
+                <Fragment key={ligne.icone}>
+                  {i > 0 && <View style={styles.filet} />}
+                  <LigneInfo {...ligne} />
+                </Fragment>
+              ))}
+            </View>
+          )}
 
-        <View style={styles.separateur} />
+          {!!lieu && (
+            <Bouton
+              libelle="Voir le lieu sur une carte"
+              variante="secondaire"
+              icone="map-outline"
+              accessibilityHint="Ouvre le plan dans ton navigateur"
+              onPress={() =>
+                Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lieu)}`)
+              }
+            />
+          )}
 
-        {/* Valider ma présence */}
-        <View style={styles.presenceCard}>
-          <Text style={styles.presenceEmoji}>🩸</Text>
-          <Text style={styles.presenceTitre}>Tu es sur place ?</Text>
-          <Text style={styles.presenceText}>
-            Scanne le QR Code affiché sur place pour valider ta présence et obtenir ta
-            carte événement.
-          </Text>
-          <TouchableOpacity
-            style={styles.presenceBtn}
-            onPress={() => router.navigate('/tabs/don/scan')}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.presenceBtnText}>Scanner le QR Code</Text>
-          </TouchableOpacity>
-        </View>
+          {description ? (
+            <TexteDocument contenu={description} variante="fiche" accent={TEINTES_VIVES.petrole} />
+          ) : (
+            <Text style={[Typo.corps, styles.secondaire]}>Les détails de cet événement arrivent bientôt.</Text>
+          )}
+
+          {/* 📖 Sur place, on scanne le QR code de l'événement : même bandeau pétrole que le
+              scan de la page Don, avec ses gouttes. */}
+          <Bandeau teinte="petrole">
+            <Text style={[Typo.titre3, styles.texteClair]} accessibilityRole="header">
+              Tu es sur place ?
+            </Text>
+            <Text style={[Typo.corps, styles.texteClair, styles.texteLimite]}>
+              Scanne le QR code affiché sur place pour valider ta présence et obtenir ta carte événement.
+            </Text>
+            <BoutonBandeau
+              libelle="Scanner le QR code"
+              icone="scan-outline"
+              onPress={() => router.navigate('/tabs/don/scan')}
+            />
+          </Bandeau>
+        </Animated.View>
       </ScrollView>
     </View>
   );
 }
 
+function LigneInfo({
+  icone,
+  teinte,
+  texte,
+}: {
+  icone: ComponentProps<typeof Ionicons>['name'];
+  teinte: TeintePastille;
+  texte: string;
+}) {
+  const couleurs = TEINTES_PASTILLE[teinte];
+  return (
+    <View style={styles.ligne}>
+      <View style={[styles.pastille, { backgroundColor: couleurs.fond }]}>
+        <Ionicons name={icone} size={18} color={couleurs.icone} />
+      </View>
+      <Text style={[Typo.corpsFort, styles.texte]}>{texte}</Text>
+    </View>
+  );
+}
+
+const PASTILLE = 36;
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
+    backgroundColor: Theme.fond.page,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 54,
+  content: {
     paddingHorizontal: 18,
-    paddingBottom: 12,
+    paddingTop: 54,
+    paddingBottom: Espace[12],
   },
-  backButton: {
+  corps: {
+    gap: Espace[6],
+  },
+  infos: {
+    padding: Espace[4],
+    gap: Espace[3],
+    borderRadius: Rayon.lg,
+    backgroundColor: Theme.fond.surface,
+    borderWidth: 1,
+    borderColor: Theme.fond.bordure,
+  },
+  ligne: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Espace[3],
   },
-  backText: {
-    color: Colors.aubergine,
-    fontSize: 14,
-    marginLeft: 4,
-  },
-  banniere: {
-    width: '100%',
-    height: 220,
-  },
-  bannierePlaceholder: {
-    width: '100%',
-    height: 220,
-    backgroundColor: Colors.creme,
+  pastille: {
+    width: PASTILLE,
+    height: PASTILLE,
+    borderRadius: Rayon.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  banniereEmoji: {
-    fontSize: 64,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 60,
-  },
-  infoCard: {
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  infoRowLast: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  infoIcon: {
-    fontSize: 14,
-    marginRight: 8,
-  },
-  infoDate: {
-    flex: 1,
-    color: Colors.aubergine,
-    fontSize: 14,
-    textTransform: 'capitalize',
-  },
-  infoText: {
-    flex: 1,
-    color: Colors.grisMoyen,
-    fontSize: 14,
-  },
-  titre: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    marginBottom: 12,
-  },
-  description: {
-    fontSize: 15,
-    color: Colors.grisMoyen,
-    lineHeight: 22,
-  },
-  descriptionVide: {
-    fontSize: 15,
-    color: Colors.grisMoyen,
-    fontStyle: 'italic',
-  },
-  separateur: {
+  filet: {
     height: 1,
-    backgroundColor: Colors.fondGris,
-    marginVertical: 16,
+    marginLeft: PASTILLE + Espace[3],
+    backgroundColor: Theme.fond.bordure,
   },
-  presenceCard: {
-    backgroundColor: Colors.creme,
-    borderRadius: 12,
-    padding: 16,
-  },
-  presenceEmoji: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  presenceTitre: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  presenceText: {
-    fontSize: 13,
-    color: Colors.grisMoyen,
-    lineHeight: 20,
-    marginTop: 4,
-  },
-  presenceBtn: {
-    backgroundColor: Colors.corail[600],
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  presenceBtnText: {
-    color: Colors.blanc,
-    fontSize: 14,
-    fontWeight: '700',
-  },
+  texte: { flex: 1, color: Theme.texte.principal },
+  secondaire: { color: Theme.texte.secondaire },
+  texteClair: { color: Theme.texte.surAccent },
+  texteLimite: { maxWidth: '85%' },
 });
