@@ -107,11 +107,20 @@ export default function AccueilScreen() {
       section(getEvenements(), setEvenements),
     ];
 
-    let minuteur: ReturnType<typeof setTimeout> | undefined;
+    // Fin du chargement global : les réserves sont arrivées et le délai est passé, sans
+    // attendre une requête plus lente. `toutes` le termine aussi, si tout répond avant.
+    // 📖 Type du minuteur laissé à l'inférence (const) : selon les types chargés, setTimeout
+    //    renvoie un `number` (navigateur) ou un `Timeout` (Node), et une annotation
+    //    explicite ne compilait pas partout (échec du typecheck en CI).
+    let annulerDelai = () => {};
+    const delai = new Promise((fin) => {
+      const minuteur = setTimeout(fin, DELAI_CASCADE_MS);
+      annulerDelai = () => clearTimeout(minuteur);
+    });
 
     // 📖 allSettled : un rejet n'annule pas les autres résultats (contrairement à Promise.all).
     const toutes = Promise.allSettled(requetes).then((resultats) => {
-      clearTimeout(minuteur);
+      annulerDelai();
       if (!monte.current) return;
 
       const echec = resultats.some((r) => r.status === 'rejected');
@@ -123,12 +132,7 @@ export default function AccueilScreen() {
       setChargement(false);
     });
 
-    // Fin du chargement global : les réserves sont arrivées et le délai est passé, sans
-    // attendre une requête plus lente. `toutes` le termine aussi, si tout répond avant.
     // Réserves en échec : on attend `toutes`, qui saura s'il faut proposer de réessayer.
-    const delai = new Promise((fin) => {
-      minuteur = setTimeout(fin, DELAI_CASCADE_MS);
-    });
     Promise.all([stocksR, delai])
       .then(() => {
         if (monte.current) setChargement(false);
