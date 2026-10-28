@@ -52,9 +52,12 @@ export function FondDecoratif({ formes, children, anime = false, style }: Props)
                 height: forme.type === 'pilule' ? EPAISSEUR_PILULE : forme.taille,
                 borderRadius: forme.taille / 2,
                 backgroundColor: Theme.decor[forme.couleur],
+                // 📖 Rotation AVANT l'étirement dans la liste : la forme est d'abord étirée
+                //    en ovale, puis l'ovale est incliné. Dans l'autre ordre, c'est le cercle
+                //    qui tourne (sans effet visible) et toutes les ellipses restent horizontales.
                 transform: [
-                  { scaleX: forme.type === 'ellipse' ? (forme.etirement ?? 1.3) : 1 },
                   { rotate: `${forme.rotation ?? 0}deg` },
+                  { scaleX: forme.type === 'ellipse' ? (forme.etirement ?? 1.3) : 1 },
                 ],
               }}
             />

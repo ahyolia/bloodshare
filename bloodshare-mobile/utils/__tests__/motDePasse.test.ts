@@ -1,4 +1,4 @@
-import { criteresMotDePasse, estMotDePasseValide, motDePasseValide } from '../motDePasse';
+import { criteresMotDePasse, estMotDePasseValide } from '../motDePasse';
 
 const etat = (motDePasse: string) =>
   Object.fromEntries(criteresMotDePasse(motDePasse).map((c) => [c.id, c.valide]));
@@ -21,6 +21,11 @@ describe('criteresMotDePasse', () => {
     expect(estMotDePasseValide(motDePasse)).toBe(true);
   });
 
+  // 📖 Mêmes classes Unicode que Laravel (\pN) : un chiffre pleine chasse compte.
+  it('reconnaît les chiffres hors ASCII, comme le back', () => {
+    expect(etat('Aimaaima２').chiffre).toBe(true);
+  });
+
   it('compte les vrais caractères, pas les unités UTF-16', () => {
     // 4 emojis = 8 unités UTF-16 mais 4 caractères : trop court, comme pour Laravel.
     expect(etat('😀😀😀😀').longueur).toBe(false);
@@ -28,28 +33,11 @@ describe('criteresMotDePasse', () => {
 });
 
 describe('estMotDePasseValide', () => {
-  it.each(['Lumi2026', 'MotDePasse1'])('%s est valide', (motDePasse) => {
+  it.each(['Lumi2026', 'MotDePasse1', 'Aima2026'])('%s est valide', (motDePasse) => {
     expect(estMotDePasseValide(motDePasse)).toBe(true);
   });
 
-  it.each(['lumi2026', 'LUMI2026', 'LumiLumi', 'Lu1'])('%s est refusé', (motDePasse) => {
+  it.each(['lumi2026', 'LUMI2026', 'LumiLumi', 'Lu1', 'Aima26'])('%s est refusé', (motDePasse) => {
     expect(estMotDePasseValide(motDePasse)).toBe(false);
-  });
-});
-
-// Tests venus de dev : l'alias doit garder le même comportement.
-describe('motDePasseValide', () => {
-  it('accepte 8 caractères avec majuscule, minuscule et chiffre', () => {
-    expect(motDePasseValide('Aima2026')).toBe(true);
-  });
-
-  it('refuse un mot de passe trop court', () => {
-    expect(motDePasseValide('Aima26')).toBe(false);
-  });
-
-  it('exige une majuscule, une minuscule et un chiffre', () => {
-    expect(motDePasseValide('aima2026')).toBe(false);
-    expect(motDePasseValide('AIMA2026')).toBe(false);
-    expect(motDePasseValide('Aimaaima')).toBe(false);
   });
 });

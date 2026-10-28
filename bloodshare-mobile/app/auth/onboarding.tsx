@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Theme } from '../../constants/colors';
 import { Espace, Rayon } from '../../constants/spacing';
 import { Typo } from '../../constants/typography';
@@ -90,7 +90,15 @@ export default function Onboarding() {
 
   return (
     <FondDecoratif formes={formes} anime>
-      <View style={styles.page}>
+      {/* 📖 ScrollView : sur un petit téléphone (~640 dp) ou avec un texte agrandi,
+          l'écran 3 poussait « S'inscrire » et « Se connecter » hors de l'écran, sans
+          moyen de quitter l'onboarding. flexGrow : sur un grand écran, rien ne défile
+          et les boutons restent en bas. */}
+      <ScrollView
+        style={styles.defilement}
+        contentContainerStyle={styles.page}
+        showsVerticalScrollIndicator={false}
+      >
         <IndicateurEtapes
           etape={index + 1}
           total={ECRANS.length}
@@ -141,7 +149,7 @@ export default function Onboarding() {
             </>
           )}
         </View>
-      </View>
+      </ScrollView>
     </FondDecoratif>
   );
 }
@@ -149,8 +157,9 @@ export default function Onboarding() {
 const SUIVANT = 56;
 
 const styles = StyleSheet.create({
+  defilement: { flex: 1 },
   page: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: Espace[6],
     // 📖 Même marge haute que les autres écrans plein page (cf. scan.tsx).
     paddingTop: 54,
@@ -160,7 +169,8 @@ const styles = StyleSheet.create({
   textes: { gap: Espace[3] },
   titre: { color: Theme.texte.principal },
   texte: { color: Theme.texte.secondaire },
-  pied: { gap: Espace[3], alignItems: 'flex-end', marginTop: Espace[4] },
+  // 📖 marginTop auto : collé en bas quand il y a de la place, juste sous le texte sinon.
+  pied: { gap: Espace[3], alignItems: 'flex-end', marginTop: 'auto', paddingTop: Espace[4] },
   suivant: {
     width: SUIVANT,
     height: SUIVANT,

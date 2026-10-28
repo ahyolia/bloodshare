@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Theme } from '../../constants/colors';
-import { Espace, Rayon } from '../../constants/spacing';
+import { CIBLE_MIN, Espace, Rayon } from '../../constants/spacing';
 import { Typo } from '../../constants/typography';
 
 /**
@@ -71,12 +71,14 @@ export function ChoixUnique<T extends string>({
         })}
       </View>
 
-      {erreur && (
+      {/* 📖 Ternaire et non `erreur && …` : une erreur vide ('') serait rendue telle quelle
+          hors d'un <Text>, et React Native planterait sur iOS et Android. */}
+      {erreur ? (
         <View style={styles.erreur} accessibilityLiveRegion="polite">
           <Ionicons name="alert-circle-outline" size={18} color={Theme.feedback.erreurTexte} />
           <Text style={[Typo.legendeForte, styles.erreurTexte]}>{erreur}</Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -91,7 +93,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Espace[3],
-    minHeight: 48,
+    minHeight: CIBLE_MIN,
     paddingHorizontal: Espace[4],
     paddingVertical: Espace[3],
     borderRadius: Rayon.md,

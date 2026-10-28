@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Theme } from '../../constants/colors';
-import { Espace, Rayon } from '../../constants/spacing';
+import { CIBLE_MIN, Espace, Rayon } from '../../constants/spacing';
 import { Typo } from '../../constants/typography';
 
 /**
@@ -10,7 +10,10 @@ import { Typo } from '../../constants/typography';
  *
  * 📖 La CASE et le LIEN sont deux éléments distincts : un élément interactif ne doit
  *    pas en contenir un autre (sinon le lien est inaccessible au clavier et mal
- *    annoncé). Le texte coche aussi la case à l'appui, pour le confort visuel.
+ *    annoncé). Sans lien, le texte coche aussi la case à l'appui, pour le confort.
+ * 📖 Avec un lien, le texte ne coche RIEN : seule la case donne le consentement. Sur
+ *    react-native-web (la PWA), l'appui sur le lien remontait jusqu'au texte et cochait
+ *    ou décochait le consentement sans que la personne le voie (RGPD).
  */
 type Props = {
   /** Texte avant le lien (ou texte entier sans lien). */
@@ -44,7 +47,7 @@ export function CaseACocher({ libelle, lien, coche, onChange, erreur }: Props) {
 
         <Text
           style={[Typo.corps, styles.texte]}
-          onPress={basculer}
+          onPress={lien ? undefined : basculer}
           // 📖 Pour un lecteur d'écran, cocher passe par la case : le texte ne sert
           //    qu'à exposer le lien, il n'est pas lui-même un bouton.
           accessibilityRole={lien ? undefined : 'text'}
@@ -53,7 +56,15 @@ export function CaseACocher({ libelle, lien, coche, onChange, erreur }: Props) {
           {lien && (
             <>
               {' '}
-              <Text style={styles.lien} onPress={lien.onPress} accessibilityRole="link">
+              <Text
+                style={styles.lien}
+                // Par précaution : l'appui sur le lien ne remonte jamais plus haut.
+                onPress={(e) => {
+                  e?.stopPropagation?.();
+                  lien.onPress();
+                }}
+                accessibilityRole="link"
+              >
                 {lien.texte}
               </Text>
             </>
@@ -61,12 +72,14 @@ export function CaseACocher({ libelle, lien, coche, onChange, erreur }: Props) {
         </Text>
       </View>
 
-      {erreur && (
+      {/* 📖 Ternaire et non `erreur && …` : une erreur vide ('') serait rendue telle quelle
+          hors d'un <Text>, et React Native planterait sur iOS et Android. */}
+      {erreur ? (
         <View style={styles.erreur} accessibilityLiveRegion="polite">
           <Ionicons name="alert-circle-outline" size={18} color={Theme.feedback.erreurTexte} />
           <Text style={[Typo.legendeForte, styles.erreurTexte]}>{erreur}</Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -77,8 +90,8 @@ const styles = StyleSheet.create({
   // 📖 Cible de 48 px autour d'une case de 22 px, décalée pour que la case reste
   //    alignée sur la première ligne du texte et sur le bord gauche du formulaire.
   cible: {
-    width: 48,
-    height: 48,
+    width: CIBLE_MIN,
+    height: CIBLE_MIN,
     marginLeft: -13,
     marginTop: -12,
     alignItems: 'center',

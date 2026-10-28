@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { Theme } from '../../constants/colors';
-import { Espace, Rayon } from '../../constants/spacing';
+import { CIBLE_MIN, Espace, Rayon } from '../../constants/spacing';
 import { Typo } from '../../constants/typography';
 
 /**
@@ -31,7 +31,6 @@ type Props = Omit<TextInputProps, 'style' | 'placeholderTextColor' | 'secureText
 
 const BORDURE_REPOS = 1.5;
 const BORDURE_ACTIVE = 2;
-const CIBLE_MIN = 48;
 
 export function Champ({
   libelle,

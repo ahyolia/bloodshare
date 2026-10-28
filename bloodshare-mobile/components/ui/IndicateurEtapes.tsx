@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Theme } from '../../constants/colors';
-import { Espace, Rayon } from '../../constants/spacing';
+import { CIBLE_MIN as CIBLE, Espace, Rayon } from '../../constants/spacing';
 import { Typo } from '../../constants/typography';
 
 /**
@@ -21,8 +21,6 @@ type Props = {
   /** Lien à droite, ex. « Passer ». */
   action?: { libelle: string; onPress: () => void; indice?: string };
 };
-
-const CIBLE = 48;
 
 export function IndicateurEtapes({ etape, total, onRetour, libelleRetour = 'Retour', action }: Props) {
   return (

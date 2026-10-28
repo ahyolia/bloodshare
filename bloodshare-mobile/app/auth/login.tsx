@@ -6,7 +6,7 @@ import { Bouton } from '../../components/ui/Bouton';
 import { Champ } from '../../components/ui/Champ';
 import { FondDecoratif, type Forme } from '../../components/ui/FondDecoratif';
 import { Theme } from '../../constants/colors';
-import { Espace, Rayon } from '../../constants/spacing';
+import { CIBLE_MIN, Espace, Rayon } from '../../constants/spacing';
 import { Typo } from '../../constants/typography';
 import { login } from '../../services/auth.service';
 import { saveToken, saveUser } from '../../stores/auth.store';
@@ -42,6 +42,10 @@ export default function LoginScreen() {
   const [motDePasse, setMotDePasse] = useState('');
   const [enCours, setEnCours] = useState(false);
   const [erreurs, setErreurs] = useState<Erreurs>({});
+  // 📖 Le bandeau « session expirée » disparaît dès la première tentative : ensuite,
+  //    c'est le résultat de cette tentative qui compte (sinon il restait affiché au-dessus
+  //    de « l'e-mail ou le mot de passe ne correspond pas »).
+  const [aEssaye, setAEssaye] = useState(false);
 
   // 📖 Corriger un champ efface son erreur, et celles qui le concernaient aussi.
   const saisir = (champ: 'email' | 'motDePasse', setter: (v: string) => void) => (valeur: string) => {
@@ -53,6 +57,7 @@ export default function LoginScreen() {
 
   const seConnecter = async () => {
     if (enCours) return;
+    setAEssaye(true);
 
     const locales: Erreurs = {
       email: email.trim() ? undefined : 'Saisis ton adresse e-mail.',
@@ -83,9 +88,11 @@ export default function LoginScreen() {
         setErreurs({ identifiants: true });
       } else if (statut === 403) {
         // 📖 Compte suspendu : le message vient de l'API.
+        // 📖 `?.trim() ||` et non `??` : un message vide ('') de l'API laisserait la
+        //    personne sans aucune explication sur la suspension de son compte.
         setErreurs({
           generale:
-            error.response.data?.message ?? "Ton compte est suspendu. Contacte l'association pour en savoir plus.",
+            error.response.data?.message?.trim() || "Ton compte est suspendu. Contacte l'association pour en savoir plus.",
         });
       } else if (statut === 429) {
         // 📖 Limite de tentatives du back (throttle:connexion).
@@ -120,7 +127,7 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.formulaire}>
-            {session === 'expiree' && !erreurs.generale && (
+            {session === 'expiree' && !aEssaye && (
               <View style={[styles.encadre, styles.encadreInfo]} accessibilityLiveRegion="polite">
                 <Ionicons name="information-circle-outline" size={20} color={Theme.info.icone} />
                 <Text style={[Typo.legendeForte, styles.encadreTexte]}>Ta session a expiré. Reconnecte-toi.</Text>
@@ -208,8 +215,6 @@ export default function LoginScreen() {
     </FondDecoratif>
   );
 }
-
-const CIBLE_MIN = 48;
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },

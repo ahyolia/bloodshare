@@ -146,7 +146,10 @@ function CarteInfo({
 const CARTE_L = 118;
 
 const styles = StyleSheet.create({
-  zone: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  // 📖 flexGrow et non flex: 1 : l'onboarding défile (petit écran, texte agrandi). Avec
+  //    flex: 1, la hauteur de base serait nulle et l'illustration chevaucherait le texte au
+  //    lieu de faire défiler la page ; ici, elle garde au moins sa propre hauteur.
+  zone: { flexGrow: 1, alignItems: 'center', justifyContent: 'center' },
   mascotte: {
     width: 210,
     height: 210,

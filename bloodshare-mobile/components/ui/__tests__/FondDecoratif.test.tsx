@@ -22,6 +22,28 @@ describe('FondDecoratif', () => {
 
     expect(screen.getAllByText(/./)).toHaveLength(1);
   });
+
+  it('incline l’ellipse après l’avoir étirée (rotation avant scaleX)', async () => {
+    await render(
+      <FondDecoratif
+        formes={[{ type: 'ellipse', couleur: 'rose', taille: 300, etirement: 1.4, rotation: -8, position: { top: 0 } }]}
+      >
+        <Text>Contenu</Text>
+      </FondDecoratif>,
+    );
+
+    // 📖 Dans l'ordre inverse, c'est le cercle qui tourne : l'ellipse resterait horizontale.
+    const transforms: unknown[] = [];
+    const parcourir = (noeud: any) => {
+      if (!noeud || typeof noeud !== 'object') return;
+      if (Array.isArray(noeud)) return noeud.forEach(parcourir);
+      if (noeud.props?.style?.transform) transforms.push(noeud.props.style.transform);
+      parcourir(noeud.children);
+    };
+    parcourir(screen.toJSON());
+
+    expect(transforms).toContainEqual([{ rotate: '-8deg' }, { scaleX: 1.4 }]);
+  });
 });
 
 describe('FondDecoratif — animation', () => {

@@ -40,4 +40,13 @@ describe('ChoixUnique', () => {
 
     expect(screen.getByText('Choisis une réponse pour continuer.')).toBeTruthy();
   });
+
+  it('une erreur vide n’affiche rien (et ne fait pas planter l’écran)', async () => {
+    await render(
+      <ChoixUnique libelle="Sexe biologique" options={[...OPTIONS]} valeur={null} onChange={jest.fn()} erreur="" />,
+    );
+
+    // Le libellé et les options seulement : aucun bloc d'erreur.
+    expect(screen.queryAllByText(/./)).toHaveLength(1 + OPTIONS.length);
+  });
 });

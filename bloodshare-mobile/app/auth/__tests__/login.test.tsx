@@ -120,6 +120,16 @@ describe('Connexion', () => {
     expect(await screen.findByText(message)).toBeTruthy();
   });
 
+  it('compte suspendu (403) sans message de l’API : explique quand même la suspension', async () => {
+    loginMock.mockRejectedValue(erreurApi(403, ''));
+    await render(<LoginScreen />);
+
+    await remplir();
+    await envoyer();
+
+    expect(await screen.findByText("Ton compte est suspendu. Contacte l'association pour en savoir plus.")).toBeTruthy();
+  });
+
   it('serveur injoignable : invite à vérifier la connexion', async () => {
     loginMock.mockRejectedValue({ request: {} });
     await render(<LoginScreen />);
@@ -135,6 +145,18 @@ describe('Connexion', () => {
     await render(<LoginScreen />);
 
     expect(screen.getByText('Ta session a expiré. Reconnecte-toi.')).toBeTruthy();
+  });
+
+  it('session expirée : le bandeau disparaît dès la première tentative', async () => {
+    mockParams = { session: 'expiree' };
+    loginMock.mockRejectedValue(erreurApi(401));
+    await render(<LoginScreen />);
+
+    await remplir();
+    await envoyer();
+
+    expect(await screen.findByText(MESSAGE_IDENTIFIANTS)).toBeTruthy();
+    expect(screen.queryByText('Ta session a expiré. Reconnecte-toi.')).toBeNull();
   });
 
   it('les liens mènent au mot de passe oublié et à l’inscription', async () => {
