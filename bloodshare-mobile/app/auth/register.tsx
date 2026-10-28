@@ -9,7 +9,7 @@ import { Theme } from '../../constants/colors';
 import { register } from '../../services/auth.service';
 import { AVATARS } from '../../services/profil.service';
 import { saveToken, saveUser } from '../../stores/auth.store';
-import { motDePasseValide, REGLE_MOT_DE_PASSE } from '../../utils/motDePasse';
+import { estMotDePasseValide, REGLE_MOT_DE_PASSE } from '../../utils/motDePasse';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ETAPE_PAR_CHAMP: Record<string, number> = {
@@ -48,7 +48,7 @@ export default function RegisterScreen() {
     if (step === 1) {
       if (!pseudo || !email || !password || !passwordConfirmation) return setLocalError('Tous les champs sont obligatoires.');
       if (!EMAIL_REGEX.test(email.trim())) return setLocalError('Adresse e-mail invalide.');
-      if (!motDePasseValide(password)) return setLocalError(REGLE_MOT_DE_PASSE);
+      if (!estMotDePasseValide(password)) return setLocalError(REGLE_MOT_DE_PASSE);
       if (password !== passwordConfirmation) return setLocalError('Les mots de passe ne correspondent pas.');
     }
     if (step === 2) {

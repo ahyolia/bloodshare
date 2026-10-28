@@ -13,6 +13,12 @@ export const Espace = {
   12: 48,
 } as const;
 
+/**
+ * Taille minimale d'une zone tactile (48 × 48), recommandée par Android et au-delà du
+ * minimum WCAG. Une seule valeur pour tous les composants qui en ont besoin.
+ */
+export const CIBLE_MIN = Espace[12];
+
 export const Rayon = {
   sm: 6,
   md: 12,

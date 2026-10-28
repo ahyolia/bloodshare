@@ -24,6 +24,11 @@ type Props = {
   desactive?: boolean;
   /** Appel en cours : bloque le double appui et l'annonce aux lecteurs d'écran. */
   chargement?: boolean;
+  /**
+   * Texte affiché à côté de la roue pendant le chargement (« Connexion… »).
+   * Sans lui, la roue seule remplace le libellé.
+   */
+  libelleChargement?: string;
   /** Précise l'effet du bouton quand le libellé ne suffit pas (lecteurs d'écran). */
   accessibilityHint?: string;
   style?: StyleProp<ViewStyle>;
@@ -70,6 +75,7 @@ export function Bouton({
   icone,
   desactive = false,
   chargement = false,
+  libelleChargement,
   accessibilityHint,
   style,
 }: Props) {
@@ -78,13 +84,15 @@ export function Bouton({
   // 📖 Un bouton désactivé prend le gris du Figma quelle que soit sa variante :
   //    il doit se lire comme « pas disponible », pas comme une autre action.
   const texte = desactive ? Theme.action.desactiveTexte : couleurs.texte;
+  // 📖 Le lecteur d'écran annonce ce qu'on voit : « Connexion… » pendant l'envoi.
+  const libelleAffiche = chargement && libelleChargement ? libelleChargement : libelle;
 
   return (
     <Pressable
       onPress={onPress}
       disabled={inactif}
       accessibilityRole="button"
-      accessibilityLabel={libelle}
+      accessibilityLabel={libelleAffiche}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: inactif, busy: chargement }}
       style={({ pressed }) => [
@@ -103,13 +111,17 @@ export function Bouton({
         style,
       ]}
     >
-      {chargement ? (
+      {chargement && !libelleChargement ? (
         <ActivityIndicator color={texte} />
       ) : (
         <View style={styles.contenu}>
-          {icone && <Ionicons name={icone} size={20} color={texte} />}
+          {chargement ? (
+            <ActivityIndicator color={texte} />
+          ) : (
+            icone && <Ionicons name={icone} size={20} color={texte} />
+          )}
           <Text style={[Typo.bouton, { color: texte }]} numberOfLines={1}>
-            {libelle}
+            {libelleAffiche}
           </Text>
         </View>
       )}

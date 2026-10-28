@@ -1,8 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Theme } from '../../constants/colors';
+import { Espace, Rayon } from '../../constants/spacing';
+import { Typo } from '../../constants/typography';
+import { Bouton } from '../../components/ui/Bouton';
+import { FondDecoratif, type Forme } from '../../components/ui/FondDecoratif';
+import { IndicateurEtapes } from '../../components/ui/IndicateurEtapes';
+import {
+  IllustrationCartes,
+  IllustrationDon,
+  IllustrationInfos,
+} from '../../components/onboarding/Illustrations';
 import { setOnboardingVu } from '../../utils/preferences';
 
 /**
@@ -10,32 +20,46 @@ import { setOnboardingVu } from '../../utils/preferences';
  *    affiche celui d'indice `index`. Ajouter ou réordonner un écran = modifier
  *    ce tableau, sans toucher à la mise en page.
  */
-const ECRANS = [
+const ECRANS: { titre: string; texte: string; Illustration: () => React.JSX.Element; formes: Forme[] }[] = [
   {
     titre: 'Sauve des vies en donnant ton sang',
     texte: 'Un simple geste, un impact immense pour la Nouvelle-Calédonie.',
+    Illustration: IllustrationDon,
+    formes: [
+      { type: 'ellipse', couleur: 'rose', taille: 380, etirement: 1.1, rotation: -15, position: { top: 110, left: 10 } },
+      { type: 'rond', couleur: 'corail', taille: 44, position: { top: 130, right: 30 } },
+      { type: 'rond', couleur: 'corailFonce', taille: 60, position: { top: 430, left: 14 } },
+      { type: 'pilule', couleur: 'petrole', taille: 44, position: { top: 455, right: 50 } },
+    ],
   },
   {
     titre: 'Gagne des cartes et des badges',
-    texte:
-      'Réponds à des quiz, parraine tes proches, et reçois une carte-souvenir à chaque don.',
+    texte: 'Réponds à des quiz, parraine tes proches, et reçois une carte-souvenir à chaque don.',
+    Illustration: IllustrationCartes,
+    formes: [
+      { type: 'rond', couleur: 'corail', taille: 56, position: { top: 120, left: 14 } },
+      { type: 'rond', couleur: 'lime', taille: 32, position: { top: 450, right: 26 } },
+      { type: 'pilule', couleur: 'aubergine', taille: 44, position: { top: 470, left: 44 } },
+    ],
   },
   {
     titre: 'Reste au courant',
-    texte:
-      'Niveau des réserves par groupe sanguin, appels au don et collectes près de chez toi.',
+    texte: 'Niveau des réserves par groupe sanguin, appels au don et collectes près de chez toi.',
+    Illustration: IllustrationInfos,
+    formes: [
+      { type: 'ellipse', couleur: 'rose', taille: 380, position: { top: 110, left: 6 } },
+      { type: 'rond', couleur: 'corailFonce', taille: 52, position: { top: 100, left: 4 } },
+      { type: 'rond', couleur: 'lime', taille: 40, position: { top: 470, right: 24 } },
+    ],
   },
-] as const;
+];
 
 const DERNIER = ECRANS.length - 1;
-
-/** Cible tactile minimale (WCAG AA). */
-const CIBLE_MIN = 48;
 
 export default function Onboarding() {
   const router = useRouter();
   const [index, setIndex] = useState(0);
-  const ecran = ECRANS[index];
+  const { titre, texte, Illustration, formes } = ECRANS[index];
 
   // 📖 Les 3 écrans ne sont qu'un état local : il n'y a rien dans la pile de
   //    navigation. Sans ce code, le bouton Retour physique d'Android fermerait
@@ -65,157 +89,96 @@ export default function Onboarding() {
   };
 
   return (
-    <View style={styles.page}>
-      {/* En-tête : Retour · progression · Passer */}
-      <View style={styles.entete}>
-        {index > 0 ? (
-          <Pressable
-            onPress={() => setIndex(index - 1)}
-            style={styles.cible}
-            accessibilityRole="button"
-            accessibilityLabel="Écran précédent"
-          >
-            <Ionicons name="chevron-back" size={24} color={Theme.texte.principal} />
-          </Pressable>
-        ) : (
-          <View style={styles.cible} />
-        )}
+    <FondDecoratif formes={formes} anime>
+      {/* 📖 ScrollView : sur un petit téléphone (~640 dp) ou avec un texte agrandi,
+          l'écran 3 poussait « S'inscrire » et « Se connecter » hors de l'écran, sans
+          moyen de quitter l'onboarding. flexGrow : sur un grand écran, rien ne défile
+          et les boutons restent en bas. */}
+      <ScrollView
+        style={styles.defilement}
+        contentContainerStyle={styles.page}
+        showsVerticalScrollIndicator={false}
+      >
+        <IndicateurEtapes
+          etape={index + 1}
+          total={ECRANS.length}
+          onRetour={index > 0 ? () => setIndex(index - 1) : undefined}
+          libelleRetour="Écran précédent"
+          action={
+            index < DERNIER
+              ? {
+                  libelle: 'Passer',
+                  onPress: () => setIndex(DERNIER),
+                  indice: "Aller directement à l'inscription ou à la connexion",
+                }
+              : undefined
+          }
+        />
 
-        <Text
-          style={styles.progression}
-          accessibilityLabel={`Écran ${index + 1} sur ${ECRANS.length}`}
-        >
-          {index + 1} / {ECRANS.length}
-        </Text>
+        <Illustration />
 
-        {index < DERNIER ? (
-          <Pressable
-            onPress={() => setIndex(DERNIER)}
-            style={styles.cible}
-            accessibilityRole="button"
-            accessibilityHint="Aller directement à l'inscription ou à la connexion"
-          >
-            <Text style={styles.lienTexte}>Passer</Text>
-          </Pressable>
-        ) : (
-          <View style={styles.cible} />
-        )}
-      </View>
+        {/* 📖 accessibilityLiveRegion : quand l'écran change, TalkBack (Android) et les
+            lecteurs d'écran web annoncent le nouveau titre. VoiceOver (iOS) ne gère pas
+            cette propriété. */}
+        <View style={styles.textes} accessibilityLiveRegion="polite">
+          <Text style={[Typo.titre1, styles.titre]} accessibilityRole="header">
+            {titre}
+          </Text>
+          <Text style={[Typo.corps, styles.texte]}>{texte}</Text>
+        </View>
 
-      <View style={styles.contenu} accessibilityLiveRegion="polite">
-        <Text style={styles.titre} accessibilityRole="header">
-          {ecran.titre}
-        </Text>
-        <Text style={styles.texte}>{ecran.texte}</Text>
-      </View>
-
-      <View style={styles.pied}>
-        {index < DERNIER ? (
-          <Pressable
-            onPress={() => setIndex(index + 1)}
-            style={[styles.cible, styles.suivant]}
-            accessibilityRole="button"
-            accessibilityLabel="Écran suivant"
-          >
-            <Ionicons name="chevron-forward" size={24} color={Theme.action.primaireTexte} />
-          </Pressable>
-        ) : (
-          <>
+        <View style={styles.pied}>
+          {index < DERNIER ? (
             <Pressable
-              onPress={() => terminer('/auth/register')}
-              style={[styles.bouton, styles.boutonPlein]}
+              onPress={() => setIndex(index + 1)}
+              style={({ pressed }) => [styles.suivant, pressed && styles.suivantPresse]}
               accessibilityRole="button"
+              accessibilityLabel="Écran suivant"
             >
-              <Text style={styles.boutonPleinTexte}>{"S'inscrire"}</Text>
+              <Ionicons name="chevron-forward" size={26} color={Theme.action.primaireTexte} />
             </Pressable>
-            <Pressable
-              onPress={() => terminer('/auth/login')}
-              style={[styles.bouton, styles.boutonContour]}
-              accessibilityRole="button"
-            >
-              <Text style={styles.boutonContourTexte}>Se connecter</Text>
-            </Pressable>
-          </>
-        )}
-      </View>
-    </View>
+          ) : (
+            <>
+              <Bouton libelle="S'inscrire" onPress={() => terminer('/auth/register')} style={styles.boutonLarge} />
+              <Bouton
+                libelle="Se connecter"
+                variante="secondaire"
+                onPress={() => terminer('/auth/login')}
+                style={styles.boutonLarge}
+              />
+            </>
+          )}
+        </View>
+      </ScrollView>
+    </FondDecoratif>
   );
 }
 
+const SUIVANT = 56;
+
 const styles = StyleSheet.create({
+  defilement: { flex: 1 },
   page: {
-    flex: 1,
-    backgroundColor: Theme.fond.page,
-    paddingHorizontal: 24,
+    flexGrow: 1,
+    paddingHorizontal: Espace[6],
+    // 📖 Même marge haute que les autres écrans plein page (cf. scan.tsx).
     paddingTop: 54,
-    paddingBottom: 32,
+    paddingBottom: Espace[8],
+    gap: Espace[4],
   },
-  entete: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cible: {
-    minWidth: CIBLE_MIN,
-    minHeight: CIBLE_MIN,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progression: {
-    color: Theme.texte.secondaire,
-    fontSize: 14,
-  },
-  lienTexte: {
-    color: Theme.action.secondaireTexte,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  contenu: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    gap: 12,
-    paddingBottom: 32,
-  },
-  titre: {
-    color: Theme.texte.principal,
-    fontSize: 26,
-    fontWeight: '700',
-  },
-  texte: {
-    color: Theme.texte.secondaire,
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  pied: {
-    gap: 12,
-    alignItems: 'flex-end',
-  },
+  textes: { gap: Espace[3] },
+  titre: { color: Theme.texte.principal },
+  texte: { color: Theme.texte.secondaire },
+  // 📖 marginTop auto : collé en bas quand il y a de la place, juste sous le texte sinon.
+  pied: { gap: Espace[3], alignItems: 'flex-end', marginTop: 'auto', paddingTop: Espace[4] },
   suivant: {
+    width: SUIVANT,
+    height: SUIVANT,
+    borderRadius: Rayon.lg,
     backgroundColor: Theme.action.primaire,
-    borderRadius: 16,
-  },
-  bouton: {
-    alignSelf: 'stretch',
-    minHeight: CIBLE_MIN,
-    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  boutonPlein: {
-    backgroundColor: Theme.action.primaire,
-  },
-  boutonPleinTexte: {
-    color: Theme.action.primaireTexte,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  boutonContour: {
-    borderWidth: 1.5,
-    borderColor: Theme.action.secondaireBordure,
-  },
-  boutonContourTexte: {
-    color: Theme.action.secondaireTexte,
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  suivantPresse: { backgroundColor: Theme.action.primairePresse },
+  boutonLarge: { alignSelf: 'stretch' },
 });
