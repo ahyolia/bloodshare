@@ -61,8 +61,9 @@ describe('page Événement', () => {
       id: '1',
       titre: 'Collecte mobile',
       description: '',
-      date_heure: '2026-09-20T09:00:00Z',
-      horaire_fin: '2026-09-20T17:00:00Z',
+      // Comme l'API les renvoie : 9 h → 17 h à Nouméa (UTC+11), en UTC.
+      date_heure: '2026-09-19T22:00:00Z',
+      horaire_fin: '2026-09-20T06:00:00Z',
       lieu: 'Place des Cocotiers, Nouméa',
       image_url: '',
     };

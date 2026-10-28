@@ -39,16 +39,23 @@ const MOIS_ABREGES = ['JAN', 'FÉV', 'MAR', 'AVR', 'MAI', 'JUIN', 'JUIL', 'AOÛT
 
 const deuxChiffres = (n: number) => String(n).padStart(2, '0');
 
-// 📖 Les heures des événements s'affichent telles qu'enregistrées (lues en UTC), comme
-//    sur la page détail : « 09:00Z » s'affiche « 09h00 » quel que soit le fuseau.
+// 📖 Nouméa est à UTC+11 toute l'année (pas d'heure d'été).
+const DECALAGE_NOUMEA_MS = 11 * 3_600_000;
+
+// 📖 L'API renvoie le vrai instant en UTC : un événement saisi à 13 h 30 dans le BO
+//    (APP_TIMEZONE=Pacific/Noumea) arrive en « 02:30Z ». Les dates d'événement sont
+//    donc décalées à l'heure de Nouméa, puis lues avec getUTC* : même affichage quel que
+//    soit le fuseau du téléphone ou du navigateur. Avant, « 02:30Z » s'affichait « 02h30 ».
+const enHeureDeNoumea = (iso: string) => new Date(new Date(iso).getTime() + DECALAGE_NOUMEA_MS);
+
 const heure = (iso: string) => {
-  const date = new Date(iso);
+  const date = enHeureDeNoumea(iso);
   return `${deuxChiffres(date.getUTCHours())}h${deuxChiffres(date.getUTCMinutes())}`;
 };
 
 /** Jour et mois de la pastille calendrier : { jour: '08', mois: 'OCT', moisLong: 'octobre' }. */
 export function dateEvenement(iso: string) {
-  const date = new Date(iso);
+  const date = enHeureDeNoumea(iso);
   return {
     jour: deuxChiffres(date.getUTCDate()),
     mois: MOIS_ABREGES[date.getUTCMonth()] ?? '',
@@ -63,7 +70,7 @@ const JOURS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'S
  * moteur JavaScript) : le même texte sur web, en natif et dans Jest.
  */
 export function dateEvenementLongue(iso: string): string {
-  const date = new Date(iso);
+  const date = enHeureDeNoumea(iso);
   if (Number.isNaN(date.getTime())) return iso;
 
   const jour = date.getUTCDate();
@@ -90,14 +97,11 @@ export const horaireEvenement = (debut: string, fin?: string | null): string =>
  * « Aujourd'hui », « Demain », « Dans 3 jours »… pour un événement de la semaine à venir,
  * `null` au-delà. Compté en jours du calendrier, pas en tranches de 24 h.
  *
- * 📖 Le jour de l'événement est lu en UTC, celui d'aujourd'hui en heure locale : c'est
- *    voulu. Les dates d'événement sont saisies en heure locale de Nouméa mais stockées
- *    avec un « Z » (« 09:00Z » veut dire 9 h à Nouméa), et s'affichent partout avec
- *    getUTC* (voir `heure`). Le jour UTC est donc le jour réel de l'événement, à comparer
- *    au jour local du téléphone.
+ * 📖 Le jour de l'événement est celui de Nouméa (voir `enHeureDeNoumea`), celui
+ *    d'aujourd'hui l'heure locale du téléphone.
  */
 export function etiquetteProchainement(iso: string, maintenant: Date = new Date()): string | null {
-  const date = new Date(iso);
+  const date = enHeureDeNoumea(iso);
   const jourEvenement = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
   const aujourdHui = Date.UTC(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate());
   const jours = Math.round((jourEvenement - aujourdHui) / 86_400_000);
