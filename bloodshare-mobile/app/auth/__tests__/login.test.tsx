@@ -3,6 +3,11 @@ import LoginScreen from '../login';
 import { login } from '../../../services/auth.service';
 import { saveToken, saveUser } from '../../../stores/auth.store';
 
+// 📖 Le premier test rend l'écran à froid : il a dépassé les 5 s par défaut sur la machine
+//    de CI alors qu'il passe en local. Délai élargi pour ce fichier seulement, comme
+//    DialogueProvider.test.tsx.
+jest.setTimeout(15000);
+
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
 let mockParams: { session?: string } = {};
