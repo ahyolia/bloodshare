@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             VisuelsSeeder::class,
             QrCodeSeeder::class,
             QuestionEligibiliteSeeder::class,
+            ActualitesSeeder::class,
         ]);
 
         // Compte de test pour l'app mobile, en local uniquement (jamais en production).
