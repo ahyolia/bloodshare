@@ -66,9 +66,9 @@ class EvenementsSeeder extends Seeder
                 'titre' => 'Forum des projets tutorés 2026',
                 'description' => "Viens découvrir Aïma, la vidéo 360° « Ça dit quoi le sang ? » et le jeu de réalité virtuelle sur le don du sang, présentés par le groupe BloodShare. Scanne le QR Code du stand pour gagner la carte du forum !",
                 'lieu' => "IUT, Université de la Nouvelle-Calédonie",
-                // Heures de Nouméa (APP_TIMEZONE), larges pour couvrir toute la journée.
-                'date_heure' => '2026-10-29 07:00:00',
-                'horaire_fin' => '2026-10-29 22:00:00',
+                // Heures de Nouméa (APP_TIMEZONE). Après horaire_fin, le scan ne donne plus la carte.
+                'date_heure' => '2026-10-29 13:30:00',
+                'horaire_fin' => '2026-10-29 17:30:00',
                 'carte' => VisuelsSeeder::TITRE_CARTE_FORUM,
             ],
         ];
