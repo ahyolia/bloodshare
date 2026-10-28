@@ -1,84 +1,36 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Animated,
-  FlatList,
-  Image,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Linking, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { BlocStocks } from '../../components/accueil/BlocStocks';
+import { BanniereAccueil } from '../../components/accueil/BanniereAccueil';
+import { BlocDefi } from '../../components/accueil/BlocDefi';
+import { CarrouselActualites } from '../../components/accueil/CarrouselActualites';
+import { LigneEvenement } from '../../components/accueil/LigneEvenement';
 import { EnTete } from '../../components/EnTete';
-import { Colors } from '../../constants/colors';
+import { Bouton } from '../../components/ui/Bouton';
+import { Chargement } from '../../components/ui/Chargement';
+import { EtatErreur } from '../../components/ui/EtatErreur';
+import { EtatVide } from '../../components/ui/EtatVide';
+import { entree } from '../../constants/animations';
+import { Theme } from '../../constants/colors';
+import { Espace, Rayon } from '../../constants/spacing';
+import { Typo } from '../../constants/typography';
 import { useNotificationsNonLues } from '../../hooks/useNotificationsNonLues';
 import { useRelanceOnglet } from '../../hooks/useRelanceOnglet';
 import { Actualite, getActualites } from '../../services/actualites.service';
-import { Banniere, getBanniere, TypeBanniere } from '../../services/bannieres.service';
+import { Banniere, getBanniere } from '../../services/bannieres.service';
 import { DefiActuel, getDefiActuel } from '../../services/defis.service';
 import { Evenement, getEvenements } from '../../services/evenements.service';
 import { getProfil, Profil } from '../../services/profil.service';
-import {
-  getStockSang,
-  GROUPES_SANGUINS,
-  NiveauStock,
-  StockGroupe,
-} from '../../services/stockSang.service';
+import { getStockSang, StockGroupe } from '../../services/stockSang.service';
 import { initialePseudo } from '../../utils/profil';
 
-// 📖 Table niveau de stock → couleur (Colors.status) + libellé lisible affiché
-//    sous la goutte. `null` (groupe sans donnée) est géré à part, en gris.
-const NIVEAU_LABEL: Record<NiveauStock, string> = {
-  critique: 'Critique',
-  bas: 'Bas',
-  correct: 'Correct',
-  bon: 'Bon',
-};
+const RESERVATION_URL = 'https://www.dondusang.nc/reservation-en-ligne/';
 
-const couleurNiveau = (niveau: NiveauStock | null): string =>
-  niveau ? Colors.status[niveau] : Colors.fondGris;
-
-// 📖 Style de la carte bannière selon le type. Toutes les valeurs viennent du
-//    design system (aucune couleur en dur).
-const BANNIERE_STYLE: Record<TypeBanniere, { fond: string; bordure: string; icone: string }> = {
-  info: { fond: Colors.fondBleu, bordure: Colors.petrole[500], icone: 'ℹ️' },
-  alerte: { fond: Colors.fondOrange, bordure: Colors.status.bas, icone: '⚠️' },
-  urgence: { fond: Colors.fondRose, bordure: Colors.corail[600], icone: '🚨' },
-};
-
-// 📖 Nombre d'items visibles « à la fois » dans le rail des stocks → sert à
-//    calculer le nombre de points de pagination (progressive disclosure).
-const STOCKS_VISIBLES = 5;
-
-// 📖 Dimensions du carousel d'actualités. Le pas de snap = largeur carte + marge.
-//    Constantes (pas des valeurs magiques éparpillées) : réutilisées par le
-//    style, par snapToInterval ET par getItemLayout → une seule source de vérité.
-const ACTU_CARD_WIDTH = 260;
-const ACTU_CARD_MARGIN = 12;
-const ACTU_SNAP = ACTU_CARD_WIDTH + ACTU_CARD_MARGIN; // 272
-
-// 📖 Nombre d'événements affichés par défaut (les suivants derrière « Voir tout »).
+// 📖 Nombre d'événements affichés par défaut (les suivants derrière « Voir tous »).
 const EVENEMENTS_APERCU = 3;
-
-// 📖 Mois abrégés FR figés. Explicite plutôt que toLocaleDateString({month:'short'})
-//    dont les abréviations varient selon l'OS / la locale installée.
-const MOIS_ABREGES = [
-  'JAN', 'FÉV', 'MAR', 'AVR', 'MAI', 'JUIN',
-  'JUIL', 'AOÛ', 'SEP', 'OCT', 'NOV', 'DÉC',
-];
-
-// 📖 "2026-07-02T09:00:00Z" → "09h00". timeZone UTC : l'heure affichée = l'heure
-//    stockée, sans décalage selon le fuseau de l'appareil.
-const formatHeure = (iso: string) =>
-  new Date(iso)
-    .toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
-    .replace(':', 'h');
 
 export default function AccueilScreen() {
   // Appui sur l'onglet : retour en haut de la page et animations d'entrée rejouées.
@@ -89,31 +41,20 @@ export default function AccueilScreen() {
   // 📖 Un state par section : chaque appel réseau retombe indépendamment, on ne
   //    veut jamais qu'un échec masque les sections qui, elles, ont répondu.
   const [user, setUser] = useState<Profil | null>(null);
-
   const [banniere, setBanniere] = useState<Banniere | null>(null);
-  const [banniereLoading, setBanniereLoading] = useState(true);
-  const [banniereError, setBanniereError] = useState(false);
-
-  const [stocks, setStocks] = useState<StockGroupe[]>([]);
-  const [stocksLoading, setStocksLoading] = useState(true);
-  const [stocksError, setStocksError] = useState(false);
-
+  // `null` : niveaux impossibles à charger (le bandeau le dit, sans disparaître).
+  const [stocks, setStocks] = useState<StockGroupe[] | null>(null);
   const [defi, setDefi] = useState<DefiActuel | null>(null);
-  const [defiLoading, setDefiLoading] = useState(true);
-  const [defiError, setDefiError] = useState(false);
-
   const [actualites, setActualites] = useState<Actualite[]>([]);
-  const [actualitesLoading, setActualitesLoading] = useState(true);
-  const [actualitesError, setActualitesError] = useState(false);
-
   const [evenements, setEvenements] = useState<Evenement[]>([]);
-  const [evenementsLoading, setEvenementsLoading] = useState(true);
 
+  // 📖 Un seul indicateur : les six appels sont attendus ensemble (allSettled), les
+  //    sections arrivent donc toutes en même temps, en cascade.
+  const [chargement, setChargement] = useState(true);
+  // Rien n'a jamais pu être chargé : on propose de réessayer plutôt qu'une page vide.
+  const [erreurTotale, setErreurTotale] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [stockPage, setStockPage] = useState(0);
-  // 📖 Index de la carte d'actualité centrée → pilote les dots de pagination.
-  const [actuIndex, setActuIndex] = useState(0);
-  // 📖 Bascule « 3 événements » ↔ « tous » (bouton « Voir tout »).
+  // 📖 Bascule « 3 événements » ↔ « tous » (bouton « Voir tous »).
   const [tousEvenements, setTousEvenements] = useState(false);
 
   // 📖 Évite un setState après démontage (l'écran peut être quitté avant la fin
@@ -128,8 +69,7 @@ export default function AccueilScreen() {
 
   // 📖 Sections dont au moins un chargement a réussi. Si un rafraîchissement échoue
   //    ensuite (réseau coupé), on garde leurs dernières données au lieu de les remplacer
-  //    par une erreur ou un état vide ; l'état d'erreur ne sert qu'aux sections qui
-  //    n'ont jamais rien chargé.
+  //    par une erreur ou un état vide.
   const dejaCharge = useRef({
     user: false,
     banniere: false,
@@ -144,16 +84,9 @@ export default function AccueilScreen() {
 
   // 📖 Chaîne de promesses (pas async/await) : les setState vivent tous dans le
   //    callback `.then`, jamais dans le corps synchrone d'un effet → pas de
-  //    « cascading renders ». Les flags *Loading sont déjà à true au montage et
-  //    ne sont pas remis à true lors d'un pull-to-refresh (contenu conservé).
+  //    « cascading renders ».
   const chargerDonnees = useCallback(() => {
-    // 📖 allSettled : on lance les 6 appels en parallèle et on attend que TOUS
-    //    soient retombés, qu'ils aient réussi ou échoué. Contrairement à
-    //    Promise.all, un rejet n'annule pas les autres résultats.
-    //    Les actualités/événements rejoignent ce bloc plutôt qu'un useEffect
-    //    séparé → le pull-to-refresh (qui rappelle chargerDonnees) les recharge
-    //    sans code en plus, et la garde monte.current / la gestion d'erreur
-    //    restent mutualisées.
+    // 📖 allSettled : un rejet n'annule pas les autres résultats (contrairement à Promise.all).
     return Promise.allSettled([
       getProfil(),
       getBanniere(),
@@ -166,68 +99,45 @@ export default function AccueilScreen() {
 
       const charge = dejaCharge.current;
       const donneesAffichees = Object.values(charge).some(Boolean);
-      const echec = [profilR, banniereR, stockR, defiR, actusR, eventsR].some(
-        (r) => r.status === 'rejected'
-      );
+      const resultats = [profilR, banniereR, stockR, defiR, actusR, eventsR];
+      const echec = resultats.some((r) => r.status === 'rejected');
 
-      // Header : pas de message d'erreur dédié, un simple repli visuel suffit.
+      // En-tête : pas de message d'erreur dédié, un simple repli visuel suffit.
       if (profilR.status === 'fulfilled') {
         setUser(profilR.value);
         charge.user = true;
-      } else if (!charge.user) {
-        setUser(null);
       }
 
+      // 📖 Bannière, défi, événements : contenus non critiques, simplement masqués en erreur.
       if (banniereR.status === 'fulfilled') {
         setBanniere(banniereR.value);
-        setBanniereError(false);
         charge.banniere = true;
-      } else if (!charge.banniere) {
-        setBanniereError(true);
       }
-      setBanniereLoading(false);
 
       if (stockR.status === 'fulfilled') {
         setStocks(stockR.value);
-        setStocksError(false);
         charge.stocks = true;
-      } else if (!charge.stocks) {
-        setStocksError(true);
       }
-      setStocksLoading(false);
 
       if (defiR.status === 'fulfilled') {
         setDefi(defiR.value);
-        setDefiError(false);
         charge.defi = true;
-      } else if (!charge.defi) {
-        setDefiError(true);
       }
-      setDefiLoading(false);
 
-      // 📖 Actualités : en erreur on affiche l'état vide (rubrique censée toujours
-      //    avoir du contenu → on rassure plutôt que de masquer).
+      // 📖 Actualités : en erreur, l'état vide (rubrique censée toujours avoir du contenu).
       if (actusR.status === 'fulfilled') {
         setActualites(actusR.value);
-        setActualitesError(false);
         charge.actualites = true;
-      } else if (!charge.actualites) {
-        setActualites([]);
-        setActualitesError(true);
       }
-      setActualitesLoading(false);
 
-      // 📖 Événements : pas de state d'erreur. Échec = liste vide = section
-      //    entièrement masquée (contenu épisodique, non bloquant).
       if (eventsR.status === 'fulfilled') {
         setEvenements(eventsR.value);
         charge.evenements = true;
-      } else if (!charge.evenements) {
-        setEvenements([]);
       }
-      setEvenementsLoading(false);
 
+      setErreurTotale(resultats.every((r) => r.status === 'rejected') && !donneesAffichees);
       setHorsLigne(echec && donneesAffichees);
+      setChargement(false);
     });
   }, []);
 
@@ -241,27 +151,40 @@ export default function AccueilScreen() {
     if (monte.current) setRefreshing(false);
   }, [chargerDonnees]);
 
-  const onScrollStocks = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, layoutMeasurement } = e.nativeEvent;
-    if (layoutMeasurement.width > 0) {
-      setStockPage(Math.round(contentOffset.x / layoutMeasurement.width));
-    }
-  };
+  const ouvrirActualite = (item: Actualite, teinte: string) =>
+    router.push({
+      pathname: '/detail/actualite/[id]',
+      params: {
+        id: String(item.id),
+        teinte,
+        titre: item.titre,
+        chapo: item.chapo ?? '',
+        contenu: item.contenu ?? '',
+        published_at: item.published_at,
+        image_url: item.image_url ?? '',
+      },
+    });
 
-  // 📖 Index de la carte centrée = décalage horizontal / pas de snap, arrondi.
-  //    On borne pour ne jamais dépasser le dernier dot (dernière carte + padding).
-  const onScrollActus = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const index = Math.round(e.nativeEvent.contentOffset.x / ACTU_SNAP);
-    setActuIndex(Math.max(0, Math.min(index, actualites.length - 1)));
-  };
+  const ouvrirEvenement = (evenement: Evenement) =>
+    router.push({
+      pathname: '/detail/evenement/[id]',
+      params: {
+        id: String(evenement.id),
+        titre: evenement.titre,
+        description: evenement.description ?? '',
+        date_heure: evenement.date_heure,
+        horaire_fin: evenement.horaire_fin ?? '',
+        lieu: evenement.lieu,
+        image_url: evenement.image_url ?? '',
+      },
+    });
 
-  const nbDotsStocks = Math.ceil(GROUPES_SANGUINS.length / STOCKS_VISIBLES);
-
-  // 📖 Événements déjà triés par date croissante côté service. On coupe à 3 sauf
-  //    si l'utilisateur a demandé « Voir tout ».
-  const evenementsAffiches = tousEvenements
-    ? evenements
-    : evenements.slice(0, EVENEMENTS_APERCU);
+  // 📖 Événements déjà triés par date croissante côté service.
+  const evenementsAffiches = tousEvenements ? evenements : evenements.slice(0, EVENEMENTS_APERCU);
+  const avecBanniere = !!banniere?.active;
+  // Rang de chaque section dans la cascade d'arrivée : une section absente ne laisse pas de trou.
+  const rangStocks = avecBanniere ? 1 : 0;
+  const rangActualites = rangStocks + (defi ? 2 : 1);
 
   return (
     <View style={styles.screen}>
@@ -270,11 +193,7 @@ export default function AccueilScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={Colors.corail[600]}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.marque.principal} />
         }
       >
         {/* 📖 Profil non chargé → repli « ? » / 0 point, jamais de spinner :
@@ -290,704 +209,140 @@ export default function AccueilScreen() {
           onPressNotifications={() => router.push('/notifications')}
         />
 
-        {horsLigne && (
-          <Text style={styles.horsLigne}>
-            Données non actualisées — vérifie ta connexion.
-          </Text>
-        )}
-
-        {horsLigne && (
-          <Text style={styles.horsLigne}>
-            Données non actualisées — vérifie ta connexion.
-          </Text>
-        )}
-
-        {/* SECTION 1 — BANNIÈRE ALERTE PÉNURIE */}
-        {banniereLoading ? (
-          <Skeleton style={styles.skeletonBanniere} />
-        ) : (
-          // 📖 En erreur, la bannière (contenu non critique) est simplement omise :
-          //    le reste de l'accueil doit rester lisible.
-          !banniereError && banniere?.active && <BanniereCard banniere={banniere} />
-        )}
-
-        {/* SECTION 2 — STOCKS DE SANG */}
-        <Text style={styles.sectionTitle}>Stocks de sang</Text>
-        {stocksLoading ? (
-          <View style={styles.stocksSkeletonRow}>
-            {Array.from({ length: STOCKS_VISIBLES }).map((_, i) => (
-              <Skeleton key={i} style={styles.skeletonGoutte} />
-            ))}
-            <ActivityIndicator color={Colors.corail[600]} style={styles.stocksSpinner} />
+        {(chargement || erreurTotale) && (
+          <View style={styles.etat}>
+            {chargement && <Chargement message="On prépare ton accueil…" />}
+            {!chargement && erreurTotale && (
+              <EtatErreur
+                titre="L’accueil fait une pause"
+                message="Vérifie ton réseau puis réessaie."
+                onReessayer={() => {
+                  setErreurTotale(false);
+                  setChargement(true);
+                  chargerDonnees();
+                }}
+              />
+            )}
           </View>
-        ) : stocksError ? (
-          <Text style={styles.sectionError}>Impossible de charger les stocks.</Text>
-        ) : (
+        )}
+
+        {!chargement && !erreurTotale && (
           <>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              onScroll={onScrollStocks}
-              scrollEventThrottle={16}
-              contentContainerStyle={styles.stocksRail}
-            >
-              {GROUPES_SANGUINS.map((groupe) => {
-                const item = stocks.find((s) => s.groupe === groupe);
-                const niveau = item?.niveau ?? null;
-                const couleur = couleurNiveau(niveau);
-                return (
-                  <View key={groupe} style={styles.stockItem}>
-                    <View style={styles.goutte}>
-                      <View style={[styles.goutteFond, { backgroundColor: couleur }]} />
-                      <Text style={[styles.goutteLabel, { color: couleur }]}>
-                        {niveau ? groupe : '—'}
-                      </Text>
-                    </View>
-                    <Text style={styles.stockNom}>
-                      {niveau ? NIVEAU_LABEL[niveau] : 'Non communiqué'}
-                    </Text>
-                  </View>
-                );
-              })}
-            </ScrollView>
-            {nbDotsStocks > 1 && (
-              <View style={styles.dots}>
-                {Array.from({ length: nbDotsStocks }).map((_, i) => (
-                  <View
-                    key={i}
-                    style={[styles.dot, i === Math.min(stockPage, nbDotsStocks - 1) && styles.dotActif]}
-                  />
-                ))}
+            {horsLigne && (
+              <View style={styles.horsLigne} accessibilityLiveRegion="polite">
+                <Ionicons name="cloud-offline-outline" size={16} color={Theme.texte.secondaire} />
+                <Text style={[Typo.legende, styles.secondaire]}>Données non actualisées, vérifie ta connexion.</Text>
               </View>
             )}
-          </>
-        )}
 
-        {/* SECTION 3 — DÉFI DU MOIS */}
-        {defiLoading ? (
-          <Skeleton style={styles.skeletonDefi} />
-        ) : (
-          // 📖 Masquée si aucun défi (defi === null) ou si l'appel a échoué :
-          //    section d'animation, non bloquante.
-          !defiError && defi && <DefiCard defi={defi} />
-        )}
-
-        {/* SECTION 4 — ACTUALITÉS */}
-        <Text style={styles.sectionTitle}>Actualités</Text>
-        {actualitesLoading ? (
-          <ActualitesSkeleton />
-        ) : actualites.length === 0 ? (
-          <View style={styles.actuVide}>
-            <Text style={styles.actuVideEmoji}>📰</Text>
-            <Text style={styles.actuVideTitre}>Aucune actualité pour le moment</Text>
-            <Text style={styles.actuVideTexte}>
-              {"Reviens bientôt pour les dernières nouvelles de l'association ADSB-NC."}
-            </Text>
-          </View>
-        ) : (
-          <>
-            <FlatList
-              data={actualites}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              // 📖 Clé stable = identité métier. Sans elle, FlatList retombe sur
-              //    l'index → mauvaise réconciliation quand la liste change au refresh.
-              keyExtractor={(item) => String(item.id)}
-              // 📖 Toutes les cartes ont la même largeur fixe (ACTU_SNAP) → on peut
-              //    donner la géométrie sans mesure : rendu initial instantané,
-              //    scrollToIndex fiable, zéro jank.
-              getItemLayout={(_, index) => ({
-                length: ACTU_SNAP,
-                offset: ACTU_SNAP * index,
-                index,
-              })}
-              snapToInterval={ACTU_SNAP}
-              snapToAlignment="start"
-              decelerationRate="fast"
-              onScroll={onScrollActus}
-              scrollEventThrottle={16}
-              contentContainerStyle={styles.actuRail}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.actuCard}
-                  activeOpacity={0.9}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/detail/actualite/[id]',
-                      params: {
-                        id: String(item.id),
-                        titre: item.titre,
-                        chapo: item.chapo ?? '',
-                        contenu: item.contenu ?? '',
-                        published_at: item.published_at,
-                        image_url: item.image_url ?? '',
-                      },
-                    })
-                  }
-                >
-                  {item.image_url ? (
-                    <Image source={{ uri: item.image_url }} style={styles.actuImage} />
-                  ) : (
-                    <View style={styles.actuImagePlaceholder}>
-                      <Text style={styles.actuImagePlaceholderEmoji}>📰</Text>
-                    </View>
-                  )}
-                  {/* 📖 Voile aubergine translucide en bas de l'image : contraste
-                      si un jour un titre est incrusté, cohérence visuelle. */}
-                  <View style={styles.actuOverlay} />
-                  <View style={styles.actuTexte}>
-                    <Text style={styles.actuTitre} numberOfLines={2}>
-                      {item.titre}
-                    </Text>
-                    <Text style={styles.actuDate}>
-                      {new Date(item.published_at).toLocaleDateString('fr-FR', {
-                        day: 'numeric',
-                        month: 'long',
-                        timeZone: 'UTC',
-                      })}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
-            {actualites.length > 1 && (
-              <View style={styles.dots}>
-                {actualites.map((actu, i) => (
-                  <View
-                    key={actu.id}
-                    style={[styles.dot, i === actuIndex && styles.dotActif]}
-                  />
-                ))}
-              </View>
+            {/* 📖 Les sections arrivent en cascade, comme sur les autres pages principales. */}
+            {avecBanniere && banniere && (
+              <Animated.View entering={entree(0)}>
+                <BanniereAccueil banniere={banniere} />
+              </Animated.View>
             )}
-          </>
-        )}
 
-        {/* SECTION 5 — ÉVÉNEMENTS À VENIR */}
-        {/* 📖 Rien du tout si aucun événement : c'est l'état NORMAL la plupart du
-            temps (contenu épisodique) → pas d'état vide, qui serait du bruit. */}
-        {!evenementsLoading && evenements.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>Événements à venir</Text>
-            {evenementsAffiches.map((evenement) => (
-              <TouchableOpacity
-                key={evenement.id}
-                style={styles.eventCard}
-                activeOpacity={0.85}
-                onPress={() =>
-                  router.push({
-                    pathname: '/detail/evenement/[id]',
-                    params: {
-                      id: String(evenement.id),
-                      titre: evenement.titre,
-                      description: evenement.description ?? '',
-                      date_heure: evenement.date_heure,
-                      horaire_fin: evenement.horaire_fin ?? '',
-                      lieu: evenement.lieu,
-                      image_url: evenement.image_url ?? '',
-                    },
-                  })
-                }
-              >
-                <View style={styles.eventRow}>
-                  <View style={styles.eventDateBloc}>
-                    <Text style={styles.eventJour}>
-                      {new Date(evenement.date_heure).toLocaleDateString('fr-FR', {
-                        day: '2-digit',
-                        timeZone: 'UTC',
-                      })}
-                    </Text>
-                    <Text style={styles.eventMois}>
-                      {MOIS_ABREGES[new Date(evenement.date_heure).getUTCMonth()]}
-                    </Text>
-                  </View>
-                  <View style={styles.eventContenu}>
-                    <Text style={styles.eventTitre} numberOfLines={1}>
-                      {evenement.titre}
-                    </Text>
-                    <View style={styles.eventLigne}>
-                      <Text style={styles.eventIcone}>📍</Text>
-                      <Text style={styles.eventInfo} numberOfLines={1}>
-                        {evenement.lieu}
-                      </Text>
-                    </View>
-                    <View style={styles.eventLigne}>
-                      <Text style={styles.eventIcone}>🕐</Text>
-                      <Text style={styles.eventInfoPetit}>
-                        {evenement.horaire_fin
-                          ? `${formatHeure(evenement.date_heure)} → ${formatHeure(evenement.horaire_fin)}`
-                          : formatHeure(evenement.date_heure)}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={styles.eventChevron}>›</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-            {evenements.length > EVENEMENTS_APERCU && (
-              <TouchableOpacity
-                onPress={() => setTousEvenements((v) => !v)}
-                style={styles.eventVoirTout}
-              >
-                <Text style={styles.eventVoirToutText}>
-                  {tousEvenements
-                    ? 'Réduire'
-                    : `Voir tous les événements (${evenements.length}) →`}
+            <Animated.View entering={entree(rangStocks)}>
+              <BlocStocks stocks={stocks} onPrendreRendezVous={() => Linking.openURL(RESERVATION_URL)} />
+            </Animated.View>
+
+            {/* 📖 Masqué s'il n'y a aucun défi en cours : section d'animation, non bloquante. */}
+            {defi && (
+              <Animated.View entering={entree(rangStocks + 1)} style={styles.section}>
+                <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+                  Défi du mois
                 </Text>
-              </TouchableOpacity>
+                <BlocDefi defi={defi} />
+              </Animated.View>
+            )}
+
+            <Animated.View entering={entree(rangActualites)} style={styles.section}>
+              <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+                Actualités
+              </Text>
+              {actualites.length > 0 ? (
+                <CarrouselActualites actualites={actualites} onOuvrir={ouvrirActualite} marge={MARGE} />
+              ) : (
+                <EtatVide
+                  titre="Pas encore d’actualité"
+                  message="Reviens bientôt pour les dernières nouvelles de l’association ADSB-NC."
+                />
+              )}
+            </Animated.View>
+
+            {/* 📖 Rien du tout si aucun événement : c'est l'état NORMAL la plupart du
+                temps (contenu épisodique) → pas d'état vide, qui serait du bruit. */}
+            {evenements.length > 0 && (
+              <Animated.View entering={entree(rangActualites + 1)} style={styles.section}>
+                <Text style={[Typo.titre3, styles.sectionTitre]} accessibilityRole="header">
+                  Événements à venir
+                </Text>
+                {evenementsAffiches.map((evenement, i) => (
+                  <Animated.View
+                    key={evenement.id}
+                    // Les événements dévoilés par « Voir tous » glissent à leur tour.
+                    entering={i >= EVENEMENTS_APERCU ? FadeInDown.delay(Math.min(i - EVENEMENTS_APERCU, 5) * 60).duration(250) : undefined}
+                  >
+                    <LigneEvenement evenement={evenement} onPress={() => ouvrirEvenement(evenement)} />
+                  </Animated.View>
+                ))}
+                {evenements.length > EVENEMENTS_APERCU && (
+                  <Bouton
+                    libelle={tousEvenements ? 'Réduire' : `Voir tous les événements (${evenements.length})`}
+                    variante="discret"
+                    icone={tousEvenements ? 'chevron-up' : 'chevron-down'}
+                    onPress={() => setTousEvenements((v) => !v)}
+                  />
+                )}
+              </Animated.View>
             )}
           </>
         )}
-
       </ScrollView>
     </View>
   );
 }
 
-function BanniereCard({ banniere }: { banniere: Banniere }) {
-  const style = BANNIERE_STYLE[banniere.type];
-  return (
-    <View
-      style={[styles.banniere, { backgroundColor: style.fond, borderColor: style.bordure }]}
-    >
-      <Text style={styles.banniereIcone}>{style.icone}</Text>
-      <View style={styles.banniereContenu}>
-        <Text style={styles.banniereTitre}>{banniere.titre}</Text>
-        <Text style={styles.banniereMessage}>{banniere.message}</Text>
-      </View>
-    </View>
-  );
-}
-
-function DefiCard({ defi }: { defi: DefiActuel }) {
-  // 📖 Bornée à 100 % : la progression réelle peut dépasser l'objectif.
-  const pct = Math.min((defi.progression_actuelle / defi.objectif_chiffre) * 100, 100);
-  return (
-    <>
-      <Text style={styles.sectionTitle}>Défi du mois</Text>
-      <View style={styles.defiCard}>
-        <View style={styles.defiBlob} />
-        <Text style={styles.defiTitre}>{defi.titre}</Text>
-        <Text style={styles.defiProgressionLabel}>Progression</Text>
-        <View style={styles.defiBarreRow}>
-          <View style={styles.defiTrack}>
-            <View style={[styles.defiFill, { width: `${pct}%` }]} />
-          </View>
-          <Text style={styles.defiValeur}>
-            {defi.progression_actuelle}/{defi.objectif_chiffre}
-          </Text>
-        </View>
-      </View>
-    </>
-  );
-}
-
-// 📖 Skeleton : bloc gris dont l'opacité oscille en boucle. Occupe la place
-//    exacte du futur contenu → pas de saut de layout, attente perçue plus courte
-//    qu'avec un spinner plein écran.
-function Skeleton({ style }: { style?: ViewStyle | ViewStyle[] }) {
-  // 📖 useState avec initialiseur paresseux : l'Animated.Value est créée une
-  //    seule fois et n'est jamais lue pendant le rendu (contrairement à un ref).
-  const [opacity] = useState(() => new Animated.Value(0.5));
-  useEffect(() => {
-    const boucle = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, { toValue: 1, duration: 600, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 0.5, duration: 600, useNativeDriver: true }),
-      ])
-    );
-    boucle.start();
-    return () => boucle.stop();
-  }, [opacity]);
-  return <Animated.View style={[styles.skeleton, style, { opacity }]} />;
-}
-
-// 📖 Skeleton du carousel : 3 blocs à la forme exacte d'une carte d'actualité,
-//    dont l'opacité pulse en boucle. Meilleur qu'un spinner ici : la forme est
-//    prévisible → l'attente est « meublée » et il n'y a aucun saut de layout
-//    quand les vraies cartes arrivent.
-function ActualitesSkeleton() {
-  const [opacity] = useState(() => new Animated.Value(1));
-  useEffect(() => {
-    // 📖 sequence = fondu descendant puis remontant ; loop = à l'infini →
-    //    pulsation « respiration ». useNativeDriver : tourne hors thread JS.
-    const boucle = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, { toValue: 0.4, duration: 800, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 1, duration: 800, useNativeDriver: true }),
-      ])
-    );
-    boucle.start();
-    return () => boucle.stop();
-  }, [opacity]);
-
-  return (
-    <View style={styles.actuRail}>
-      {[0, 1, 2].map((i) => (
-        <Animated.View key={i} style={[styles.actuSkeleton, { opacity }]} />
-      ))}
-    </View>
-  );
-}
+const MARGE = Espace[4];
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
+    backgroundColor: Theme.fond.page,
   },
   content: {
-    paddingHorizontal: 16,
+    // flexGrow : le contenu occupe au moins tout l'écran, pour pouvoir centrer un état.
+    flexGrow: 1,
+    padding: MARGE,
     paddingTop: 54,
-    // 📖 La tab bar flottante (bottom 15, hauteur 72) recouvrirait la fin du
-    //    contenu avec seulement 32 : on réserve la place.
-    paddingBottom: 120,
+    // 📖 La tab bar flottante recouvrirait la fin du contenu : on réserve la place.
+    paddingBottom: 126,
+    gap: Espace[6],
   },
-
-  // SECTIONS
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    marginBottom: 12,
+  etat: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  section: {
+    gap: Espace[3],
+  },
+  sectionTitre: {
+    color: Theme.texte.principal,
+  },
+  secondaire: {
+    color: Theme.texte.secondaire,
+    flexShrink: 1,
   },
   horsLigne: {
-    color: Colors.grisMoyen,
-    fontSize: 12,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  sectionError: {
-    color: Colors.grisMoyen,
-    fontSize: 13,
-    marginBottom: 16,
-  },
-
-  // BANNIÈRE
-  banniere: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 16,
-  },
-  banniereIcone: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  banniereContenu: {
-    flex: 1,
-  },
-  banniereTitre: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  banniereMessage: {
-    fontSize: 13,
-    color: Colors.grisMoyen,
-    marginTop: 4,
-  },
-
-  // STOCKS
-  stocksRail: {
-    paddingRight: 16,
-    paddingBottom: 4,
-  },
-  stockItem: {
-    alignItems: 'center',
-    marginRight: 12,
-    width: 56,
-  },
-  goutte: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  // 📖 Fond coloré à 15 % posé DERRIÈRE le label : `opacity` sur la vue
-  //    n'affecte que ce calque, pas le texte (contrairement à opacity sur le
-  //    parent qui atténuerait aussi le label).
-  goutteFond: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    opacity: 0.15,
-  },
-  goutteLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  stockNom: {
-    fontSize: 11,
-    color: Colors.grisMoyen,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  stocksSkeletonRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  stocksSpinner: {
-    marginLeft: 4,
-  },
-  dots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.fondGris,
-    marginHorizontal: 3,
-  },
-  dotActif: {
-    backgroundColor: Colors.corail[600],
-  },
-
-  // DÉFI
-  defiCard: {
-    backgroundColor: Colors.blanc,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-  defiBlob: {
-    position: 'absolute',
-    right: -20,
-    bottom: -20,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: Colors.creme,
-    opacity: 0.5,
-  },
-  defiTitre: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    marginBottom: 4,
-    maxWidth: '75%',
-  },
-  defiProgressionLabel: {
-    fontSize: 12,
-    color: Colors.grisMoyen,
-    marginBottom: 8,
-  },
-  defiBarreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  defiTrack: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.fondGris,
-    marginRight: 8,
-    overflow: 'hidden',
-  },
-  defiFill: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.corail[600],
-  },
-  defiValeur: {
-    fontSize: 12,
-    color: Colors.grisMoyen,
-  },
-
-  // SKELETON
-  skeleton: {
-    backgroundColor: Colors.fondGris,
-    borderRadius: 8,
-  },
-  skeletonBanniere: {
-    height: 84,
-    marginBottom: 16,
-  },
-  skeletonGoutte: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 12,
-  },
-  skeletonDefi: {
-    height: 132,
-    marginBottom: 16,
-  },
-
-  // ACTUALITÉS
-  actuRail: {
-    paddingRight: 16,
-    paddingBottom: 4,
-  },
-  actuSkeleton: {
-    width: ACTU_CARD_WIDTH,
-    height: 160,
-    marginRight: ACTU_CARD_MARGIN,
-    borderRadius: 12,
-    backgroundColor: Colors.fondGris,
-  },
-  actuCard: {
-    width: ACTU_CARD_WIDTH,
-    marginRight: ACTU_CARD_MARGIN,
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  actuImage: {
-    width: '100%',
-    height: 120,
-  },
-  actuImagePlaceholder: {
-    width: '100%',
-    height: 120,
-    backgroundColor: Colors.creme,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actuImagePlaceholderEmoji: {
-    fontSize: 32,
-    color: Colors.grisMoyen,
-  },
-  actuOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 80,
-    height: 40,
-    backgroundColor: Colors.aubergine,
-    opacity: 0.3,
-  },
-  actuTexte: {
-    padding: 12,
-  },
-  actuTitre: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  actuDate: {
-    fontSize: 11,
-    color: Colors.grisMoyen,
-    marginTop: 4,
-  },
-  actuVide: {
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  actuVideEmoji: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
-  actuVideTitre: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    textAlign: 'center',
-  },
-  actuVideTexte: {
-    fontSize: 13,
-    color: Colors.grisMoyen,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-
-  // ÉVÉNEMENTS
-  eventCard: {
-    backgroundColor: Colors.blanc,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  eventRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  eventDateBloc: {
-    backgroundColor: Colors.corail[600],
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    minWidth: 52,
-  },
-  eventJour: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.blanc,
-  },
-  eventMois: {
-    fontSize: 11,
-    color: Colors.blanc,
-    textTransform: 'uppercase',
-  },
-  eventContenu: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  eventTitre: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.aubergine,
-  },
-  eventLigne: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  eventIcone: {
-    fontSize: 12,
-    marginRight: 4,
-  },
-  eventInfo: {
-    flex: 1,
-    fontSize: 13,
-    color: Colors.grisMoyen,
-  },
-  eventInfoPetit: {
-    fontSize: 12,
-    color: Colors.grisMoyen,
-  },
-  eventChevron: {
-    fontSize: 18,
-    color: Colors.grisMoyen,
-    marginLeft: 8,
-  },
-  eventVoirTout: {
-    marginTop: 8,
-  },
-  eventVoirToutText: {
-    fontSize: 14,
-    color: Colors.petrole[500],
-    textAlign: 'center',
+    alignSelf: 'center',
+    gap: Espace[2],
+    paddingHorizontal: Espace[3],
+    paddingVertical: Espace[1],
+    borderRadius: Rayon.plein,
+    backgroundColor: Theme.fond.surfaceEnfoncee,
+    // Collé au bloc suivant : il le concerne, il ne forme pas une section à lui seul.
+    marginBottom: -Espace[3],
   },
 });
