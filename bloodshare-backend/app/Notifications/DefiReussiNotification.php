@@ -25,7 +25,8 @@ class DefiReussiNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('Défi réussi 🎉')
-            ->body("L'objectif du défi « {$this->defi->titre} » est atteint, merci à tous les participants !");
+            ->body("L'objectif du défi « {$this->defi->titre} » est atteint, merci à tous les participants !")
+            ->data(['url' => '/tabs']);
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

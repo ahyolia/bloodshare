@@ -25,7 +25,8 @@ class NouvelEvenementNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('Nouvel événement Aïma ! 🎪')
-            ->body("{$this->evenement->titre} — {$this->evenement->lieu}");
+            ->body("{$this->evenement->titre} — {$this->evenement->lieu}")
+            ->data(['url' => "/detail/evenement/{$this->evenement->id}"]);
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

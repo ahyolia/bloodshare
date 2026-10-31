@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { type Href, useRouter } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -50,6 +51,7 @@ type Section = { cle: 'nouvelles' | 'lues'; titre: string; items: NotificationIt
 
 export default function NotificationsScreen() {
   const { informer } = useDialogue();
+  const router = useRouter();
   const { notifications, loading, chargementSuite, error, marquerLue, marquerToutesLues, chargerPlus, recharger } =
     useNotifications({
       onErreurMarquage: () =>
@@ -57,6 +59,13 @@ export default function NotificationsScreen() {
     });
 
   const enTete = <EnTeteSousPage titre="Notifications" />;
+
+  // 📖 Toucher une notification la lit ET ouvre la page qu'elle concerne (quiz, événement,
+  //    badges…). Une déjà lue reste touchable si elle a un lien, pour y revenir.
+  const ouvrir = (notification: NotificationItem) => {
+    if (!notification.lue) marquerLue(notification.id);
+    if (notification.lien) router.push(notification.lien as Href);
+  };
 
   if (loading || error || !notifications) {
     return (
@@ -86,7 +95,7 @@ export default function NotificationsScreen() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={enTete}
         renderItem={({ item }) => (
-          <SectionNotifications section={item} onLire={marquerLue} onToutLire={marquerToutesLues} />
+          <SectionNotifications section={item} onOuvrir={ouvrir} onToutLire={marquerToutesLues} />
         )}
         onEndReached={chargerPlus}
         onEndReachedThreshold={0.4}
@@ -106,17 +115,18 @@ export default function NotificationsScreen() {
 
 /**
  * 📖 Surélevé = interactif : les nouvelles se touchent (elles passent en lues), leur
- *    carte flotte. Les lues n'ont plus d'action : carte à plat, contour fin.
+ *    carte flotte. Les lues ne sont plus à traiter : carte à plat, contour fin (elles
+ *    rouvrent tout de même leur page si elles en ont une).
  *    « Tout marquer comme lu » vit sur la ligne du titre « Nouvelles » : il agit sur
  *    cette section, et n'existe donc que lorsqu'elle est affichée.
  */
 function SectionNotifications({
   section,
-  onLire,
+  onOuvrir,
   onToutLire,
 }: {
   section: Section;
-  onLire: (id: string) => void;
+  onOuvrir: (notification: NotificationItem) => void;
   onToutLire: () => void;
 }) {
   return (
@@ -138,7 +148,7 @@ function SectionNotifications({
         {section.items.map((notification, i) => (
           <View key={notification.id}>
             {i > 0 && <Separateur />}
-            <LigneNotification notification={notification} onPress={() => onLire(notification.id)} />
+            <LigneNotification notification={notification} onPress={() => onOuvrir(notification)} />
           </View>
         ))}
       </Groupe>
@@ -153,17 +163,20 @@ function SectionNotifications({
  */
 function LigneNotification({ notification, onPress }: { notification: NotificationItem; onPress: () => void }) {
   const nonLue = !notification.lue;
+  const touchable = nonLue || !!notification.lien;
   const meta = META_CATEGORIE[notification.categorie];
   const teinte = TEINTES_PASTILLE[meta.teinte];
 
   return (
     <Pressable
       onPress={onPress}
-      disabled={!nonLue}
+      disabled={!touchable}
       accessibilityRole="button"
       accessibilityLabel={`${nonLue ? 'Non lue. ' : ''}${notification.titre}. ${notification.corps}`}
-      accessibilityHint={nonLue ? 'Marque la notification comme lue' : undefined}
-      accessibilityState={{ disabled: !nonLue }}
+      accessibilityHint={
+        notification.lien ? 'Ouvre la page concernée' : nonLue ? 'Marque la notification comme lue' : undefined
+      }
+      accessibilityState={{ disabled: !touchable }}
       style={({ pressed }) => [styles.ligne, pressed && styles.presse]}
     >
       <View style={[styles.pastille, { backgroundColor: teinte.fond }]}>

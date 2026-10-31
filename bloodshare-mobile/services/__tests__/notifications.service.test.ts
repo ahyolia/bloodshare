@@ -43,18 +43,34 @@ describe('getNotifications', () => {
   it('renomme `created_at` en `date`', async () => {
     apiGet.mockResolvedValue(
       page(1, 1, [
-        { id: 'a', titre: 'Badge', corps: 'Bravo', lue: false, categorie: 'badge', created_at: '2026-10-15T10:00:00Z' },
+        {
+          id: 'a',
+          titre: 'Badge',
+          corps: 'Bravo',
+          lue: false,
+          categorie: 'badge',
+          lien: '/tabs/profil/badges',
+          created_at: '2026-10-15T10:00:00Z',
+        },
       ])
     );
 
     const { items } = await getNotifications();
 
     expect(items).toEqual([
-      { id: 'a', titre: 'Badge', corps: 'Bravo', lue: false, categorie: 'badge', date: '2026-10-15T10:00:00Z' },
+      {
+        id: 'a',
+        titre: 'Badge',
+        corps: 'Bravo',
+        lue: false,
+        categorie: 'badge',
+        lien: '/tabs/profil/badges',
+        date: '2026-10-15T10:00:00Z',
+      },
     ]);
   });
 
-  it('donne un titre, un corps et une catégorie par défaut à une notification incomplète', async () => {
+  it('donne un titre, un corps, une catégorie et un lien par défaut à une notification incomplète', async () => {
     apiGet.mockResolvedValue(page(1, 1, [{ id: 'a', titre: null, corps: null, lue: true, created_at: '2026-10-15' }]));
 
     const { items } = await getNotifications();
@@ -62,6 +78,7 @@ describe('getNotifications', () => {
     expect(items[0].titre).toBe('Notification');
     expect(items[0].corps).toBe('');
     expect(items[0].categorie).toBe('autre');
+    expect(items[0].lien).toBeNull();
   });
 
   it("indique la page suivante tant qu'il en reste", async () => {

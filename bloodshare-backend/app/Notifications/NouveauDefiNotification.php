@@ -25,7 +25,8 @@ class NouveauDefiNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('Nouveau défi disponible ! 🎯')
-            ->body($this->defi->titre);
+            ->body($this->defi->titre)
+            ->data(['url' => '/tabs']);
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

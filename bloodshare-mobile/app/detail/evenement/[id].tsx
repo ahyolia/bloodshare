@@ -1,25 +1,28 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Fragment, type ComponentProps } from 'react';
+import { Fragment, useEffect, useState, type ComponentProps } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { EnTeteContenu } from '../../../components/accueil/EnTeteContenu';
 import { Bandeau, BoutonBandeau } from '../../../components/ui/Bandeau';
 import { Bouton } from '../../../components/ui/Bouton';
+import { Chargement } from '../../../components/ui/Chargement';
 import { EnTeteSousPage } from '../../../components/ui/EnTeteSousPage';
+import { EtatVide } from '../../../components/ui/EtatVide';
 import { TexteDocument } from '../../../components/ui/TexteDocument';
 import { entreeSousPage } from '../../../constants/animations';
 import { Theme } from '../../../constants/colors';
 import { Espace, Rayon } from '../../../constants/spacing';
 import { TEINTES_PASTILLE, TEINTES_VIVES, type TeintePastille } from '../../../constants/teintes';
 import { Typo } from '../../../constants/typography';
+import { type Evenement, getEvenements } from '../../../services/evenements.service';
 import { dateEvenementLongue, etiquetteProchainement, horaireEvenement } from '../../../utils/accueil';
 
 export default function EvenementDetailScreen() {
   // 📖 Params passés par router.push depuis l'accueil. TOUT est string (sérialisé
   //    dans l'URL). En V1 il n'y a pas de GET /evenements/{id} : on se contente
   //    des champs déjà chargés dans la liste, transmis ici.
-  const { titre, description, date_heure, horaire_fin, lieu, image_url } = useLocalSearchParams<{
+  const params = useLocalSearchParams<{
     id: string;
     titre: string;
     description: string;
@@ -29,6 +32,49 @@ export default function EvenementDetailScreen() {
     image_url: string;
   }>();
   const router = useRouter();
+
+  // 📖 Ouvert depuis une notification (lien « /detail/evenement/7 »), seul l'id est connu :
+  //    on retrouve l'événement dans la liste. `null` : terminé ou retiré entre-temps.
+  const [charge, setCharge] = useState<Evenement | null | undefined>(undefined);
+  const lienDirect = !params.titre;
+  useEffect(() => {
+    if (!lienDirect) return;
+    let annule = false;
+    getEvenements()
+      .then((liste) => liste.find((e) => String(e.id) === params.id) ?? null)
+      .catch(() => null)
+      .then((evenement) => {
+        if (!annule) setCharge(evenement);
+      });
+    return () => {
+      annule = true;
+    };
+  }, [lienDirect, params.id]);
+
+  const titre = params.titre || charge?.titre;
+  const description = params.description || charge?.description || '';
+  const date_heure = params.date_heure || charge?.date_heure;
+  const horaire_fin = params.horaire_fin || charge?.horaire_fin || '';
+  const lieu = params.lieu || charge?.lieu;
+  const image_url = params.image_url || charge?.image_url || '';
+
+  if (lienDirect && charge === undefined) {
+    return (
+      <View style={[styles.screen, styles.content]}>
+        <EnTeteSousPage titre="Événement" />
+        <Chargement message="On retrouve l’événement…" />
+      </View>
+    );
+  }
+
+  if (lienDirect && charge === null) {
+    return (
+      <View style={[styles.screen, styles.content]}>
+        <EnTeteSousPage titre="Événement" />
+        <EtatVide titre="Événement terminé" message="Cet événement est passé ou n’est plus proposé." />
+      </View>
+    );
+  }
 
   const bientot = date_heure ? etiquetteProchainement(date_heure) : null;
 

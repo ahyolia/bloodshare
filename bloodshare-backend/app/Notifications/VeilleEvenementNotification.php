@@ -25,7 +25,8 @@ class VeilleEvenementNotification extends Notification
     {
         return (new WebPushMessage())
             ->title("C'est demain 🎪")
-            ->body("« {$this->evenement->titre} » a lieu demain à {$this->evenement->lieu}.");
+            ->body("« {$this->evenement->titre} » a lieu demain à {$this->evenement->lieu}.")
+            ->data(['url' => "/detail/evenement/{$this->evenement->id}"]);
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

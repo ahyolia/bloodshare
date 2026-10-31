@@ -20,7 +20,8 @@ class PremierDonFilleulNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('Ton parrainage est validé ! 🩸')
-            ->body('Ton filleul a fait son premier don : tu gagnes 75 points.');
+            ->body('Ton filleul a fait son premier don : tu gagnes 75 points.')
+            ->data(['url' => '/tabs/profil/parrainage']);
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app
