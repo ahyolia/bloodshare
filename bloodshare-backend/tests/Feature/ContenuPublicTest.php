@@ -112,4 +112,47 @@ class ContenuPublicTest extends TestCase
 
         $this->getJson('/api/bannieres')->assertExactJson(['active' => false]);
     }
+
+    public function test_annonce_d_elle_meme_les_stocks_critiques_sans_banniere_active(): void
+    {
+        Banniere::create(['titre' => 'Inactive', 'message' => 'X', 'active' => false]);
+        StockSang::create(['groupe_sanguin' => 'O-', 'niveau' => 'critique']);
+        StockSang::create(['groupe_sanguin' => 'A+', 'niveau' => 'bon']);
+        StockSang::create(['groupe_sanguin' => 'O+', 'niveau' => 'critique']);
+        StockSang::create(['groupe_sanguin' => 'B-', 'niveau' => 'critique']);
+
+        $this->getJson('/api/bannieres')
+            ->assertOk()
+            ->assertExactJson([
+                'active' => true,
+                'type' => 'urgence',
+                'titre' => 'Stock critique',
+                'message' => 'Les réserves de B-, O+ et O- sont au plus bas. Ton don peut tout changer.',
+            ]);
+    }
+
+    public function test_annonce_un_seul_groupe_critique(): void
+    {
+        StockSang::create(['groupe_sanguin' => 'O-', 'niveau' => 'critique']);
+
+        $this->getJson('/api/bannieres')
+            ->assertJsonPath('message', 'Les réserves de O- sont au plus bas. Ton don peut tout changer.');
+    }
+
+    public function test_la_banniere_du_backoffice_l_emporte_sur_l_alerte_des_stocks(): void
+    {
+        StockSang::create(['groupe_sanguin' => 'O-', 'niveau' => 'critique']);
+        Banniere::create(['titre' => 'Collecte ce week-end', 'message' => 'Place des Cocotiers', 'type' => 'info', 'active' => true]);
+
+        $this->getJson('/api/bannieres')
+            ->assertExactJson(['active' => true, 'type' => 'info', 'titre' => 'Collecte ce week-end', 'message' => 'Place des Cocotiers']);
+    }
+
+    public function test_aucune_banniere_quand_aucun_stock_n_est_critique(): void
+    {
+        StockSang::create(['groupe_sanguin' => 'O-', 'niveau' => 'bas']);
+        StockSang::create(['groupe_sanguin' => 'A+', 'niveau' => 'bon']);
+
+        $this->getJson('/api/bannieres')->assertExactJson(['active' => false]);
+    }
 }
