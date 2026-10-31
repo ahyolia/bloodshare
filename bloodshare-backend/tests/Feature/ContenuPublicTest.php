@@ -83,6 +83,17 @@ class ContenuPublicTest extends TestCase
             ->assertJsonPath('1.titre', 'Bientôt');
     }
 
+    public function test_garde_un_evenement_commence_jusqu_a_sa_fin(): void
+    {
+        Evenement::create(['titre' => 'En cours', 'lieu' => 'IUT', 'date_heure' => now()->subHour(), 'horaire_fin' => now()->addHours(3), 'statut' => 'publie']);
+        Evenement::create(['titre' => 'Terminé', 'lieu' => 'IUT', 'date_heure' => now()->subHours(5), 'horaire_fin' => now()->subHour(), 'statut' => 'publie']);
+
+        $this->getJson('/api/evenements')
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.titre', 'En cours');
+    }
+
     public function test_liste_les_questions_d_eligibilite_actives_dans_l_ordre(): void
     {
         QuestionEligibilite::create(['ordre' => 2, 'question' => 'Deuxième ?', 'reponse_bloquante' => 'oui', 'actif' => true]);
