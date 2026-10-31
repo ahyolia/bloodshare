@@ -64,8 +64,13 @@ class ContenuController extends Controller
     public function evenements()
     {
         return response()->json(
+            // 📖 Un événement reste listé jusqu'à sa fin, pas seulement jusqu'à son début :
+            //    filtré sur date_heure, le Forum disparaissait de l'accueil dès 13 h 30, en
+            //    plein pendant. Même règle que les cartes d'événement (CarteController) :
+            //    sans heure de fin, jusqu'à la fin de son jour.
             Evenement::where('statut', 'publie')
-                ->where('date_heure', '>=', now())
+                ->where(fn ($q) => $q->where('horaire_fin', '>=', now())
+                    ->orWhere(fn ($q) => $q->whereNull('horaire_fin')->where('date_heure', '>=', today())))
                 ->orderBy('date_heure', 'asc')
                 ->get(['id', 'titre', 'description', 'date_heure', 'horaire_fin', 'lieu', 'image_url'])
         );

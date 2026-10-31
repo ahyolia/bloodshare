@@ -48,7 +48,13 @@ describe('getEvenements', () => {
     jest.useRealTimers();
   });
 
-  const evenement = (id: number, date_heure: string) => ({ id, titre: `Événement ${id}`, lieu: 'Nouméa', date_heure });
+  const evenement = (id: number, date_heure: string, horaire_fin: string | null = null) => ({
+    id,
+    titre: `Événement ${id}`,
+    lieu: 'Nouméa',
+    date_heure,
+    horaire_fin,
+  });
 
   it('trie les événements du plus proche au plus lointain', async () => {
     apiGet.mockResolvedValue({
@@ -60,8 +66,27 @@ describe('getEvenements', () => {
     expect(evenements.map((e) => e.id)).toEqual([2, 3, 1]);
   });
 
-  it('écarte un événement passé pendant la session', async () => {
-    apiGet.mockResolvedValue({ data: [evenement(1, '2026-10-15T09:59:00Z'), evenement(2, '2026-10-15T10:01:00Z')] });
+  // Maintenant : 15/10 à 21 h à Nouméa (10:00Z).
+  it('garde un événement commencé jusqu’à son heure de fin, puis l’écarte', async () => {
+    apiGet.mockResolvedValue({
+      data: [
+        evenement(1, '2026-10-15T08:00:00Z', '2026-10-15T09:59:00Z'), // terminé
+        evenement(2, '2026-10-15T08:00:00Z', '2026-10-15T10:30:00Z'), // en cours
+      ],
+    });
+
+    const evenements = await getEvenements();
+
+    expect(evenements.map((e) => e.id)).toEqual([2]);
+  });
+
+  it('sans heure de fin, garde l’événement jusqu’à la fin de son jour à Nouméa', async () => {
+    apiGet.mockResolvedValue({
+      data: [
+        evenement(1, '2026-10-13T22:00:00Z'), // 14/10 à 9 h à Nouméa : jour fini
+        evenement(2, '2026-10-14T20:00:00Z'), // 15/10 à 7 h à Nouméa : encore aujourd'hui
+      ],
+    });
 
     const evenements = await getEvenements();
 
