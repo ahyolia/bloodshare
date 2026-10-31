@@ -20,7 +20,8 @@ class RetourInactiviteNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('Ça fait un moment ! 👋')
-            ->body('Aïma t\'attend — reviens quand tu veux.');
+            ->body('Aïma t\'attend — reviens quand tu veux.')
+            ->data(['url' => '/tabs/don']);
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

@@ -24,7 +24,8 @@ class NiveauAtteintNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('Nouveau niveau atteint ! 🎉')
-            ->body("Tu es maintenant « {$this->label} ».");
+            ->body("Tu es maintenant « {$this->label} ».")
+            ->data(['url' => '/tabs/profil/points']);
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

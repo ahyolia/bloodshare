@@ -5,8 +5,9 @@ import { useNotifications } from '../../hooks/useNotifications';
 import type { NotificationItem } from '../../services/notifications.service';
 
 // 📖 Test placé hors de app/ : Expo Router y transformerait tout fichier en route.
+const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ back: jest.fn(), canGoBack: () => true, replace: jest.fn() }),
+  useRouter: () => ({ back: jest.fn(), canGoBack: () => true, replace: jest.fn(), push: mockPush }),
   usePathname: () => '/notifications',
 }));
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -17,13 +18,15 @@ jest.mock('../../hooks/useNotifications');
 
 const mockUseNotifications = useNotifications as jest.Mock;
 const marquerToutesLues = jest.fn();
+const marquerLue = jest.fn();
 
-const notif = (id: string, lue: boolean): NotificationItem => ({
+const notif = (id: string, lue: boolean, lien: string | null = null): NotificationItem => ({
   id,
   titre: `Notif ${id}`,
   corps: 'Corps',
   lue,
   categorie: 'quiz',
+  lien,
   date: '2026-10-20T09:00:00Z',
 });
 
@@ -33,7 +36,7 @@ const afficher = async (notifications: NotificationItem[]) => {
     loading: false,
     chargementSuite: false,
     error: false,
-    marquerLue: jest.fn(),
+    marquerLue,
     marquerToutesLues,
     chargerPlus: jest.fn(),
     recharger: jest.fn(),
@@ -80,6 +83,33 @@ describe('écran Notifications', () => {
 
     expect(screen.getByText('Pas enregistré')).toBeTruthy();
     expect(screen.getByText(/Vérifie ta connexion et réessaie/)).toBeTruthy();
+  });
+
+  it('ouvre la page de la notification et la marque comme lue', async () => {
+    await afficher([notif('a', false, '/tabs/quiz/3')]);
+
+    await fireEvent.press(screen.getByRole('button', { name: /Notif a/ }));
+
+    expect(marquerLue).toHaveBeenCalledWith('a');
+    expect(mockPush).toHaveBeenCalledWith('/tabs/quiz/3');
+  });
+
+  it('rouvre la page d’une notification déjà lue sans la remarquer', async () => {
+    await afficher([notif('b', true, '/tabs/profil/badges')]);
+
+    await fireEvent.press(screen.getByRole('button', { name: /Notif b/ }));
+
+    expect(marquerLue).not.toHaveBeenCalled();
+    expect(mockPush).toHaveBeenCalledWith('/tabs/profil/badges');
+  });
+
+  it('marque comme lue sans naviguer une notification sans lien', async () => {
+    await afficher([notif('a', false)]);
+
+    await fireEvent.press(screen.getByRole('button', { name: /Notif a/ }));
+
+    expect(marquerLue).toHaveBeenCalledWith('a');
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it("n'affiche pas le bouton sans notification non lue", async () => {

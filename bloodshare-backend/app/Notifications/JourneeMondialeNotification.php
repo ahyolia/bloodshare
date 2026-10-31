@@ -20,7 +20,8 @@ class JourneeMondialeNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('Journée mondiale du don de sang 🩸')
-            ->body('Merci à tous les donneurs. Chaque geste compte.');
+            ->body('Merci à tous les donneurs. Chaque geste compte.')
+            ->data(['url' => '/tabs']);
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

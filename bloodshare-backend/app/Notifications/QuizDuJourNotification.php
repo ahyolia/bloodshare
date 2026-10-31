@@ -25,7 +25,8 @@ class QuizDuJourNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('Le quiz du jour 🧠')
-            ->body("Aujourd'hui : « {$this->quiz->titre} ».");
+            ->body("Aujourd'hui : « {$this->quiz->titre} ».")
+            ->data(['url' => "/tabs/quiz/{$this->quiz->id}"]);
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

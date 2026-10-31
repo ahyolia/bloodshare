@@ -108,8 +108,26 @@ class ContenuController extends Controller
     {
         $banniere = Banniere::where('active', true)->latest()->first();
 
+        // 📖 Sans bannière activée dans le BO, une pénurie s'annonce d'elle-même : calculée à
+        //    chaque appel depuis les stocks, rien n'est stocké, donc elle disparaît dès que plus
+        //    aucun groupe n'est critique. Une bannière du BO reste prioritaire (message choisi
+        //    par l'association).
         if (! $banniere) {
-            return response()->json(['active' => false]);
+            $critiques = StockSang::where('niveau', 'critique')
+                ->orderBy('groupe_sanguin')
+                ->pluck('groupe_sanguin');
+
+            if ($critiques->isEmpty()) {
+                return response()->json(['active' => false]);
+            }
+
+            return response()->json([
+                'active' => true,
+                'type' => 'urgence',
+                'titre' => 'Stock critique',
+                'message' => 'Les réserves de '.$critiques->join(', ', ' et ')
+                    .' sont au plus bas. Ton don peut tout changer.',
+            ]);
         }
 
         return response()->json([

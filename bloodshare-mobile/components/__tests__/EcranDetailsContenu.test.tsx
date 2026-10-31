@@ -15,6 +15,10 @@ jest.mock('expo-router', () => ({
 jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
+const mockGetEvenements = jest.fn();
+jest.mock('../../services/evenements.service', () => ({
+  getEvenements: () => mockGetEvenements(),
+}));
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -103,5 +107,26 @@ describe('page Événement', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Scanner le QR code' }));
 
     expect(mockNavigate).toHaveBeenCalledWith('/tabs/don/scan');
+  });
+
+  // 📖 Lien d'une notification (« /detail/evenement/1 ») : seul l'id est dans l'URL.
+  it('retrouve l’événement quand seul son id est connu (notification)', async () => {
+    mockParams = { id: '1' };
+    mockGetEvenements.mockResolvedValue([
+      { id: 2, titre: 'Autre', date_heure: '2026-09-25T22:00:00Z', lieu: 'Païta' },
+      { id: 1, titre: 'Collecte mobile', date_heure: '2026-09-19T22:00:00Z', lieu: 'Place des Cocotiers, Nouméa' },
+    ]);
+    await render(<EvenementDetailScreen />);
+
+    expect(await screen.findByRole('header', { name: 'Collecte mobile' })).toBeTruthy();
+    expect(screen.getByText('Place des Cocotiers, Nouméa')).toBeTruthy();
+  });
+
+  it('prévient quand l’événement de la notification est terminé', async () => {
+    mockParams = { id: '1' };
+    mockGetEvenements.mockResolvedValue([]);
+    await render(<EvenementDetailScreen />);
+
+    expect(await screen.findByText('Événement terminé')).toBeTruthy();
   });
 });
