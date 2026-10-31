@@ -6,14 +6,20 @@
   "high": true,
   "skip-dev": true,
   "allowlist": [
-    // node-forge : utilisé par la CLI Expo (signature des mises à jour), jamais dans l'app.
-    "GHSA-86w9-cpqp-85rv",
     // zod (expo > @expo/cli > zod 3.25) : saturation mémoire sur des collections énormes
     // validées par la CLI Expo (Metro, builds), jamais dans l'app : aucun fichier du build
     // web n'en contient. Corrigé en zod 4.6.6, une version majeure que la CLI n'accepte pas
     // (^3.25) : attendre une version d'Expo qui l'embarque. Ajouté le 24/10/2026.
-    "GHSA-mrhx-c7xc-m3w5"
+    "GHSA-mrhx-c7xc-m3w5",
+    // decode-uri-component (expo-router > query-string 7 > decode-uri-component 0.2) :
+    // décodage quadratique d'une URL piégée. Même portée que GHSA-vcc3-ghjq-m6fr ci-dessous :
+    // l'URL est décodée dans le navigateur de la personne qui l'ouvre, qui peut au pire figer
+    // son propre onglet, sans accès aux données ni impact sur le serveur. Corrigé en 0.5.1,
+    // publié en ESM seulement, que query-string 7 n'accepte pas (^0.2.2) : attendre une
+    // version d'expo-router qui l'embarque. Ajouté le 31/10/2026.
+    "GHSA-qr28-fpjm-wq7f"
     // braces GHSA-vfj7-8cjw-p6xm retiré le 24/10/2026 : plus présent dans les dépendances.
+    // node-forge GHSA-86w9-cpqp-85rv retiré le 31/10/2026 : corrigé par node-forge 1.4.2.
     // Moyennes, non bloquantes avec "high" (analysées, rapport d'audit US-29) :
     // sprintf-js GHSA-hp3w-g68c-fv3c (outils, lecture YAML), uuid GHSA-w5hq-g745-h8pq
     // (génération du projet iOS, option buf jamais utilisée), decode-uri-component
