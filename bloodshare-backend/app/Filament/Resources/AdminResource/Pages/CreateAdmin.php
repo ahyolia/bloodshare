@@ -8,8 +8,12 @@ use Filament\Forms\Form;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Hash;
 
+use App\Filament\Concerns\RedirectsToIndex;
+
 class CreateAdmin extends CreateRecord
 {
+    use RedirectsToIndex;
+
     protected static string $resource = AdminResource::class;
 
     public function form(Form $form): Form

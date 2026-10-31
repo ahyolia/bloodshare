@@ -23,12 +23,13 @@ Ce document définit le format exact des requêtes et réponses entre l'applicat
 | Parrainage | `GET /parrainage/code` | ✅ Implémenté |
 | Contenu | `GET /actualites` | ✅ Implémenté |
 | Contenu | `GET /fiches-infos` | ✅ Implémenté |
-| Contenu | `GET /faq` | ✅ Implémenté |
 | Contenu | `GET /stock-sang` | ✅ Implémenté |
 | Contenu | `GET /evenements` | ✅ Implémenté |
 | Contenu | `GET /bannieres` | ✅ Implémenté |
+| Contenu | `GET /documents-juridiques/{type}` | ✅ Implémenté |
 | Gamification | `GET /quiz` | ✅ Implémenté |
 | Gamification | `GET /quiz/{id}` | ✅ Implémenté |
+| Gamification | `PUT /quiz/{id}/progression` | ✅ Implémenté |
 | Gamification | `POST /quiz/{id}/soumettre` | ✅ Implémenté |
 | Gamification | `GET /defis/actuel` | ✅ Implémenté |
 
@@ -72,17 +73,24 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
   "password": "MotDePasse123",
   "password_confirmation": "MotDePasse123",
   "sexe": "homme",
-  "statut_donneur": "quelques_dons",
   "avatar_id": 3,
-  "code_parrainage": "ABCD1234"
+  "code_parrainage": "ABCD1234",
+  "cgu_acceptees": true,
+  "confidentialite_acceptee": true,
+  "consentement_sante": true,
+  "majeur": true
 }
 ```
 
-> `statut_donneur`, `avatar_id` et `code_parrainage` sont optionnels. `sexe` est requis
+> `cgu_acceptees`, `confidentialite_acceptee`, `consentement_sante` (traitement du sexe et des
+> dates de don, qui sont des données de santé) et `majeur` (18 ans minimum) sont **obligatoires
+> et doivent valoir `true`** ; sinon 422 sur le champ concerné et aucun compte n'est créé. Le
+> serveur enregistre la version des CGU acceptée et la date des consentements.
+> `avatar_id` et `code_parrainage` sont optionnels. `sexe` est requis
 > (`homme` ou `femme`) : il est stocké côté serveur car la fréquence maximale de don en dépend,
 > mais il n'est jamais renvoyé dans la réponse et ne doit pas être conservé sur le téléphone.
-> `statut_donneur` accepte `donneur_regulier`, `quelques_dons` ou `jamais_donne`.
 > `password` doit faire au moins 8 caractères et contenir majuscule, minuscule et chiffre.
+> Si `code_parrainage` est renseigné, il doit être **celui d'un utilisateur existant** (la casse n'a pas d'importance) ; sinon l'inscription est refusée (422, voir ci-dessous) et aucun compte n'est créé. Laisser le champ vide ou l'omettre reste valable.
 
 **Réponse 201 :**
 
@@ -92,8 +100,7 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
   "user": {
     "id": 12,
     "pseudo": "BloodHero42",
-    "avatar_url": "https://cdn.bloodshare.nc/avatars/3.webp",
-    "statut_donneur": "quelques_dons",
+    "avatar_url": "https://cdn.aima.nc/avatars/3.webp",
     "points_cumules": 0,
     "code_parrainage": "XYZ98765"
   }
@@ -101,6 +108,17 @@ Crée un nouveau compte utilisateur et connecte directement la personne (renvoie
 ```
 
 > `points_cumules` ne reflète que les points gagnés via quiz, défi du mois ou parrainage — jamais via un don ou un événement (voir section 3).
+
+**Réponse 422** (données invalides, par exemple un code de parrainage inconnu) :
+
+```json
+{
+  "message": "Ce code de parrainage n'existe pas. Vérifie-le ou laisse le champ vide.",
+  "errors": {
+    "code_parrainage": ["Ce code de parrainage n'existe pas. Vérifie-le ou laisse le champ vide."]
+  }
+}
+```
 
 ## `POST /auth/login`
 Connecte un utilisateur déjà inscrit et renvoie un nouveau token à stocker.
@@ -122,8 +140,7 @@ Connecte un utilisateur déjà inscrit et renvoie un nouveau token à stocker.
   "user": {
     "id": 12,
     "pseudo": "BloodHero42",
-    "avatar_url": "https://cdn.bloodshare.nc/avatars/3.webp",
-    "statut_donneur": "quelques_dons",
+    "avatar_url": "https://cdn.aima.nc/avatars/3.webp",
     "points_cumules": 250,
     "code_parrainage": "XYZ98765"
   }
@@ -138,6 +155,24 @@ Connecte un utilisateur déjà inscrit et renvoie un nouveau token à stocker.
 ```json
 { "message": "Email ou mot de passe incorrect." }
 ```
+
+> Un compte supprimé via `DELETE /me` renvoie aussi 401 : l'email est anonymisé à la
+> suppression (`supprime-{id}@bloodshare.local`), donc l'ancien email ne correspond plus à
+> aucun compte.
+
+**Réponse 403** (identifiants corrects, mais connexion refusée, sans token) :
+
+```json
+{ "message": "Ton compte est suspendu. Contacte l'association pour en savoir plus." }
+```
+
+```json
+{ "message": "Ce compte sert au backoffice : connecte-toi sur le site d'administration. Pour utiliser l'app, crée un compte donneur." }
+```
+
+> L'app est réservée aux donneurs : un compte `admin` ou `super_admin` est refusé. Les routes
+> authentifiées répondent aussi 403 à un token appartenant à un compte suspendu ou du
+> backoffice. L'écran de connexion affiche le `message` tel quel.
 
 ## `POST /auth/logout`
 Invalide le token côté serveur. À appeler quand l'utilisateur clique sur "Se déconnecter" — penser aussi à effacer le token stocké localement sur le téléphone. _Authentifié._ Aucune requête body.
@@ -170,8 +205,7 @@ Récupère les informations complètes du profil de l'utilisateur actuellement c
 {
   "id": 12,
   "pseudo": "BloodHero42",
-  "avatar_url": "https://cdn.bloodshare.nc/avatars/3.webp",
-  "statut_donneur": "quelques_dons",
+  "avatar_url": "https://cdn.aima.nc/avatars/3.webp",
   "sexe": "homme",
   "points_cumules": 250,
   "niveau": {
@@ -215,6 +249,8 @@ Supprime définitivement le compte et toutes les données personnelles associée
 # 3\. Scan QR Code
 ## `POST /scan`
 _Authentifié._ Endpoint central — appelé après le scan d'un QR Code (centre ou événement). Le token est celui encodé brut dans le QR Code (pas une URL).
+
+> 🔒 **QR centre tournant** : l'écran du centre (lien signé `/qrcode-centre/affichage/{id}`, depuis la page « QR Code centre » du BO) affiche un jeton `C.{fenêtre}.{signature}` qui change toutes les 30 secondes, accepté pendant 60 secondes au plus. Le token brut du QR centre (celui des anciens QR imprimés) est refusé (404). Un QR de secours imprimable (`S.{signature}`, PNG/PDF depuis le BO) n'est accepté que pendant le mode secours, activé dans le BO jusqu'à 23h59 le jour même. Les QR d'événement gardent leur token fixe.
 > ⚠️ Le don du sang reste un acte volontaire et gratuit : **aucun point n'est attribué pour un don ou un événement**. L'action donne uniquement une carte-souvenir, attribuée directement (pas de tirage aléatoire, pas de booster).
 
 **Requête :**
@@ -230,21 +266,26 @@ _Authentifié._ Endpoint central — appelé après le scan d'un QR Code (centre
   "type": "don",
   "carte_obtenue": {
     "id": 6,
-    "titre": "Carte de Juin",
+    "titre": "Carte de Juin 2026",
     "categorie": "mois_don",
     "mois_numero": 6,
+    "annee": 2026,
     "image_url": "...",
     "deja_possedee": false
   },
+  "carte_fidele": null,
   "badges_debloques": [
     {
       "id": 2,
       "nom": "Donneur Confirmé",
-      "image_url": "https://cdn.bloodshare.nc/badges/2.webp"
+      "image_url": "https://cdn.aima.nc/badges/2.webp"
     }
   ]
 }
 ```
+
+> `carte_obtenue` : la carte du mois en cours **dans la collection de l'année en cours** (`annee`). Si personne n'a préparé cette collection (1er janvier), ses 12 cartes sont créées sans visuel et le don passe quand même. 503 seulement si la carte du mois a été désactivée dans le BO.
+> `carte_fidele` : la carte Fidèle (`{ id, titre, categorie, image_url }`), donnée **en plus** de la carte du mois au premier don validé au moins un an après le tout premier don validé. `null` avant, et à tous les dons suivants (elle ne s'obtient qu'une fois).
 
 **Réponse 200 — succès (événement) :**
 
@@ -263,12 +304,12 @@ _Authentifié._ Endpoint central — appelé après le scan d'un QR Code (centre
 }
 ```
 
-> `quantite` indique le nombre total d'exemplaires de cette carte après ce scan (la carte "Événement" est générique en V1, donc cumulable).
+> `carte_obtenue` est la carte propre à l'événement si le BO en a choisi une (et qu'elle est active), sinon la carte Événement générique. `quantite` indique le nombre total d'exemplaires de cette carte après ce scan (cumulable d'un événement à l'autre).
 **Réponse 422 — don refusé (délai non respecté) :**
 
 ```json
 {
-  "message": "Vous n'êtes pas encore éligible pour donner.",
+  "message": "Tu n'es pas encore éligible pour donner.",
   "prochaine_eligibilite": "2026-07-15"
 }
 ```
@@ -278,6 +319,16 @@ _Authentifié._ Endpoint central — appelé après le scan d'un QR Code (centre
 ```json
 { "message": "QR Code invalide ou expiré." }
 ```
+
+**Réponse 422 — événement non disponible (annulé, en brouillon, ou déjà terminé) :**
+
+```json
+{ "message": "Cet événement n'est plus disponible pour valider une participation." }
+```
+
+> Le scan d'un événement n'est accepté que si son statut est `publie` et que sa date de fin
+> (`horaire_fin`, ou `date_heure` si aucune heure de fin n'est renseignée) n'est pas encore
+> passée.
 
 # 4\. Dons
 ## `GET /dons`
@@ -306,23 +357,48 @@ Alimente l'onglet Cartes — renvoie la collection organisée par catégorie (mo
 ```json
 {
   "mois_don": {
-    "pourcentage_complete": 41.7,
+    "annee": 2027,
+    "pourcentage_complete": 8.3,
     "cartes": [
-      { "id": 1, "titre": "Carte de Janvier", "mois_numero": 1, "image_url": "...", "obtenue": false },
-      { "id": 6, "titre": "Carte de Juin", "mois_numero": 6, "image_url": "...", "obtenue": true }
+      { "id": 30, "titre": "Carte de Janvier 2027", "description": "...", "mois_numero": 1, "annee": 2027, "image_url": "...", "obtenue": true, "obtenue_le": "2027-01-15" }
+    ],
+    "collections": [
+      {
+        "annee": 2027,
+        "pourcentage_complete": 8.3,
+        "cartes": [
+          { "id": 30, "titre": "Carte de Janvier 2027", "description": "...", "mois_numero": 1, "annee": 2027, "image_url": "...", "obtenue": true, "obtenue_le": "2027-01-15" }
+        ]
+      },
+      {
+        "annee": 2026,
+        "pourcentage_complete": 8.3,
+        "cartes": [
+          { "id": 6, "titre": "Carte de Juin 2026", "description": "...", "mois_numero": 6, "annee": 2026, "image_url": "...", "obtenue": true, "obtenue_le": "2026-06-14" }
+        ]
+      }
     ]
   },
   "evenement": {
-    "carte": { "id": 13, "titre": "Carte Événement", "image_url": "...", "obtenue": true, "quantite": 3 }
+    "cartes": [
+      { "id": 13, "titre": "Carte Événement", "image_url": "...", "obtenue": true, "quantite": 3 },
+      { "id": 16, "titre": "Carte Forum IUT", "image_url": "...", "obtenue": false, "quantite": 0 }
+    ]
   },
   "parrainage": {
     "carte_parrain": { "id": 14, "titre": "Carte Parrain", "image_url": "...", "obtenue": true, "quantite": 1 },
     "carte_filleul": { "id": 15, "titre": "Carte Filleul", "image_url": "...", "obtenue": false }
+  },
+  "fidelite": {
+    "carte": { "id": 17, "titre": "Carte Fidèle", "image_url": "...", "obtenue": false, "quantite": 0 }
   }
 }
 ```
 
-> Pas de notion de rareté — toutes les cartes sont équivalentes, seule la catégorie les distingue. Le `pourcentage_complete` ne s'applique qu'à la collection "Mois du don" (12 cartes), qui est la seule pensée comme une vraie collection à compléter.
+> **Une collection de cartes du mois par année.** `mois_don.collections` contient la collection de l'année en cours, puis celles des années passées où l'utilisateur a au moins une carte, de la plus récente à la plus ancienne, chacune avec ses 12 cartes de janvier à décembre (exemple abrégé ci-dessus). Une collection future (créée en décembre pour que le BO y pose les dessins) n'est pas renvoyée. `mois_don.annee`, `mois_don.cartes` et `mois_don.pourcentage_complete` reprennent la collection de l'année en cours, pour les apps pas encore à jour.
+> `evenement.cartes` liste les cartes Événement actives : la carte générique (toujours, en premier), puis celles propres à un événement (ex. forum IUT, choisies dans le BO sur la fiche de l'événement), **seulement si l'utilisateur les a obtenues ou si un événement publié pas encore terminé les remet**. Passé l'événement, une carte qu'on n'a pas eue disparaît : elle ne s'obtient plus.
+> Chaque carte porte aussi sa `description` (saisie dans le BO, peut être `null`) et `obtenue_le` (jour d'obtention au format `AAAA-MM-JJ`, `null` si pas obtenue), affichés sur la carte en grand.
+> Pas de notion de rareté — toutes les cartes sont équivalentes, seule la catégorie les distingue. Le `pourcentage_complete` ne s'applique qu'aux collections "Mois du don" (12 cartes par année), les seules pensées comme de vraies collections à compléter.
 # 6\. Badges
 ## `GET /badges`
 Alimente la section Badges du profil — liste tous les badges existants, obtenus ou non. _Authentifié._
@@ -353,16 +429,15 @@ Renvoie le détail de chaque gain de points (utile si vous voulez afficher un hi
 
 ```json
 {
-  "points_cumules": 280,
+  "points_cumules": 105,
   "historique": [
     { "points": 30, "source": "quiz", "created_at": "2026-05-08T14:00:00Z" },
-    { "points": 75, "source": "parrainage", "created_at": "2026-05-10T09:01:00Z" },
-    { "points": 50, "source": "defi", "created_at": "2026-05-31T23:59:00Z" }
+    { "points": 75, "source": "parrainage", "created_at": "2026-05-10T09:01:00Z" }
   ]
 }
 ```
 
-> Les sources possibles sont uniquement `quiz`, `defi`, `parrainage` — un don ou un événement ne génère jamais d'entrée ici (voir section 3 sur `/scan`).
+> Les sources possibles sont uniquement `quiz` et `parrainage` — un don, un événement ou un défi (y participer, c'est donner) ne génère jamais d'entrée ici (voir section 3 sur `/scan`). Les anciens points « defi » ont été retirés en octobre 2026.
 # 8\. Quiz
 ## `GET /quiz`
 Alimente l'écran d'accueil de l'onglet Quiz — la liste de tous les quiz disponibles, déjà triés par catégorie. _Authentifié._ Liste groupée par catégorie.
@@ -373,12 +448,16 @@ Alimente l'écran d'accueil de l'onglet Quiz — la liste de tous les quiz dispo
   {
     "categorie": "Les bases du don",
     "quiz": [
-      { "id": 1, "titre": "Qui peut donner ?", "points_attribues": 30, "complete": true },
-      { "id": 2, "titre": "Comment se préparer ?", "points_attribues": 30, "complete": false }
+      { "id": 1, "titre": "Qui peut donner ?", "points_attribues": 30, "complete": true,
+        "nb_questions": 5, "nb_tentatives": 2, "questions_repondues": 5, "score": 4 },
+      { "id": 2, "titre": "Comment se préparer ?", "points_attribues": 30, "complete": false,
+        "nb_questions": 5, "nb_tentatives": 0, "questions_repondues": 2, "score": null }
     ]
   }
 ]
 ```
+
+> Un quiz est **« en cours »** quand `complete` est `false` et `questions_repondues > 0` (progression enregistrée via `PUT /quiz/{id}/progression`). `score` vaut `null` tant que le quiz n'est pas terminé ; sinon c'est le nombre de bonnes réponses sur `nb_questions`.
 
 ## `GET /quiz/{id}`
 Récupère le contenu d'un quiz précis (ses questions et réponses possibles) — à appeler quand l'utilisateur clique sur un quiz pour le lancer. _Authentifié._
@@ -389,6 +468,9 @@ Récupère le contenu d'un quiz précis (ses questions et réponses possibles) �
   "id": 1,
   "titre": "Qui peut donner ?",
   "aleatoire": false,
+  "reponses_donnees": [
+    { "question_id": 1, "reponse_ids": [2] }
+  ],
   "questions": [
     {
       "id": 1,
@@ -405,6 +487,26 @@ Récupère le contenu d'un quiz précis (ses questions et réponses possibles) �
 ```
 
 > Le champ `est_correcte` n'est jamais renvoyé avant soumission.
+> `reponses_donnees` contient les choix déjà enregistrés lors d'une tentative non terminée (liste vide sinon) : c'est ce qui permet de reprendre le quiz là où l'utilisateur s'était arrêté. Elle ne révèle jamais les bonnes réponses.
+## `PUT /quiz/{id}/progression`
+Enregistre les réponses déjà données à un quiz **non terminé**, pour qu'il apparaisse dans « Quiz en cours » et puisse être repris. Ne corrige rien et n'attribue aucun point (seul `soumettre` le fait). Envoie l'ensemble des réponses données à ce stade : elles **remplacent** la progression précédente. _Authentifié._
+**Requête :**
+
+```json
+{
+  "reponses": [
+    { "question_id": 1, "reponse_ids": [2] }
+  ]
+}
+```
+
+**Réponse 200 :**
+
+```json
+{ "enregistree": true, "questions_repondues": 1 }
+```
+
+> Les questions ou réponses qui n'appartiennent pas au quiz sont ignorées. Si le quiz est déjà terminé, rien n'est modifié et la réponse est `{ "enregistree": false }`. La progression est effacée à la soumission finale.
 ## `POST /quiz/{id}/soumettre`
 Envoie les réponses choisies par l'utilisateur une fois le quiz terminé, et reçoit en retour le score et les points gagnés. _Authentifié._
 **Requête :**
@@ -428,7 +530,7 @@ Envoie les réponses choisies par l'utilisateur une fois le quiz terminé, et re
 }
 ```
 
-> Si `premiere_completion` est `false`, `points_gagnes` sera `0` (quiz rejoué).
+> `points_gagnes` est **proportionnel au score** : `points_attribues du quiz × score / total_questions`, arrondi au point entier le plus proche (ex. `4/5` sur un quiz à 30 points → 24). Un score de 0 ne rapporte aucun point et ne crée aucune ligne dans l'historique. Si `premiere_completion` est `false`, `points_gagnes` sera `0` (quiz rejoué : les points ne sont attribués qu'à la première complétion).
 # 9\. Défi du mois
 ## `GET /defis/actuel`
 Alimente le bloc "Défi du mois" affiché sur l'écran d'accueil, avec sa progression en temps réel. _Authentifié._
@@ -441,33 +543,50 @@ Alimente le bloc "Défi du mois" affiché sur l'écran d'accueil, avec sa progre
   "description": "Aidons le centre à atteindre son objectif.",
   "objectif_chiffre": 100,
   "progression_actuelle": 67,
-  "points_attribues": 50,
+  "ma_progression": 4,
+  "statut": "actif",
   "date_fin": "2026-06-30"
 }
 ```
 
-> Retourne `null` si aucun défi actif.
+> `progression_actuelle` reste le total collectif (tous les dons validés du mois, tous
+> utilisateurs confondus). `ma_progression` est propre à l'utilisateur connecté : le nombre de
+> ses dons qui ont compté pour CE défi (0 s'il n'a pas encore contribué).
+> `statut` vaut `actif` ou `termine` : quand `progression_actuelle` atteint `objectif_chiffre`,
+> le défi passe à `termine`, chaque contributeur est marqué comme ayant remporté le défi (badge
+> « Objectif atteint ») — **sans points** : un don ne rapporte jamais de points (règle éthique
+> ADSB-NC) —, et cet endpoint continue de renvoyer ce défi (au lieu de basculer sur `null`) pour
+> que l'app puisse afficher le résultat.
+> Retourne `null` s'il n'existe aucun défi actif ni récemment terminé.
 # 10\. Contenu
 ## `GET /actualites`
-Alimente le carousel d'actualités sur l'écran d'accueil. **Réponse 200 :**
+Alimente le carousel d'actualités sur l'écran d'accueil, et le contenu de l'écran de détail (pas d'appel dédié par id : le détail se construit à partir de cette liste). **Réponse 200 :**
 
 ```scheme
 [
-  { "id": 1, "titre": "Journée mondiale du don", "image_url": "...", "published_at": "2026-06-01" }
+  { "id": 1, "titre": "Journée mondiale du don", "contenu": "Le corps complet de l'article...", "image_url": "...", "published_at": "2026-06-01" }
 ]
 ```
 
 ## `GET /fiches-infos`
-Alimente les fiches pratiques sur le don, affichées dans l'onglet Don. **Réponse 200 :** même structure que `/actualites`, avec un champ `categorie` en plus.
-## `GET /faq`
-Alimente la section FAQ / Informations pratiques. **Réponse 200 :**
+Alimente les fiches pratiques sur le don, affichées dans l'onglet Don. **Réponse 200 :**
 
-```scheme
+```json
 [
-  { "id": 1, "categorie": "Éligibilité", "question": "Qui peut donner ?", "reponse": "..." }
+  {
+    "id": 4,
+    "titre": "Qui peut donner son sang ?",
+    "categorie": "eligibilite",
+    "contenu": "...",
+    "image_url": null,
+    "quiz_cta": true,
+    "le_saviez_vous": "Un don de sang peut sauver jusqu'à trois vies.",
+    "published_at": "2026-09-17T09:29:00Z"
+  }
 ]
 ```
 
+> `categorie` vaut `eligibilite`, `processus_don`, `apres_don` ou `urgences` (les seules clés que l'app regroupe). `quiz_cta` (booléen) indique s'il faut afficher sous la fiche l'invitation « Tester ses connaissances » ; `le_saviez_vous` (texte, `null` si absent) alimente le bloc « Le saviez-vous ? ». Ces deux champs se renseignent dans le backoffice (Contenus).
 ## `GET /stock-sang`
 Alimente l'animation du stock de sang par groupe sanguin sur l'écran d'accueil. **Réponse 200 :**
 
@@ -505,6 +624,23 @@ Vérifie s'il y a une alerte pénurie à afficher en bandeau sur l'écran d'accu
 ```
 
 > Retourne `{ "active": false }` si aucune bannière active.
+
+## `GET /documents-juridiques/{type}`
+Public (pas de token) : lu depuis l'écran d'inscription comme depuis les paramètres du profil. `type` vaut `cgu`, `confidentialite` ou `mentions_legales`. Le texte est saisi dans le backoffice (*Administration > Documents juridiques*, modifiable par le super_admin uniquement). **Réponse 200 :**
+
+```json
+{
+  "type": "cgu",
+  "titre": "Conditions générales d'utilisation",
+  "contenu": "## Objet\n\nAïma est éditée par l'ADSB-NC.\n\n- Réservée aux personnes majeures",
+  "version": "1.0",
+  "mis_a_jour_le": "2026-10-14"
+}
+```
+
+> `contenu` utilise une syntaxe minimale : `## ` pour un titre, `- ` pour une puce, une ligne vide entre deux paragraphes (rendu côté mobile par `utils/documentTexte.ts`).
+> **404** si le type est inconnu ou si le document n'est pas encore rédigé (contenu vide) : l'app affiche alors « bientôt disponible ».
+
 # 11\. Parrainage
 ## `GET /parrainage/code`
 Récupère le code de parrainage personnel de l'utilisateur, à afficher/partager depuis l'écran Profil. _Authentifié._

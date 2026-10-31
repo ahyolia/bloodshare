@@ -7,8 +7,12 @@ use App\Models\QrCode;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Str;
 
+use App\Filament\Concerns\RedirectsToIndex;
+
 class CreateEvenement extends CreateRecord
 {
+    use RedirectsToIndex;
+
     protected static string $resource = EvenementResource::class;
 
     protected function afterCreate(): void

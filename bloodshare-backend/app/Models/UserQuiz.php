@@ -18,12 +18,18 @@ class UserQuiz extends Model
         'points_attribues',
         'nb_tentatives',
         'completed_at',
+        'progression',
+        'commence_at',
+        'rappel_envoye',
     ];
 
     protected $casts = [
         'complete'         => 'boolean',
         'points_attribues' => 'boolean',
         'completed_at'     => 'datetime',
+        'progression'      => 'array',
+        'commence_at'      => 'datetime',
+        'rappel_envoye'    => 'boolean',
     ];
 
     public function user()

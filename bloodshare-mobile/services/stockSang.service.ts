@@ -22,6 +22,13 @@ export const getStockSang = async (): Promise<StockGroupe[]> => {
     return stockSangMock as StockGroupe[];
   }
 
-  const response = await api.get<StockGroupe[]>('/stock-sang');
-  return response.data;
+  // 📖 L'API renvoie `groupe_sanguin` (nom de colonne BDD) : on l'adapte ici en
+  // `groupe` pour que le reste de l'app reste indépendant du contrat API.
+  const response = await api.get<{ groupe_sanguin: string; niveau: NiveauStock | null }[]>(
+    '/stock-sang'
+  );
+  return response.data.map((item) => ({
+    groupe: item.groupe_sanguin,
+    niveau: item.niveau,
+  }));
 };

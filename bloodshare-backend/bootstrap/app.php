@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,16 +13,71 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware) {
-        $middleware->api(prepend: [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-        ]);
+    ->withSchedule(function (Schedule $schedule) {
+        // 📖 Aucun scheduler n'était encore activé sur dev (bootstrap/app.php n'avait pas
+        //    de ->withSchedule) : nécessaire pour que les commandes ci-dessous tournent
+        //    réellement en continu, pas seulement quand on les lance à la main.
+        //
+        //    Pas de ->timezone() ici : ça ne décalerait que l'heure de DÉCLENCHEMENT du
+        //    cron, pas ce que now() renvoie une fois la commande lancée — les commandes
+        //    elles-mêmes (journée mondiale, veille d'événement...) calculent "aujourd'hui"/
+        //    "demain" avec now(), qui suit APP_TIMEZONE (Pacific/Noumea, voir .env). Les
+        //    deux doivent être dans le même fuseau, donc aucun ->timezone() à poser ici :
+        //    le scheduler utilise déjà APP_TIMEZONE par défaut.
+        // 📖 Les tokens expirés (config/sanctum.php) sont refusés mais restent en base :
+        //    on les supprime une fois par jour.
+        $schedule->command('sanctum:prune-expired --hours=24')->dailyAt('03:20');
 
+        $schedule->command('notifications:quiz-du-jour')->dailyAt('08:00');
+        $schedule->command('notifications:veille-evenement')->dailyAt('08:10');
+        $schedule->command('notifications:fin-ineligibilite')->dailyAt('09:00');
+        $schedule->command('notifications:retour-inactivite')->dailyAt('09:10');
+        $schedule->command('notifications:quiz-non-termine')->dailyAt('09:20');
+        $schedule->command('notifications:anniversaire-don')->dailyAt('09:30');
+        $schedule->command('notifications:journee-mondiale')->dailyAt('09:40');
+        $schedule->command('notifications:carte-du-mois')->dailyAt('09:50');
+        // 📖 La collection de l'année suivante, un mois à l'avance : le BO a décembre pour
+        //    y poser les nouveaux dessins.
+        $schedule->command('cartes:creer-collection')->yearlyOn(12, 1, '03:30');
+        $schedule->command('notifications:progression-defi')->weeklyOn(1, '10:00');
+
+        // 📖 Durées de conservation annoncées dans la politique de confidentialité.
+        $schedule->command('donnees:purger-comptes-inactifs')->dailyAt('03:00');
+        $schedule->command('donnees:purger-notifications')->dailyAt('03:10');
+    })
+    ->withMiddleware(function (Middleware $middleware) {
         // Derrière ngrok/Dokploy (Traefik), la requête arrive en HTTP en interne :
         // sans ça, Laravel ignore X-Forwarded-Proto et génère des URLs d'assets
         // en http:// sur une page servie en https:// (mixed content bloqué).
         $middleware->trustProxies(at: '*');
+
+        $middleware->append(\App\Http\Middleware\EnTetesSecurite::class);
+
+        // 📖 Limite globale de l'API (limiteur « api », AppServiceProvider) : scan, quiz,
+        //    abonnements push... n'avaient aucune limite.
+        $middleware->throttleApi();
+
+        // 📖 Le middleware `auth` redirige un visiteur non connecté vers la route nommée
+        //    `login`, que Laravel ne déclare pas ici (la connexion est celle de Filament) :
+        //    une route web protégée par `auth` ouverte sans session donnait une 500
+        //    « Route [login] not defined ». Les appels API (JSON) gardent leur 401.
+        $middleware->redirectGuestsTo(fn () => route('filament.admin.auth.login'));
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // 📖 Une erreur SQL était journalisée avec ses valeurs (email, mot de passe haché) et
+        //    la ligne DETAIL de PostgreSQL (« Failing row contains (...) » : toute la ligne,
+        //    sexe compris, donnée de santé), gardées 180 jours. Trouvé par gitleaks dans le
+        //    laravel.log local (audit cybersécurité). On ne garde que la requête avec ses « ? »
+        //    et le message d'erreur, qui suffisent pour déboguer. Ne s'applique qu'au rapport
+        //    et à l'affichage : un `catch (QueryException)` dans le code voit l'original.
+        $exceptions->map(function (\Illuminate\Database\QueryException $e) {
+            $message = preg_replace('/\s*DETAIL:.*$/s', '', (string) $e->getPrevious()?->getMessage());
+
+            return new \Illuminate\Database\QueryException(
+                $e->getConnectionName(),
+                $e->getSql(),
+                [],
+                new \PDOException($message),
+            );
+        });
     })->create();

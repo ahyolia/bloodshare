@@ -6,6 +6,7 @@ export default function QuizLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="[id]" />
       <Stack.Screen name="score" />
+      <Stack.Screen name="fiche/[id]" />
     </Stack>
   );
 }

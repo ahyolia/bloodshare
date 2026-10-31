@@ -42,6 +42,7 @@ class BanniereResource extends Resource
 
                 Forms\Components\Textarea::make('message')
                     ->label('Message')
+                    ->maxLength(300)
                     ->required()
                     ->rows(4)
                     ->columnSpanFull(),

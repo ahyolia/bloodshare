@@ -1,11 +1,15 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Middleware\MetAJourDerniereActivite;
+use App\Http\Middleware\RefuseCompteBloque;
+use App\Models\DocumentJuridique;
 use App\Http\Controllers\Api\BadgeController;
 use App\Http\Controllers\Api\CarteController;
 use App\Http\Controllers\Api\ContenuController;
 use App\Http\Controllers\Api\DefiController;
 use App\Http\Controllers\Api\DonController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ParrainageController;
 use App\Http\Controllers\Api\PointsController;
 use App\Http\Controllers\Api\ProfilController;
@@ -16,25 +20,36 @@ use Illuminate\Support\Facades\Route;
 // Contenu éditorial (public, pas besoin d'être connecté)
 Route::get('/actualites', [ContenuController::class, 'actualites']);
 Route::get('/fiches-infos', [ContenuController::class, 'fichesInfos']);
-Route::get('/faq', [ContenuController::class, 'faq']);
 Route::get('/stock-sang', [ContenuController::class, 'stockSang']);
 Route::get('/evenements', [ContenuController::class, 'evenements']);
 Route::get('/bannieres', [ContenuController::class, 'bannieres']);
+// 📖 Public : les critères d'éligibilité sont des questions médicales
+// génériques (CHT NC), aucune réponse individuelle n'y transite — contrainte
+// d'anonymat respectée.
+Route::get('/eligibilite', [ContenuController::class, 'eligibilite']);
+// 📖 Public : les CGU et la politique de confidentialité doivent pouvoir être lues
+//    avant de créer un compte (liens de l'écran d'inscription).
+Route::get('/documents-juridiques/{type}', [ContenuController::class, 'documentJuridique'])
+    ->whereIn('type', array_keys(DocumentJuridique::TYPES));
 
 // Auth (pas besoin d'être connecté)
 Route::prefix('auth')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/register', [AuthController::class, 'register'])
+        ->middleware('throttle:15,1');
+    // 📖 Limite par compte visé, pas seulement par IP : voir AppServiceProvider.
+    Route::post('/login', [AuthController::class, 'login'])
+        ->middleware('throttle:connexion');
     Route::post('/logout', [AuthController::class, 'logout'])
         ->middleware('auth:sanctum');
 });
 
 // Profil (connecté obligatoire)
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', RefuseCompteBloque::class, MetAJourDerniereActivite::class])->group(function () {
     Route::get('/me', [ProfilController::class, 'show']);
     Route::put('/me', [ProfilController::class, 'update']);
     Route::delete('/me', [ProfilController::class, 'destroy']);
+    Route::post('/me/changer-mot-de-passe', [ProfilController::class, 'changerMotDePasse'])
+        ->middleware('throttle:6,1');
 
     // Scan (déjà existant — ne pas toucher)
     Route::post('/scan', [ScanController::class, 'scan']);
@@ -43,12 +58,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dons', [DonController::class, 'index']);
     Route::get('/cartes', [CarteController::class, 'index']);
     Route::get('/badges', [BadgeController::class, 'index']);
+    Route::get('/badges/a-feter', [BadgeController::class, 'aFeter']);
     Route::get('/points/historique', [PointsController::class, 'index']);
     Route::get('/parrainage/code', [ParrainageController::class, 'index']);
 
     // Gamification
     Route::get('/quiz', [QuizController::class, 'index']);
     Route::get('/quiz/{id}', [QuizController::class, 'show']);
+    Route::put('/quiz/{id}/progression', [QuizController::class, 'progression']);
+    Route::post('/quiz/{id}/questions/{questionId}/verifier', [QuizController::class, 'verifier'])
+        ->whereNumber(['id', 'questionId']);
     Route::post('/quiz/{id}/soumettre', [QuizController::class, 'soumettre']);
     Route::get('/defis/actuel', [DefiController::class, 'actuel']);
+
+    // Notifications push (PWA / Web Push)
+    Route::post('/notifications/subscription', [NotificationController::class, 'storeSubscription']);
+    Route::delete('/notifications/subscription', [NotificationController::class, 'destroySubscription']);
+
+    // Historique des notifications (canal database)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/non-lues', [NotificationController::class, 'countUnread']);
+    Route::put('/notifications/lues', [NotificationController::class, 'markAllAsRead']);
+    Route::put('/notifications/{id}/lue', [NotificationController::class, 'markAsRead'])
+        ->whereUuid('id');
 });

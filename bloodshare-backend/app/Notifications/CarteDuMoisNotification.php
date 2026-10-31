@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Notifications;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
+
+class CarteDuMoisNotification extends Notification
+{
+    use Queueable;
+
+    public function via($notifiable): array
+    {
+        return [WebPushChannel::class, 'database'];
+    }
+
+    public function toWebPush($notifiable, $notification): WebPushMessage
+    {
+        return (new WebPushMessage())
+            ->title('Carte du mois à obtenir 🗓️')
+            ->body('Il te reste quelques jours pour obtenir la carte de ce mois en donnant ton sang.')
+            ->data(['url' => '/tabs/cartes']);
+    }
+
+    // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app
+    //    (canal database) que dans la notification push.
+    public function toArray($notifiable): array
+    {
+        return $this->toWebPush($notifiable, null)->toArray();
+    }
+}

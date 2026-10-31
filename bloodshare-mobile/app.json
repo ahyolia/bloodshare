@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Bloodshare",
+    "name": "Aïma",
     "slug": "bloodshare",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FFFDF7",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -36,14 +36,10 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "backgroundColor": "#F6F1E4"
         }
       ],
       "expo-secure-store",
-      "expo-barcode-scanner",
       "expo-font",
       "expo-image",
       "expo-status-bar",

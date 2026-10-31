@@ -9,31 +9,9 @@ class CarteSeeder extends Seeder
 {
     public function run(): void
     {
-        $mois = [
-            1 => 'Janvier',
-            2 => 'Février',
-            3 => 'Mars',
-            4 => 'Avril',
-            5 => 'Mai',
-            6 => 'Juin',
-            7 => 'Juillet',
-            8 => 'Août',
-            9 => 'Septembre',
-            10 => 'Octobre',
-            11 => 'Novembre',
-            12 => 'Décembre',
-        ];
-
-        foreach ($mois as $numero => $nom) {
-            Carte::updateOrCreate(
-                ['categorie' => 'mois_don', 'mois_numero' => $numero],
-                [
-                    'titre' => "Carte de {$nom}",
-                    'description' => "Carte obtenue lors d'un don en {$nom}",
-                    'image_url' => null,
-                    'statut' => 'active',
-                ]
-            );
+        // Une collection de cartes de mois par année, de la première à l'année en cours.
+        foreach (range(Carte::PREMIERE_COLLECTION, max(Carte::PREMIERE_COLLECTION, now()->year)) as $annee) {
+            Carte::collectionMois($annee);
         }
 
         $cartesSpeciales = [
@@ -52,15 +30,26 @@ class CarteSeeder extends Seeder
                 'titre' => 'Carte Filleul',
                 'description' => 'Carte obtenue en étant parrainé',
             ],
+            [
+                'categorie' => 'fidele',
+                'titre' => 'Carte Fidèle',
+                'description' => 'Carte obtenue après un an de dons',
+            ],
         ];
 
         foreach ($cartesSpeciales as $carte) {
+            // 📖 Plusieurs cartes Événement peuvent exister (forum IUT...) : on ne retrouve
+            //    que la générique, sinon la carte d'un événement serait renommée ici.
+            $cle = ['categorie' => $carte['categorie'], 'mois_numero' => null];
+            if ($carte['categorie'] === 'evenement') {
+                $cle['generique'] = true;
+            }
+
             Carte::updateOrCreate(
-                ['categorie' => $carte['categorie'], 'mois_numero' => null],
+                $cle,
                 [
                     'titre' => $carte['titre'],
                     'description' => $carte['description'],
-                    'image_url' => null,
                     'statut' => 'active',
                 ]
             );

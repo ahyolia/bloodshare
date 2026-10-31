@@ -1,5 +1,5 @@
 ---
-description: Rédige le titre et la description d'une Pull Request selon les conventions BloodShare
+description: Rédige le titre et la description d'une Pull Request selon les conventions Aïma
 argument-hint: [numéro US, ex: FO-02]
 allowed-tools: Bash(git status:*), Bash(git log:*), Bash(git diff:*), Bash(git branch:*), Read
 ---
@@ -37,7 +37,7 @@ Règle stricte : `refactor` ne change **jamais** le comportement. Si le comporte
 
 ### Description
 
-Remplis le template BloodShare :
+Remplis le template Aïma :
 ```md
 ## Description
 <!-- Ex: [FO-02][Auth] - Connexion / Déconnexion + lien ClickUp -->

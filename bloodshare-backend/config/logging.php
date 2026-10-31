@@ -54,7 +54,7 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', env('LOG_STACK', 'single')),
+            'channels' => explode(',', env('LOG_STACK', 'daily')),
             'ignore_exceptions' => false,
         ],
 
@@ -65,11 +65,28 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // 📖 Le transport mail 'log' (MAIL_MAILER=log, tant qu'aucun vrai fournisseur n'est
+        //    branché) écrit chaque email au niveau debug/info. Avec LOG_LEVEL=error en
+        //    production, ces emails — notamment le lien de réinitialisation de mot de passe —
+        //    étaient filtrés avant même d'atteindre le fichier : l'API répondait 200 mais le
+        //    contenu de l'email n'était écrit nulle part, ni consultable, ni récupérable.
+        //    Ce canal dédié a son propre niveau, indépendant de LOG_LEVEL, pour que les emails
+        //    restent toujours visibles sans avoir à baisser la verbosité de toute l'appli.
+        'mail' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/mail.log'),
+            'level' => env('MAIL_LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 180),
+            'replace_placeholders' => true,
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => env('LOG_DAILY_DAYS', 14),
+            // 📖 Journaux limités à 6 mois (politique de confidentialité, docs/juridique) :
+            //    un fichier par jour, les plus anciens sont effacés automatiquement.
+            'days' => env('LOG_DAILY_DAYS', 180),
             'replace_placeholders' => true,
         ],
 

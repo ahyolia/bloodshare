@@ -1,200 +1,146 @@
-import { useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-} from 'react-native';
-import { router } from 'expo-router';
-import { Colors } from '../../constants/colors';
-import { forgotPassword } from '../../services/auth.service';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { Bouton } from '../../components/ui/Bouton';
+import { EnTeteSousPage } from '../../components/ui/EnTeteSousPage';
+import { Groupe } from '../../components/ui/Groupe';
+import { entreeSousPage } from '../../constants/animations';
+import { Theme } from '../../constants/colors';
+import { Espace, Rayon } from '../../constants/spacing';
+import { Typo } from '../../constants/typography';
+
+const EMAIL_CONTACT = 'aima.dondusang@outlook.fr';
+const OBJET = 'Mot de passe oublié';
+
+// 📖 Pas d'envoi de mail automatique en V1 : cet écran n'appelle pas l'API, il explique
+//    la procédure manuelle. L'utilisateur écrit depuis l'adresse de son compte (même
+//    procédure que dans les CGU), ce qui permet à l'admin de vérifier que la demande
+//    vient bien du titulaire du compte. Le reset se fait dans le backoffice (action
+//    "Réinitialiser le mot de passe" sur la fiche utilisateur), et l'admin répond avec
+//    un mot de passe temporaire. À la connexion suivante, l'app impose d'en choisir un
+//    nouveau (écran changer-mot-de-passe, mode forcé).
+// 📖 Ouvert depuis la connexion ET depuis Paramètres (compte connecté) : le retour
+//    revient donc à l'écran précédent, jamais de force sur la connexion.
+const ETAPES = [
+  {
+    titre: "Écris-nous depuis l'adresse de ton compte",
+    detail: "C'est ce qui nous permet de vérifier que la demande vient bien de toi.",
+  },
+  {
+    titre: "L'équipe réinitialise ton mot de passe",
+    detail: "Un membre de l'association s'en occupe à la main.",
+  },
+  {
+    titre: 'Tu reçois un mot de passe temporaire',
+    detail: 'En réponse à ton email.',
+  },
+  {
+    titre: 'Connecte-toi et choisis-en un nouveau',
+    detail: "L'app te le demande dès ta connexion avec le mot de passe temporaire.",
+  },
+];
 
 export default function MotDePasseOublieScreen() {
-  const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [envoye, setEnvoye] = useState(false);
-
-  const handleSubmit = async () => {
-    setErrorMessage('');
-    if (!email) {
-      setErrorMessage('Veuillez saisir votre adresse e-mail.');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      await forgotPassword(email.trim());
-      setEnvoye(true);
-    } catch (error: any) {
-      console.error('Erreur lors de la demande de réinitialisation:', error);
-
-      if (error.response) {
-        setErrorMessage(error.response.data?.message || 'Une erreur est survenue côté serveur.');
-      } else if (error.request) {
-        setErrorMessage('Impossible de joindre le serveur. Vérifiez votre connexion.');
-      } else {
-        setErrorMessage("Une erreur inattendue s'est produite.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (envoye) {
-    return (
-      <KeyboardAvoidingView style={styles.screen}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <Text style={styles.title}>E-mail envoyé</Text>
-          <Text style={styles.subtitle}>
-            Si un compte est associé à {email.trim()}, vous recevrez un lien de réinitialisation
-            dans quelques minutes. Pensez à vérifier vos spams.
-          </Text>
-
-          <Pressable
-            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-            onPress={() => router.replace('/auth/login')}
-            accessibilityRole="button"
-          >
-            <Text style={styles.buttonText}>Retour à la connexion</Text>
-          </Pressable>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    );
-  }
+  const ecrire = () =>
+    // 📖 Échoue si aucune application mail n'est installée : on l'ignore, l'adresse
+    //    reste affichée (et sélectionnable) pour être recopiée.
+    Linking.openURL(`mailto:${EMAIL_CONTACT}?subject=${encodeURIComponent(OBJET)}`).catch(() => {});
 
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.title}>Mot de passe oublié</Text>
-        <Text style={styles.subtitle}>
-          Saisissez l&apos;adresse e-mail de votre compte : nous vous enverrons un lien pour
-          définir un nouveau mot de passe.
-        </Text>
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <EnTeteSousPage titre="Mot de passe oublié" />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Adresse e-mail"
-          placeholderTextColor={Colors.grisMoyen}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          autoCorrect={false}
-          editable={!isLoading}
-          onSubmitEditing={handleSubmit}
-          returnKeyType="send"
-        />
+        <Animated.View entering={entreeSousPage}>
+          <Text style={[Typo.corps, styles.intro]}>
+            {"Pas encore de réinitialisation automatique : c'est l'équipe qui s'en charge. " +
+              'Voici comment faire.'}
+          </Text>
 
-        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+          <Groupe variante="info">
+            <View style={styles.etapes}>
+              {ETAPES.map((etape, i) => (
+                <View key={etape.titre} style={styles.etape}>
+                  <View style={styles.numero} accessibilityElementsHidden importantForAccessibility="no">
+                    <Text style={[Typo.legendeForte, styles.numeroTexte]}>{i + 1}</Text>
+                  </View>
+                  <View style={styles.etapeTextes} accessible accessibilityLabel={`Étape ${i + 1} : ${etape.titre}. ${etape.detail}`}>
+                    <Text style={[Typo.corpsFort, { color: Theme.texte.principal }]}>{etape.titre}</Text>
+                    <Text style={[Typo.legende, { color: Theme.texte.secondaire }]}>{etape.detail}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </Groupe>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed,
-            isLoading && styles.buttonDisabled,
-          ]}
-          onPress={handleSubmit}
-          disabled={isLoading}
-          accessibilityRole="button"
-        >
-          {isLoading ? (
-            <ActivityIndicator color={Colors.cremeClair} />
-          ) : (
-            <Text style={styles.buttonText}>Envoyer le lien</Text>
-          )}
-        </Pressable>
+          <Text style={[Typo.legende, styles.adresseLibelle]}>{"Adresse de l'équipe"}</Text>
+          <Text style={[Typo.corpsFort, styles.adresse]} selectable>
+            {EMAIL_CONTACT}
+          </Text>
 
-        <Pressable onPress={() => router.back()} style={styles.linkContainer}>
-          <Text style={styles.linkText}>Retour à la connexion</Text>
-        </Pressable>
+          <Bouton
+            libelle="Écrire à l'équipe"
+            icone="mail-outline"
+            onPress={ecrire}
+            accessibilityHint="Ouvre ton application mail avec l'adresse de l'équipe"
+            style={styles.bouton}
+          />
+        </Animated.View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
+
+const NUMERO = 32;
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
+    backgroundColor: Theme.fond.page,
   },
   content: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 54,
+    paddingHorizontal: 18,
+    paddingTop: 54,
+    paddingBottom: Espace[12],
   },
-  title: {
-    fontSize: 30,
-    fontWeight: '800',
-    textAlign: 'center',
-    color: Colors.aubergine,
+  intro: {
+    color: Theme.texte.secondaire,
+    marginBottom: Espace[6],
   },
-  subtitle: {
-    fontSize: 14,
-    color: Colors.grisMoyen,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginTop: 8,
-    marginBottom: 28,
+  etapes: {
+    padding: Espace[4],
+    gap: Espace[4],
   },
-  input: {
-    height: 52,
-    borderWidth: 1.5,
-    borderColor: '#D8D3CA',
-    paddingHorizontal: 16,
-    borderRadius: 18,
-    marginBottom: 16,
-    fontSize: 15,
-    color: Colors.aubergine,
-    backgroundColor: Colors.cremeClair,
+  etape: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Espace[3],
   },
-  errorText: {
-    color: Colors.corail[600],
-    marginBottom: 16,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  button: {
-    height: 56,
-    borderRadius: 20,
-    backgroundColor: Colors.aubergine,
+  numero: {
+    width: NUMERO,
+    height: NUMERO,
+    borderRadius: Rayon.plein,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
+    backgroundColor: Theme.info.fond,
   },
-  buttonPressed: {
-    opacity: 0.85,
+  numeroTexte: {
+    color: Theme.info.icone,
   },
-  buttonDisabled: {
-    opacity: 0.5,
+  etapeTextes: {
+    flex: 1,
+    gap: 2,
   },
-  buttonText: {
-    color: Colors.cremeClair,
-    fontSize: 17,
-    fontWeight: '700',
+  adresseLibelle: {
+    color: Theme.texte.secondaire,
+    textAlign: 'center',
+    marginTop: Espace[8],
   },
-  linkContainer: {
-    marginTop: 24,
-    alignItems: 'center',
+  adresse: {
+    color: Theme.texte.principal,
+    textAlign: 'center',
+    marginTop: Espace[1],
   },
-  linkText: {
-    color: Colors.petrole[600],
-    fontSize: 14,
-    fontWeight: '700',
-    textDecorationLine: 'underline',
+  bouton: {
+    marginTop: Espace[4],
   },
 });

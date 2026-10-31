@@ -1,52 +1,39 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../../../constants/colors';
-import { TAB_BAR_STYLE } from '../../_layout';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { Bandeau, BoutonBandeau } from '../../../../components/ui/Bandeau';
+import { LienSite } from '../../../../components/don/LienSite';
+import { Chargement } from '../../../../components/ui/Chargement';
+import { EnTeteSousPage } from '../../../../components/ui/EnTeteSousPage';
+import { EtatErreur } from '../../../../components/ui/EtatErreur';
+import { TexteDocument } from '../../../../components/ui/TexteDocument';
+import { entreeSousPage } from '../../../../constants/animations';
+import { Theme } from '../../../../constants/colors';
+import { categorieFiche } from '../../../../constants/fiches';
+import { Espace, Rayon } from '../../../../constants/spacing';
+import { TEINTES_VIVES } from '../../../../constants/teintes';
+import { Typo } from '../../../../constants/typography';
 import { FicheInfo, getFicheInfo } from '../../../../services/fichesInfos.service';
+import { tempsLecture } from '../../../../utils/tempsLecture';
+import { TAB_BAR_STYLE } from '../../_layout';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  eligibilite: 'Éligibilité au don',
-  processus_don: 'Processus du don',
-  apres_don: 'Avant et après le don',
-  urgences: 'Urgences et pénuries',
-};
+const SITE_URL = 'https://www.dondusang.nc/';
 
-function LeSaviezVous({ texte }: { texte: string }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <View style={styles.saviezCard}>
-      <TouchableOpacity
-        style={styles.saviezHeader}
-        onPress={() => setOpen((value) => !value)}
-        activeOpacity={0.85}
-      >
-        <Text style={styles.saviezTitle}>Le saviez-vous ?</Text>
-        <Ionicons
-          name={open ? 'chevron-up' : 'chevron-down'}
-          size={20}
-          color={Colors.aubergine}
-        />
-      </TouchableOpacity>
-
-      {open && <Text style={styles.saviezText}>{texte}</Text>}
-    </View>
-  );
-}
+type Etat =
+  | { statut: 'chargement' }
+  | { statut: 'pret'; fiche: FicheInfo }
+  | { statut: 'erreur' };
 
 export default function FicheScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const navigation = useNavigation();
-  const [fiche, setFiche] = useState<FicheInfo | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [etat, setEtat] = useState<Etat>({ statut: 'chargement' });
 
-  // 📖 Même logique que sur l'écran scanner : on masque la tab bar pendant la lecture, on la restaure en quittant l'écran
-  // → Pourquoi : une fiche pratique est un contenu à lire en plein écran (potentiellement long, avec scroll) ; la tab bar flottante par-dessus le texte gênerait la lecture sans apporter d'utilité ici
+  // 📖 Une fiche est un texte à lire en plein écran : la barre d'onglets flottante, par-
+  //    dessus le texte, gênerait la lecture. Restaurée en quittant l'écran.
   useFocusEffect(
     useCallback(() => {
       navigation.getParent()?.setOptions({ tabBarStyle: { display: 'none' } });
@@ -57,282 +44,236 @@ export default function FicheScreen() {
     }, [navigation])
   );
 
-  useEffect(() => {
-    let cancelled = false;
+  const charger = useCallback(() => {
+    let annule = false;
 
     getFicheInfo(Number(id))
-      .then((data) => {
-        if (!cancelled) setFiche(data);
+      .then((fiche) => {
+        if (!annule) setEtat(fiche ? { statut: 'pret', fiche } : { statut: 'erreur' });
       })
       .catch(() => {
-        if (!cancelled) setError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!annule) setEtat({ statut: 'erreur' });
       });
 
     return () => {
-      cancelled = true;
+      annule = true;
     };
   }, [id]);
 
+  useEffect(() => charger(), [charger]);
+
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={22} color={Colors.aubergine} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Fiche pratique</Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <EnTeteSousPage titre="Fiche pratique" />
+
+        {etat.statut === 'chargement' && <Chargement message="On ouvre la fiche…" />}
+
+        {etat.statut === 'erreur' && (
+          <EtatErreur
+            message="Impossible de charger cette fiche. Vérifie ta connexion et réessaie."
+            onReessayer={() => {
+              setEtat({ statut: 'chargement' });
+              charger();
+            }}
+          />
+        )}
+
+        {etat.statut === 'pret' && (
+          <Animated.View entering={entreeSousPage} style={styles.fiche}>
+            <Fiche
+              fiche={etat.fiche}
+              onOuvrirQuiz={(quizId) => router.push({ pathname: '/tabs/quiz/[id]', params: { id: quizId } })}
+              onVoirQuiz={() => router.push('/tabs/quiz')}
+            />
+          </Animated.View>
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+function Fiche({
+  fiche,
+  onOuvrirQuiz,
+  onVoirQuiz,
+}: {
+  fiche: FicheInfo;
+  onOuvrirQuiz: (id: number) => void;
+  onVoirQuiz: () => void;
+}) {
+  const categorie = categorieFiche(fiche.categorie);
+  const quiz = fiche.quiz_lies ?? [];
+
+  return (
+    <>
+      {/* 📖 En-tête coloré, comme la carte de la fiche sur la page Don : fond pastel et
+          grande icône de la catégorie. À plat, sans ombre (dans l'app, ce qui est
+          surélevé se touche, pas cet en-tête), sur un pastel assez soutenu pour se
+          détacher du fond crème. Le titre domine ; catégorie, durée et quiz sont dans
+          des pilules blanches. Aubergine sur pastel : ≥ 7:1. */}
+      <View style={styles.entete}>
+        <View style={[StyleSheet.absoluteFill, styles.teinte, { backgroundColor: TEINTES_VIVES[categorie.teinte] }]} />
+        <View style={styles.forme} accessible={false}>
+          <Ionicons name={categorie.iconePleine} size={150} color={TEINTES_VIVES[categorie.teinte]} />
+        </View>
+        <View style={styles.pilule}>
+          <Ionicons name={categorie.icone} size={14} color={Theme.texte.principal} />
+          <Text style={[Typo.legendeForte, styles.piluleTexte]}>{categorie.libelle}</Text>
+        </View>
+        <Text style={styles.titre} accessibilityRole="header">
+          {fiche.titre}
+        </Text>
+        <View style={styles.pilules}>
+          <View style={styles.pilule}>
+            <Ionicons name="time-outline" size={14} color={Theme.texte.principal} />
+            <Text style={[Typo.legendeForte, styles.piluleTexte]}>{tempsLecture(fiche.contenu)} min de lecture</Text>
+          </View>
+          {quiz.length > 0 && (
+            <View style={styles.pilule}>
+              <Ionicons name="bulb-outline" size={14} color={Theme.texte.principal} />
+              <Text style={[Typo.legendeForte, styles.piluleTexte]}>Quiz</Text>
+            </View>
+          )}
+        </View>
       </View>
 
-      {loading && <ActivityIndicator color={Colors.corail[600]} style={styles.loader} />}
+      <TexteDocument contenu={fiche.contenu} variante="fiche" accent={TEINTES_VIVES[categorie.teinte]} />
 
-      {!loading && (error || !fiche) && (
-        <View style={styles.content}>
-          <Ionicons name="alert-circle-outline" size={48} color={Colors.aubergine} />
-          <Text style={styles.text}>Impossible de charger cette fiche.</Text>
+      {!!fiche.le_saviez_vous && (
+        // 📖 Pétrole soutenu pour se détacher du crème ; la pastille lime à l'ampoule et
+        //    le titre en pétrole foncé le signalent comme une anecdote, le texte reste foncé.
+        <View style={styles.saviez}>
+          <View style={styles.saviezEntete}>
+            <View style={styles.saviezPastille}>
+              <Ionicons name="bulb" size={18} color={Theme.accent.signatureTexte} />
+            </View>
+            <Text style={[Typo.corpsFort, styles.saviezTitre]}>Le savais-tu ?</Text>
+          </View>
+          <Text style={[Typo.corps, styles.saviezTexte]}>{fiche.le_saviez_vous}</Text>
         </View>
       )}
 
-      {!loading && fiche && (
-        <ScrollView contentContainerStyle={styles.readingContent} showsVerticalScrollIndicator={false}>
-          {CATEGORY_LABELS[fiche.categorie] && (
-            <Text style={styles.categoryBadge}>{CATEGORY_LABELS[fiche.categorie]}</Text>
-          )}
-
-          <Text style={styles.title}>{fiche.titre}</Text>
-
-          {fiche.contenu && <Text style={styles.intro}>{fiche.contenu}</Text>}
-
-          {fiche.sections?.map((section) => (
-            <View key={section.titre} style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>{section.titre}</Text>
-
-              {section.items.map((item) => (
-                <View key={item.titre} style={styles.bulletRow}>
-                  <View style={styles.dot} />
-                  <View style={styles.bulletTextContainer}>
-                    <Text style={styles.bulletTitle}>{item.titre}</Text>
-                    <Text style={styles.bulletDescription}>{item.description}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          ))}
-
-          {fiche.a_eviter && fiche.a_eviter.length > 0 && (
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Ce qu&apos;il faut éviter avant le don</Text>
-
-              {fiche.a_eviter.map((item) => (
-                <View key={item} style={styles.eviterRow}>
-                  <Text style={styles.eviterIcon}>✕</Text>
-                  <Text style={styles.eviterText}>{item}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {fiche.quiz_cta && (
-            <View style={styles.quizCard}>
-              <Text style={styles.quizTitle}>Tester ses connaissances</Text>
-              <Text style={styles.quizText}>
-                Vous pensez tout savoir sur le don du sang ? Testez vos connaissances et gagnez
-                des points !
+      {/* 📖 Le quiz lié, s'il y en a un : on passe de la lecture à la pratique. Même
+          bandeau aubergine que la page Quiz. Sans quiz lié, on propose la liste. */}
+      {fiche.quiz_cta && (
+        <Bandeau>
+          <Text style={[Typo.titre3, styles.texteClair]} accessibilityRole="header">
+            Teste-toi !
+          </Text>
+          {quiz.length > 0 ? (
+            <>
+              <Text style={[Typo.corps, styles.texteClair, styles.texteLimite]}>
+                {quiz.length === 1
+                  ? `Le quiz « ${quiz[0].titre} » reprend ce que tu viens de lire.`
+                  : 'Ces quiz reprennent ce que tu viens de lire.'}
               </Text>
-
-              <TouchableOpacity
-                style={styles.quizButton}
-                onPress={() => router.push('/tabs/quiz')}
-                activeOpacity={0.9}
-              >
-                <Text style={styles.quizButtonText}>Faire le questionnaire</Text>
-              </TouchableOpacity>
-            </View>
+              {quiz.map((q) => (
+                <BoutonBandeau
+                  key={q.id}
+                  libelle={quiz.length === 1 ? 'Faire le quiz' : q.titre}
+                  accessibilityLabel={`Faire le quiz ${q.titre}`}
+                  onPress={() => onOuvrirQuiz(q.id)}
+                />
+              ))}
+            </>
+          ) : (
+            <>
+              <Text style={[Typo.corps, styles.texteClair, styles.texteLimite]}>
+                Vérifie ce que tu as retenu et gagne des points.
+              </Text>
+              <BoutonBandeau libelle="Voir les quiz" onPress={onVoirQuiz} />
+            </>
           )}
-
-          {fiche.le_saviez_vous && <LeSaviezVous texte={fiche.le_saviez_vous} />}
-        </ScrollView>
+        </Bandeau>
       )}
-    </View>
+
+      <LienSite onPress={() => Linking.openURL(SITE_URL)} />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 54,
-    paddingHorizontal: 18,
-    paddingBottom: 16,
-  },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.aubergine,
+    backgroundColor: Theme.fond.page,
   },
   content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    gap: 12,
-  },
-  readingContent: {
     paddingHorizontal: 18,
-    paddingBottom: 126,
+    paddingTop: 54,
+    paddingBottom: Espace[12],
   },
-  text: {
-    color: Colors.aubergine,
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 22,
+  fiche: {
+    gap: Espace[6],
   },
-  title: {
-    color: Colors.aubergine,
-    fontSize: 22,
-    fontWeight: '700',
-    marginTop: 4,
-    marginBottom: 10,
+  entete: {
+    gap: Espace[3],
+    padding: Espace[6] - Espace[1],
+    borderRadius: Rayon.lg,
+    overflow: 'hidden',
+    backgroundColor: Theme.fond.surface,
   },
-  loader: {
-    marginTop: 24,
+  // Couleur vive à 22 % sur du blanc : un pastel plus soutenu que celui des pastilles,
+  // qui se détache du fond crème sans ombre ni contour. Aubergine dessus : ≥ 7:1.
+  teinte: {
+    opacity: 0.22,
   },
-  categoryBadge: {
+  forme: {
+    position: 'absolute',
+    right: -30,
+    bottom: -36,
+    opacity: 0.3,
+    transform: [{ rotate: '-12deg' }],
+  },
+  titre: {
+    ...Typo.titre2,
+    fontSize: 26,
+    lineHeight: 32,
+    color: Theme.texte.principal,
+    // Laisse respirer l'icône à droite.
+    maxWidth: '88%',
+  },
+  pilules: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Espace[2],
+  },
+  pilule: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
-    color: Colors.grisMoyen,
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 8,
+    gap: 4,
+    paddingHorizontal: Espace[2],
+    paddingVertical: 4,
+    borderRadius: Rayon.plein,
+    backgroundColor: Theme.fond.surface,
   },
-  intro: {
-    color: Colors.grisMoyen,
-    fontSize: 15,
-    lineHeight: 21,
-    marginBottom: 20,
+  piluleTexte: { color: Theme.texte.principal },
+  saviez: {
+    gap: Espace[3],
+    padding: Espace[6] - Espace[1],
+    borderRadius: Rayon.lg,
+    backgroundColor: Theme.info.surface,
   },
-  sectionCard: {
-    backgroundColor: Colors.cremeClair,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-  sectionTitle: {
-    color: Colors.aubergine,
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  bulletRow: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.corail[600],
-    marginTop: 7,
-    marginRight: 10,
-  },
-  bulletTextContainer: {
-    flex: 1,
-  },
-  bulletTitle: {
-    color: Colors.aubergine,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  bulletDescription: {
-    color: Colors.grisMoyen,
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 2,
-  },
-  eviterRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 10,
-  },
-  eviterIcon: {
-    color: Colors.corail[600],
-    fontWeight: '700',
-    fontSize: 13,
-    marginRight: 10,
-    marginTop: 1,
-  },
-  eviterText: {
-    flex: 1,
-    color: Colors.aubergine,
-    fontSize: 14,
-    lineHeight: 19,
-  },
-  quizCard: {
-    backgroundColor: Colors.aubergine,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
-  },
-  quizTitle: {
-    color: Colors.cremeClair,
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  quizText: {
-    color: '#D9D0D3',
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 14,
-  },
-  quizButton: {
-    backgroundColor: Colors.cremeClair,
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  quizButtonText: {
-    color: Colors.aubergine,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  saviezCard: {
-    backgroundColor: Colors.cremeClair,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 8,
-  },
-  saviezHeader: {
+  saviezEntete: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: Espace[2],
   },
-  saviezTitle: {
-    color: Colors.aubergine,
-    fontWeight: '700',
-    fontSize: 15,
+  saviezPastille: {
+    width: 32,
+    height: 32,
+    borderRadius: Rayon.plein,
+    backgroundColor: Theme.accent.signatureAplat,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  saviezText: {
-    color: Colors.grisMoyen,
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 12,
+  saviezTitre: {
+    color: Theme.info.icone,
   },
+  saviezTexte: {
+    color: Theme.texte.principal,
+  },
+  texteClair: { color: Theme.texte.surAccent },
+  texteLimite: { maxWidth: '85%' },
 });

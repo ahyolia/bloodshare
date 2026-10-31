@@ -7,22 +7,22 @@
         <table class="w-full text-sm text-left">
             <thead>
                 <tr class="border-b border-gray-200 dark:border-white/10">
-                    <th class="py-2 pr-4 font-medium text-gray-500 dark:text-gray-400">Action</th>
+                    <th class="py-2 pe-4 font-medium text-gray-500 dark:text-gray-400">Action</th>
                     <th class="py-2 font-medium text-gray-500 dark:text-gray-400">Points</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($this->getPointsParAction() as $ligne)
                     <tr class="border-b border-gray-100 dark:border-white/5">
-                        <td class="py-2 pr-4 text-gray-950 dark:text-white">{{ $ligne['action'] }}</td>
-                        <td class="py-2 text-gray-700 dark:text-gray-300">{{ $ligne['points'] }}</td>
+                        <td class="py-2 pe-4 text-gray-950 dark:text-white">{{ $ligne['action'] }}</td>
+                        <td class="py-2 text-gray-700 dark:text-gray-200">{{ $ligne['points'] }}</td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
 
-        <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            Don et événement : aucun point attribué (conformément à la charte de l'association ADSB-NC).
+        <p class="mt-6 text-sm text-gray-500 dark:text-gray-400">
+            Don, événement, défi du mois et parrainage côté filleul : aucun point attribué (conformément à la charte de l'association ADSB-NC). Ils sont récompensés par des cartes et des badges.
         </p>
     </div>
 </x-filament-panels::page>

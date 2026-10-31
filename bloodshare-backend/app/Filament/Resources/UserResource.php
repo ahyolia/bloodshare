@@ -11,9 +11,13 @@ use Filament\Forms\Form;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserResource extends Resource
 {
@@ -23,6 +27,16 @@ class UserResource extends Resource
     protected static ?string $navigationGroup = 'Utilisateurs';
     protected static ?string $navigationLabel = 'Utilisateurs';
     protected static ?string $modelLabel = 'utilisateur';
+
+    // 📖 Donneurs uniquement : les comptes du BO se gèrent dans « Admins », réservé au
+    //    super_admin. Sans ce filtre, un admin pouvait suspendre ou supprimer le super_admin
+    //    depuis sa fiche utilisateur (audit cybersécurité). Le filtre s'applique aussi à
+    //    l'URL directe /admin/users/{id} (404).
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->whereDoesntHave('roles', fn ($q) => $q->whereIn('name', ['admin', 'super_admin']));
+    }
     protected static ?string $pluralModelLabel = 'Utilisateurs';
 
     public static function table(Table $table): Table
@@ -37,15 +51,6 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('pseudo')
                     ->label('Pseudo')
                     ->searchable(),
-
-                Tables\Columns\TextColumn::make('statut_donneur')
-                    ->label('Statut donneur')
-                    ->formatStateUsing(fn ($state) => match($state) {
-                        'donneur_regulier' => 'Donneur régulier',
-                        'quelques_dons'    => 'Quelques dons',
-                        'jamais_donne'     => 'Jamais donné',
-                        default            => '—'
-                    }),
 
                 Tables\Columns\TextColumn::make('points_cumules')
                     ->label('Points')
@@ -91,15 +96,42 @@ class UserResource extends Resource
                         'suspendu' => 'Suspendu',
                         'supprime' => 'Supprimé',
                     ]),
-                Tables\Filters\SelectFilter::make('statut_donneur')
-                    ->options([
-                        'donneur_regulier' => 'Donneur régulier',
-                        'quelques_dons'    => 'Quelques dons',
-                        'jamais_donne'     => 'Jamais donné',
-                    ]),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()->label('Voir'),
+                Tables\Actions\Action::make('reinitialiser_mdp')
+                    ->label('Réinitialiser le mot de passe')
+                    ->icon('heroicon-o-key')
+                    ->color('warning')
+                    ->visible(fn (User $record): bool => $record->statut !== 'supprime'
+                        && ! $record->hasAnyRole(['super_admin', 'admin']))
+                    ->requiresConfirmation()
+                    ->modalDescription(
+                        "Un mot de passe temporaire va être généré. Transmettez-le vous-même à "
+                        . "l'utilisateur (l'association n'a pas encore de mail dédié à l'envoi "
+                        . "automatique) : il devra le changer dès sa prochaine connexion."
+                    )
+                    // 📖 Pas d'envoi de mail en V1 (pas de mail pro, voir CLAUDE.md) : le mdp
+                    //    temporaire n'est affiché qu'une fois, ici, pour transmission manuelle.
+                    ->action(function (User $record) {
+                        $motDePasseTemporaire = Str::password(12, symbols: false);
+
+                        $record->update([
+                            'password' => Hash::make($motDePasseTemporaire),
+                            'doit_changer_mdp' => true,
+                        ]);
+
+                        // 📖 Un mdp réinitialisé doit invalider les sessions déjà ouvertes avec
+                        //    l'ancien, sans quoi un appareil resterait connecté malgré le reset.
+                        $record->tokens()->delete();
+
+                        Notification::make()
+                            ->title('Mot de passe temporaire généré')
+                            ->body("Transmettez-le à l'utilisateur : {$motDePasseTemporaire}")
+                            ->warning()
+                            ->persistent()
+                            ->send();
+                    }),
             ])
             ->bulkActions([
                 //
@@ -113,15 +145,9 @@ class UserResource extends Resource
                 InfolistSection::make('Informations')
                     ->schema([
                         TextEntry::make('pseudo')->label('Pseudo'),
-                        TextEntry::make('statut_donneur')
-                            ->label('Statut donneur')
-                            ->formatStateUsing(fn ($state) => match($state) {
-                                'donneur_regulier' => '🩸 Donneur régulier',
-                                'quelques_dons'    => '💧 Quelques dons',
-                                'jamais_donne'     => '🆕 Jamais donné',
-                                default            => '—'
-                            }),
-                        TextEntry::make('sexe')->label('Sexe'),
+                        // 📖 Pas de sexe ici : donnée de santé (avec les dates de don) dont les
+                        //    admins n'ont pas besoin (audit RGPD). Seul le calcul du délai entre
+                        //    deux dons l'utilise.
                         TextEntry::make('points_cumules')->label('Points cumulés'),
                         TextEntry::make('niveau')
                             ->label('Niveau')

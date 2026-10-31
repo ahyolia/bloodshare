@@ -1,0 +1,30 @@
+# .htaccess du serveur de démo sae203, copié dans public/ par installer.sh.
+#
+# 📖 Diffère du public/.htaccess de Laravel sur deux points :
+#    - RewriteBase : Apache sert le site depuis un dossier utilisateur (UserDir),
+#      sans lui les réécritures visent le chemin disque et répondent 404.
+#    - Pas de « Options -MultiViews -Indexes » : la config UserDir par défaut
+#      n'autorise pas Options dans un .htaccess, ce qui donnerait une 500 partout.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /~cameliaa/
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Handle X-XSRF-Token Header
+    RewriteCond %{HTTP:x-xsrf-token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>

@@ -1,12 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useCameraPermissions } from 'expo-camera';
+import { QrScanner } from '../../../components/scanner/QrScanner';
+import { useDialogue } from '../../../components/DialogueProvider';
 import { useNavigation, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
+  AppState,
   Linking,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,10 +18,13 @@ import {
 import { Colors } from '../../../constants/colors';
 import { TAB_BAR_STYLE } from '../_layout';
 import { ResultatScan, soumettreScan } from '../../../services/scan.service';
+import { formaterDateLongue } from '../../../utils/dates';
+import { estAppInstallee, etatPermissionCamera } from '../../../utils/permissionCamera';
 
 export default function ScanScreen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const { informer } = useDialogue();
 
   // 📖 On masque la tab bar tant que cet écran est affiché, et on la remet dès qu'on le quitte
   // → Pourquoi : le scanner occupe déjà tout l'écran (plein écran caméra) ; la tab bar flottante par-dessus gênerait le cadrage du QR Code et n'a aucune utilité pendant un scan
@@ -37,7 +43,21 @@ export default function ScanScreen() {
 
   // 📖 permission = l'état actuel (accordée/refusée/inconnue), requestPermission = la fonction qui déclenche la popup système
   // → Pourquoi : useCameraPermissions ne fait QUE lire l'état ; c'est nous qui décidons quand appeler requestPermission (au clic, jamais au montage)
-  const [permission, requestPermission] = useCameraPermissions();
+  const [permission, requestPermission, getPermission] = useCameraPermissions();
+
+  // 📖 Au retour des Réglages du téléphone (où l'utilisateur vient d'autoriser la caméra),
+  //    l'app repasse au premier plan mais useCameraPermissions ne relit PAS l'état tout seul :
+  //    l'écran « Accès refusé » restait affiché, il fallait quitter puis rouvrir le scanner.
+  //    On relit donc la permission à chaque retour au premier plan.
+  useEffect(() => {
+    const abonnement = AppState.addEventListener('change', (etat) => {
+      if (etat === 'active') {
+        getPermission();
+      }
+    });
+
+    return () => abonnement.remove();
+  }, [getPermission]);
 
   // 📖 scanned évite de traiter plusieurs fois le même QR Code tant qu'un scan est en cours de traitement
   // → Si on ne le faisait pas : la caméra détecte le même QR Code plusieurs fois par seconde et enverrait des dizaines de requêtes /scan pour un seul passage devant le lecteur
@@ -53,14 +73,28 @@ export default function ScanScreen() {
     return <View style={styles.screen} />;
   }
 
+  // 📖 Sur web, canAskAgain est toujours vrai : etatPermissionCamera s'appuie sur le statut
+  //    « denied » à la place (cf. utils/permissionCamera.ts).
+  const surWeb = Platform.OS === 'web';
+  const etat = etatPermissionCamera(permission, surWeb);
+  const appInstallee = surWeb && estAppInstallee(typeof window !== 'undefined' ? window : undefined);
+
   // 📖 Cas 2 : la permission n'a jamais été accordée ET l'utilisateur peut encore la redemander (canAskAgain)
   // → Pourquoi : on distingue "jamais demandé" de "refusé définitivement" pour proposer la bonne action (popup vs réglages téléphone)
-  if (!permission.granted && permission.canAskAgain) {
+  if (etat === 'demander') {
     return (
       <View style={styles.permissionScreen}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.retourPermission}
+          accessibilityRole="button"
+          accessibilityLabel="Retour"
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.aubergine} />
+        </TouchableOpacity>
         <Ionicons name="camera-outline" size={56} color={Colors.aubergine} />
         <Text style={styles.permissionText}>
-          BloodShare a besoin d&apos;accéder à votre caméra pour scanner le QR Code après votre don.
+          {"Aïma a besoin d'accéder à ta caméra pour scanner le QR Code après ton don."}
         </Text>
         <TouchableOpacity style={styles.primaryButton} onPress={requestPermission}>
           <Text style={styles.primaryButtonText}>Autoriser la caméra</Text>
@@ -71,40 +105,87 @@ export default function ScanScreen() {
 
   // 📖 Cas 3 : la permission a été refusée ET l'utilisateur ne peut plus la redemander via la popup
   // → Pourquoi : iOS/Android n'affichent la popup qu'une seule fois ; après un refus, seul un passage par les Réglages du téléphone permet de changer d'avis
-  if (!permission.granted) {
+  if (etat === 'refuse') {
     return (
       <View style={styles.permissionScreen}>
-        <Ionicons name="camera-outline" size={56} color={Colors.aubergine} />
-        <Text style={styles.permissionText}>
-          Accès à la caméra refusé. Activez-le dans les paramètres de votre téléphone.
-        </Text>
-        <TouchableOpacity style={styles.outlineButton} onPress={() => Linking.openSettings()}>
-          <Text style={styles.outlineButtonText}>Ouvrir les paramètres</Text>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.retourPermission}
+          accessibilityRole="button"
+          accessibilityLabel="Retour"
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.aubergine} />
         </TouchableOpacity>
+        <Ionicons name="camera-outline" size={56} color={Colors.aubergine} />
+        {surWeb ? (
+          // 📖 Un navigateur ne peut pas ouvrir ses propres réglages (Linking.openSettings
+          //    n'y fait rien) : on explique plutôt où réactiver la caméra.
+          <>
+            <Text style={styles.permissionText}>
+              {"Pas d'inquiétude, tu peux autoriser la caméra à tout moment pour scanner ton QR Code."}
+            </Text>
+            {appInstallee ? (
+              // 📖 App installée : pas de barre d'adresse, on passe par les réglages du téléphone.
+              <View style={styles.aideNavigateur}>
+                <Text style={styles.aideTitre}>Sur iPhone</Text>
+                <Text style={styles.aideTexte}>
+                  {"Ouvre les Réglages du téléphone › « Apps » › « Safari » › « Appareil photo » › « Autoriser »."}
+                </Text>
+                <Text style={styles.aideTitre}>Sur Android</Text>
+                <Text style={styles.aideTexte}>
+                  {"Ouvre les Paramètres du téléphone › « Applications » › « Aïma » (ou ton navigateur) › « Autorisations » › « Appareil photo » › « Autoriser »."}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.aideNavigateur}>
+                <Text style={styles.aideTitre}>Sur iPhone (Safari)</Text>
+                <Text style={styles.aideTexte}>
+                  {"Touche l'icône à gauche de l'adresse (souvent « aA »), puis « Réglages du site web » › « Appareil photo » › « Autoriser »."}
+                </Text>
+                <Text style={styles.aideTitre}>Sur Android ou ordinateur (Chrome, Edge, Firefox…)</Text>
+                <Text style={styles.aideTexte}>
+                  {"Touche l'icône à gauche de l'adresse (cadenas ou réglages), ouvre les autorisations du site, puis autorise l'appareil photo."}
+                </Text>
+              </View>
+            )}
+            <Text style={styles.permissionText}>{"Reviens ensuite ici et touche « Réessayer »."}</Text>
+            {/* 📖 Recharger la page relance la demande d'accès à la caméra. Indispensable en
+                app installée, qui n'a pas de bouton « recharger » du navigateur. */}
+            <TouchableOpacity style={styles.outlineButton} onPress={() => window.location.reload()}>
+              <Text style={styles.outlineButtonText}>Réessayer</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <Text style={styles.permissionText}>
+              Accès à la caméra refusé. Active-le dans les paramètres de ton téléphone.
+            </Text>
+            <TouchableOpacity style={styles.outlineButton} onPress={() => Linking.openSettings()}>
+              <Text style={styles.outlineButtonText}>Ouvrir les paramètres</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     );
   }
 
   // 📖 handleScan reçoit l'objet renvoyé par CameraView à chaque QR Code détecté ; on ne garde que son champ `data` (le contenu textuel du QR Code), renommé `token`
   // → Pourquoi setScanned(true) en premier : la caméra scanne plusieurs fois par seconde. Si on attendait la réponse de l'API pour bloquer les scans suivants, on enverrait déjà 3 ou 4 requêtes avant que la première ne réponde. En le mettant AVANT l'appel API, on bloque immédiatement les scans suivants dès la première détection.
-  const handleScan = async ({ data: token }: { data: string }) => {
+  const handleScan = async (token: string) => {
     setScanned(true);
     setLoading(true);
 
     try {
-      // 📖 La validation passe par la couche service (mock ou API selon USE_MOCK_DATA).
-      //    Le token n'est jamais interprété côté app : seul le backend sait le valider
+      // 📖 Le token n'est jamais interprété côté app : seul le backend sait le valider
       //    (don réel, éligibilité, expiration...) — un QR Code peut être falsifié ou rejoué.
       const data = await soumettreScan(token);
-
+      setLoading(false);
       handleSuccess(data);
     } catch (error) {
-      // 📖 error.response existe quand le serveur A répondu mais avec un code d'erreur (404, 422...)
-      //    error.request existe quand la requête est partie mais qu'AUCUNE réponse n'est arrivée (pas de réseau, timeout, serveur injoignable)
-      // → Pourquoi la distinction compte : un 422 veut dire "le serveur a compris ta demande mais elle est invalide" (ex: pas éligible), alors qu'une absence de réponse veut dire "problème réseau" — le message à afficher n'est pas le même
-      handleError(error);
-    } finally {
+      // 📖 On retire l'overlay « Validation en cours… » AVANT d'afficher l'erreur,
+      //    sinon il resterait visible derrière la modale.
       setLoading(false);
+      await handleError(error);
     }
   };
 
@@ -119,9 +200,12 @@ export default function ScanScreen() {
           type: data.type,
           carte_id: data.carte_obtenue?.id,
           carte_titre: data.carte_obtenue?.titre,
+          carte_image_url: data.carte_obtenue?.image_url ?? undefined,
+          carte_mois: data.carte_obtenue?.mois_numero ?? undefined,
           carte_categorie: data.carte_obtenue?.categorie,
           deja_possedee: String(data.carte_obtenue?.deja_possedee ?? false),
-          badges: JSON.stringify(data.badges_debloques ?? []),
+          carte_fidele_titre: data.carte_fidele?.titre,
+          carte_fidele_image_url: data.carte_fidele?.image_url ?? undefined,
         },
       });
     }
@@ -131,68 +215,50 @@ export default function ScanScreen() {
   // → Pourquoi des codes HTTP différents plutôt qu'un code d'erreur générique : le code HTTP dit la NATURE du problème (422 = requête comprise mais refusée pour une raison métier, 404 = ressource introuvable) ; ça permet à l'app d'adapter le message sans avoir à parser un texte d'erreur fragile
   // → Le "?." (optional chaining) : error.response peut être `undefined` (erreur réseau, cf. ci-dessus) ; sans le "?", error.response.status planterait l'app avec un "Cannot read property 'status' of undefined"
   // → Pourquoi remettre scanned à false seulement en cas d'erreur : après un succès, on quitte l'écran de scan (navigation vers resultat-scan), donc pas besoin de le réautoriser ; après une erreur, l'utilisateur reste sur l'écran caméra et doit pouvoir rescanner
-  const handleError = (error: any) => {
+    // 📖 handleError choisit le message selon le code HTTP renvoyé par le backend
+  //    (422 = refus métier, 404 = QR introuvable, 401 = session, 503 = config backoffice).
+  //    error.response est undefined en cas de problème réseau, d'où le « ?. ».
+  const handleError = async (error: any) => {
     const status = error.response?.status;
+    let titre = 'Erreur';
+    let message = 'Une erreur est survenue. Vérifie ta connexion et réessaie.';
 
     if (status === 422) {
-      Alert.alert(
-        'Don non validé',
-        `Vous n'êtes pas encore éligible.\nProchain don possible le : ${error.response.data.prochaine_eligibilite}`,
-        [{ text: 'OK', onPress: () => setScanned(false) }]
-      );
-      return;
+      // 📖 Deux refus partagent le 422 : un don trop rapproché (le backend joint
+      //    `prochaine_eligibilite`) et un QR d'événement annulé ou terminé (simple `message`).
+      const { prochaine_eligibilite, message: messageServeur } = error.response.data ?? {};
+      if (prochaine_eligibilite) {
+        titre = 'Don non validé';
+        message = `Tu n'es pas encore éligible.\nProchain don possible le ${formaterDateLongue(prochaine_eligibilite)}`;
+      } else {
+        titre = 'Scan non validé';
+        message = messageServeur ?? "Ce QR Code n'a pas pu être validé.";
+      }
+    } else if (status === 404) {
+      titre = 'QR Code invalide';
+      message = 'Ce QR Code est invalide ou expiré.';
+    } else if (status === 401) {
+      titre = 'Session expirée';
+      message = 'Ta session a expiré. Reconnecte-toi pour valider un scan, puis réessaie.';
+    } else if (status === 503) {
+      titre = 'Service temporairement indisponible';
+      message = "La carte à débloquer n'est pas encore configurée. Réessaie plus tard.";
     }
 
-    if (status === 404) {
-      Alert.alert(
-        'QR Code invalide',
-        'Ce QR Code est invalide ou expiré.',
-        [{ text: 'Réessayer', onPress: () => setScanned(false) }]
-      );
-      return;
-    }
-
-    // 📖 401 = l'utilisateur n'a pas de session valide (token absent, expiré, ou jamais connecté)
-    // → Pourquoi un message dédié : l'intercepteur de services/api.ts efface le token stocké sur un 401, mais ne redirige pas vers l'écran de login automatiquement ; sans ce cas, l'utilisateur verrait "vérifiez votre connexion" et penserait à un problème réseau, alors que le vrai souci est qu'il doit se reconnecter
-    if (status === 401) {
-      Alert.alert(
-        'Session expirée',
-        'Vous devez être connecté pour valider un scan. Reconnectez-vous puis réessayez.',
-        [{ text: 'OK', onPress: () => setScanned(false) }]
-      );
-      return;
-    }
-
-    // 📖 503 = le backend a bien compris et accepté la requête, mais ne peut pas la traiter (ex: carte du mois pas encore créée dans le backoffice)
-    // → Pourquoi un message dédié : ce n'est ni un problème de connexion utilisateur, ni un token expiré, ni un QR invalide — c'est un souci de configuration côté backoffice, que l'utilisateur ne peut pas résoudre lui-même en réessayant
-    if (status === 503) {
-      Alert.alert(
-        'Service temporairement indisponible',
-        "La carte à débloquer n'est pas encore configurée. Réessayez plus tard.",
-        [{ text: 'OK', onPress: () => setScanned(false) }]
-      );
-      return;
-    }
-
-    Alert.alert(
-      'Erreur',
-      'Une erreur est survenue. Vérifiez votre connexion et réessayez.',
-      [{ text: 'OK', onPress: () => setScanned(false) }]
-    );
+    await informer(titre, message);
+    // 📖 On réautorise le scan seulement après la fermeture du message : sinon la caméra
+    //    relirait le même QR derrière la modale et enverrait une nouvelle requête.
+    setScanned(false);
   };
 
   return (
     <View style={styles.screen}>
       {/* 📖 CameraView est le composant caméra léger d'expo-camera, dédié à l'AFFICHAGE + à la détection de codes-barres/QR
           → Pourquoi lui et pas "la caméra complète" : on n'a besoin ni de prendre des photos, ni de filmer ; CameraView embarque juste ce qu'il faut (flux vidéo + scanner de codes), ce qui est plus léger et plus simple à configurer que l'API caméra complète */}
-      <CameraView
+      <QrScanner
         style={StyleSheet.absoluteFill}
-        // 📖 barcodeTypes: ['qr'] filtre le scanner pour qu'il ne réagisse qu'aux QR Codes
-        // → Pourquoi : CameraView sait aussi lire des codes-barres classiques (EAN, Code128...) ; sans ce filtre, l'app tenterait de scanner n'importe quel code visible, avec le risque de traiter un code-barres de supermarché comme un token BloodShare
-        barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-        // 📖 onBarcodeScanned n'appelle handleScan que si !scanned
-        // → Pourquoi : CameraView continue d'appeler ce callback à chaque frame où un QR Code est détecté ; sans cette garde, on redéclencherait handleScan en boucle tant que le QR Code reste dans le cadre
-        onBarcodeScanned={!scanned ? handleScan : undefined}
+        actif={!scanned}
+        onScan={handleScan}
       />
 
       <View style={styles.overlay} pointerEvents="box-none">
@@ -202,7 +268,7 @@ export default function ScanScreen() {
 
         <View style={styles.centerArea} pointerEvents="none">
           <View style={styles.scanFrame} />
-          <Text style={styles.scanHint}>Placez le QR Code dans le cadre</Text>
+          <Text style={styles.scanHint}>Place le QR Code dans le cadre</Text>
         </View>
       </View>
 
@@ -250,6 +316,24 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
   },
+  aideNavigateur: {
+    alignSelf: 'stretch',
+    backgroundColor: Colors.blanc,
+    borderRadius: 16,
+    padding: 16,
+    gap: 4,
+  },
+  aideTitre: {
+    color: Colors.aubergine,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  aideTexte: {
+    color: Colors.aubergine,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
   outlineButton: {
     borderWidth: 1.5,
     borderColor: Colors.aubergine,
@@ -265,6 +349,14 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFill,
     justifyContent: 'space-between',
+  },
+  // 📖 Retour sur les écrans de permission : la tab bar est masquée ici et le bouton de
+  //    l'écran caméra n'existe pas dans ces deux cas.
+  retourPermission: {
+    position: 'absolute',
+    top: 54,
+    left: 18,
+    padding: 6,
   },
   backButton: {
     marginTop: 54,
