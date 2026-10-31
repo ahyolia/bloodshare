@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Evenement;
 use App\Models\User;
+use App\Notifications\NouvelEvenementNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -45,6 +47,39 @@ class NotificationsTest extends TestCase
 
         $this->assertSame('badge', $categories['Badge']);
         $this->assertSame('autre', $categories['Inconnue']);
+    }
+
+    public function test_donne_le_lien_enregistre_avec_la_notification(): void
+    {
+        $evenement = new Evenement(['titre' => 'Collecte', 'lieu' => 'Nouméa']);
+        $evenement->id = 7;
+        $this->user->notifications()->create([
+            'id' => (string) Str::uuid(),
+            'type' => NouvelEvenementNotification::class,
+            'data' => (new NouvelEvenementNotification($evenement))->toArray($this->user),
+        ]);
+
+        $this->getJson('/api/notifications')->assertJsonPath('data.0.lien', '/detail/evenement/7');
+    }
+
+    public function test_replie_sur_la_rubrique_pour_une_notification_sans_lien(): void
+    {
+        // Enregistrée avant les liens : data ne contient que le titre et le corps.
+        $this->creerNotification($this->user, 'Quiz', type: 'App\\Notifications\\NouveauQuizNotification');
+        $this->creerNotification($this->user, 'Inconnue');
+
+        $liens = collect($this->getJson('/api/notifications')->json('data'))->pluck('lien', 'titre');
+
+        $this->assertSame('/tabs/quiz', $liens['Quiz']);
+        $this->assertNull($liens['Inconnue']);
+    }
+
+    public function test_chaque_notification_porte_un_lien(): void
+    {
+        foreach (glob(app_path('Notifications/*Notification.php')) as $fichier) {
+            $classe = 'App\\Notifications\\'.basename($fichier, '.php');
+            $this->assertStringContainsString("->data(['url' =>", file_get_contents($fichier), "$classe n'a pas de lien");
+        }
     }
 
     public function test_ne_montre_pas_les_notifications_des_autres(): void

@@ -14,18 +14,25 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(payload.title, {
       body: payload.body,
       icon: payload.icon,
+      // Page de l'app liée à la notification (data.url, posé par le backend).
+      data: payload.data,
     })
   );
 });
 
+// Au clic : ouvre la page liée (quiz, événement, badges…), dans l'onglet de l'app s'il
+// est déjà ouvert, sinon dans un nouveau. Sans lien : l'accueil.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  const url = new URL(event.notification.data?.url ?? '/', self.location.origin).href;
+
   event.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then((clients) => {
-      if (clients.length > 0) {
-        return clients[0].focus();
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      const onglet = clients.find((c) => new URL(c.url).origin === self.location.origin);
+      if (onglet) {
+        return onglet.focus().then((c) => (c.navigate ? c.navigate(url) : c));
       }
-      return self.clients.openWindow('/');
+      return self.clients.openWindow(url);
     })
   );
 });

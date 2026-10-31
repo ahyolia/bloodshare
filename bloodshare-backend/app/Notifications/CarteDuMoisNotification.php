@@ -20,7 +20,8 @@ class CarteDuMoisNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('Carte du mois à obtenir 🗓️')
-            ->body('Il te reste quelques jours pour obtenir la carte de ce mois en donnant ton sang.');
+            ->body('Il te reste quelques jours pour obtenir la carte de ce mois en donnant ton sang.')
+            ->data(['url' => '/tabs/cartes']);
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

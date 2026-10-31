@@ -36,6 +36,23 @@ class NotificationController extends Controller
         'CarteDuMoisNotification' => 'carte',
     ];
 
+    /**
+     * Page de repli par catégorie, pour les notifications enregistrées avant que chacune
+     * porte son lien (`data.url`, posé dans toWebPush) : sans l'événement ou le quiz
+     * précis, on ouvre la rubrique. « autre » : aucun lien, la ligne n'ouvre rien.
+     */
+    private const LIENS_PAR_CATEGORIE = [
+        'badge' => '/tabs/profil/badges',
+        'niveau' => '/tabs/profil/points',
+        'quiz' => '/tabs/quiz',
+        'defi' => '/tabs',
+        'evenement' => '/tabs',
+        'don' => '/tabs/don',
+        'alerte' => '/tabs',
+        'parrainage' => '/tabs/profil/parrainage',
+        'carte' => '/tabs/cartes',
+    ];
+
     public function __construct(private NotificationService $notifications)
     {
     }
@@ -76,14 +93,19 @@ class NotificationController extends Controller
             ->notifications()
             ->latest()
             ->paginate(20)
-            ->through(fn ($notification) => [
-                'id' => $notification->id,
-                'titre' => $notification->data['title'] ?? null,
-                'corps' => $notification->data['body'] ?? null,
-                'lue' => $notification->read_at !== null,
-                'categorie' => self::CATEGORIES[class_basename($notification->type)] ?? 'autre',
-                'created_at' => $notification->created_at,
-            ]);
+            ->through(function ($notification) {
+                $categorie = self::CATEGORIES[class_basename($notification->type)] ?? 'autre';
+
+                return [
+                    'id' => $notification->id,
+                    'titre' => $notification->data['title'] ?? null,
+                    'corps' => $notification->data['body'] ?? null,
+                    'lue' => $notification->read_at !== null,
+                    'categorie' => $categorie,
+                    'lien' => $notification->data['data']['url'] ?? self::LIENS_PAR_CATEGORIE[$categorie] ?? null,
+                    'created_at' => $notification->created_at,
+                ];
+            });
 
         return response()->json($notifications);
     }

@@ -19,6 +19,8 @@ export type NotificationItem = {
   corps: string;
   lue: boolean;
   categorie: CategorieNotification;
+  // Page à ouvrir au toucher (route Expo Router, ex. "/tabs/quiz/3"). null : la ligne n'ouvre rien.
+  lien: string | null;
   date: string; // ISO 8601
 };
 
@@ -27,13 +29,14 @@ export type NotificationsPage = {
   pageSuivante: number | null;
 };
 
-// Contrat réel de GET /notifications : pagination Laravel, avec data: [{ id, titre, corps, lue, categorie, created_at }].
+// Contrat réel de GET /notifications : pagination Laravel, avec data: [{ id, titre, corps, lue, categorie, lien, created_at }].
 type NotificationApi = {
   id: string;
   titre: string | null;
   corps: string | null;
   lue: boolean;
   categorie?: CategorieNotification;
+  lien?: string | null;
   created_at: string;
 };
 
@@ -57,6 +60,7 @@ export const getNotifications = async (page = 1): Promise<NotificationsPage> => 
       corps: notif.corps ?? '',
       lue: notif.lue,
       categorie: notif.categorie ?? 'autre',
+      lien: notif.lien ?? null,
       date: notif.created_at,
     })),
     pageSuivante: current_page < last_page ? current_page + 1 : null,

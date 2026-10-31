@@ -25,7 +25,8 @@ class ProgressionDefiNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('Ta progression dans le défi 🎯')
-            ->body("Tu as contribué {$this->progression} fois au défi « {$this->defi->titre} ». Continue !");
+            ->body("Tu as contribué {$this->progression} fois au défi « {$this->defi->titre} ». Continue !")
+            ->data(['url' => '/tabs']);
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app

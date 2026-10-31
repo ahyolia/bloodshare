@@ -25,7 +25,8 @@ class NouveauQuizNotification extends Notification
     {
         return (new WebPushMessage())
             ->title('Nouveau quiz disponible ! 🧠')
-            ->body($this->quiz->titre);
+            ->body($this->quiz->titre)
+            ->data(['url' => "/tabs/quiz/{$this->quiz->id}"]);
     }
 
     // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app
