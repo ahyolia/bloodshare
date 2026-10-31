@@ -69,6 +69,15 @@ class AuthTest extends TestCase
         ];
     }
 
+    public function test_les_erreurs_de_validation_sont_en_francais(): void
+    {
+        // 📖 L'écran d'inscription affiche le message de l'API tel quel : sans lang/fr,
+        //    l'utilisateur lisait « The email field must be a valid email address. ».
+        $this->postJson('/api/auth/register', $this->inscription(['email' => 'pasunemail']))
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.email.0', 'Le champ adresse e-mail doit être une adresse e-mail valide.');
+    }
+
     public function test_ne_stocke_pas_le_mot_de_passe_en_clair(): void
     {
         $this->postJson('/api/auth/register', $this->inscription())->assertCreated();
