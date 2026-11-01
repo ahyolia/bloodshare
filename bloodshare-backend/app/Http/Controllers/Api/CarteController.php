@@ -37,15 +37,22 @@ class CarteController extends Controller
             ?? ['pourcentage_complete' => 0, 'cartes' => collect()];
 
         // 📖 La carte générique, toujours ; une carte propre à un événement (forum IUT...)
-        //    seulement si on l'a obtenue ou si un événement à venir la remet : passé
-        //    l'événement, elle ne s'obtient plus et resterait verrouillée pour toujours.
-        //    La générique en premier.
+        //    dès qu'un événement publié ou passé la remet. Passé l'événement, une carte
+        //    qu'on n'a pas eue reste visible, grisée et marquée `evenement_termine` : elle ne
+        //    s'obtient plus. Une carte rattachée à aucun événement (ou à un événement en
+        //    brouillon ou annulé) reste cachée.
+        //    La générique en premier, les cartes manquées en dernier.
         $cartesAVenir = $this->cartesDesEvenementsAVenir();
+        $cartesRemises = $this->cartesDesEvenementsPublies();
+        $estManquee = fn (Carte $carte) => ! $carte->generique
+            && ! $userCartes->has($carte->id)
+            && ! $cartesAVenir->contains($carte->id);
         $cartesEvenement = $cartes->where('categorie', 'evenement')
             ->filter(fn (Carte $carte) => $carte->generique
                 || $userCartes->has($carte->id)
-                || $cartesAVenir->contains($carte->id))
-            ->sortBy([['generique', 'desc'], ['id', 'asc']])
+                || $cartesRemises->contains($carte->id))
+            ->sort(fn (Carte $a, Carte $b) => [$b->generique, $estManquee($a), $a->id]
+                <=> [$a->generique, $estManquee($b), $b->id])
             ->values();
         $carteParrain = $cartes->firstWhere('categorie', 'parrain');
         $carteFilleul = $cartes->firstWhere('categorie', 'filleul');
@@ -66,7 +73,9 @@ class CarteController extends Controller
                 'collections' => $collections,
             ],
             'evenement' => [
-                'cartes' => $cartesEvenement->map($avecQuantite)->values(),
+                'cartes' => $cartesEvenement->map(fn (Carte $carte) => $avecQuantite($carte) + [
+                    'evenement_termine' => $estManquee($carte),
+                ])->values(),
             ],
             'parrainage' => [
                 'carte_parrain' => $carteParrain ? $avecQuantite($carteParrain) : null,
@@ -88,6 +97,18 @@ class CarteController extends Controller
             ->whereNotNull('carte_id')
             ->where(fn ($q) => $q->where('horaire_fin', '>=', now())
                 ->orWhere(fn ($q) => $q->whereNull('horaire_fin')->where('date_heure', '>=', today())))
+            ->pluck('carte_id')
+            ->unique();
+    }
+
+    /**
+     * Cartes remises par un événement publié ou passé, terminé ou non. Brouillons et
+     * événements annulés exclus : personne n'a jamais pu y obtenir leur carte.
+     */
+    private function cartesDesEvenementsPublies(): Collection
+    {
+        return Evenement::whereIn('statut', ['publie', 'passe'])
+            ->whereNotNull('carte_id')
             ->pluck('carte_id')
             ->unique();
     }

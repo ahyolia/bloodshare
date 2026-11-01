@@ -11,6 +11,8 @@ export type CarteGrille = {
   quantite?: number;
   /** Texte sous la carte (ex. le mois) ; le titre par défaut. */
   legende?: string;
+  /** Carte d'un événement passé qu'on n'a pas eue. */
+  evenement_termine?: boolean;
 };
 
 const COLONNES = 3;
@@ -59,6 +61,7 @@ export function GrilleCartes({
                 imageUrl={carte.image_url}
                 obtenue={carte.obtenue}
                 quantite={carte.quantite}
+                terminee={carte.evenement_termine}
                 largeur="100%"
                 onPress={() => onOuvrir(carte.id)}
               />

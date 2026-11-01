@@ -381,8 +381,8 @@ Alimente l'onglet Cartes — renvoie la collection organisée par catégorie (mo
   },
   "evenement": {
     "cartes": [
-      { "id": 13, "titre": "Carte Événement", "image_url": "...", "obtenue": true, "quantite": 3 },
-      { "id": 16, "titre": "Carte Forum IUT", "image_url": "...", "obtenue": false, "quantite": 0 }
+      { "id": 13, "titre": "Carte Événement", "image_url": "...", "obtenue": true, "quantite": 3, "evenement_termine": false },
+      { "id": 16, "titre": "Carte Forum IUT", "image_url": "...", "obtenue": false, "quantite": 0, "evenement_termine": true }
     ]
   },
   "parrainage": {
@@ -396,7 +396,7 @@ Alimente l'onglet Cartes — renvoie la collection organisée par catégorie (mo
 ```
 
 > **Une collection de cartes du mois par année.** `mois_don.collections` contient la collection de l'année en cours, puis celles des années passées où l'utilisateur a au moins une carte, de la plus récente à la plus ancienne, chacune avec ses 12 cartes de janvier à décembre (exemple abrégé ci-dessus). Une collection future (créée en décembre pour que le BO y pose les dessins) n'est pas renvoyée. `mois_don.annee`, `mois_don.cartes` et `mois_don.pourcentage_complete` reprennent la collection de l'année en cours, pour les apps pas encore à jour.
-> `evenement.cartes` liste les cartes Événement actives : la carte générique (toujours, en premier), puis celles propres à un événement (ex. forum IUT, choisies dans le BO sur la fiche de l'événement), **seulement si l'utilisateur les a obtenues ou si un événement publié pas encore terminé les remet**. Passé l'événement, une carte qu'on n'a pas eue disparaît : elle ne s'obtient plus.
+> `evenement.cartes` liste les cartes Événement actives : la carte générique (toujours, en premier), puis celles propres à un événement (ex. forum IUT, choisies dans le BO sur la fiche de l'événement), **dès qu'un événement publié ou passé les remet, ou que l'utilisateur les a obtenues** (une carte rattachée seulement à un brouillon ou à un événement annulé reste cachée). Passé l'événement, une carte qu'on n'a pas eue reste listée, en dernier, avec `evenement_termine: true` : elle ne s'obtient plus et l'app l'affiche grisée avec la mention « Événement terminé ». `evenement_termine` vaut `false` pour toutes les autres, y compris quand un autre événement à venir remet la carte.
 > Chaque carte porte aussi sa `description` (saisie dans le BO, peut être `null`) et `obtenue_le` (jour d'obtention au format `AAAA-MM-JJ`, `null` si pas obtenue), affichés sur la carte en grand.
 > Pas de notion de rareté — toutes les cartes sont équivalentes, seule la catégorie les distingue. Le `pourcentage_complete` ne s'applique qu'aux collections "Mois du don" (12 cartes par année), les seules pensées comme de vraies collections à compléter.
 # 6\. Badges

@@ -26,6 +26,8 @@ export type CarteEvenementItem = {
   /** Jour d'obtention (AAAA-MM-JJ), null tant que la carte n'est pas obtenue. */
   obtenue_le?: string | null;
   quantite?: number;
+  /** Événement passé et carte pas eue : elle ne s'obtient plus. Absent d'un backend pas encore à jour. */
+  evenement_termine?: boolean;
 };
 
 export type CategorieEvenement = {
