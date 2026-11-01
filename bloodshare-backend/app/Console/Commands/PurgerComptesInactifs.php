@@ -11,7 +11,7 @@ class PurgerComptesInactifs extends Command
 
     protected $description = 'Supprime (anonymise) les comptes sans connexion depuis 3 ans';
 
-    // 📖 Durée annoncée dans la politique de confidentialité (docs/juridique) : la changer
+    // 📖 Durée annoncée dans la politique de confidentialité (resources/juridique) : la changer
     //    ici impose de mettre le texte à jour.
     private const ANNEES_INACTIVITE = 3;
 
