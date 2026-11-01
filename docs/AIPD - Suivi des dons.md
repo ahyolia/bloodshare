@@ -8,7 +8,7 @@
 > Méthode : modèle de la CNIL (contexte, principes fondamentaux, risques, plan d'action).
 > Les constats techniques ont été vérifiés dans le code le 14/10/2026.
 > Documents liés : `docs/Dossier juridique prérempli — application AÏMA.docx.md`,
-> `docs/Grille d'audit RGPD - Application mobile.md`, `docs/juridique/politique-confidentialite.md`.
+> `docs/Grille d'audit RGPD - Application mobile.md`, `bloodshare-backend/resources/juridique/politique-confidentialite.md`.
 
 ## 0. Pourquoi une AIPD
 

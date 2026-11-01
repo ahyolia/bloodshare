@@ -22,6 +22,8 @@ type Props = {
   legende?: string;
   /** Seules les cartes obtenues s'ouvrent. */
   onPress?: () => void;
+  /** Carte d'un événement passé qu'on n'a pas eue : elle ne s'obtient plus. */
+  terminee?: boolean;
 };
 
 // 📖 Carte de la collection, au vrai format portrait des illustrations (avant : recadrée
@@ -29,17 +31,28 @@ type Props = {
 //    - Obtenue : l'illustration, surélevée (elle se touche et s'ouvre en grand).
 //    - Pas encore obtenue : un aperçu grisé et estompé du dessin, à plat, avec un
 //      cadenas. On voit ce qu'on peut gagner, sans confondre avec une carte obtenue.
-export function CartePortrait({ titre, imageUrl, obtenue, quantite, largeur, legende = titre, onPress }: Props) {
+//    - Événement terminé, carte pas eue : le même aperçu grisé, avec la mention
+//      « Événement terminé » sous le titre (elle ne s'obtient plus).
+export function CartePortrait({
+  titre,
+  imageUrl,
+  obtenue,
+  quantite,
+  largeur,
+  legende = titre,
+  onPress,
+  terminee = false,
+}: Props) {
   const ouvrable = obtenue && !!onPress;
+  const manquee = terminee && !obtenue;
+  const etat = obtenue ? 'carte obtenue' : manquee ? 'événement terminé' : 'carte à obtenir';
 
   return (
     <Pressable
       onPress={ouvrable ? onPress : undefined}
       disabled={!ouvrable}
       accessibilityRole={ouvrable ? 'button' : undefined}
-      accessibilityLabel={`${titre}, ${obtenue ? 'carte obtenue' : 'carte à obtenir'}${
-        quantite && quantite > 1 ? `, ${quantite} exemplaires` : ''
-      }`}
+      accessibilityLabel={`${titre}, ${etat}${quantite && quantite > 1 ? `, ${quantite} exemplaires` : ''}`}
       accessibilityHint={ouvrable ? 'Affiche la carte en grand' : undefined}
       style={({ pressed }) => [{ width: largeur }, styles.conteneur, pressed && styles.presse]}
     >
@@ -83,6 +96,7 @@ export function CartePortrait({ titre, imageUrl, obtenue, quantite, largeur, leg
       >
         {legende}
       </Text>
+      {manquee && <Text style={[Typo.legende, styles.mentionTerminee]}>Événement terminé</Text>}
     </Pressable>
   );
 }
@@ -167,5 +181,11 @@ const styles = StyleSheet.create({
   },
   legendeVerrouillee: {
     color: Theme.texte.secondaire,
+  },
+  // Collée au titre : le conteneur espace déjà la carte de sa légende.
+  mentionTerminee: {
+    marginTop: -Espace[2],
+    color: Theme.texte.secondaire,
+    textAlign: 'center',
   },
 });

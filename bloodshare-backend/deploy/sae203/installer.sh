@@ -78,6 +78,8 @@ ln -sfn "$APP/public" "$HOME/public_html"
 
 echo "▶ Base de données"
 php artisan migrate --force --no-ansi
+# Textes juridiques : remplit seulement les documents encore vides (jamais ceux modifiés dans le BO).
+php artisan juridique:importer --no-ansi
 
 # 📖 Mise en cache après les migrations : une fois la config en cache, env()
 #    renvoie null hors des fichiers config/ (les seeders ne trouveraient plus

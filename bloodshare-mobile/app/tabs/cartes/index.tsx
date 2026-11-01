@@ -75,6 +75,9 @@ export default function CartesScreen() {
   const ouvrirCollection = (annee: number) =>
     router.push({ pathname: '/tabs/cartes/collection/[annee]', params: { annee } });
   const cartesEvenement = cartes?.evenement.categories.flatMap((categorie) => categorie.cartes) ?? [];
+  // 📖 Le compteur ne compte pas les cartes manquées : elles ne s'obtiennent plus, la
+  //    collection ne pourrait jamais être complète.
+  const cartesEvenementAObtenir = cartesEvenement.filter((carte) => carte.obtenue || !carte.evenement_termine);
   const cartesUniques = cartes
     ? [
         cartes.parrainage.carte_parrain,
@@ -146,7 +149,7 @@ export default function CartesScreen() {
                 titre="Événements"
                 precision="Collectes, forums, journées"
                 icone="sparkles"
-                cartes={cartesEvenement}
+                cartes={cartesEvenementAObtenir}
               >
                 {cartesEvenement.length > 0 ? (
                   <GrilleCartes cartes={cartesEvenement} onOuvrir={ouvrirCarte} delaiDepart={200} />

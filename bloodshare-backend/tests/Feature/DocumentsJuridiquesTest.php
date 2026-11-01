@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Console\Commands\ImporterDocumentsJuridiques;
 use App\Models\DocumentJuridique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -40,5 +41,40 @@ class DocumentsJuridiquesTest extends TestCase
     public function test_un_type_inconnu_renvoie_404(): void
     {
         $this->getJson('/api/documents-juridiques/inconnu')->assertNotFound();
+    }
+
+    public function test_l_import_remplit_les_documents_vides_depuis_les_fichiers(): void
+    {
+        $this->artisan('juridique:importer')->assertSuccessful();
+
+        foreach (ImporterDocumentsJuridiques::FICHIERS as $type => $fichier) {
+            $this->assertSame(
+                trim(file_get_contents(resource_path("juridique/{$fichier}"))),
+                DocumentJuridique::where('type', $type)->value('contenu')
+            );
+        }
+        $this->getJson('/api/documents-juridiques/mentions_legales')
+            ->assertOk()
+            ->assertJsonPath('version', '1.0');
+    }
+
+    public function test_les_textes_publies_n_ont_plus_de_champ_a_completer(): void
+    {
+        foreach (ImporterDocumentsJuridiques::FICHIERS as $fichier) {
+            $this->assertStringNotContainsString('À COMPLÉTER', file_get_contents(resource_path("juridique/{$fichier}")));
+        }
+    }
+
+    public function test_l_import_ne_remplace_pas_un_texte_modifie_dans_le_bo_sans_force(): void
+    {
+        DocumentJuridique::where('type', 'cgu')->update(['contenu' => 'Texte du BO', 'version' => '1.3']);
+
+        $this->artisan('juridique:importer')->assertSuccessful();
+        $this->assertSame('Texte du BO', DocumentJuridique::where('type', 'cgu')->value('contenu'));
+
+        $this->artisan('juridique:importer', ['--force' => true, '--numero' => '1.4'])->assertSuccessful();
+        $cgu = DocumentJuridique::where('type', 'cgu')->first();
+        $this->assertSame(trim(file_get_contents(resource_path('juridique/cgu.md'))), $cgu->contenu);
+        $this->assertSame('1.4', $cgu->version);
     }
 }

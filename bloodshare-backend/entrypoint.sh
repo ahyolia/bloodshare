@@ -52,6 +52,10 @@ php artisan storage:link --force
 
 php artisan migrate --force
 
+# 📖 Textes juridiques (CGU, confidentialité, mentions légales) depuis resources/juridique :
+#    remplit seulement les documents encore vides, jamais un texte modifié dans le BO.
+php artisan juridique:importer
+
 # 📖 Données de référence (cartes, badges, avatars, rôles, super admin...) : uniquement
 #    quand RUN_SEEDERS=true (docker-compose local). Les seeders sont idempotents. Jamais
 #    déclenché sur Dokploy : la production a ses propres données.

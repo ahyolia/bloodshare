@@ -46,4 +46,26 @@ describe('CartePortrait', () => {
     );
     expect(screen.getByText('Décembre')).toBeTruthy();
   });
+
+  it("garde visible, grisée et marquée « Événement terminé », la carte d'un événement manqué", async () => {
+    const ouvrir = jest.fn();
+    await render(
+      <CartePortrait titre="Carte Forum" imageUrl={URL} obtenue={false} terminee largeur={108} onPress={ouvrir} />
+    );
+
+    await fireEvent.press(screen.getByLabelText('Carte Forum, événement terminé'));
+
+    expect(ouvrir).not.toHaveBeenCalled();
+    expect(screen.getByText('Événement terminé')).toBeTruthy();
+    expect(screen.getByTestId('carte-illustration').props.style).toContainEqual(
+      expect.objectContaining({ filter: 'grayscale(1)' })
+    );
+  });
+
+  it("n'affiche pas la mention sur une carte obtenue, même l'événement passé", async () => {
+    await render(<CartePortrait titre="Carte Forum" imageUrl={URL} obtenue terminee largeur={108} />);
+
+    expect(screen.queryByText('Événement terminé')).toBeNull();
+    expect(screen.getByLabelText('Carte Forum, carte obtenue')).toBeTruthy();
+  });
 });
