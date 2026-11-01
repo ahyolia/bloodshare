@@ -363,7 +363,7 @@ Cette action supprimera définitivement votre compte : **votre pseudo, votre adr
 | 10 | Durées de conservation choisies pour chaque traitement | ✅ voir le tableau « Traitements » | — |
 | 11 | Âge minimal des utilisateurs | ✅ 18 ans | — |
 | 12 | Procédure et URL de suppression du compte | ✅ dans l'application (Profil > Paramètres > Supprimer mon compte) | — |
-| 13 | Version finale des CGU | 🟡 version 1.0 rédigée (`docs/juridique/cgu.md`), à valider | ADSB-NC |
+| 13 | Version finale des CGU | 🟡 version 1.0 rédigée (`bloodshare-backend/resources/juridique/cgu.md`), à valider | ADSB-NC |
 | 14 | Déclarations App Store et Google Play | ➖ non applicable en V1 (PWA) | — |
 | 15 | Accord sur la propriété intellectuelle | ⏳ | ADSB-NC + équipe |
 

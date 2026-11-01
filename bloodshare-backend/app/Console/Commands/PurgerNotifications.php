@@ -11,7 +11,7 @@ class PurgerNotifications extends Command
 
     protected $description = "Supprime l'historique des notifications de plus d'un an";
 
-    // 📖 Durée annoncée dans la politique de confidentialité (docs/juridique).
+    // 📖 Durée annoncée dans la politique de confidentialité (resources/juridique).
     public function handle(): int
     {
         $supprimees = DatabaseNotification::where('created_at', '<', now()->subYear())->delete();

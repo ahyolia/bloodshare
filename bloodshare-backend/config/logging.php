@@ -84,7 +84,7 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            // 📖 Journaux limités à 6 mois (politique de confidentialité, docs/juridique) :
+            // 📖 Journaux limités à 6 mois (politique de confidentialité, resources/juridique) :
             //    un fichier par jour, les plus anciens sont effacés automatiquement.
             'days' => env('LOG_DAILY_DAYS', 180),
             'replace_placeholders' => true,

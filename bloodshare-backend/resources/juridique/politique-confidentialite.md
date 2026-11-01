@@ -59,7 +59,7 @@ Lorsque vous supprimez votre compte, votre historique de jeu (dates de don, poin
 ## Qui a accès à vos données
 
 - Les administrateurs habilités de l'ADSB-NC, depuis l'interface d'administration.
-- L'hébergeur de l'application : [À COMPLÉTER : nom de l'hébergeur], dont les serveurs sont situés en [À COMPLÉTER : pays].
+- Les hébergeurs de l'application, à titre **provisoire** en attendant une solution d'hébergement définitive : Netlify (États-Unis) pour l'application web, un serveur de l'IUT de l'Université de la Nouvelle-Calédonie (Nouméa) pour le serveur de l'application, et Neon (filiale de Databricks, États-Unis) pour la base de données, dont les serveurs sont situés à **Sydney, en Australie**. Vos données sont donc enregistrées hors de Nouvelle-Calédonie. Vous serez informé du changement d'hébergeur.
 - Les services d'envoi de notifications intégrés aux navigateurs (Google pour Chrome et Android, Mozilla pour Firefox, Apple pour Safari et iOS), si vous acceptez les notifications. Le contenu des notifications leur est transmis chiffré : ils n'en voient que l'adresse technique d'acheminement. Ces services peuvent opérer hors de Nouvelle-Calédonie, notamment aux États-Unis.
 
 ## Ce qui est enregistré sur votre appareil

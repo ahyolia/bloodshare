@@ -3,7 +3,7 @@
 > Audit réalisé le 14/10/2026 sur la branche `dev` et les PR US-28 en relecture
 > (consentements à l'inscription, documents juridiques, purge des données).
 > Les statuts ont été vérifiés dans le code. Références : `docs/Dossier juridique prérempli — application AÏMA.docx.md`
-> et `docs/juridique/` (CGU, politique de confidentialité, mentions légales).
+> et `bloodshare-backend/resources/juridique/` (CGU, politique de confidentialité, mentions légales).
 >
 > Légende : ✅ Oui · 🟡 Partiel · ❌ Non · 🔍 À vérifier au déploiement · ➖ Non applicable
 
