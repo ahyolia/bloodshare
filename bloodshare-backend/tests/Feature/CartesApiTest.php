@@ -36,41 +36,66 @@ class CartesApiTest extends TestCase
             ->assertJsonPath('evenement.cartes.1.quantite', 1);
     }
 
-    public function test_une_carte_propre_a_un_evenement_n_apparait_que_si_on_peut_encore_l_obtenir_ou_qu_on_l_a(): void
+    public function test_une_carte_manquee_reste_visible_marquee_evenement_termine_en_dernier(): void
     {
         Carte::query()->delete();
         Carte::create(['titre' => 'Carte Événement', 'categorie' => 'evenement', 'statut' => 'active', 'generique' => true]);
+        $passee = Carte::create(['titre' => 'Passée', 'categorie' => 'evenement', 'statut' => 'active']);
         $aVenir = Carte::create(['titre' => 'À venir', 'categorie' => 'evenement', 'statut' => 'active']);
         $passeeObtenue = Carte::create(['titre' => 'Passée, obtenue', 'categorie' => 'evenement', 'statut' => 'active']);
-        $passee = Carte::create(['titre' => 'Passée', 'categorie' => 'evenement', 'statut' => 'active']);
+        $archivee = Carte::create(['titre' => 'Passée, archivée', 'categorie' => 'evenement', 'statut' => 'active']);
         $brouillon = Carte::create(['titre' => 'Brouillon', 'categorie' => 'evenement', 'statut' => 'active']);
+        $annulee = Carte::create(['titre' => 'Annulée', 'categorie' => 'evenement', 'statut' => 'active']);
         Carte::create(['titre' => 'Sans événement', 'categorie' => 'evenement', 'statut' => 'active']);
 
+        $this->creerEvenement($passee, now()->subDays(10));
         $this->creerEvenement($aVenir, now()->addDays(10));
         $this->creerEvenement($passeeObtenue, now()->subDays(10));
-        $this->creerEvenement($passee, now()->subDays(10));
+        $this->creerEvenement($archivee, now()->subDays(20), 'passe');
         $this->creerEvenement($brouillon, now()->addDays(10), 'brouillon');
+        $this->creerEvenement($annulee, now()->subDays(10), 'annule');
 
         $user = User::factory()->create();
         UserCarte::create(['user_id' => $user->id, 'carte_id' => $passeeObtenue->id, 'quantite' => 1, 'obtenue_at' => now()->subDays(10)]);
         Sanctum::actingAs($user);
 
-        $titres = collect($this->getJson('/api/cartes')->assertOk()->json('evenement.cartes'))->pluck('titre')->all();
+        $cartes = collect($this->getJson('/api/cartes')->assertOk()->json('evenement.cartes'));
 
-        $this->assertSame(['Carte Événement', 'À venir', 'Passée, obtenue'], $titres);
+        $this->assertSame(
+            ['Carte Événement', 'À venir', 'Passée, obtenue', 'Passée', 'Passée, archivée'],
+            $cartes->pluck('titre')->all()
+        );
+        $this->assertSame([false, false, false, true, true], $cartes->pluck('evenement_termine')->all());
     }
 
-    public function test_une_carte_reste_visible_pendant_l_evenement_jusqu_a_sa_fin(): void
+    public function test_une_carte_remise_a_nouveau_par_un_evenement_a_venir_n_est_pas_terminee(): void
+    {
+        Carte::query()->delete();
+        $forum = Carte::create(['titre' => 'Carte Forum', 'categorie' => 'evenement', 'statut' => 'active']);
+        $this->creerEvenement($forum, now()->subYear());
+        $this->creerEvenement($forum, now()->addDays(10));
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->getJson('/api/cartes')
+            ->assertJsonCount(1, 'evenement.cartes')
+            ->assertJsonPath('evenement.cartes.0.evenement_termine', false);
+    }
+
+    public function test_une_carte_est_marquee_terminee_a_la_fin_de_l_evenement(): void
     {
         Carte::query()->delete();
         $forum = Carte::create(['titre' => 'Carte Forum', 'categorie' => 'evenement', 'statut' => 'active']);
         $this->creerEvenement($forum, now()->subHours(2), 'publie', now()->addHour());
         Sanctum::actingAs(User::factory()->create());
 
-        $this->getJson('/api/cartes')->assertJsonPath('evenement.cartes.0.id', $forum->id);
+        $this->getJson('/api/cartes')
+            ->assertJsonPath('evenement.cartes.0.id', $forum->id)
+            ->assertJsonPath('evenement.cartes.0.evenement_termine', false);
 
         $this->travel(2)->hours();
-        $this->getJson('/api/cartes')->assertJsonCount(0, 'evenement.cartes');
+        $this->getJson('/api/cartes')
+            ->assertJsonCount(1, 'evenement.cartes')
+            ->assertJsonPath('evenement.cartes.0.evenement_termine', true);
     }
 
     public function test_les_cartes_de_mois_sont_triees_de_janvier_a_decembre(): void
