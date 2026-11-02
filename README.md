@@ -63,6 +63,11 @@ L'authentification de l'API repose sur Laravel Sanctum (tokens Bearer). Le forma
 | Expérience VR (dépôt) | https://github.com/nevizsh/bloodshare-vr |
 | Roue de la chance (dépôt) | https://github.com/nevizsh/aima-roue |
 
+Il n'y a pas d'APK publié pour la V1. L'application s'utilise en PWA (lien ci-dessus, installable
+depuis le navigateur du téléphone) ou en développement avec Expo Go (voir
+[Lancer l'appli mobile](#lancer-lappli-mobile)). La commande pour produire un APK est dans
+[DEVOPS.md, section 4](DEVOPS.md#build-dun-apk-android-via-eas-build).
+
 ## Prérequis
 
 - Docker Desktop
