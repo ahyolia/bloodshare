@@ -1,6 +1,8 @@
 # 📖 Dependabot (audit cybersécurité, US-29) : ouvre chaque semaine des PR de mise à jour
 #    vers dev, à relire comme les autres. Les mises à jour de sécurité sont proposées même
 #    hors de ce rythme.
+#    ⚠️ GitHub ne lit ce fichier que sur la branche par défaut (main) : une modification
+#    ne prend effet qu'une fois arrivée sur main.
 version: 2
 updates:
   - package-ecosystem: composer
@@ -15,6 +17,16 @@ updates:
     groups:
       mineures:
         update-types: [minor, patch]
+    # 📖 Montées majeures du socle (Filament 3 → 5, Laravel, Livewire) : un chantier à
+    #    planifier à la main (guide de migration, BO à retester), pas une PR automatique.
+    #    Les correctifs et mineures de ces paquets continuent d'arriver.
+    ignore:
+      - dependency-name: 'filament/*'
+        update-types: [version-update:semver-major]
+      - dependency-name: 'laravel/framework'
+        update-types: [version-update:semver-major]
+      - dependency-name: 'livewire/*'
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: npm
     directory: /bloodshare-mobile
@@ -29,8 +41,19 @@ updates:
         update-types: [minor, patch]
     # 📖 Expo fixe lui-même les versions compatibles de ses paquets et de React Native :
     #    une montée de version majeure se fait avec `npx expo install --fix`, pas ici.
+    #    `expo*` ne couvre pas les paquets dont le nom finit par « expo » (jest-expo,
+    #    eslint-config-expo), versionnés comme le SDK : 57 → 58 = changement de SDK.
+    #    Jest et ESLint suivent ces deux presets : leurs majeures arrivent avec le SDK.
     ignore:
       - dependency-name: 'expo*'
+        update-types: [version-update:semver-major]
+      - dependency-name: '*-expo'
+        update-types: [version-update:semver-major]
+      - dependency-name: 'jest'
+        update-types: [version-update:semver-major]
+      - dependency-name: '@types/jest'
+        update-types: [version-update:semver-major]
+      - dependency-name: 'eslint'
         update-types: [version-update:semver-major]
       - dependency-name: 'react-native*'
         update-types: [version-update:semver-major]
