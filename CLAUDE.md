@@ -1,5 +1,41 @@
 # Aïma Backend — Contexte projet
 
+## ⚠️ Règles métier non négociables
+Ces règles priment sur toute autre considération technique. En cas de doute,
+demander plutôt que supposer.
+
+### Gamification
+- Un **don validé** ou une **présence à un événement** rapporte **une
+  carte-souvenir et ZÉRO point**. Ne jamais écrire dans `points_historique`
+  lors d'un scan de QR code.
+- Le don est un acte volontaire et gratuit : on ne le transforme jamais en
+  transaction récompensée. C'est une exigence éthique de l'association, pas
+  une préférence de conception.
+- Les points proviennent **uniquement** des quiz, des parrainages et des
+  défis collectifs.
+- Les **cartes sont déterministes** : pas de tirage aléatoire, pas de rareté,
+  pas de booster. La carte obtenue dépend du mois du don.
+- Les **badges** sont attribués automatiquement par paliers, et restent
+  distincts des cartes (pas de fusion des deux concepts).
+
+### Anonymat et données personnelles
+- Ne jamais collecter ni stocker : nom, prénom, date de naissance, numéro de
+  donneur, groupe sanguin de l'utilisateur, ni aucune donnée médicale.
+- Le compte utilisateur ne sert qu'à la gamification. La validation d'un don
+  passe par un QR code anonyme.
+- Le `sexe` n'est stocké que pour calculer la prochaine éligibilité
+  (6 dons/an homme, 4/an femme) : ne jamais l'exposer dans le backoffice,
+  ne pas l'ajouter à un nouvel endpoint, ne rien construire d'autre dessus.
+- Le backoffice n'affiche que des **pseudonymes**. Les e-mails servent
+  uniquement à l'authentification et ne sont jamais exposés dans les
+  interfaces d'administration.
+- Le questionnaire d'éligibilité ne persiste aucune réponse.
+
+### Ton et rédaction
+- Les messages destinés aux utilisateurs (erreurs, notifications, libellés)
+  sont chaleureux, rassurants et jamais culpabilisants. Proscrire le
+  vocabulaire clinique ou anxiogène.
+
 ## Stack
 - Laravel 12 + PHP 8.3
 - Filament 3 (backoffice)
@@ -26,6 +62,10 @@ depuis bloodshare-backend) :
 cd /c/Dev/bloodshare
 docker compose up -d
 ```
+
+**Ne jamais lancer de commande destructive sans confirmation explicite**
+(`migrate:fresh`, `migrate:refresh`, `migrate:rollback`, `db:wipe`) : la base
+locale contient du contenu saisi via Filament que les seeders ne recréent pas.
 
 ## Structure du projet
 - `app/Models/` → modèles Eloquent (24 tables)
