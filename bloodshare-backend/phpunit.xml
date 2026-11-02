@@ -18,7 +18,12 @@
         </include>
     </source>
     <php>
-        <env name="APP_ENV" value="testing"/>
+        <!-- 📖 Même piège que DB_DATABASE plus bas : dans Docker, APP_ENV=local vient de
+             l'env_file et l'emporte sur un <env> simple. Les tests tournaient alors en
+             "local" : runningUnitTests() renvoyait false et les migrations de contenu
+             remplissaient la base de test (7 tests en échec dans le conteneur). -->
+        <env name="APP_ENV" value="testing" force="true"/>
+        <server name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
