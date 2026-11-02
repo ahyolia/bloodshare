@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\Badge;
 use App\Models\Carte;
 use App\Models\Parrainage;
 use App\Models\PointsHistorique;
 use App\Models\User;
-use App\Models\UserBadge;
 use App\Models\UserCarte;
+use App\Notifications\PremierDonFilleulNotification;
+use Illuminate\Support\Facades\DB;
 
 class ParrainageService
 {
@@ -36,19 +36,26 @@ class ParrainageService
             'source_id' => $parrainage->id,
         ]);
         $parrain->increment('points_cumules', 75);
+        // 📖 Après commit : validerSiFilleul() tourne pendant la transaction du scan — notifier
+        //    avant son commit annoncerait un parrainage validé que l'échec du scan annulerait.
+        DB::afterCommit(fn () => $parrain->notify(new PremierDonFilleulNotification()));
 
-        PointsHistorique::create([
-            'user_id'   => $user->id,
-            'points'    => 50,
-            'source'    => 'parrainage',
-            'source_id' => $parrainage->id,
-        ]);
-        $user->increment('points_cumules', 50);
+        // 📖 Pas de points pour le filleul : ils récompensaient son propre premier don, or un
+        //    don ne rapporte jamais de points (règle éthique ADSB-NC, CONTRIBUTING.md). Il
+        //    garde la carte Filleul. Le parrain, lui, est récompensé d'avoir sensibilisé
+        //    quelqu'un d'autre, pas d'avoir donné : ses 75 points restent.
 
         $this->attribuerCarte($parrain, 'parrain');
         $this->attribuerCarte($user, 'filleul');
 
-        $badgeDebloque = $this->attribuerBadgeAmbassadeur($parrain);
+        // 📖 Délégué à BadgeService, qui recalcule l'éligibilité du parrain à partir de
+        //    son état réel (ici : au moins un parrainage validé) plutôt que de ne vérifier
+        //    que ce seul événement — voir BadgeService::synchroniser pour le pourquoi.
+        $nouveauxBadges = app(BadgeService::class)->synchroniser($parrain);
+        // 📖 On matche sur action_specifique (identifiant technique stable), pas sur le
+        //    libellé : celui-ci se modifie librement dans le BO, et un firstWhere('nom', ...)
+        //    renverrait alors null en silence dès qu'un admin renomme le badge (revue @nevizsh).
+        $badgeDebloque = collect($nouveauxBadges)->firstWhere('action_specifique', 'premier_parrainage');
 
         return [
             'parrainage_id'    => $parrainage->id,
@@ -68,51 +75,23 @@ class ParrainageService
             return;
         }
 
-        $userCarte = UserCarte::where('user_id', $user->id)
+        // 📖 La carte Parrain / Filleul n'est donnée qu'une seule fois : à partir du 2e
+        //    filleul, un parrain ne gagne que des points (ni carte en plus, ni quantité
+        //    qui grimpe). Le badge Ambassadeur suit la même règle (cf. attribuerBadgeAmbassadeur).
+        $dejaObtenue = UserCarte::where('user_id', $user->id)
             ->where('carte_id', $carte->id)
-            ->first();
-
-        if ($userCarte) {
-            $userCarte->increment('quantite');
-        } else {
-            UserCarte::create([
-                'user_id'    => $user->id,
-                'carte_id'   => $carte->id,
-                'quantite'   => 1,
-                'obtenue_at' => now(),
-            ]);
-        }
-    }
-
-    private function attribuerBadgeAmbassadeur(User $parrain): ?array
-    {
-        $badge = Badge::where('statut', 'actif')
-            ->where('condition_type', 'action_specifique')
-            ->where('action_specifique', 'premier_parrainage')
-            ->first();
-
-        if (! $badge) {
-            return null;
-        }
-
-        $dejaObtenu = UserBadge::where('user_id', $parrain->id)
-            ->where('badge_id', $badge->id)
             ->exists();
 
-        if ($dejaObtenu) {
-            return null;
+        if ($dejaObtenue) {
+            return;
         }
 
-        UserBadge::create([
-            'user_id'   => $parrain->id,
-            'badge_id'  => $badge->id,
-            'obtenu_at' => now(),
+        UserCarte::create([
+            'user_id'    => $user->id,
+            'carte_id'   => $carte->id,
+            'quantite'   => 1,
+            'obtenue_at' => now(),
         ]);
-
-        return [
-            'id'        => $badge->id,
-            'nom'       => $badge->nom,
-            'image_url' => $badge->image_url,
-        ];
     }
+
 }

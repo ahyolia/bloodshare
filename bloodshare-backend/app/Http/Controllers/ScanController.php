@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Badge;
 use App\Models\Carte;
 use App\Models\Don;
 use App\Models\QrCode;
 use App\Models\QrCodeScan;
-use App\Models\UserBadge;
 use App\Models\UserCarte;
+use App\Services\BadgeService;
+use App\Services\CarteFideleService;
+use App\Services\DefiService;
 use App\Services\ParrainageService;
+use App\Services\QrCentreTournant;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,9 +23,13 @@ class ScanController extends Controller
     {
         $request->validate(['token' => 'required|string']);
 
-        $qrCode = QrCode::where('token', $request->token)
-            ->where('actif', true)
-            ->first();
+        // 📖 Le QR centre n'est plus accepté que sous sa forme tournante : son token brut est
+        //    celui des anciens QR imprimés ou téléchargés, qui ne doivent plus valider de don.
+        $qrCode = app(QrCentreTournant::class)->verifier($request->token)
+            ?? QrCode::where('token', $request->token)
+                ->where('type', 'evenement')
+                ->where('actif', true)
+                ->first();
 
         if (! $qrCode) {
             return response()->json(['message' => 'QR Code invalide ou expiré.'], 404);
@@ -31,18 +38,28 @@ class ScanController extends Controller
         $user = $request->user();
 
         return DB::transaction(function () use ($user, $qrCode) {
-            $scan = QrCodeScan::create([
-                'user_id'    => $user->id,
-                'qr_code_id' => $qrCode->id,
-                'scanned_at' => now(),
-            ]);
+            // 📖 Verrou sur la ligne user : sérialise les scans simultanés d'un même
+            //    utilisateur (double-tap, retry réseau). Sans lui, 8 scans parallèles du QR
+            //    centre passaient tous le contrôle d'éligibilité avant que l'un ait écrit,
+            //    et créaient 5 dons (reproduit, audit cybersécurité). Il protège aussi le
+            //    contrôle « une participation par événement ».
+            $user->newQuery()->whereKey($user->id)->lockForUpdate()->first();
 
             return match ($qrCode->type) {
-                'centre'    => $this->handleDon($user, $scan),
-                'evenement' => $this->handleEvenement($user, $scan, $qrCode),
+                'centre'    => $this->handleDon($user, $this->enregistrerScan($user, $qrCode)),
+                'evenement' => $this->handleEvenement($user, $qrCode),
                 default     => response()->json(['message' => 'Type de QR Code non supporté.'], 422),
             };
         });
+    }
+
+    private function enregistrerScan($user, QrCode $qrCode): QrCodeScan
+    {
+        return QrCodeScan::create([
+            'user_id'    => $user->id,
+            'qr_code_id' => $qrCode->id,
+            'scanned_at' => now(),
+        ]);
     }
 
     private function handleDon($user, QrCodeScan $scan): JsonResponse
@@ -57,21 +74,17 @@ class ScanController extends Controller
 
         if ($dernierDon && $dernierDon->date_don->addDays($delaiJours)->isFuture()) {
             return response()->json([
-                'message'               => 'Vous n\'êtes pas encore éligible pour donner.',
+                'message'               => 'Tu n\'es pas encore éligible pour donner.',
                 'prochaine_eligibilite' => $dernierDon->date_don->addDays($delaiJours)->toDateString(),
             ], 422);
         }
 
-        // Carte du mois courant
-        $moisNumero = (int) now()->format('n');
-        $carte      = Carte::where('categorie', 'mois_don')
-            ->where('mois_numero', $moisNumero)
-            ->where('statut', 'active')
-            ->first();
+        // Carte du mois courant, dans la collection de l'année en cours
+        $carte = Carte::carteDuMois(now());
 
         if (! $carte) {
             return response()->json([
-                'message' => 'La carte du mois n\'est pas encore disponible. Contactez un administrateur.',
+                'message' => 'La carte du mois n\'est pas encore disponible. Contacte un administrateur.',
             ], 503);
         }
 
@@ -92,12 +105,29 @@ class ScanController extends Controller
             $dejaPossedee = (bool) $userCarte;
 
             if (! $userCarte) {
-                UserCarte::create([
-                    'user_id'    => $user->id,
-                    'carte_id'   => $carte->id,
-                    'quantite'   => 1,
-                    'obtenue_at' => now(),
-                ]);
+                // 📖 Deux scans concurrents du même don (double-tap, retry réseau) pourraient
+                //    tous deux passer ce `if (! $userCarte)` avant qu'aucun n'ait écrit : la
+                //    contrainte unique (user_id, carte_id) — migration
+                //    add_unique_constraint_to_user_cartes_table — fait respecter la règle au
+                //    niveau base. Un doublon veut juste dire que l'autre requête a gagné la
+                //    course ; la carte est déjà possédée, rien d'autre à faire.
+                //    Transaction imbriquée (savepoint) : sous PostgreSQL, une violation de
+                //    contrainte annule toute la transaction en cours, et sans savepoint la
+                //    requête suivante échouait en 500 malgré le catch.
+                try {
+                    DB::transaction(fn () => UserCarte::create([
+                        'user_id'    => $user->id,
+                        'carte_id'   => $carte->id,
+                        'quantite'   => 1,
+                        'obtenue_at' => now(),
+                    ]));
+                } catch (QueryException $e) {
+                    if (! str_contains($e->getMessage(), 'user_cartes_user_id_carte_id_unique')) {
+                        throw $e;
+                    }
+
+                    $dejaPossedee = true;
+                }
             }
 
             $carteObtenue = [
@@ -105,28 +135,75 @@ class ScanController extends Controller
                 'titre'        => $carte->titre,
                 'categorie'    => $carte->categorie,
                 'mois_numero'  => $carte->mois_numero,
+                'annee'        => $carte->annee,
                 'image_url'    => $carte->image_url,
                 'deja_possedee' => $dejaPossedee,
             ];
         }
 
         app(ParrainageService::class)->validerSiFilleul($user);
+        app(DefiService::class)->enregistrerContribution($user);
 
-        $badges = $this->attribuerBadgesDon($user);
+        $carteFidele = app(CarteFideleService::class)->attribuerSiEligible($user);
+
+        $badges = app(BadgeService::class)->synchroniser($user);
 
         return response()->json([
             'type'             => 'don',
             'carte_obtenue'    => $carteObtenue,
+            // 📖 En plus de la carte du mois, pas à sa place : null tant qu'elle n'est pas
+            //    obtenue, et aux dons suivants.
+            'carte_fidele'     => $carteFidele ? [
+                'id'        => $carteFidele->id,
+                'titre'     => $carteFidele->titre,
+                'categorie' => $carteFidele->categorie,
+                'image_url' => $carteFidele->image_url,
+            ] : null,
             'badges_debloques' => $badges,
         ]);
     }
 
-    private function handleEvenement($user, QrCodeScan $scan, QrCode $qrCode): JsonResponse
+    private function handleEvenement($user, QrCode $qrCode): JsonResponse
     {
-        // Carte générique événement (la première active trouvée)
-        $carte = Carte::where('categorie', 'evenement')
-            ->where('statut', 'active')
-            ->first();
+        $evenement = $qrCode->evenement;
+
+        // 📖 Règle tranchée le 28/09 : le QR d'un événement annulé, en brouillon, ou déjà
+        // terminé (horaire_fin, ou date_heure si pas d'heure de fin) ne donne plus la carte.
+        // Avant ce contrôle, n'importe quel statut/date donnait quand même la carte —
+        // ScanController ne vérifiait ni l'un ni l'autre.
+        if ($evenement) {
+            $finEvenement = $evenement->horaire_fin ?? $evenement->date_heure;
+
+            if ($evenement->statut !== 'publie' || $finEvenement->isPast()) {
+                return response()->json([
+                    'message' => 'Cet événement n\'est plus disponible pour valider une participation.',
+                ], 422);
+            }
+        }
+
+        // 📖 Une participation par événement : sans ce contrôle, rescanner le même QR
+        //    rapportait une carte à chaque fois (et le badge « Toujours partant », 3 cartes
+        //    événement, s'obtenait avec un seul événement). Les scans simultanés sont
+        //    sérialisés par le verrou posé dans scan().
+        //    Le scan n'est enregistré qu'APRÈS les contrôles : un scan refusé (événement
+        //    en brouillon, par ex.) ne doit pas bloquer la participation une fois publié.
+        $dejaParticipe = QrCodeScan::where('user_id', $user->id)
+            ->where('qr_code_id', $qrCode->id)
+            ->exists();
+
+        if ($dejaParticipe) {
+            return response()->json([
+                'message' => 'Ta participation à cet événement est déjà validée.',
+            ], 422);
+        }
+
+        $this->enregistrerScan($user, $qrCode);
+
+        // 📖 La carte propre à l'événement si le BO en a choisi une (et qu'elle est active),
+        //    sinon la carte Événement générique.
+        $carte = $evenement?->carte?->statut === 'active'
+            ? $evenement->carte
+            : Carte::generiqueEvenement();
 
         $quantite = 1;
         if ($carte) {
@@ -138,16 +215,34 @@ class ScanController extends Controller
                 $userCarte->increment('quantite');
                 $quantite = $userCarte->fresh()->quantite;
             } else {
-                UserCarte::create([
-                    'user_id'    => $user->id,
-                    'carte_id'   => $carte->id,
-                    'quantite'   => 1,
-                    'obtenue_at' => now(),
-                ]);
+                // 📖 Même protection que dans handleDon : voir le commentaire là-bas.
+                try {
+                    DB::transaction(fn () => UserCarte::create([
+                        'user_id'    => $user->id,
+                        'carte_id'   => $carte->id,
+                        'quantite'   => 1,
+                        'obtenue_at' => now(),
+                    ]));
+                } catch (QueryException $e) {
+                    if (! str_contains($e->getMessage(), 'user_cartes_user_id_carte_id_unique')) {
+                        throw $e;
+                    }
+
+                    // L'autre requête a créé la ligne la première : on incrémente celle-là.
+                    UserCarte::where('user_id', $user->id)
+                        ->where('carte_id', $carte->id)
+                        ->increment('quantite');
+                    $quantite = UserCarte::where('user_id', $user->id)
+                        ->where('carte_id', $carte->id)
+                        ->value('quantite');
+                }
             }
         }
 
-        $evenement = $qrCode->evenement;
+        // 📖 Manquait ici (contrairement à handleDon) : « Toujours partant » (3 cartes
+        //    événement) était bien attribué en base par BadgeService lu depuis GET /badges,
+        //    mais jamais annoncé dans la réponse du scan — pas de popup au bon moment.
+        $badges = app(BadgeService::class)->synchroniser($user);
 
         return response()->json([
             'type'             => 'evenement',
@@ -159,39 +254,8 @@ class ScanController extends Controller
                 'image_url' => $carte->image_url,
                 'quantite'  => $quantite,
             ] : null,
-            'badges_debloques' => [],
+            'badges_debloques' => $badges,
         ]);
     }
 
-    private function attribuerBadgesDon($user): array
-    {
-        $nbDons = Don::where('user_id', $user->id)
-            ->where('statut', 'valide')
-            ->count();
-
-        $dejObtenuIds = UserBadge::where('user_id', $user->id)
-            ->pluck('badge_id');
-
-        $badgesEligibles = Badge::where('statut', 'actif')
-            ->where('condition_type', 'nb_dons')
-            ->whereNotIn('id', $dejObtenuIds)
-            ->where('condition_valeur', '<=', $nbDons)
-            ->get();
-
-        $nouveauxBadges = [];
-        foreach ($badgesEligibles as $badge) {
-            UserBadge::create([
-                'user_id'    => $user->id,
-                'badge_id'   => $badge->id,
-                'obtenu_at'  => now(),
-            ]);
-            $nouveauxBadges[] = [
-                'id'        => $badge->id,
-                'nom'       => $badge->nom,
-                'image_url' => $badge->image_url,
-            ];
-        }
-
-        return $nouveauxBadges;
-    }
 }

@@ -169,7 +169,10 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // 📖 Activé par défaut en production : le BO est servi en HTTPS (tunnel), le cookie de
+    //    session ne doit jamais partir en clair. `request()->secure()` suit X-Forwarded-Proto
+    //    grâce à trustProxies (bootstrap/app.php).
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
 
     /*
     |--------------------------------------------------------------------------

@@ -12,6 +12,8 @@ class Question extends Model
         'type',
         'ordre',
         'aleatoire',
+        'explication',
+        'contenu_id',
     ];
 
     protected $casts = [
@@ -26,5 +28,11 @@ class Question extends Model
     public function reponses()
     {
         return $this->hasMany(Reponse::class);
+    }
+
+    // 📖 Fiche pratique liée (contenu de type fiche_info), facultative.
+    public function contenu()
+    {
+        return $this->belongsTo(Contenu::class);
     }
 }

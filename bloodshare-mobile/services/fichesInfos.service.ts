@@ -2,25 +2,22 @@ import { USE_MOCK_DATA } from '../constants/config';
 import fichesInfosMock from '../data/mocks/fiches-infos.json';
 import api from './api';
 
-export type FicheSectionItem = {
+/** Quiz dont au moins une question renvoie vers la fiche (calculé par l'API). */
+export type QuizLie = {
+  id: number;
   titre: string;
-  description: string;
-};
-
-export type FicheSection = {
-  titre: string;
-  items: FicheSectionItem[];
 };
 
 export type FicheInfo = {
   id: number;
   titre: string;
   categorie: string;
+  /** Texte saisi dans le BO : « ## Titre », « - » pour une puce, « **gras** » (voir TexteDocument). */
   contenu: string;
-  sections?: FicheSection[];
-  a_eviter?: string[];
+  quiz_lies?: QuizLie[];
+  // Renseignés dans le backoffice (Contenus) ; `le_saviez_vous` vaut null quand il est vide.
   quiz_cta?: boolean;
-  le_saviez_vous?: string;
+  le_saviez_vous?: string | null;
 };
 
 export const getFichesInfos = async (): Promise<FicheInfo[]> => {

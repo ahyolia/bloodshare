@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\ChampImage;
 use App\Filament\Resources\EvenementResource\Pages;
+use App\Models\Carte;
 use App\Models\Evenement;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -31,24 +33,31 @@ class EvenementResource extends Resource
 
                 Forms\Components\Textarea::make('description')
                     ->label('Description')
+                    ->maxLength(2000)
                     ->rows(4)
                     ->columnSpanFull(),
 
                 Forms\Components\DateTimePicker::make('date_heure')
                     ->label('Date et heure de début')
+                    ->seconds(false)
                     ->required(),
 
                 Forms\Components\DateTimePicker::make('horaire_fin')
-                    ->label('Date et heure de fin'),
+                    ->label('Date et heure de fin')
+                    ->seconds(false),
 
                 Forms\Components\TextInput::make('lieu')
                     ->label('Lieu')
                     ->required()
                     ->maxLength(255),
 
-                Forms\Components\TextInput::make('image_url')
-                    ->label('URL de l\'image')
-                    ->maxLength(255),
+                ChampImage::make('image_url', 'evenements')
+                    // 📖 image_url est exposé en URL absolue (accesseur, pour l'app mobile) ;
+                    //    FileUpload attend le chemin relatif — sans ceci, l'image disparaît à
+                    //    l'édition. Pas de ->formatStateUsing() ici : il écraserait l'hydratation
+                    //    interne de FileUpload (500). Voir HasStorageImageUrl::etatFileUpload().
+                    ->afterStateHydrated(fn (\Filament\Forms\Components\FileUpload $component, $state) => $component->state(Evenement::etatFileUpload($state)))
+                    ->columnSpanFull(),
 
                 Forms\Components\Select::make('statut')
                     ->label('Statut')
@@ -61,6 +70,15 @@ class EvenementResource extends Resource
                     ->required()
                     ->default('brouillon'),
 
+                Forms\Components\Select::make('carte_id')
+                    ->label('Carte remise aux participants')
+                    ->options(fn () => Carte::where('categorie', 'evenement')
+                        ->where('statut', 'active')
+                        ->orderBy('titre')
+                        ->pluck('titre', 'id'))
+                    ->placeholder('Carte Événement générique')
+                    ->helperText('Laisser vide pour remettre la carte Événement générique. Les cartes se créent dans Gamification → Cartes, catégorie « Événement ».'),
+
                 Forms\Components\Hidden::make('admin_id')
                     ->default(fn () => Auth::id()),
             ]);
@@ -70,6 +88,10 @@ class EvenementResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('image_url')
+                    ->label('Image')
+                    ->size(48),
+
                 Tables\Columns\TextColumn::make('titre')
                     ->label('Titre')
                     ->searchable()
@@ -102,6 +124,10 @@ class EvenementResource extends Resource
                         default => $state,
                     }),
 
+                Tables\Columns\TextColumn::make('carte.titre')
+                    ->label('Carte remise')
+                    ->default('Générique'),
+
                 Tables\Columns\TextColumn::make('admin.pseudo')
                     ->label('Créé par')
                     ->default('—'),
@@ -124,7 +150,7 @@ class EvenementResource extends Resource
                     ->color('gray')
                     ->modalHeading('QR Code de l\'événement')
                     ->modalContent(fn (Evenement $record) => view('filament.modals.qr-code-token', [
-                        'token' => $record->qrCode?->token,
+                        'qrCode' => $record->qrCode,
                     ]))
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Fermer'),

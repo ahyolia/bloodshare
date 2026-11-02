@@ -4,7 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\QuizResource\Pages;
 use App\Filament\Resources\QuizResource\RelationManagers;
+use App\Models\Contenu;
 use App\Models\Quiz;
+use Database\Seeders\QuizContenuSeeder;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,6 +14,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class QuizResource extends Resource
 {
@@ -19,16 +22,23 @@ class QuizResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationGroup = 'Gamification';
+
+    protected static ?string $navigationLabel = 'Quiz';
+
+    protected static ?string $modelLabel = 'quiz';
+
+    protected static ?string $pluralModelLabel = 'Quiz';
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('admin_id')
-                    ->numeric(),
                 Forms\Components\TextInput::make('titre')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\Textarea::make('description')
+                    ->maxLength(1000)
                     ->columnSpanFull(),
                 Forms\Components\Toggle::make('aleatoire')
                     ->required(),
@@ -36,15 +46,41 @@ class QuizResource extends Resource
                     ->required()
                     ->numeric()
                     ->default(0),
-                Forms\Components\TextInput::make('statut')
+                Forms\Components\Select::make('statut')
+                    ->label('Statut')
+                    ->options([
+                        'brouillon' => 'Brouillon',
+                        'actif' => 'Actif',
+                        'inactif' => 'Inactif',
+                    ])
                     ->required()
-                    ->maxLength(255)
                     ->default('brouillon'),
-                Forms\Components\TextInput::make('categorie')
-                    ->maxLength(255),
+                // 📖 Options figées sur les catégories réellement utilisées par les quiz
+                //    du BO (mêmes 3 vues sur les quiz existants) : évite les doublons du
+                //    style "Les bases du don" / "les bases du don" qui casseraient le
+                //    regroupement par catégorie côté mobile.
+                //    Ce sont les 3 catégories des quiz rédigés par Strat'Com (QuizContenuSeeder),
+                //    reprises côté mobile dans app/tabs/quiz/index.tsx (CATEGORIE_STYLE).
+                Forms\Components\Select::make('categorie')
+                    ->label('Catégorie')
+                    ->options([
+                        QuizContenuSeeder::CATEGORIE_ELIGIBILITE => QuizContenuSeeder::CATEGORIE_ELIGIBILITE,
+                        QuizContenuSeeder::CATEGORIE_DON => QuizContenuSeeder::CATEGORIE_DON,
+                        QuizContenuSeeder::CATEGORIE_CENTRE => QuizContenuSeeder::CATEGORIE_CENTRE,
+                    ]),
+                Forms\Components\Hidden::make('admin_id')
+                    ->default(fn () => Auth::id()),
                 Forms\Components\Repeater::make('questions')
                     ->relationship('questions')
                     ->label('Questions')
+                    // 📖 orderColumn : Filament gère lui-même la colonne `ordre` via le
+                    //    glisser-déposer natif du Repeater — plus besoin de le saisir à la
+                    //    main (source de confusion), l'API /quiz/{id} qui trie par `ordre`
+                    //    reste alimentée correctement quand le quiz n'est pas aléatoire.
+                    ->orderColumn('ordre')
+                    ->collapsible()
+                    ->collapsed()
+                    ->itemLabel(fn (array $state): ?string => $state['intitule'] ?? null)
                     ->schema([
                         Forms\Components\TextInput::make('intitule')
                             ->required()
@@ -56,14 +92,29 @@ class QuizResource extends Resource
                             ])
                             ->required()
                             ->default('unique'),
-                        Forms\Components\TextInput::make('ordre')
-                            ->numeric()
-                            ->default(1),
                         Forms\Components\Toggle::make('aleatoire')
                             ->label('Réponses aléatoires'),
+                        // 📖 Montrée à l'utilisateur après validation, réponse juste ou fausse.
+                        Forms\Components\Textarea::make('explication')
+                            ->label('Explication')
+                            ->maxLength(1000)
+                            ->rows(3),
+                        // 📖 Seules les fiches publiées sont proposées : un lien vers un brouillon
+                        //    ouvrirait une fiche introuvable côté app.
+                        Forms\Components\Select::make('contenu_id')
+                            ->label('Fiche pratique liée')
+                            ->options(fn () => Contenu::where('type', 'fiche_info')
+                                ->where('statut', 'publie')
+                                ->orderBy('titre')
+                                ->pluck('titre', 'id'))
+                            ->searchable()
+                            ->placeholder('Aucune'),
                         Forms\Components\Repeater::make('reponses')
                             ->relationship('reponses')
                             ->label('Réponses')
+                            ->collapsible()
+                            ->collapsed()
+                            ->itemLabel(fn (array $state): ?string => $state['texte'] ?? null)
                             ->schema([
                                 Forms\Components\TextInput::make('texte')
                                     ->required()

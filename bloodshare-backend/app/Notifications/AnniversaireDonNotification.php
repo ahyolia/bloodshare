@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Notifications;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
+
+class AnniversaireDonNotification extends Notification
+{
+    use Queueable;
+
+    public function via($notifiable): array
+    {
+        return [WebPushChannel::class, 'database'];
+    }
+
+    public function toWebPush($notifiable, $notification): WebPushMessage
+    {
+        return (new WebPushMessage())
+            ->title('Un an déjà 🎂')
+            ->body('Cela fait 1 an que tu as fait ton premier don. Merci pour ce geste !')
+            ->data(['url' => '/tabs/profil/historique-dons']);
+    }
+
+    // 📖 Réutilise toWebPush() : même titre/corps dans l'historique in-app
+    //    (canal database) que dans la notification push.
+    public function toArray($notifiable): array
+    {
+        return $this->toWebPush($notifiable, null)->toArray();
+    }
+}

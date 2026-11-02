@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\ChampImage;
 use App\Filament\Resources\ContenuResource\Pages;
 use App\Models\Contenu;
 use Filament\Forms;
@@ -38,20 +39,52 @@ class ContenuResource extends Resource
                     ->required()
                     ->maxLength(255),
 
-                Forms\Components\TextInput::make('categorie')
+                // 📖 Options figées sur les 4 clés attendues par l'écran mobile
+                //    (app/tabs/don/index.tsx, CATEGORIES) : une catégorie hors de cette
+                //    liste ne serait jamais regroupée/affichée côté app, en silence.
+                Forms\Components\Select::make('categorie')
                     ->label('Catégorie')
-                    ->maxLength(255)
+                    ->options([
+                        'eligibilite' => 'Éligibilité au don',
+                        'processus_don' => 'Processus du don',
+                        'apres_don' => 'Avant et après le don',
+                        'urgences' => 'Urgences et pénuries',
+                    ])
                     ->visible(fn ($get) => $get('type') === 'fiche_info'),
 
                 Forms\Components\Textarea::make('contenu')
                     ->label('Contenu')
+                    // 📖 Limites des textes du BO : renvoyés tels quels à chaque appel de
+                    //    l'API, ils ne doivent pas pouvoir grossir sans borne (audit cybersécurité).
+                    ->maxLength(10000)
                     ->required()
                     ->rows(6)
                     ->columnSpanFull(),
 
-                Forms\Components\TextInput::make('image_url')
-                    ->label('URL de l\'image')
-                    ->maxLength(255),
+                // 📖 Blocs facultatifs affichés sous une fiche pratique dans l'app (uniquement
+                //    pour le type "Fiche info & don" : sans objet pour une actualité).
+                Forms\Components\Toggle::make('quiz_cta')
+                    ->label('Proposer « Tester ses connaissances »')
+                    ->helperText('Affiche sous la fiche une invitation à faire un quiz.')
+                    ->default(true)
+                    ->inline(false)
+                    ->visible(fn ($get) => $get('type') === 'fiche_info'),
+
+                Forms\Components\Textarea::make('le_saviez_vous')
+                    ->label('Le saviez-vous ?')
+                    ->maxLength(1000)
+                    ->helperText('Facultatif : un fait court affiché en bas de la fiche.')
+                    ->rows(3)
+                    ->columnSpanFull()
+                    ->visible(fn ($get) => $get('type') === 'fiche_info'),
+
+                ChampImage::make('image_url', 'contenus')
+                    // 📖 image_url est exposé en URL absolue (accesseur, pour l'app mobile) ;
+                    //    FileUpload attend le chemin relatif — sans ceci, l'image disparaît à
+                    //    l'édition. Pas de ->formatStateUsing() ici : il écraserait l'hydratation
+                    //    interne de FileUpload (500). Voir HasStorageImageUrl::etatFileUpload().
+                    ->afterStateHydrated(fn (\Filament\Forms\Components\FileUpload $component, $state) => $component->state(Contenu::etatFileUpload($state)))
+                    ->columnSpanFull(),
 
                 Forms\Components\Select::make('statut')
                     ->label('Statut')
@@ -63,7 +96,8 @@ class ContenuResource extends Resource
                     ->default('brouillon'),
 
                 Forms\Components\DateTimePicker::make('published_at')
-                    ->label('Date de publication'),
+                    ->label('Date de publication')
+                    ->seconds(false),
 
                 Forms\Components\Hidden::make('admin_id')
                     ->default(fn () => Auth::id()),
@@ -74,6 +108,10 @@ class ContenuResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('image_url')
+                    ->label('Image')
+                    ->size(48),
+
                 Tables\Columns\BadgeColumn::make('type')
                     ->label('Type')
                     ->colors([
@@ -95,7 +133,14 @@ class ContenuResource extends Resource
 
                 Tables\Columns\TextColumn::make('categorie')
                     ->label('Catégorie')
-                    ->default('—'),
+                    ->default('—')
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'eligibilite' => 'Éligibilité au don',
+                        'processus_don' => 'Processus du don',
+                        'apres_don' => 'Avant et après le don',
+                        'urgences' => 'Urgences et pénuries',
+                        default => $state ?? '—',
+                    }),
 
                 Tables\Columns\BadgeColumn::make('statut')
                     ->label('Statut')

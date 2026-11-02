@@ -19,11 +19,29 @@ export type DonsReponse = {
   dons: Don[];
 };
 
+// Contrat réel de GET /dons (docs/contrat_API.md § 4) : la liste est sous la clé `data`
+// et le type d'un don est l'origine du QR Code scanné ("centre" ou "evenement"),
+// pas "don" comme dans le mock.
+type DonsApi = {
+  total_dons: number;
+  data: (Omit<Don, 'type'> & { type: 'centre' | 'evenement' | null })[];
+};
+
+// Adaptateur : l'UI (et le mock) raisonnent en `dons` avec type 'don' | 'evenement'.
+// On convertit ici pour que les écrans restent indépendants du contrat backend.
+const adapterDons = (data: DonsApi): DonsReponse => ({
+  total_dons: data.total_dons,
+  dons: data.data.map((don) => ({
+    ...don,
+    type: don.type === 'evenement' ? 'evenement' : 'don',
+  })),
+});
+
 export const getDons = async (): Promise<DonsReponse> => {
   if (USE_MOCK_DATA) {
     return donsMock as DonsReponse;
   }
 
-  const response = await api.get<DonsReponse>('/dons');
-  return response.data;
+  const response = await api.get<DonsApi>('/dons');
+  return adapterDons(response.data);
 };

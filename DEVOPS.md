@@ -1,20 +1,40 @@
-# DevOps — BloodShare
+# DevOps — Aïma
 
-Documentation DevOps du projet BloodShare (app mobile de sensibilisation au don du sang en Nouvelle-Calédonie pour l'association ADSB-NC) : architecture Docker, variables d'environnement, workflow Git, mobile Expo, monitoring.
+Documentation DevOps du projet Aïma (app mobile de sensibilisation au don du sang en Nouvelle-Calédonie pour l'association ADSB-NC) : architecture Docker, variables d'environnement, workflow Git, mobile Expo, monitoring.
 
-> Le déploiement en production n'est pas encore défini à ce stade — cette section sera ajoutée ultérieurement.
+> L'hébergement de production officiel n'est pas encore défini. En attendant, le backend
+> tourne sur un serveur de démo (sae203) : voir la [section 6](#6-déploiement-sur-le-serveur-de-démo-sae203).
 
 ---
 
 ## 1. Architecture Docker
 
-Le projet tourne entièrement en Docker (3 services), orchestrés par `docker-compose.yml` à la racine du repo.
+Le projet tourne entièrement en Docker (4 services), orchestrés par `docker-compose.yml` à la racine du repo.
 
 | Service | Image | Port local | Rôle |
 |---|---|---|---|
 | `backend` (`bloodshare_backend`) | build local (`bloodshare-backend/Dockerfile`, PHP 8.3-cli) | 8000 | API Laravel + Backoffice Filament |
-| `db` (`bloodshare_db`) | `postgres:15-alpine` | 5433 → 5432 | Base de données PostgreSQL |
-| `pgadmin` (`bloodshare_pgadmin`) | `dpage/pgadmin4` | 5050 → 80 | Interface d'administration de la BDD |
+| `scheduler` (`bloodshare_scheduler`) | même image que `backend` | — | Exécute les tâches planifiées (`php artisan schedule:work`) |
+| `db` (`bloodshare_db`) | `postgres:15-alpine` | 127.0.0.1:5433 → 5432 | Base de données PostgreSQL |
+| `pgadmin` (`bloodshare_pgadmin`) | `dpage/pgadmin4` | 127.0.0.1:5050 → 80 | Interface d'administration de la BDD |
+
+### Service `scheduler`
+
+`bootstrap/app.php` déclare les tâches planifiées (`->withSchedule(...)`), mais cette
+déclaration seule ne fait rien tourner : il faut un process qui reste actif et les
+exécute. `backend` ne lance que `php artisan serve` (voir `entrypoint.sh`) — sans le
+service `scheduler` (`php artisan schedule:work`), aucune tâche planifiée (notifications
+automatiques, etc.) ne se déclenche jamais, silencieusement.
+
+**Sur Dokploy**, il n'y a pas de `docker-compose.yml` lu directement : dupliquer le
+service `backend` en créant un second service dans l'application Dokploy, avec :
+- la même image/build que `backend`
+- la commande de démarrage remplacée par `php artisan schedule:work`
+- aucun port exposé
+- les mêmes variables d'environnement que `backend`
+
+Vérifier qu'il tourne : `docker logs <conteneur scheduler>` doit afficher les tâches
+exécutées aux heures prévues (`php artisan schedule:list` liste les horaires).
 
 ### Dockerfile du backend
 
@@ -45,6 +65,7 @@ Pourquoi ces extensions PHP :
 | `intl` | Formatage des dates, nombres et chaînes localisées (fr-FR) |
 | `zip` | Lecture/écriture d'archives ZIP, requis par certaines dépendances Composer |
 | `gd` | Traitement d'images (redimensionnement, upload avatars/visuels de badges) |
+| `bcmath` | Calculs grands nombres pour la signature VAPID des notifications push (`minishlink/web-push`) — sans elle, l'avertissement qu'elle lève est transformé par Laravel en erreur 500 à chaque envoi |
 
 ### Commandes Docker utiles
 
@@ -66,6 +87,21 @@ Pourquoi ces extensions PHP :
 docker exec -it bloodshare_backend php artisan migrate
 docker exec -it bloodshare_backend php artisan db:seed
 docker exec -it bloodshare_backend php artisan make:filament-user
+```
+
+### Base de test (`bloodshare_testing`)
+
+`phpunit.xml` fait tourner `php artisan test` contre une base Postgres **séparée**
+(`bloodshare_testing`, même instance), pour que `RefreshDatabase` ne vide jamais la
+vraie base de dev.
+
+Sur un volume `postgres_data` neuf, `docker-entrypoint-initdb.d` (monté dans
+`docker-compose.yml`) la crée automatiquement au premier démarrage du conteneur `db` —
+rien à faire. Ce dossier ne s'exécute **que** sur un volume vide : si le volume existe
+déjà (mise à jour d'un poste existant), la créer à la main une fois :
+
+```bash
+docker exec bloodshare_db createdb -U bloodshare bloodshare_testing
 ```
 
 ---
@@ -97,6 +133,28 @@ cp bloodshare-backend/.env.example bloodshare-backend/.env
 ```bash
 docker exec -it bloodshare_backend php artisan config:show
 ```
+
+### Configuration de production (Dokploy)
+
+En production (`APP_ENV=production`), `entrypoint.sh` lance `php artisan securite:verifier-config`
+avant de démarrer le serveur. **Le conteneur refuse de démarrer** (erreur dans les logs du
+service) si :
+
+| Contrôle | Valeur attendue |
+| --- | --- |
+| `APP_DEBUG` | `false` |
+| `APP_KEY` | définie |
+| `DB_PASSWORD`, `SEED_ADMIN_PASSWORD` | différents de ceux de `.env.example` (publics, le dépôt l'est) |
+| `SESSION_SECURE_COOKIE` | `true` (valeur par défaut en production) |
+| `CORS_ALLOWED_ORIGINS` | l'URL exacte du front, sans `/` final (`*`, la valeur par défaut, est refusé) |
+
+À vérifier aussi à la main :
+- **HTTPS** : le BO et l'API ne sont utilisés que par le tunnel HTTPS. Le port publié par
+  Dokploy (`8001`) sert le backend en HTTP sur toutes les interfaces de la machine : ne pas
+  l'ouvrir sur Internet (box, pare-feu), et le retirer s'il ne sert pas.
+- **Base de données** : aucun port publié pour le service `db` de Dokploy.
+- **En local**, PostgreSQL (`5433`) et pgAdmin (`5050`) n'écoutent que sur `127.0.0.1` :
+  leurs mots de passe sont ceux du dépôt.
 
 ---
 
@@ -176,7 +234,35 @@ npx expo start --tunnel
 
 ### Configuration de l'API selon l'environnement
 
-Dans `bloodshare-mobile/constants/api.ts`, l'URL de l'API doit pointer, en développement, vers l'IP locale de la machine hébergeant le backend Docker (ex. `http://192.168.x.x:8000`). L'URL de production sera définie une fois l'hébergement choisi.
+L'adresse du backend n'est pas versionnée : chaque poste la définit dans `bloodshare-mobile/.env.local`, à partir du modèle fourni.
+
+```bash
+cd bloodshare-mobile
+cp .env.example .env.local
+```
+
+Renseigner `EXPO_PUBLIC_API_URL` avec une adresse joignable **depuis l'appareil qui exécute l'app** — sur un téléphone, `localhost` désigne le téléphone lui-même, jamais la machine de dev. Trois cas, le backend écoutant sur le port 8000 (`docker compose up -d`) :
+
+| Situation | Valeur |
+| --- | --- |
+| Téléphone sur le même réseau que le PC | `http://192.168.x.x:8000/api` — IP LAN du PC |
+| Réseau qui isole les appareils entre eux (Wi-Fi d'établissement) | `https://<tunnel>.ngrok-free.dev/api` — voir `ngrok http 8000` |
+| Émulateur iOS ou test web | `http://localhost:8000/api` |
+
+Vérifier qu'on cible bien **son** backend et pas celui d'un autre poste :
+
+```bash
+curl -H "ngrok-skip-browser-warning: 1" <url>/api/stock-sang
+```
+
+> ⚠️ Après toute modification de `.env.local`, relancer le bundler avec `npx expo start -c`.
+> Les variables `EXPO_PUBLIC_*` sont inlinées dans le bundle au moment de la transformation, et Metro
+> conserve les modules transformés en cache : sans le `-c`, l'ancienne valeur reste active. Cela ne
+> concerne que ce fichier — le code applicatif continue de se recharger instantanément (Fast Refresh).
+
+Au démarrage, l'app affiche en console `[api] URL utilisée : …`, et avertit explicitement si `EXPO_PUBLIC_API_URL` est absent — auquel cas elle se replie sur `localhost`, injoignable depuis un téléphone.
+
+L'URL de production sera définie une fois l'hébergement choisi.
 
 ### Build d'un APK Android via EAS Build
 
@@ -207,7 +293,261 @@ pg_dump -h <host> -U bloodshare -d bloodshare -F c -f "bloodshare_backup_$(date 
 
 La stratégie de sauvegarde en production sera précisée une fois l'hébergement choisi.
 
+### Images envoyées depuis le backoffice (déploiement Dokploy)
+
+Les images téléversées dans le BO (badges, cartes, actualités, événements) sont écrites dans
+`storage/app/public` **à l'intérieur du conteneur**. Sans volume persistant, chaque
+redéploiement recrée le conteneur et **efface toutes ces images**, alors que la base garde leurs
+chemins : l'app affiche alors des images cassées et il faut tout renvoyer.
+
+Sur Dokploy, monter un volume sur ce dossier (service backend → *Advanced* → *Volumes / Mounts*) :
+
+| Champ | Valeur |
+| --- | --- |
+| Type | Volume |
+| Nom | `bloodshare-storage` |
+| Chemin dans le conteneur | `/var/www/html/storage/app/public` |
+
+Vérification après redéploiement : `docker inspect <conteneur> --format '{{json .Mounts}}'` doit
+lister ce volume (un résultat `[]` signifie que les images seront perdues au prochain déploiement).
+En local, `docker-compose.yml` monte déjà le dépôt en volume : rien à faire.
+
 ---
 
-Documentation maintenue par l'équipe BloodShare.
-Dernière mise à jour : août 2026.
+## 6. Déploiement sur le serveur de démo (sae203)
+
+Hébergement **temporaire**, en attendant une solution officielle : le backend (API + backoffice)
+tourne sur le serveur d'un enseignant, le front web est sur Netlify.
+
+| Élément | Valeur |
+| --- | --- |
+| URL du backend | `https://sae203.hopto.org/~cameliaa` |
+| API | `https://sae203.hopto.org/~cameliaa/api` |
+| Backoffice | `https://sae203.hopto.org/~cameliaa/admin` |
+| Serveur | Raspberry Pi (Debian, ARM 64 bits, 1,8 Go de RAM), Apache 2.4 + mod_php, PHP 8.2 |
+| Base de données | PostgreSQL hébergé chez Neon, région Sydney (`ap-southeast-2`) |
+| Accès | SSH / SFTP avec le compte `cameliaa` |
+
+### Organisation sur le serveur
+
+```
+/home/cameliaa/
+├── aima/backend/          ← le contenu de bloodshare-backend/ (avec vendor/)
+│   ├── .env               ← copie de .env.production, lisible par Apache seulement
+│   └── public/            ← seul dossier exposé sur le web
+├── public_html  →  aima/backend/public   (lien symbolique)
+└── ancien-public_html-…   ← ancien contenu de public_html, hors ligne
+```
+
+`bloodshare-backend/deploy/sae203/` contient tout ce qui est propre à ce serveur :
+
+| Fichier | Rôle |
+| --- | --- |
+| `publier.sh` | Lancé depuis WSL : exporte le code commité, construit `vendor/` dans Docker, envoie le tout et lance `installer.sh` |
+| `installer.sh` | Lancé sur le Pi : vérifie les extensions, `.htaccess`, `storage:link`, permissions, lien `public_html`, migrations, cache, cron, puis teste l'API et le backoffice |
+| `.htaccess` | Remplace `public/.htaccess` : ajoute `RewriteBase /~cameliaa/` et retire `Options`, interdit dans un `.htaccess` par la config UserDir par défaut (erreur 500 sinon) |
+| `construire-front.ps1` | Lancé depuis PowerShell 7 : construit le front web branché sur sae203 (dossier + zip dans Téléchargements), à glisser dans Netlify. Avec `-Secours`, le front du plan B (section 7) |
+
+### Prérequis (une seule fois)
+
+1. **Extensions PHP**, à faire installer par l'admin du serveur :
+   ```bash
+   sudo apt install php8.2-intl php8.2-pgsql php8.2-bcmath php8.2-imagick
+   sudo systemctl restart apache2
+   ```
+   `intl` est exigée par Filament, `pgsql` par la base, `bcmath` par les notifications push (sinon
+   500, voir le Dockerfile) et `imagick` par le téléchargement du QR code en PNG.
+2. **Base Neon** : créer un projet en région Sydney. Pour `DB_HOST`, prendre l'hôte **sans**
+   `-pooler` (connexion directe, compatible avec les migrations).
+3. **`bloodshare-backend/.env.production`**, ignoré par git, à ne jamais commiter : partir d'un
+   `.env.production` existant (le demander à l'équipe) ou adapter `.env.example`. Valeurs propres à
+   ce serveur : `APP_URL=https://sae203.hopto.org/~cameliaa`, `SESSION_PATH=/~cameliaa` (le domaine
+   est partagé avec les sites des autres étudiants), `SESSION_SECURE_COOKIE=true`,
+   `CORS_ALLOWED_ORIGINS=<URL Netlify>`, `SESSION_DRIVER=file` et `CACHE_STORE=file` (en base,
+   chaque page ferait plusieurs allers-retours de plus vers Neon), `QUEUE_CONNECTION=sync` (pas de
+   worker). Générer un `APP_KEY` et des clés VAPID **propres à ce serveur** avec `--show`.
+4. **Remplir la base**, depuis WSL, avec l'image qui reproduit le PHP du serveur
+   (`deploy/sae203/Dockerfile`) :
+   ```bash
+   docker build -t aima-php82 bloodshare-backend/deploy/sae203
+   docker run --rm -v ~/dev/bloodshare/bloodshare-backend:/app aima-php82 \
+       php artisan migrate --env=production --force --seed
+   ```
+   La même image vérifie que les tests passent sous PHP 8.2 :
+   `docker run --rm --network bloodshare_default -v ~/dev/bloodshare/bloodshare-backend:/app aima-php82 php artisan test`.
+   ⚠️ Ne **pas** passer par `bloodshare_backend` : docker-compose lui impose `DB_HOST=db`, qui
+   l'emporte sur `.env.production`, et la commande viserait la base locale. Une seule personne lance
+   les migrations à la fois : deux migrations simultanées laissent la base dans un état incohérent
+   (`migrate:fresh` pour repartir d'une base vide).
+5. **Clé SSH** (facultatif) pour ne plus taper de mot de passe : `ssh-copy-id cameliaa@sae203.hopto.org`.
+
+### Publier une version
+
+Depuis WSL, à la racine du repo, sur la branche à publier (seul le code **commité** part) :
+
+```bash
+bash bloodshare-backend/deploy/sae203/publier.sh
+```
+
+Le script se termine par `✅ Déploiement terminé.` si l'API et la page de connexion du backoffice
+répondent 200. Il peut être relancé sans risque, par exemple après l'installation des extensions.
+Les images envoyées depuis le backoffice (`storage/app/public`) sont conservées d'une publication à
+l'autre. `vendor/` est remplacé d'un coup (envoyé en `vendor.nouveau`, puis échangé par deux
+renommages) : le site et le cron ne restent pas sans dépendances pendant l'envoi. Le code, lui,
+est réécrit fichier par fichier pendant quelques secondes : éviter de publier en pleine démo.
+
+`.env.production` (en local) fait référence : il est renvoyé à chaque publication, donc une
+modification faite directement dans le `.env` du serveur sera écrasée.
+
+### Front web (Netlify)
+
+Le site `https://aima-nc.netlify.app` est déployé **par glisser-déposer** d'un build fait en
+local : les variables d'environnement de Netlify ne servent donc à rien. `EXPO_PUBLIC_API_URL` et
+`EXPO_PUBLIC_VAPID_PUBLIC_KEY` sont gravées dans le JS au moment de `expo export`, sur le poste
+qui construit. Un build fait avec son propre `.env.local` (localhost, ngrok…) appellerait ce
+backend-là : toujours passer par le script, depuis PowerShell 7 (Node est côté Windows) :
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File bloodshare-backend\deploy\sae203\construire-front.ps1
+```
+
+Il construit avec l'URL de sae203 et la clé VAPID **publique** de `.env.production`, sans toucher
+au `.env.local`, puis vérifie le résultat (URL présente, ni `localhost:8000` ni clé privée,
+fichiers PWA présents). Il produit `Téléchargements\aima-dist-sae203` et le `.zip` du même nom,
+à glisser dans Netlify : site **aima-nc** (pas un nouveau site, sinon l'URL change et le CORS
+refuse) → *Deploys* → zone de dépôt.
+
+L'URL Netlify doit figurer dans `CORS_ALLOWED_ORIGINS`, exactement et sans `/` final.
+
+### Mettre à jour après une modification
+
+| Modifié | À faire |
+| --- | --- |
+| Backend seulement | Commiter, puis `publier.sh` |
+| Front seulement | `construire-front.ps1`, puis glisser le résultat dans Netlify |
+| Les deux | **Backend d'abord**, puis front : l'ancien front reste compatible avec le nouveau backend le temps de glisser le build, l'inverse n'est pas garanti (route ou champ attendu absent) |
+| Une migration | Rien de plus : `installer.sh` lance `migrate --force` (après la vérification de la config) |
+| `.env.production` | `publier.sh`, même sans changement de code : le `.env` est renvoyé et la config remise en cache |
+
+Après une mise à jour du front, la PWA peut garder l'ancienne version en cache : Ctrl+F5, ou
+F12 → *Application* → *Service workers* → *Unregister*.
+
+### Dépannage
+
+| Symptôme | Piste |
+| --- | --- |
+| 500 sur tout le site | `storage/logs/laravel-<date>.log` sur le Pi. Si le log est vide : `.htaccess` (directive non autorisée) ou permissions de `storage/` |
+| 404 sur toutes les routes sauf l'accueil | `public/.htaccess` n'est pas celui de `deploy/sae203/` : relancer `installer.sh` |
+| Images cassées | `ls -l ~/aima/backend/public/storage` doit être un lien vers `storage/app/public` |
+| Backoffice affiché mais connexion sans effet | URLs Livewire sans `/~cameliaa` (console du navigateur : 404 sur `/livewire/...`). Vérifier que `public/vendor/livewire` existe (publié par `installer.sh`) et que `AppServiceProvider` branche `HandleRequestsSousDossier` |
+| Erreur CORS dans la console du navigateur | `CORS_ALLOWED_ORIGINS` ne correspond pas exactement à l'URL Netlify, puis republier |
+| Changement de `.env` sans effet | La config est en cache : republier, ou `php artisan optimize` sur le Pi |
+| Notifications planifiées absentes | `crontab -l` doit contenir la ligne `schedule:run` ; `php artisan schedule:list` |
+| Une modification semble enregistrée puis revient (notif lue, profil, progression de quiz) | La config UserDir de Debian n'autorise que GET, POST et OPTIONS : un `PUT`/`DELETE` reçoit un 403 HTML d'Apache, avant Laravel. L'app les envoie en POST avec `X-HTTP-Method-Override` (`bloodshare-mobile/services/api.ts`) : vérifier que le front publié est récent, et ne jamais appeler `axios.put`/`delete` en dehors de ce client |
+
+### Limites connues
+
+- **Latence** : ~120 ms par requête SQL entre la Nouvelle-Calédonie et Sydney. Le backoffice
+  est plus lent qu'en local. Après 5 minutes sans activité, Neon se met en veille et la première
+  requête prend environ une seconde de plus.
+- **Uploads limités à 2 Mo** (`upload_max_filesize` du serveur) : compresser les images avant de les
+  envoyer depuis le backoffice.
+- **Serveur partagé** : `installer.sh` réserve le code et le `.env` à Apache par des ACL. Si
+  `setfacl` manque (paquet `acl`), il s'arrête avant toute modification plutôt que de publier :
+  sans ACL, ces fichiers seraient lisibles par les autres comptes.
+- **RGPD** : base hébergée en Australie, donc hors UE. Réservé à la démo, avec des comptes de test,
+  jamais de vrais utilisateurs.
+- **Charge** (mesurée en lecture, 0 erreur) : moins d'1 s jusqu'à 10 requêtes simultanées, 2 à 4 s
+  à 20-30. L'accueil de l'app lance 5 à 6 requêtes : 5 personnes qui l'ouvrent au même instant
+  attendent quelques secondes. Le jour d'une démo, garder Neon éveillé avec une ligne de cron
+  temporaire sur le Pi : `*/4 * * * * curl -s -o /dev/null https://sae203.hopto.org/~cameliaa/api/stock-sang`.
+- **Limites anti-abus par IP** (US-29) : sur un Wi-Fi partagé, toute la salle sort avec la même
+  IP. Inscription 15/min, connexion 30/min, pages publiques 300/min pour toute la salle ; une fois
+  connecté, chacun a sa propre limite.
+
+---
+
+## 7. Plan B : backend de secours si sae203 tombe
+
+Si le Pi ne répond plus pendant une démo, un backend de secours tourne sur un PC de l'équipe et
+remplace sae203 en quelques minutes. Il utilise **la même base Neon** et les mêmes clés (`APP_KEY`,
+VAPID) : comptes, contenus et abonnements push restent les mêmes, et on rebascule sur sae203
+sans rien perdre une fois le Pi revenu.
+
+| Élément | Valeur |
+| --- | --- |
+| Backend de secours | conteneur `aima-secours`, `http://localhost:8002`, dossier `~/aima-secours` |
+| Adresse publique | tunnel ngrok à URL fixe, dans `SECOURS_URL` de `bloodshare-backend/.env.production` (hors du dépôt, à demander à l'équipe) |
+| Front de secours | `Téléchargements\aima-dist-secours` (`construire-front.ps1 -Secours`) |
+| Scripts | `bloodshare-backend/deploy/secours/` |
+
+### À préparer avant chaque démo (sae203 en marche)
+
+1. `bash bloodshare-backend/deploy/secours/preparer-secours.sh` (WSL, sur `dev` à jour) :
+   exporte `dev`, construit `vendor/`, crée un `.env` à partir de `.env.production` (seuls
+   `APP_URL` et `SESSION_PATH` changent) et **copie les images du Pi**, qui ne sont nulle part
+   ailleurs. Si le Pi ne répond pas, il reprend les images de la préparation précédente.
+2. `pwsh -ExecutionPolicy Bypass -File bloodshare-backend\deploy\sae203\construire-front.ps1 -Secours`
+   (PowerShell 7) : build du front branché sur l'URL ngrok, à garder sous la main.
+3. Si une image a été ajoutée dans le BO depuis : relancer l'étape 1.
+
+### Basculer le jour d'une panne
+
+1. `bash bloodshare-backend/deploy/secours/lancer-secours.sh` : démarre le secours et vérifie
+   l'API. Il ne lance **ni migration ni seeder** : la base reste celle de sae203. Le secours
+   ne redémarre **pas** tout seul avec le PC : après un redémarrage, relancer ce script.
+2. Arrêter le tunnel ngrok en cours (il sert le backend de dev, port 8000), puis
+   `ngrok http --url=<SECOURS_URL sans https://> 8002` (le script affiche la commande exacte).
+3. Glisser `aima-dist-secours` dans Netlify (site **aima-nc** → *Deploys*). L'URL du front ne
+   change pas : le CORS (`aima-nc.netlify.app`) reste valable.
+4. Retour à la normale : glisser de nouveau `aima-dist-sae203`, puis
+   `lancer-secours.sh arreter` et relancer le tunnel de dev.
+
+### Sauvegarder la base Neon (avant chaque démo)
+
+Le plan gratuit de Neon garde peu d'historique : une sauvegarde locale avant chaque démo.
+
+```bash
+bash bloodshare-backend/deploy/secours/sauvegarder-neon.sh
+```
+
+Lecture seule sur Neon. Le fichier (`~/sauvegardes-aima/neon-<date>.dump`, format `pg_dump -Fc`)
+est vérifié, et les 10 plus récents sont gardés. ⚠️ Il contient des données personnelles
+(emails, mots de passe hachés) : hors du repo, lisible par son seul propriétaire (`600`), à ne
+jamais commiter (`*.dump` est ignoré par git) ni partager.
+
+**Restaurer** (remplace le contenu de la base visée : vérifier deux fois `DB_HOST`) :
+
+```bash
+docker run --rm -e PGPASSWORD=... -v ~/sauvegardes-aima:/s postgres:18-alpine \
+    pg_restore --clean --if-exists --no-owner --no-acl \
+    -d "host=<DB_HOST> port=5432 dbname=<DB_DATABASE> user=<DB_USERNAME> sslmode=require" \
+    /s/neon-<date>.dump
+```
+
+Pour vérifier une sauvegarde sans risque, la restaurer dans un Postgres 18 jetable
+(`docker run -d -e POSTGRES_PASSWORD=x postgres:18-alpine`) et y compter les lignes.
+
+### Limites du plan B
+
+- **Images absentes dans l'app** (vérifié) : sur le plan gratuit, ngrok répond à toute requête
+  de navigateur sans l'en-tête `ngrok-skip-browser-warning` par son message d'avertissement
+  (236 octets en `text/plain`) au lieu du fichier. L'app envoie cet en-tête pour l'API, mais une
+  balise image ne le peut pas : actualités, événements, cartes et badges illustrés s'affichent
+  sans image. Les avatars (emojis) ne sont pas touchés. Le BO demande un clic sur « Visit Site »
+  la première fois.
+- **Plus lent** : 2 à 3,5 s par appel d'API via ngrok (contre ~0,5 s sur sae203).
+- Alternative sans page d'avertissement : un tunnel Cloudflare gratuit (`cloudflared tunnel
+  --url http://localhost:8002`), mais son adresse change à chaque lancement : il faudrait
+  reconstruire le front (`construire-front.ps1 -Secours -UrlSecours <adresse>`) au moment de la
+  panne, et mettre l'adresse dans `APP_URL` du secours.
+- **Images** : seules celles copiées à la dernière préparation. Une image envoyée depuis le BO
+  pendant la panne reste sur le PC et devra être renvoyée sur sae203.
+- **Pas de tâches planifiées** sur le secours (pas de cron) : notifications du matin absentes
+  tant qu'il sert. Le push déclenché depuis le BO (bannière d'urgence) fonctionne.
+- Le PC qui sert le secours doit rester allumé, connecté, et ne pas se mettre en veille.
+
+---
+
+Documentation maintenue par l'équipe Aïma.
+Dernière mise à jour : octobre 2026.

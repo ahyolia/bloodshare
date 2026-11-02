@@ -57,5 +57,13 @@
       "image_url": null,
       "obtenue": false
     }
+  },
+  "fidelite": {
+    "carte": {
+      "id": 401,
+      "titre": "Carte Fidèle",
+      "image_url": null,
+      "obtenue": false
+    }
   }
 }

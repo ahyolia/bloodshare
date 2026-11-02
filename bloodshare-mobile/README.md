@@ -1,6 +1,6 @@
-# BloodShare — Mobile 🩸
+# Aïma — Mobile 🩸
 
-Application mobile React Native (Expo) de BloodShare — plateforme gamifiée de sensibilisation au don du sang en Nouvelle-Calédonie.
+Application mobile React Native (Expo) d'Aïma — plateforme gamifiée de sensibilisation au don du sang en Nouvelle-Calédonie.
 
 ## Stack
 
@@ -64,11 +64,16 @@ Scannez le QR Code avec Expo Go sur votre téléphone, ou appuyez sur :
 
 ## Connexion au backend
 
-Configurez l'URL de l'API dans votre fichier de configuration :
+Configurez l'URL de l'API dans `bloodshare-mobile/.env.local` (copie de `.env.example`, qui
+détaille ngrok et l'IP LAN) :
 
 ```
-API_URL=http://localhost:8000/api
+EXPO_PUBLIC_API_URL=http://localhost:8000/api
 ```
+
+Cette valeur est intégrée au build : **ne pas construire le site en ligne (Netlify) avec son
+`.env.local`**, il appellerait votre backend local. Utiliser le script dédié, voir
+[DEVOPS.md, section 6](../DEVOPS.md#front-web-netlify).
 
 ## Endpoints disponibles
 
@@ -107,4 +112,7 @@ Après `login`/`register`, stocker le `token` reçu (idéalement via `expo-secur
 
 ## Rôles utilisateur
 
-L'application mobile est accessible uniquement aux utilisateurs avec le rôle `utilisateur`. Les admins accèdent au backoffice via http://localhost:8000/admin.
+L'application mobile est réservée aux donneurs, c'est-à-dire aux comptes **sans rôle** (il
+n'existe pas de rôle `utilisateur`). Un compte du backoffice (`admin`, `super_admin`) est refusé
+à la connexion (403), et un token mobile qu'il aurait obtenu avant est refusé sur toutes les
+routes. Les admins accèdent au backoffice via http://localhost:8000/admin.

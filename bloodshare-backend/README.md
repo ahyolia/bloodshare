@@ -1,10 +1,10 @@
-# BloodShare — Backend 🩸
+# Aïma — Backend 🩸
 
-Backend Laravel 11 de l'application BloodShare. Gère à la fois l'API REST pour l'application mobile et le backoffice d'administration via Filament.
+Backend Laravel 12 de l'application Aïma. Gère à la fois l'API REST pour l'application mobile et le backoffice d'administration via Filament.
 
 ## Stack
 
-- **Framework** : Laravel 11
+- **Framework** : Laravel 12
 - **PHP** : 8.3
 - **Base de données** : PostgreSQL 15
 - **Auth API** : Laravel Sanctum
@@ -30,7 +30,7 @@ cp .env.example .env
 ## Configuration `.env`
 
 ```env
-APP_NAME=BloodShare
+APP_NAME="Aïma"
 APP_ENV=local
 APP_DEBUG=true
 APP_URL=http://localhost:8000
@@ -97,7 +97,6 @@ GET    /api/parrainage/code        Code + parrainages validés (authentifié)
 
 GET    /api/actualites             Actualités publiées (public)
 GET    /api/fiches-infos           Fiches info publiées (public)
-GET    /api/faq                    FAQ (public)
 GET    /api/stock-sang             Niveaux de stock par groupe sanguin (public)
 GET    /api/evenements             Événements à venir (public)
 GET    /api/bannieres              Bannière d'urgence active (public)

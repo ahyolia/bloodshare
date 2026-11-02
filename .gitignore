@@ -1,4 +1,3 @@
-cat > .gitignore << 'EOF'
 # Node
 node_modules/
 npm-debug.log
@@ -10,6 +9,12 @@ npm-debug.log
 # Docker
 postgres_data/
 
+# Sauvegardes de base : elles contiennent des comptes réels (emails, mots de passe hachés)
+# et le dépôt est public. Seuls les scripts d'initialisation Docker sont versionnés.
+*.sql
+*.dump
+!bloodshare-backend/docker/postgres-init/*.sql
+
 # Expo
 bloodshare-mobile/.expo/
 bloodshare-mobile/dist/
@@ -17,4 +22,3 @@ bloodshare-mobile/dist/
 # OS
 .DS_Store
 Thumbs.db
-EOF

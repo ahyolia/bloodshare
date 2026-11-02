@@ -25,12 +25,11 @@ export default function EligibiliteScreen() {
   // → QuestionView et ResultatView ne font que lire ces valeurs et appeler ces fonctions, ils ne possèdent aucun état métier à eux
   const {
     questionActuelle,
-    historique,
+    numeroQuestion,
     resultat,
     repondre,
     revenirArriere,
     recommencer,
-    progression,
     peutRevenirArriere,
   } = useEligibilite();
 
@@ -41,8 +40,7 @@ export default function EligibiliteScreen() {
       ) : (
         <QuestionView
           question={questionActuelle}
-          numeroQuestion={historique.length + 1}
-          progression={progression}
+          numeroQuestion={numeroQuestion}
           peutRevenirArriere={peutRevenirArriere}
           onRepondre={repondre}
           onRetour={revenirArriere}

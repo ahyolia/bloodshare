@@ -9,6 +9,7 @@ import { getUser, saveUser } from '../stores/auth.store';
 //    utilisateur AVANT la réponse réseau : l'écran n'est jamais vide.
 type Apercu = {
   pseudo: string;
+  avatar_id: number | null;
   avatar_url: string | null;
   points_cumules: number;
 };
@@ -36,6 +37,7 @@ export function useProfilComplet() {
     if (cache) {
       setApercu({
         pseudo: cache.pseudo,
+        avatar_id: cache.avatar_id ?? null,
         avatar_url: cache.avatar_url ?? null,
         points_cumules: cache.points_cumules ?? 0,
       });
@@ -57,8 +59,8 @@ export function useProfilComplet() {
       await saveUser({
         ...(cache ?? {}),
         pseudo: meData.pseudo,
+        avatar_id: meData.avatar_id,
         avatar_url: meData.avatar_url,
-        statut_donneur: meData.statut_donneur,
         points_cumules: meData.points_cumules,
         code_parrainage: meData.code_parrainage,
       });

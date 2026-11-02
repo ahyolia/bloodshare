@@ -1,20 +1,50 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../constants/colors';
-import { Question } from '../../constants/eligibilite';
-
-const TOTAL_QUESTIONS = 15;
+import { useState, type ComponentProps } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeInLeft, FadeInRight } from 'react-native-reanimated';
+import { Theme } from '../../constants/colors';
+import { Question, Reponse, TOTAL_QUESTIONS } from '../../constants/eligibilite';
+import { Espace, Ombre, Rayon } from '../../constants/spacing';
+import { Typo } from '../../constants/typography';
+import { Bouton } from '../ui/Bouton';
 
 type Props = {
   question: Question;
   numeroQuestion: number;
-  progression: number;
   peutRevenirArriere: boolean;
-  onRepondre: (reponse: 'oui' | 'non') => void;
+  onRepondre: (reponse: Reponse) => void;
   onRetour: () => void;
   onQuitter: () => void;
 };
 
+const BOUTON_ROND = 44;
+
+// Bouton rond et blanc des en-têtes du design system (comme EnTeteSousPage).
+function BoutonRond({
+  icone,
+  libelle,
+  onPress,
+}: {
+  icone: ComponentProps<typeof Ionicons>['name'];
+  libelle: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={2}
+      accessibilityRole="button"
+      accessibilityLabel={libelle}
+      style={({ pressed }) => [styles.boutonRond, pressed && styles.presse]}
+    >
+      <Ionicons name={icone} size={22} color={Theme.texte.principal} />
+    </Pressable>
+  );
+}
+
+// 📖 Un écran par question : la question en grand et ses réponses, centrées ensemble.
+//    En haut : « question précédente » à gauche, l'avancement en points, et la croix pour
+//    quitter à droite (les réponses restent en mémoire, on pourra reprendre).
 export function QuestionView({
   question,
   numeroQuestion,
@@ -23,56 +53,85 @@ export function QuestionView({
   onRetour,
   onQuitter,
 }: Props) {
+  // Sens du glissement : on compare au numéro affiché juste avant (état ajusté pendant le
+  // rendu quand la question change, le schéma recommandé par React plutôt qu'un effet).
+  const [precedent, setPrecedent] = useState(numeroQuestion);
+  const [recule, setRecule] = useState(false);
+  if (numeroQuestion !== precedent) {
+    setRecule(numeroQuestion < precedent);
+    setPrecedent(numeroQuestion);
+  }
+
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={peutRevenirArriere ? onRetour : onQuitter}
-          style={styles.backButton}
-          accessibilityRole="button"
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.aubergine} />
-        </TouchableOpacity>
+        {/* Place réservée même sans bouton : les points restent centrés. */}
+        <View style={styles.case}>
+          {peutRevenirArriere && (
+            <Animated.View entering={FadeIn.duration(200)}>
+              <BoutonRond icone="chevron-back" libelle="Question précédente" onPress={onRetour} />
+            </Animated.View>
+          )}
+        </View>
 
-        <View style={styles.dots}>
+        <View style={styles.points} accessibilityLabel={`Question ${numeroQuestion} sur ${TOTAL_QUESTIONS}`}>
           {Array.from({ length: TOTAL_QUESTIONS }).map((_, index) => (
             <View
               key={index}
               style={[
-                styles.dot,
-                index === numeroQuestion - 1 ? styles.dotActive : styles.dotInactive,
+                styles.point,
+                index < numeroQuestion - 1 && styles.pointFait,
+                index === numeroQuestion - 1 && styles.pointActif,
               ]}
             />
           ))}
         </View>
+
+        <BoutonRond icone="close" libelle="Quitter le questionnaire" onPress={onQuitter} />
       </View>
 
-      <View style={styles.questionBlock}>
-        <Text style={styles.questionTexte}>{question.texte}</Text>
-        {question.sous_texte && <Text style={styles.questionSousTexte}>{question.sous_texte}</Text>}
-        <Text style={styles.progressLabel}>
-          Question {numeroQuestion} sur {TOTAL_QUESTIONS}
-        </Text>
+      {/* 📖 La question et ses réponses forment un seul groupe, centré dans l'écran. Une
+          clé par question : le groupe entre en glissant depuis la droite (suivante) ou la
+          gauche (précédente). Ignoré si « Réduire les animations » est activé. */}
+      <View style={styles.centre}>
+        <Animated.View
+          key={numeroQuestion}
+          entering={(recule ? FadeInLeft : FadeInRight).duration(280)}
+          style={styles.groupe}
+        >
+          <View style={styles.question}>
+            <Text style={[Typo.legendeForte, styles.numero]}>
+              Question {numeroQuestion} sur {TOTAL_QUESTIONS}
+            </Text>
+            <Text style={[Typo.titre2, styles.texte]} accessibilityRole="header">
+              {question.texte}
+            </Text>
+            {question.sous_texte && <Text style={[Typo.corps, styles.sousTexte]}>{question.sous_texte}</Text>}
+          </View>
+
+          {/* 📖 Oui et Non : deux tuiles blanches identiques (surélevées : elles se
+              touchent), aucune ne doit sembler « la bonne ». « Je ne sais pas » renvoie
+              vers le Don du Sang plutôt que de deviner. */}
+          <View style={styles.tuiles}>
+            {(['oui', 'non'] as const).map((valeur) => (
+              <Pressable
+                key={valeur}
+                onPress={() => onRepondre(valeur)}
+                accessibilityRole="button"
+                accessibilityLabel={valeur === 'oui' ? 'Oui' : 'Non'}
+                style={({ pressed }) => [styles.tuile, pressed && styles.tuilePressee]}
+              >
+                <Text style={[Typo.titre3, styles.tuileTexte]}>{valeur === 'oui' ? 'Oui' : 'Non'}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Bouton libelle="Je ne sais pas" variante="discret" onPress={() => onRepondre('ne_sait_pas')} />
+        </Animated.View>
       </View>
 
-      <View style={styles.answersBlock}>
-        <TouchableOpacity
-          style={styles.buttonOui}
-          onPress={() => onRepondre('oui')}
-          accessibilityRole="button"
-        >
-          <Text style={styles.buttonOuiText}>Oui</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.buttonNon}
-          onPress={() => onRepondre('non')}
-          accessibilityRole="button"
-        >
-          <Text style={styles.buttonNonText}>Non</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.disclaimer}>Aucune donnée n&apos;est enregistrée.</Text>
+      <View style={styles.anonymat}>
+        <Ionicons name="lock-closed-outline" size={14} color={Theme.texte.secondaire} />
+        <Text style={[Typo.legende, styles.anonymatTexte]}>Tes réponses ne sont ni enregistrées ni envoyées.</Text>
       </View>
     </View>
   );
@@ -81,99 +140,98 @@ export function QuestionView({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.creme,
-    paddingHorizontal: 20,
+    backgroundColor: Theme.fond.page,
+    paddingHorizontal: 18,
     paddingTop: 54,
-    paddingBottom: 24,
+    paddingBottom: Espace[6],
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    gap: Espace[3],
   },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  boutonRond: {
+    width: BOUTON_ROND,
+    height: BOUTON_ROND,
+    borderRadius: BOUTON_ROND / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    backgroundColor: Theme.fond.surface,
+    ...Ombre.flottante,
   },
-  dots: {
+  presse: { opacity: 0.8 },
+  case: {
+    width: BOUTON_ROND,
+  },
+  points: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     flexWrap: 'wrap',
     gap: 6,
-    marginRight: 42,
   },
-  dot: {
-    borderRadius: 5,
-  },
-  dotActive: {
-    width: 9,
-    height: 9,
-    backgroundColor: Colors.aubergine,
-  },
-  dotInactive: {
+  point: {
     width: 6,
     height: 6,
-    backgroundColor: '#D8D3CA',
+    borderRadius: Rayon.plein,
+    backgroundColor: Theme.fond.bordure,
   },
-  questionBlock: {
+  // Questions passées en aubergine pâle, la question en cours en aubergine, plus grande.
+  pointFait: {
+    backgroundColor: Theme.texte.desactive,
+  },
+  pointActif: {
+    width: 9,
+    height: 9,
+    backgroundColor: Theme.action.primaire,
+  },
+  centre: {
     flex: 1,
     justifyContent: 'center',
   },
-  questionTexte: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.aubergine,
-    lineHeight: 30,
+  groupe: {
+    gap: Espace[6],
   },
-  questionSousTexte: {
-    fontStyle: 'italic',
-    color: Colors.grisMoyen,
-    fontSize: 14,
-    marginTop: 6,
+  question: {
+    gap: Espace[2],
   },
-  progressLabel: {
-    marginTop: 10,
-    fontSize: 13,
-    color: Colors.grisMoyen,
+  numero: {
+    color: Theme.texte.secondaire,
   },
-  answersBlock: {
-    gap: 12,
+  texte: {
+    color: Theme.texte.principal,
   },
-  buttonOui: {
-    height: 56,
-    borderRadius: 20,
-    backgroundColor: '#E2DFD8',
+  sousTexte: {
+    color: Theme.texte.secondaire,
+  },
+  tuiles: {
+    flexDirection: 'row',
+    gap: Espace[3],
+  },
+  tuile: {
+    flex: 1,
+    minHeight: 72,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: Rayon.lg,
+    backgroundColor: Theme.fond.surface,
+    ...Ombre.flottante,
   },
-  buttonOuiText: {
-    color: Colors.aubergine,
-    fontWeight: '700',
-    fontSize: 17,
+  // La tuile s'enfonce légèrement sous le doigt : on sent qu'on l'a touchée.
+  tuilePressee: {
+    transform: [{ scale: 0.97 }],
   },
-  buttonNon: {
-    height: 56,
-    borderRadius: 20,
-    backgroundColor: Colors.aubergine,
-    borderWidth: 1.5,
+  tuileTexte: {
+    color: Theme.texte.principal,
+  },
+  anonymat: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: Espace[1],
   },
-  buttonNonText: {
-    color: Colors.cremeClair,
-    fontWeight: '700',
-    fontSize: 17,
-  },
-  disclaimer: {
-    color: Colors.grisMoyen,
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 12,
+  anonymatTexte: {
+    color: Theme.texte.secondaire,
   },
 });

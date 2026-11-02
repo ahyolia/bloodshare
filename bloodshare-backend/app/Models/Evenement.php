@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasStorageImageUrl;
 use Illuminate\Database\Eloquent\Model;
 
 class Evenement extends Model
 {
+    use HasStorageImageUrl;
+
     protected $fillable = [
         'admin_id',
         'qr_code_id',
+        'carte_id',
         'titre',
         'description',
         'lieu',
@@ -23,6 +27,16 @@ class Evenement extends Model
         'horaire_fin' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (Evenement $evenement) {
+            if (($evenement->wasChanged('statut') || $evenement->wasRecentlyCreated) && $evenement->statut === 'publie') {
+                app(\App\Services\NotificationService::class)
+                    ->notifierTousLesUsers(new \App\Notifications\NouvelEvenementNotification($evenement));
+            }
+        });
+    }
+
     public function admin()
     {
         return $this->belongsTo(User::class, 'admin_id');
@@ -31,5 +45,11 @@ class Evenement extends Model
     public function qrCode()
     {
         return $this->belongsTo(QrCode::class);
+    }
+
+    // Carte remise aux participants ; null → carte Événement générique (voir Carte::generiqueEvenement()).
+    public function carte()
+    {
+        return $this->belongsTo(Carte::class);
     }
 }

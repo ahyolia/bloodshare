@@ -5,6 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\NiveauService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password as PasswordRule;
+use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class ProfilController extends Controller
 {
@@ -27,12 +31,47 @@ class ProfilController extends Controller
         return response()->json($this->formatUser($user->fresh()));
     }
 
-    public function destroy(Request $request)
+    public function changerMotDePasse(Request $request)
     {
         $user = $request->user();
 
-        $user->tokens()->delete();
-        $user->update(['statut' => 'supprime']);
+        $validated = $request->validate([
+            'mot_de_passe_actuel' => 'required|string',
+            'password' => [
+                'required',
+                'confirmed',
+                PasswordRule::min(8)->mixedCase()->numbers(),
+            ],
+        ]);
+
+        if (! Hash::check($validated['mot_de_passe_actuel'], $user->password)) {
+            throw ValidationException::withMessages([
+                'mot_de_passe_actuel' => 'Mot de passe actuel incorrect.',
+            ]);
+        }
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+            'doit_changer_mdp' => false,
+        ]);
+
+        // 📖 Déconnecte les autres appareils : changer de mot de passe après un vol de compte
+        //    ne servait à rien, le token volé restait valable (audit cybersécurité). La
+        //    session en cours est gardée, l'utilisateur n'a pas à se reconnecter.
+        $tokenEnCours = $user->currentAccessToken();
+
+        $user->tokens()
+            ->when($tokenEnCours instanceof PersonalAccessToken, fn ($q) => $q->whereKeyNot($tokenEnCours->getKey()))
+            ->delete();
+
+        return response()->json([
+            'message' => 'Mot de passe mis à jour.',
+        ]);
+    }
+
+    public function destroy(Request $request)
+    {
+        $request->user()->anonymiser();
 
         return response()->json([
             'message' => 'Compte supprimé avec succès.',
@@ -44,13 +83,14 @@ class ProfilController extends Controller
         return [
             'id' => $user->id,
             'pseudo' => $user->pseudo,
+            'avatar_id' => $user->avatar_id,
             'avatar_url' => null,
-            'statut_donneur' => $user->statut_donneur,
             'sexe' => $user->sexe,
             'points_cumules' => $user->points_cumules,
             'niveau' => NiveauService::calculerNiveau($user->points_cumules ?? 0),
             'code_parrainage' => $user->code_parrainage,
             'statut' => $user->statut,
+            'doit_changer_mdp' => $user->doit_changer_mdp,
             'created_at' => $user->created_at,
             'derniere_connexion' => $user->derniere_connexion,
         ];

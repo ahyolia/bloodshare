@@ -1,17 +1,17 @@
-# BloodShare 🩸
+# Aïma 🩸
 
 Application mobile gamifiée de sensibilisation et fidélisation des donneurs de sang en Nouvelle-Calédonie, développée pour l'association ADSB-NC.
 
 ## Concept
 
-BloodShare encourage les non-donneurs à passer à l'acte et fidélise les donneurs existants via un système de récompenses : points, badges et cartes à collectionner obtenus après chaque don ou participation à un événement.
+Aïma encourage les non-donneurs à passer à l'acte et fidélise les donneurs existants via un système de récompenses : points, badges et cartes à collectionner obtenus après chaque don ou participation à un événement.
 
 ## Stack technique
 
 | Composant | Technologie |
 |---|---|
 | Application mobile | React Native (Expo) |
-| Backend & API REST | Laravel 11 + Sanctum |
+| Backend & API REST | Laravel 12 + Sanctum |
 | Backoffice | Laravel + Filament |
 | Base de données | PostgreSQL 15 |
 | Gestion des rôles | Spatie Laravel Permission |
@@ -34,7 +34,7 @@ L'authentification de l'API repose sur Laravel Sanctum (tokens Bearer). Le forma
 
 | Document | Description |
 |---|---|
-| [DEVOPS.md](DEVOPS.md) | Architecture Docker, workflow Git |
+| [DEVOPS.md](DEVOPS.md) | Architecture Docker, workflow Git, déploiement sur le serveur de démo (section 6) |
 | [docs/contrat_API.md](docs/contrat_API.md) | Format des endpoints API mobile |
 | [bloodshare-backend/README.md](bloodshare-backend/README.md) | Documentation backend |
 | [bloodshare-mobile/README.md](bloodshare-mobile/README.md) | Documentation mobile |
@@ -52,15 +52,25 @@ L'authentification de l'API repose sur Laravel Sanctum (tokens Bearer). Le forma
 git clone https://github.com/ahyolia/bloodshare.git
 cd bloodshare
 
-# Installer les dépendances Laravel via Docker
-docker run --rm -v "$(pwd)/bloodshare-backend:/app" composer:latest install --ignore-platform-reqs --no-scripts
-
-# Configurer l'environnement
+# Configurer l'environnement (valeurs déjà alignées sur le docker-compose)
 cp bloodshare-backend/.env.example bloodshare-backend/.env
 
-# Lancer les conteneurs
+# Tout lancer
 docker compose up --build
 ```
+
+Au premier démarrage, le conteneur `backend` fait automatiquement le reste : installation des
+dépendances (`composer install`), génération de `APP_KEY`, attente de la base, migrations, puis
+seeders (cartes, badges, avatars, QR Code du centre, 15 questions d'éligibilité, rôles, super
+admin). Les seeders sont idempotents : relancer `docker compose up` ne duplique rien.
+
+**Backoffice** : http://localhost:8000/admin avec le compte **super admin** `SEED_ADMIN_EMAIL` /
+`SEED_ADMIN_PASSWORD` (définis dans `bloodshare-backend/.env`, par défaut
+`super.admin@bloodshare.local` / `Admin-local-1234`).
+Compte de test pour l'app mobile : `test@example.com` / `password` (aucun accès au backoffice).
+
+> Cette base est **locale et indépendante** de celle des autres développeur·se·s : ce que vous
+> saisissez dans votre backoffice n'apparaît pas dans leur application, et inversement.
 
 ## Accès
 
@@ -69,6 +79,10 @@ docker compose up --build
 | API Laravel | http://localhost:8000 |
 | Backoffice Filament | http://localhost:8000/admin |
 | pgAdmin | http://localhost:5050 |
+
+Démo en ligne (hébergement temporaire) : front sur https://aima-nc.netlify.app, API et
+backoffice sur https://sae203.hopto.org/~cameliaa. Mise à jour du back ou du front : voir
+[DEVOPS.md, section 6](DEVOPS.md#6-déploiement-sur-le-serveur-de-démo-sae203).
 
 ## Connexion pgAdmin
 

@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const CLES = {
   notifications: 'notifications_enabled',
   penurie: 'penurie_alertes_enabled',
+  onboardingVu: 'onboarding_vu',
 } as const;
 
 // 📖 AsyncStorage ne stocke que des chaînes → on sérialise en 'true' / 'false'.
@@ -25,3 +26,6 @@ export const setNotificationsActivees = (v: boolean) => ecrireBool(CLES.notifica
 
 export const getPenurieActivee = () => lireBool(CLES.penurie, false);
 export const setPenurieActivee = (v: boolean) => ecrireBool(CLES.penurie, v);
+
+export const getOnboardingVu = () => lireBool(CLES.onboardingVu, false);
+export const setOnboardingVu = () => ecrireBool(CLES.onboardingVu, true);

@@ -1,6 +1,6 @@
 [
   {
-    "categorie": "Les bases du don",
+    "categorie": "Qui peut donner ?",
     "quiz": [
       {
         "id": 1,
@@ -35,7 +35,7 @@
     ]
   },
   {
-    "categorie": "Les groupes sanguins",
+    "categorie": "Le don du sang",
     "quiz": [
       {
         "id": 4,
@@ -60,7 +60,7 @@
     ]
   },
   {
-    "categorie": "L'association ADSB-NC",
+    "categorie": "Le Centre et l'ADSB-NC",
     "quiz": [
       {
         "id": 6,

@@ -22,8 +22,16 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
-        <!-- <env name="DB_CONNECTION" value="sqlite"/> -->
-        <!-- <env name="DB_DATABASE" value=":memory:"/> -->
+        <!-- 📖 Sans ça, RefreshDatabase vide et remigre la vraie base de dev à chaque
+             `php artisan test` — vécu en direct : tous les users/dons/abonnements de dev
+             supprimés par un lancement de test. DB_DATABASE est déjà fixé au niveau de
+             l'environnement Docker (env_file), donc <env> seul ne suffit pas à le
+             surcharger sans force="true" ; <server> est nécessaire en plus, Laravel lisant
+             $_SERVER en priorité sur $_ENV pour cette valeur. Une base Postgres séparée
+             (même instance) isole les tests sans changer de moteur (le projet utilise des
+             fonctionnalités propres à Postgres). -->
+        <env name="DB_DATABASE" value="bloodshare_testing" force="true"/>
+        <server name="DB_DATABASE" value="bloodshare_testing"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>

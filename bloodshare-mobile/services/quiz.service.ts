@@ -39,9 +39,24 @@ export type Question = {
   type: 'unique' | 'multiple';
   ordre: number;
   reponses: Reponse[];
-  // 📖 Présent uniquement dans le mock (le vrai backend ne renvoie jamais les bonnes réponses
-  //    au client). Sert à la correction locale dans submitQuiz ci-dessous, jamais affiché.
+  // 📖 Présents uniquement dans le mock (le vrai backend ne renvoie jamais les bonnes réponses
+  //    au client avant validation). Servent à la correction locale ci-dessous, jamais affichés tels quels.
   correctes?: number[];
+  explication?: string | null;
+  contenu?: FicheLiee | null;
+};
+
+// 📖 Fiche pratique à ouvrir depuis la correction d'une question.
+export type FicheLiee = {
+  id: number;
+  titre: string;
+};
+
+export type Correction = {
+  correcte: boolean;
+  reponses_correctes: number[];
+  explication: string | null;
+  contenu: FicheLiee | null;
 };
 
 export type QuizDetail = {
@@ -49,6 +64,9 @@ export type QuizDetail = {
   titre: string;
   aleatoire: boolean;
   questions: Question[];
+  // 📖 Réponses déjà validées lors d'une tentative non terminée (reprise du quiz), avec leur
+  //    correction : elles sont verrouillées côté serveur. Absent du mock.
+  reponses_donnees?: (ReponsePayload & { correction?: Correction })[];
 };
 
 export const getQuizDetail = async (id: number): Promise<QuizDetail> => {
@@ -67,9 +85,17 @@ export type ReponsePayload = {
   reponse_ids: number[];
 };
 
-export type DetailReponse = {
+export type QuestionCorrigee = Correction & {
   question_id: number;
-  correcte: boolean;
+  // 📖 Réponses retenues par le serveur : celles déjà verrouillées si la question avait
+  //    été validée avant (autre appareil, reprise), sinon celles qu'on vient d'envoyer.
+  reponse_ids: number[];
+};
+
+export type DetailReponse = Correction & {
+  question_id: number;
+  // 📖 Réponses comptées pour le score (celles verrouillées à la validation).
+  reponse_ids: number[];
 };
 
 export type SoumissionResultat = {
@@ -92,6 +118,36 @@ const memesIds = (a: number[], b: number[]) => {
   return as.every((v, i) => v === bs[i]);
 };
 
+// 📖 Correction locale d'une question du mock (mode maquette uniquement).
+const corrigerMock = (question: Question, reponseIds: number[]): Correction => ({
+  correcte: memesIds(reponseIds, question.correctes ?? []),
+  reponses_correctes: question.correctes ?? [],
+  explication: question.explication ?? null,
+  contenu: question.contenu ?? null,
+});
+
+// 📖 Valide une question : le serveur la corrige et verrouille la réponse, qui ne pourra plus
+//    être changée. Il enregistre aussi la progression (le quiz apparaît dans "Quiz en cours").
+export const verifierQuestion = async (
+  quizId: number,
+  questionId: number,
+  reponseIds: number[]
+): Promise<QuestionCorrigee> => {
+  if (USE_MOCK_DATA) {
+    const detail = (quizDetailsMock as Record<string, QuizDetail>)[String(quizId)];
+    const question = detail?.questions.find((q) => q.id === questionId);
+    if (!question) throw new Error('Question introuvable');
+
+    return { question_id: questionId, reponse_ids: reponseIds, ...corrigerMock(question, reponseIds) };
+  }
+
+  const response = await api.post<QuestionCorrigee>(
+    `/quiz/${quizId}/questions/${questionId}/verifier`,
+    { reponse_ids: reponseIds }
+  );
+  return response.data;
+};
+
 export const submitQuiz = async (
   id: number,
   reponses: ReponsePayload[]
@@ -104,7 +160,8 @@ export const submitQuiz = async (
 
     const details: DetailReponse[] = (detail?.questions ?? []).map((q) => ({
       question_id: q.id,
-      correcte: memesIds(parQuestion.get(q.id) ?? [], q.correctes ?? []),
+      reponse_ids: parQuestion.get(q.id) ?? [],
+      ...corrigerMock(q, parQuestion.get(q.id) ?? []),
     }));
 
     const total = detail?.questions.length ?? reponses.length;

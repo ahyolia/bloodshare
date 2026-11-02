@@ -10,10 +10,30 @@ class Defi extends Model
         'admin_id',
         'titre',
         'description',
+        'type',
+        'periode',
         'objectif_chiffre',
-        'points_attribues',
+        'date_fin',
         'statut',
     ];
+
+    protected $casts = [
+        'date_fin' => 'date',
+    ];
+
+    // 📖 wasChanged('statut') est déjà false si un défi actif est juste resauvegardé
+    //    sans toucher au statut : pas de notif en double à chaque édition du BO. Il
+    //    vaut aussi toujours false à la création (rien à comparer) — wasRecentlyCreated
+    //    couvre ce cas (défi créé directement avec statut='actif').
+    protected static function booted(): void
+    {
+        static::saved(function (Defi $defi) {
+            if (($defi->wasChanged('statut') || $defi->wasRecentlyCreated) && $defi->statut === 'actif') {
+                app(\App\Services\NotificationService::class)
+                    ->notifierTousLesUsers(new \App\Notifications\NouveauDefiNotification($defi));
+            }
+        });
+    }
 
     public function admin()
     {

@@ -25,10 +25,7 @@ class ViewUser extends ViewRecord
                         ->required(),
                 ])
                 ->action(function (array $data): void {
-                    $this->record->update([
-                        'statut' => 'suspendu',
-                        'motif_suspension' => $data['motif'],
-                    ]);
+                    $this->record->suspendre($data['motif']);
                 }),
 
             Actions\Action::make('reactiver')
@@ -51,9 +48,7 @@ class ViewUser extends ViewRecord
                 ->visible(fn (): bool => $this->record->statut !== 'supprime')
                 ->requiresConfirmation()
                 ->modalDescription('Cette action est irréversible.')
-                ->action(function (): void {
-                    $this->record->update(['statut' => 'supprime']);
-                }),
+                ->action(fn () => $this->record->anonymiser()),
         ];
     }
 }
