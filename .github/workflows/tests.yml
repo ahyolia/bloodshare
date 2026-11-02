@@ -52,7 +52,7 @@ jobs:
       DB_PASSWORD: bloodshare123
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Mêmes extensions que le Dockerfile du backend.
       - uses: shivammathur/setup-php@v2
@@ -68,7 +68,7 @@ jobs:
         run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
       - name: Cache Composer
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: composer-${{ hashFiles('bloodshare-backend/composer.lock') }}
@@ -94,9 +94,9 @@ jobs:
         working-directory: bloodshare-mobile
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm

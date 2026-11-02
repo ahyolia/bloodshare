@@ -28,7 +28,7 @@ jobs:
       run:
         working-directory: bloodshare-backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -47,9 +47,9 @@ jobs:
       run:
         working-directory: bloodshare-mobile
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
 
@@ -64,7 +64,7 @@ jobs:
     timeout-minutes: 10
     steps:
       # Tout l'historique : un secret ajouté puis retiré dans la même PR reste dans git.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -83,7 +83,7 @@ jobs:
     container:
       image: semgrep/semgrep:1.95.0
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 📖 Règles PHP, TypeScript et React du registre Semgrep : 0 résultat sur le code au
       #    moment de l'audit, donc bloquant. Un faux positif se justifie dans le code avec
