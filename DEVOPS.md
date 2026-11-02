@@ -71,7 +71,7 @@ Pourquoi ces extensions PHP :
 
 | Commande | Effet |
 |---|---|
-| `docker compose up -d` | Crée et démarre les 3 services en arrière-plan (première fois, ou après un changement de config/Dockerfile) |
+| `docker compose up -d` | Crée et démarre les 4 services en arrière-plan (première fois, ou après un changement de config/Dockerfile) |
 | `docker compose start` | Redémarre les conteneurs existants sans les recréer (usage quotidien, plus rapide) |
 | `docker compose stop` | Arrête les conteneurs sans les supprimer (préféré à `down` pour un usage quotidien) |
 | `docker compose logs -f backend` | Suit les logs du backend en temps réel |
@@ -83,10 +83,20 @@ Pourquoi ces extensions PHP :
 
 ### Initialisation de la base de données
 
+Rien à faire à la main : à chaque démarrage, `entrypoint.sh` attend la base, lance les
+migrations (`migrate --force`), charge les textes juridiques (`juridique:importer`) puis, en local
+(`RUN_SEEDERS=true` dans `docker-compose.yml`), tous les seeders : cartes, badges, avatars, QR Code
+du centre, questions d'éligibilité, rôles et super admin. Les seeders sont idempotents.
+
+Le super admin est créé à partir de `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`
+(`bloodshare-backend/.env`, par défaut `super.admin@bloodshare.local` / `Admin-local-1234`).
+Les autres admins se créent ensuite depuis le backoffice.
+
+Pour relancer une étape à la main :
+
 ```bash
 docker exec -it bloodshare_backend php artisan migrate
 docker exec -it bloodshare_backend php artisan db:seed
-docker exec -it bloodshare_backend php artisan make:filament-user
 ```
 
 ### Base de test (`bloodshare_testing`)
@@ -163,14 +173,15 @@ service) si :
 ### Schéma des branches
 
 ```
-main
- ├── feat/...      (nouvelle fonctionnalité)
- ├── fix/...        (correction de bug)
- ├── refacto/...    (refactorisation, sans changement de comportement)
- └── chore/...      (tâches techniques, config, dépendances)
+main                  (déploiement : ne reçoit que dev, une fois stable)
+ └── dev              (intégration)
+      ├── feat/...    (nouvelle fonctionnalité)
+      ├── fix/...     (correction de bug)
+      ├── refactor/...(refactorisation, sans changement de comportement)
+      └── chore/...   (tâches techniques, config, dépendances)
 ```
 
-**Règle absolue : jamais de commit direct sur `main`.** Toute modification passe par une branche dédiée puis une Pull Request.
+**Règle absolue : jamais de commit direct sur `main` ni sur `dev`.** Toute modification passe par une branche dédiée, partie de `dev`, puis une Pull Request vers `dev`.
 
 ### Convention de nommage des branches
 
@@ -190,7 +201,7 @@ Format : `type(portée): description` en français.
 |---|---|
 | `feat` | Nouvelle fonctionnalité |
 | `fix` | Correction de bug |
-| `refacto` | Refactorisation, sans changement de comportement |
+| `refactor` | Refactorisation, sans changement de comportement |
 | `chore` | Tâches techniques, config, dépendances |
 | `docs` | Documentation |
 | `style` | Formatage, sans impact sur la logique |
@@ -203,7 +214,7 @@ Exemples réels du projet :
 
 ### Workflow de Pull Request (7 étapes)
 
-1. Créer une branche depuis `main` (ou `dev` selon la cible du merge)
+1. Créer une branche depuis `dev` à jour (`git switch dev && git pull`)
 2. Développer et committer sur cette branche
 3. Pousser la branche vers GitHub (`git push -u origin <branche>`)
 4. Ouvrir une Pull Request vers `dev`
