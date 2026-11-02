@@ -52,7 +52,7 @@ jobs:
       DB_PASSWORD: bloodshare123
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Mêmes extensions que le Dockerfile du backend.
       - uses: shivammathur/setup-php@v2
@@ -94,7 +94,7 @@ jobs:
         working-directory: bloodshare-mobile
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
